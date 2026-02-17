@@ -1,7 +1,7 @@
 <template>
   <v-app class="app-container">
-    <LeftSidebar />
-    <RightSidebar />
+    <LeftSidebar v-if="!isIndexPage" />
+    <RightSidebar v-if="!isIndexPage" />
 
     <v-main class="main-content">
       <router-view />
@@ -10,8 +10,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import LeftSidebar from '@/components/LeftSidebar.vue'
 import RightSidebar from '@/components/RightSidebar.vue'
+
+const route = useRoute()
+const isIndexPage = computed(() => route.path === '/')
 </script>
 
 <style>
