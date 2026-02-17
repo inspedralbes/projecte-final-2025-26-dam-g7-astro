@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Importaciones de las fases de acceso
+// Importaciones de las vistas principales
 import RegisterView from '@/pages/RegisterView.vue'
 import LoginView from '@/pages/LoginView.vue'
 import Plans from '@/pages/Plans.vue'
@@ -10,38 +10,53 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/singleplayer'
+    },
+    {
+      path: '/register',
       name: 'register',
-      // Fase 1: Alistamiento de nuevos tripulantes
       component: RegisterView,
     },
     {
       path: '/login',
       name: 'login',
-      // Fase 2: Sincronización de credenciales
       component: LoginView,
       props: true,
     },
     {
       path: '/plans',
       name: 'Plans',
-      // Fase 3: Selección de modalidad de misión
       component: Plans,
     },
-    // Aquí puedes añadir más rutas como /menu o /perfil según tu esquema
+    {
+      // Mantenemos /planes por compatibilidad si la usábamos
+      path: '/planes',
+      redirect: '/plans'
+    },
+    {
+      path: '/singleplayer',
+      name: 'SinglePlayer',
+      component: () => import('@/pages/SinglePlayer.vue'),
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/Profile.vue')
+    },
   ],
 })
 
-// Lógica de gestión de errores para módulos dinámicos
+// Mantenemos la lógica de error para imports dinámicos
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
     if (localStorage.getItem('vuetify:dynamic-reload')) {
-      console.error('Error crítico en salto hiperespacial (módulo dinámico)', err)
+      console.error('Dynamic import error', err)
     } else {
       localStorage.setItem('vuetify:dynamic-reload', 'true')
       location.assign(to.fullPath)
     }
   } else {
-    console.error('Error de trayectoria:', err)
+    console.error(err)
   }
 })
 
