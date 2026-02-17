@@ -1,29 +1,46 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center text-center">
-    <div class="hero-section">
-      <h1 class="text-h2 font-weight-bold mb-4 primary-gradient-text">
-        BIENVENIDO A ASTRO
-      </h1>
-      <p class="text-h5 mb-10 text-grey-lighten-1 mx-auto" style="max-width: 700px;">
-        Embárcate en una experiencia espacial única donde la exploración y la gestión se encuentran.
-        Prepárate para liderar tu propia misión interestelar.
-      </p>
-
-      <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10" to="/menu" elevation="10">
-        INICIAR MISIÓN
-        <v-icon end icon="mdi-rocket-launch-outline" class="ms-2"></v-icon>
+  <v-container fluid class="pa-0 main-scroll-container">
+    <!-- Navbar -->
+    <v-app-bar flat color="transparent" class="px-6">
+      <v-spacer></v-spacer>
+      <v-btn variant="text" to="/login" class="text-white mx-2">
+        Iniciar sesión
       </v-btn>
-    </div>
+      <v-btn variant="outlined" to="/register" color="primary" class="mx-2">
+        Registrarse
+      </v-btn>
+    </v-app-bar>
+
+    <!-- Hero Section -->
+    <section class="hero-section d-flex align-center justify-center text-center px-4">
+      <div class="content-wrapper">
+        <h1 class="text-h2 font-weight-bold mb-4 primary-gradient-text">
+          PROYECTO ASTRO
+        </h1>
+        <p class="text-h5 mb-6 text-grey-lighten-1 mx-auto" style="max-width: 800px;">
+          Plataforma de entrenamiento visual y neurocognitivo de alto rendimiento.
+          Agilidad lectora y decodificación sin límites.
+        </p>
+        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4" to="/menu">
+          INICIAR MISIÓN
+          <v-icon end icon="mdi-rocket-launch-outline" class="ms-2"></v-icon>
+        </v-btn>
+      </div>
+    </section>
   </v-container>
 </template>
 
-<script setup>
-// No redirection logic needed here anymore as this is our landing page
-</script>
 
 <style scoped>
+.main-scroll-container {
+  background: #000000;
+  min-height: 100vh;
+}
+
 .hero-section {
-  animation: fadeIn 1.2s ease-out;
+  min-height: 90vh;
+  position: relative;
+  overflow: hidden;
 }
 
 .primary-gradient-text {
@@ -31,30 +48,33 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: 2px;
 }
 
 .start-button {
-  border-radius: 30px;
+  border-radius: 4px;
   font-weight: bold;
-  letter-spacing: 1px;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  letter-spacing: 2px;
+  transition: all 0.4s ease;
 }
 
 .start-button:hover {
-  transform: scale(1.1) translateY(-5px);
-  box-shadow: 0 0 25px rgba(0, 242, 255, 0.5) !important;
+  filter: brightness(1.2);
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.4) !important;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.hero-section .content-wrapper {
+  animation: fadeIn 1.5s ease-out;
 }
 </style>

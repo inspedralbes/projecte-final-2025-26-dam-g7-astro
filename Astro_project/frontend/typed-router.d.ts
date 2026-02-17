@@ -19,9 +19,9 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/LoginView': RouteRecordInfo<'/LoginView', '/LoginView', Record<never, never>, Record<never, never>>,
+    '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/multiplayer': RouteRecordInfo<'/multiplayer', '/multiplayer', Record<never, never>, Record<never, never>>,
-    '/Plans': RouteRecordInfo<'/Plans', '/Plans', Record<never, never>, Record<never, never>>,
+    '/plans': RouteRecordInfo<'/plans', '/plans', Record<never, never>, Record<never, never>>,
     '/profile': RouteRecordInfo<'/profile', '/profile', Record<never, never>, Record<never, never>>,
     '/RegisterView': RouteRecordInfo<'/RegisterView', '/RegisterView', Record<never, never>, Record<never, never>>,
     '/shop': RouteRecordInfo<'/shop', '/shop', Record<never, never>, Record<never, never>>,
@@ -43,16 +43,16 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/LoginView.vue': {
-      routes: '/LoginView'
+    'src/pages/login.vue': {
+      routes: '/login'
       views: never
     }
     'src/pages/multiplayer.vue': {
       routes: '/multiplayer'
       views: never
     }
-    'src/pages/Plans.vue': {
-      routes: '/Plans'
+    'src/pages/plans.vue': {
+      routes: '/plans'
       views: never
     }
     'src/pages/profile.vue': {

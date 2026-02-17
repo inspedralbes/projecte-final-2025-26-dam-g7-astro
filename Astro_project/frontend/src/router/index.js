@@ -3,14 +3,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 // Importaciones de las vistas principales
 import RegisterView from '@/pages/RegisterView.vue'
 import LoginView from '@/pages/LoginView.vue'
-import Plans from '@/pages/Plans.vue'
+import Plans from '@/pages/plans.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/singleplayer'
+      name: 'index',
+      component: () => import('@/pages/index.vue'),
     },
     {
       path: '/register',
@@ -41,7 +42,7 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('@/pages/Profile.vue')
+      component: () => import('@/pages/profile.vue')
     },
   ],
 })
