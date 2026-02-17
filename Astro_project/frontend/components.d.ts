@@ -11,10 +11,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
-    LeftSidebar: typeof import('./src/components/LeftSidebar.vue')['default']
-    RightSidebar: typeof import('./src/components/RightSidebar.vue')['default']
+    LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
+    RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

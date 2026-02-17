@@ -12,8 +12,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import LeftSidebar from '@/components/LeftSidebar.vue'
-import RightSidebar from '@/components/RightSidebar.vue'
+import LeftSidebar from '@/components/layout/LeftSidebar.vue'
+import RightSidebar from '@/components/layout/RightSidebar.vue'
 
 const route = useRoute()
 const isIndexPage = computed(() => route.path === '/')

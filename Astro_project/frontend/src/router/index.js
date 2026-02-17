@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Importaciones de las vistas principales
-import RegisterView from '@/pages/RegisterView.vue'
-import LoginView from '@/pages/LoginView.vue'
-import Plans from '@/pages/plans.vue'
+import register from '@/pages/auth/register.vue'
+import login from '@/pages/auth/login.vue'
+import Plans from '@/pages/plans/plans.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,17 +11,17 @@ const router = createRouter({
     {
       path: '/',
       name: 'index',
-      component: () => import('@/pages/index.vue'),
+      component: () => import('@/pages/home/index.vue'),
     },
     {
       path: '/register',
       name: 'register',
-      component: RegisterView,
+      component: register,
     },
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: login,
       props: true,
     },
     {
@@ -37,12 +37,12 @@ const router = createRouter({
     {
       path: '/singleplayer',
       name: 'SinglePlayer',
-      component: () => import('@/pages/SinglePlayer.vue'),
+      component: () => import('@/pages/training/singleplayer.vue'),
     },
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('@/pages/profile.vue')
+      component: () => import('@/pages/profile/profile.vue')
     },
   ],
 })
