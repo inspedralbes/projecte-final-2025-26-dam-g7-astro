@@ -22,9 +22,9 @@ declare module 'vue-router/auto-routes' {
     '/LoginView': RouteRecordInfo<'/LoginView', '/LoginView', Record<never, never>, Record<never, never>>,
     '/multiplayer': RouteRecordInfo<'/multiplayer', '/multiplayer', Record<never, never>, Record<never, never>>,
     '/Planes': RouteRecordInfo<'/Planes', '/Planes', Record<never, never>, Record<never, never>>,
-    '/profile': RouteRecordInfo<'/profile', '/profile', Record<never, never>, Record<never, never>>,
-    '/shop': RouteRecordInfo<'/shop', '/shop', Record<never, never>, Record<never, never>>,
-    '/singleplayer': RouteRecordInfo<'/singleplayer', '/singleplayer', Record<never, never>, Record<never, never>>,
+    '/Profile': RouteRecordInfo<'/Profile', '/Profile', Record<never, never>, Record<never, never>>,
+    '/Shop': RouteRecordInfo<'/Shop', '/Shop', Record<never, never>, Record<never, never>>,
+    '/SinglePlayer': RouteRecordInfo<'/SinglePlayer', '/SinglePlayer', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -54,16 +54,16 @@ declare module 'vue-router/auto-routes' {
       routes: '/Planes'
       views: never
     }
-    'src/pages/profile.vue': {
-      routes: '/profile'
+    'src/pages/Profile.vue': {
+      routes: '/Profile'
       views: never
     }
-    'src/pages/shop.vue': {
-      routes: '/shop'
+    'src/pages/Shop.vue': {
+      routes: '/Shop'
       views: never
     }
-    'src/pages/singleplayer.vue': {
-      routes: '/singleplayer'
+    'src/pages/SinglePlayer.vue': {
+      routes: '/SinglePlayer'
       views: never
     }
   }

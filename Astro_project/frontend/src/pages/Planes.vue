@@ -90,6 +90,10 @@ const plans = [
 ]
 
 const selectPlan = (plan) => {
+    if (plan === 'INDIVIDUAL') {
+        router.push('/profile')
+        return
+    }
     selectedPlan.value = plan
     user.value = ''     // Limpiamos datos por seguridad
     password.value = ''

@@ -8,17 +8,32 @@ import LoginView from '@/pages/LoginView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+
     {
       path: '/',
+      redirect: '/singleplayer'
+    },
+    {
+      path: '/planes',
       name: 'Planes',
-      // Esta es la pantalla donde eligen entre INDIVIDUAL o GRUPAL
-      component: Planes, 
+      component: Planes,
+    },
+    {
+      path: '/singleplayer',
+      name: 'SinglePlayer',
+      component: () => import('@/pages/SinglePlayer.vue'),
     },
     {
       path: '/login',
       name: 'login',
       component: LoginView,
+
       props: true, // Permite pasar props desde la ruta al componente
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/Profile.vue')
     },
   ],
 })
