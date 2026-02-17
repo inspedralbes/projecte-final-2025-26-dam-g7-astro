@@ -1,34 +1,42 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Planes from '@/pages/Planes.vue'
+// Importaciones de las vistas principales
+import RegisterView from '@/pages/RegisterView.vue'
 import LoginView from '@/pages/LoginView.vue'
-
-
+import Plans from '@/pages/Plans.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-
     {
       path: '/',
       redirect: '/singleplayer'
     },
     {
-      path: '/planes',
-      name: 'Planes',
-      component: Planes,
-    },
-    {
-      path: '/singleplayer',
-      name: 'SinglePlayer',
-      component: () => import('@/pages/SinglePlayer.vue'),
+      path: '/register',
+      name: 'register',
+      component: RegisterView,
     },
     {
       path: '/login',
       name: 'login',
       component: LoginView,
-
-      props: true, // Permite pasar props desde la ruta al componente
+      props: true,
+    },
+    {
+      path: '/plans',
+      name: 'Plans',
+      component: Plans,
+    },
+    {
+      // Mantenemos /planes por compatibilidad si la usábamos
+      path: '/planes',
+      redirect: '/plans'
+    },
+    {
+      path: '/singleplayer',
+      name: 'SinglePlayer',
+      component: () => import('@/pages/SinglePlayer.vue'),
     },
     {
       path: '/profile',
@@ -38,7 +46,7 @@ const router = createRouter({
   ],
 })
 
-// Mantenemos tu lógica de error para imports dinámicos
+// Mantenemos la lógica de error para imports dinámicos
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
     if (localStorage.getItem('vuetify:dynamic-reload')) {
