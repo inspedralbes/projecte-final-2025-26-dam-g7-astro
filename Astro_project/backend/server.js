@@ -69,6 +69,42 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+    // Rebem les dades del formulari Vue
+    // Nota: mapegem 'username' a 'user' i 'password' a 'pass' per coincidir amb el teu esquema
+    const { username, password, rank } = req.body;
+
+    try {
+        const db = getDB();
+        const collection = db.collection('users');
+
+        // 1. Comprovar si l'usuari ja existeix
+        const existingUser = await collection.findOne({ user: username });
+        if (existingUser) {
+            return res.status(409).json({ message: "Aquest ID de tripulant ja està assignat." });
+        }
+
+        // 2. Crear el nou objecte usuari
+        const newUser = {
+            user: username,
+            pass: password, // AVIS: En producció fes servir bcrypt per encriptar!
+            rank: rank || "Cadete de Vuelo",
+            plan: "INDIVIDUAL", // Per defecte
+            createdAt: new Date()
+        };
+
+        // 3. Inserir a MongoDB
+        await collection.insertOne(newUser);
+
+        console.log(`Nou recluta registrat: ${username}`);
+        res.status(201).json({ message: "Reclutament acceptat. Benvingut a bord." });
+
+    } catch (error) {
+        console.error("Error en registre:", error);
+        res.status(500).json({ message: "Error en el sistema de reclutament." });
+    }
+});
+
 // --- LÓGICA DE WEBSOCKET ---
 wss.on('connection', (ws) => {
     console.log('Nuevo tripulante conectado vía WebSocket puro.');

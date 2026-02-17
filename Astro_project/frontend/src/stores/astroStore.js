@@ -13,6 +13,27 @@ export const useAstroStore = defineStore('astro', {
     }),
 
     actions: {
+        async registerTripulante(userData) {
+            this.error = null;
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.message || "Error al registrar");
+
+                return { success: true };
+
+            } catch (error) {
+                console.error(error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },  
         async loginTripulante(credentials) {
             this.error = null;
             try {

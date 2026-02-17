@@ -46,6 +46,7 @@
               variant="outlined"
               prepend-inner-icon="mdi-lock-outline"
               color="primary"
+              :rules="[v => !!v || 'Campo requerido']"
             ></v-text-field>
           </v-col>
 
@@ -62,6 +63,7 @@
           </v-col>
         </v-row>
 
+        <!-- ALERTA D'ERROR SI EL SERVER DIU QUE NO -->
         <v-alert
           v-if="errorMessage"
           type="error"
@@ -69,6 +71,7 @@
           density="compact"
           class="mt-4 mb-4"
           border="start"
+          closable
         >
           {{ errorMessage }}
         </v-alert>
@@ -80,6 +83,7 @@
           type="submit"
           class="register-btn font-weight-black mt-4"
           :loading="loading"
+          :disabled="!!passwordMatchError"
         >
           INICIAR PROTOCOLO DE ALTA
         </v-btn>
@@ -103,7 +107,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAstroStore } from '@/stores/astroStore';
+import { useAstroStore } from '@/stores/astroStore'; // Assegura't que la ruta és correcta
 
 const router = useRouter();
 const astroStore = useAstroStore();
@@ -119,30 +123,49 @@ const formData = ref({
   confirmPassword: ''
 });
 
+// Validació simple de coincidència de contrasenyes
 const passwordMatchError = computed(() => {
+  if (!formData.value.confirmPassword) return '';
   return formData.value.password !== formData.value.confirmPassword 
     ? 'Los códigos no coinciden' 
     : '';
 });
 
 const handleRegister = async () => {
+  // 1. Validacions bàsiques abans d'enviar
   if (passwordMatchError.value) return;
+  if (!formData.value.username || !formData.value.password) {
+      errorMessage.value = "Tots els camps són obligatoris.";
+      return;
+  }
   
   loading.value = true;
   errorMessage.value = '';
 
   try {
-    // Aquí llamarías a una nueva acción en tu astroStore
-    // Ej: const result = await astroStore.registerTripulante(formData.value);
+    // 2. Construïm l'objecte per enviar al Backend
+    const tripulanteData = {
+        username: formData.value.username,
+        password: formData.value.password,
+        rank: formData.value.rank
+    };
+
+    // 3. Cridem a l'acció del Store (que fa el fetch a MongoDB)
+    // Assegura't d'haver afegit l'acció registerTripulante al teu astroStore.js
+    const result = await astroStore.registerTripulante(tripulanteData);
     
-    // Simulación de delay de red "espacial"
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log("Tripulante registrado:", formData.value);
-    router.push('/login'); // Redirigir al login tras éxito
+    if (result.success) {
+        console.log("✅ Tripulante registrado en Mongo Atlas:", tripulanteData.username);
+        // Redirigim al login perquè l'usuari entri amb les seves credencials
+        router.push('/login'); 
+    } else {
+        // Mostrem l'error que ve del servidor (Ex: "Usuari ja existeix")
+        errorMessage.value = result.message || "Error al processar l'alta.";
+    }
     
   } catch (err) {
-    errorMessage.value = "Error en la base de datos de la flota.";
+    console.error(err);
+    errorMessage.value = "Error crític: No s'ha pogut contactar amb la base.";
   } finally {
     loading.value = false;
   }
