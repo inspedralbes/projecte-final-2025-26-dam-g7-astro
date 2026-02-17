@@ -62,25 +62,40 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAstroStore } from '@/stores/astroStore';
+import { useRouter } from 'vue-router';
 
 const props = defineProps(['selectedPlan']);
-const emit = defineEmits(['back', 'login-success']);
+const emit = defineEmits(['back']);
+
+const astroStore = useAstroStore();
+const router = useRouter();
 
 const username = ref('');
 const password = ref('');
 const loading = ref(false);
+const errorMessage = ref('');
 
-const handleLogin = () => {
+const handleLogin = async () => {
   loading.value = true;
-  
-  // Simulamos la sincronización de la trayectoria
-  setTimeout(() => {
+  errorMessage.value = '';
+
+  // Intentamos la sincronización con el servidor
+  const result = await astroStore.loginTripulante({
+    user: username.value,
+    password: password.value
+  });
+
+  if (result.success) {
+    // Si es éxito, vamos al menú (según esquema de pantallas) [cite: 41]
+    setTimeout(() => {
+      loading.value = false;
+      router.push('/menu');
+    }, 1000);
+  } else {
     loading.value = false;
-    console.log(`Login para plan ${props.selectedPlan} con usuario ${username.value}`);
-    
-    // Emitimos el éxito para pasar al menú principal
-    emit('login-success', { user: username.value, plan: props.selectedPlan });
-  }, 1500);
+    errorMessage.value = result.message; // "Credenciales no reconocidas"
+  }
 };
 </script>
 
