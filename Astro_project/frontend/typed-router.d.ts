@@ -19,8 +19,9 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
+    '/LoginView': RouteRecordInfo<'/LoginView', '/LoginView', Record<never, never>, Record<never, never>>,
     '/multiplayer': RouteRecordInfo<'/multiplayer', '/multiplayer', Record<never, never>, Record<never, never>>,
+    '/Planes': RouteRecordInfo<'/Planes', '/Planes', Record<never, never>, Record<never, never>>,
     '/profile': RouteRecordInfo<'/profile', '/profile', Record<never, never>, Record<never, never>>,
     '/shop': RouteRecordInfo<'/shop', '/shop', Record<never, never>, Record<never, never>>,
     '/singleplayer': RouteRecordInfo<'/singleplayer', '/singleplayer', Record<never, never>, Record<never, never>>,
@@ -41,12 +42,16 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/login.vue': {
-      routes: '/login'
+    'src/pages/LoginView.vue': {
+      routes: '/LoginView'
       views: never
     }
     'src/pages/multiplayer.vue': {
       routes: '/multiplayer'
+      views: never
+    }
+    'src/pages/Planes.vue': {
+      routes: '/Planes'
       views: never
     }
     'src/pages/profile.vue': {
