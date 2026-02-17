@@ -1,43 +1,49 @@
+require('dotenv').config(); // Assegura't de carregar les variables d'entorn al principi
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const http = require('http');
 const cors = require('cors');
+const { connectDB, getDB } = require('./db'); // <--- IMPORTACIÓ DEL TEU MÒDUL DB
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Necesario para leer JSON en el cuerpo de las peticiones
+app.use(express.json());
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// --- BASE DE DATOS SIMULADA ---
-// Aquí es donde diferenciarás los roles y planes definidos en tu esquema [cite: 54, 56]
-const users = [
-    { id: 1, user: "JOEL", pass: "123", plan: "INDIVIDUAL", rank: "Cadete de Vuelo" }, // [cite: 20, 60]
-    { id: 2, user: "Escuela_Astro", pass: "admin", plan: "GRUPAL", students: ["BIEL", "ANTONIO"] } // [cite: 28, 62]
-];
-
 // --- ENDPOINT DE LOGIN (HTTP) ---
-app.post('/api/auth/login', (req, res) => {
-    const { user, password } = req.body; // Captura de datos del esquema de pantalla [cite: 58, 59]
-    
-    const foundUser = users.find(u => u.user === user && u.pass === password);
+app.post('/api/auth/login', async (req, res) => { // <--- Ara la funció és ASYNC
+    const { user, password } = req.body;
 
-    if (foundUser) {
-        // Respuesta con la estética Neo-Espacial de ASTRO [cite: 13, 15]
-        res.json({
-            status: "Sincronización completada",
-            token: "session_token_xyz",
-            profile: {
-                name: foundUser.user,
-                plan: foundUser.plan,
-                rank: foundUser.rank || "Administrador",
-                // Si es grupal, enviamos acceso a telemetría avanzada 
-                canAccessTelemetry: foundUser.plan === "GRUPAL"
-            }
-        });
-    } else {
-        res.status(401).json({ status: "Trayectoria fallida", message: "Credenciales no reconocidas" });
+    try {
+        // Obtenim la instància de la BD
+        const db = getDB();
+        const collection = db.collection('users'); // Suposant que la col·lecció es diu 'users'
+
+        // Busquem l'usuari a MongoDB Atlas
+        // Nota: En producció, mai guardis contrasenyes en text pla (usa bcrypt)
+        const foundUser = await collection.findOne({ user: user, pass: password });
+
+        if (foundUser) {
+            // Resposta amb la estética Neo-Espacial de ASTRO
+            res.json({
+                status: "Sincronización completada",
+                token: "session_token_xyz", // Aquí podries generar un JWT real
+                profile: {
+                    name: foundUser.user,
+                    plan: foundUser.plan,
+                    rank: foundUser.rank || "Administrador",
+                    // Si és grupal, enviem accés a telemetria avançada
+                    canAccessTelemetry: foundUser.plan === "GRUPAL"
+                }
+            });
+        } else {
+            res.status(401).json({ status: "Trayectoria fallida", message: "Credenciales no reconocidas" });
+        }
+    } catch (error) {
+        console.error("Error en la base de dades:", error);
+        res.status(500).json({ status: "Error del sistema", message: "Error intern del servidor" });
     }
 });
 
@@ -49,13 +55,14 @@ wss.on('connection', (ws) => {
         try {
             const message = JSON.parse(data);
             
-            // Lógica para el Modo Multijugador (Ranking en tiempo real) [cite: 43, 86]
+            // Lógica para el Modo Multijugador
             if (message.type === 'UPDATE_SCORE') {
                 console.log(`Puntuación de ${message.user}: ${message.pts} pts`);
-                // Aquí retransmitirías a los demás tripulantes de la sala
+                // Aquí podries guardar la puntuació a la BD també si volguessis:
+                // const db = getDB();
+                // db.collection('scores').insertOne({ user: message.user, score: message.pts, date: new Date() });
             }
 
-            // Datos de precisión del minijuego para telemetría [cite: 32, 29]
             if (message.type === 'TRACKING_DATA') {
                 console.log('Sincronización de movimiento ocular recibida');
             }
@@ -67,6 +74,11 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ msg: "Trayectoria corregida: Conexión establecida" }));
 });
 
-server.listen(3000, () => {
-    console.log('Servidor de Misión ASTRO operando en puerto 3000');
+// --- ARRENCAR SERVIDOR ---
+connectDB().then(() => {
+    server.listen(3000, () => {
+        console.log('🚀 Servidor de Misión ASTRO operando en puerto 3000 i connectat a Atlas');
+    });
+}).catch(err => {
+    console.error('❌ Error crític: No s\'ha pogut connectar a Atlas. Tancant missió.', err);
 });
