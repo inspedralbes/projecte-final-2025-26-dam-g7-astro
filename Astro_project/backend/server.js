@@ -75,6 +75,7 @@ wss.on('connection', (ws) => {
 });
 
 // --- ARRENCAR SERVIDOR ---
+// Primer connectem a la BD, després aixequem el servidor
 connectDB().then(() => {
     server.listen(3000, () => {
         console.log('🚀 Servidor de Misión ASTRO operando en puerto 3000 i connectat a Atlas');
