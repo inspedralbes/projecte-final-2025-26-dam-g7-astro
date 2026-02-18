@@ -88,8 +88,8 @@
       <h2 class="text-h4 text-white mb-2">¡Construcció Completada!</h2>
       <p class="text-h5 text-cyan-accent-2 mb-6">Punts Totals: {{ score }}</p>
       
-      <v-btn @click="emitExit" color="red-accent-2" variant="flat" size="large" rounded="pill">
-        Kim
+      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
+        Tornar al Menú
       </v-btn>
     </v-card>
 

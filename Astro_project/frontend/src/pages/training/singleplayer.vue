@@ -43,7 +43,7 @@ import SpelledRosco from '@/components/games/SpelledRosco.vue';
 
 // 2. Llista de jocs (ara només un, però preparat per més)
 const gamesList = [
-    // WordConstruction,
+    WordConstruction,
     SpelledRosco
 ];
 
