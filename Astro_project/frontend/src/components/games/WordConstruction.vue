@@ -106,6 +106,7 @@ const emit = defineEmits(['game-over']);
 // Luego lo podemos conectar a la base de datos
 const words = Object.freeze([
   { word: 'NAU', hint: 'Vehicle espacial' },
+  { word: 'PAU', hint: 'Persona que s\'encarrega de la IA' },
   { word: 'ASTRE', hint: 'Cos celeste' },
   { word: 'PLANETA', hint: 'Orbita al voltant d\'una estrella' },
   { word: 'GALAXIA', hint: 'Conjunt immens d\'estrelles' },
