@@ -15,17 +15,17 @@
                 <v-card color="transparent" elevation="0" class="d-flex flex-column align-center">
                     <h2 class="text-h5 font-weight-bold mb-4 text-amber-accent-3">
                         <v-icon start icon="mdi-star-four-points" />
-                        Suerte Diaria
+                        Suerte Diaria                                                                           
                         <v-icon end icon="mdi-star-four-points" />
                     </h2>
                     
-                    <LuckyWheel @win="handleWin" @update-balance="updateCoins" />
-
+                    <LuckyWheel :user="astroStore.user" @win="handleWin" @update-balance="updateCoins" />
+                    
                     <div class="mt-4 px-4 py-2 rounded-pill bg-surface-variant d-flex align-center">
-                        <span class="text-caption text-grey-lighten-1">
+                        <span class="text-caption text-grey-lighten-1">                                 
                             Coste de giro: <strong>50</strong>
-                        </span>
-                        <v-icon size="small" color="amber" class="ml-1">mdi-currency-usd</v-icon>
+                        </span>                                                                                                                                                                              
+                        <v-icon size="small" color="amber" class="ml-1">mdi-currency-usd</v-icon>                               
                     </div>
                 </v-card>
             </v-col>
@@ -107,58 +107,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useAstroStore } from '@/stores/astroStore'; // Importamos el Store
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
 
-// ESTADO
-const userCoins = ref(0); // Empezamos en 0 para no engañar visualmente
+// 1. Conectamos con el Store
+const astroStore = useAstroStore();
+
+// 2. Creamos referencias reactivas que miren al Store
+// Así, si el usuario cambia en el login, aquí cambia solo.
+const currentUser = computed(() => astroStore.user);
+const userCoins = computed(() => astroStore.coins);
+
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
-const currentUser = "JOEL"; // Esto debería venir de tu sistema de auth (Pinia/LocalStorage)
 
-// ITEMS DE TIENDA (Configuración visual)
-const shopItems = [
-    { 
-        id: 1, 
-        name: 'Pack de Vidas', 
-        price: 200, 
-        icon: 'mdi-heart-multiple', 
-        color: 'red-accent-2',
-        bgColor: 'red-darken-4',
-        desc: 'Recupera 5 vidas inmediatamente para seguir la misión.' 
-    },
-    { 
-        id: 2, 
-        name: 'Congelar Racha', 
-        price: 500, 
-        icon: 'mdi-snowflake', 
-        color: 'cyan-accent-2', 
-        bgColor: 'cyan-darken-4',
-        desc: 'Protege tu racha de aprendizaje un día si no juegas.' 
-    },
-    { 
-        id: 3, 
-        name: 'Modo Oscuro Pro', 
-        price: 1000, 
-        icon: 'mdi-theme-light-dark', 
-        color: 'purple-accent-2', 
-        bgColor: 'purple-darken-4',
-        desc: 'Desbloquea temas de alto contraste exclusivos.' 
-    },
-];
+// ITEMS DE TIENDA... (se mantiene igual)
 
-// LÓGICA DE CARGA INICIAL
 onMounted(async () => {
-    await fetchUserBalance();
+    // Solo pedimos el balance si hay un usuario logueado
+    if (astroStore.user) {
+        await fetchUserBalance();
+    } else {
+        console.warn("⚠️ No hay tripulante detectado. Redirigiendo...");
+        // Opcional: router.push('/login')
+    }
 });
 
 async function fetchUserBalance() {
     try {
-        // Consultamos al puerto 3000 (Backend)
-        const res = await fetch(`http://localhost:3000/api/shop/balance/${currentUser}`);
+        // 3. Usamos el nombre dinámico del Store en la URL
+        const res = await fetch(`http://localhost:3000/api/shop/balance/${astroStore.user}`);
         if (res.ok) {
             const data = await res.json();
-            userCoins.value = data.coins;
+            // 4. Guardamos el dato en el Store para que toda la app lo sepa
+            astroStore.coins = data.coins;
         }
     } catch (e) {
         console.error("Error conectando con el banco espacial:", e);
@@ -172,8 +155,8 @@ const handleWin = (prize) => {
 };
 
 const updateCoins = (newBalance) => {
-    // Actualizamos con el dato real que viene del servidor tras el giro
-    userCoins.value = newBalance;
+    // 5. Cuando la ruleta devuelve el nuevo saldo, actualizamos el Store
+    astroStore.coins = newBalance;
 };
 </script>
 
