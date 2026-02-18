@@ -58,6 +58,11 @@ const router = createRouter({
       name: 'Profile',
       component: () => import('@/pages/profile/profile.vue')
     },
+    {
+      path: '/achievements',
+      name: 'Achievements',
+      component: () => import('@/pages/achievements/achievements.vue')
+    },
   ],
 })
 
