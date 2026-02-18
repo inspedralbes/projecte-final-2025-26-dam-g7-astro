@@ -1,8 +1,3 @@
-Entendido, vamos a aplicar la misma lógica de "Abortar Misión" al componente de Registro, manteniendo la coherencia visual con el botón de retroceso que pusimos en el Login.
-
-Aquí tienes el código completo para tu archivo de registro:
-Fragmento de código
-
 <template>
   <v-container fluid class="fill-height register-container d-flex align-center justify-center">
     <div class="stars-overlay"></div>

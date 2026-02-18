@@ -11,24 +11,28 @@
             </div>
 
             <!-- Nombre y Rango -->
-            <h1 class="text-h4 font-weight-bold text-white mb-2">Usuario Estudiante</h1>
+            <h1 class="text-h4 font-weight-bold text-white mb-2">
+                {{ user || 'Tripulante Desconocido' }}
+            </h1>
+
             <v-chip color="cyan-accent-3" variant="outlined" class="mb-8">
-                Desarrollador Junior
+                {{ rank || 'Cadete de Vuelo' }}
             </v-chip>
 
-            <!-- Estadísticas Simples -->
             <v-row class="mb-8">
-                <v-col cols="4">
-                    <div class="text-h5 font-weight-bold text-cyan-accent-3">2</div>
+                <v-col cols="3">
+                    <div class="text-h5 font-weight-bold text-cyan-accent-3">1</div>
                     <div class="text-caption text-grey">Nivel</div>
                 </v-col>
-                <v-col cols="4">
-                    <div class="text-h5 font-weight-bold text-white">DAM 2</div>
-                    <div class="text-caption text-grey">Clase</div>
+                <v-col cols="6">
+                    <div class="text-h5 font-weight-bold text-white">
+                        {{ plan || 'S/N' }}
+                    </div>
+                    <div class="text-caption text-grey">Plan de Vuelo</div>
                 </v-col>
-                <v-col cols="4">
-                    <v-icon color="green" icon="mdi-circle-small"></v-icon>
-                    <div class="text-caption text-grey">Online</div>
+                <v-col cols="3">
+                    <v-icon :color="user ? 'green' : 'red'" icon="mdi-circle-small"></v-icon>
+                    <div class="text-caption text-grey">{{ user ? 'Online' : 'Offline' }}</div>
                 </v-col>
             </v-row>
 
@@ -53,10 +57,15 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAstroStore } from '@/stores/astroStore' // Importamos el store
+import { storeToRefs } from 'pinia' // Para mantener la reactividad
 
 const router = useRouter()
+const astroStore = useAstroStore()
 
-// Función simple para volver
+// Extraemos los datos del usuario de forma reactiva
+const { user, rank, plan } = storeToRefs(astroStore)
+
 function goHome() {
     router.push('/')
 }
