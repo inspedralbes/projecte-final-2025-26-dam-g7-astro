@@ -46,10 +46,41 @@
                 </v-list-item>
             </v-list>
         </v-card>
+        <!-- Weekly Missions -->
+        <v-card class="glass-card pa-4 mt-6" elevation="0">
+            <div class="d-flex align-center mb-6">
+                <v-icon icon="mdi-calendar-check" color="blue-accent-2" class="mr-2"></v-icon>
+                <span class="text-h6 text-white font-weight-bold">Misiones Semanales</span>
+            </div>
+
+            <v-list bg-color="transparent" class="pa-0">
+                <v-list-item v-for="mission in weeklyMissions" :key="mission.id"
+                    class="mission-item mb-3 pa-3 rounded-lg">
+                    <template v-slot:prepend>
+                        <v-checkbox-btn color="blue-accent-2" v-model="mission.completed"></v-checkbox-btn>
+                    </template>
+                    <v-list-item-title
+                        :class="['text-body-1', mission.completed ? 'text-grey text-decoration-line-through' : 'text-white']">
+                        {{ mission.text }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle
+                        :class="['text-caption', mission.completed ? 'text-grey' : 'text-blue-accent-1']">
+                        {{ mission.progress }}
+                    </v-list-item-subtitle>
+                </v-list-item>
+            </v-list>
+        </v-card>
     </v-navigation-drawer>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const weeklyMissions = ref([
+    { id: 1, text: 'Ganar 10 partidas', completed: false, progress: '3/10' },
+    { id: 2, text: 'Completar retos diarios', completed: false, progress: '0/7' },
+    { id: 3, text: 'Gastar 500 monedas', completed: false, progress: '150/500' }
+])
 </script>
 
 <style scoped>

@@ -2,7 +2,7 @@
     <v-container fluid class="fill-height d-flex flex-column justify-center align-center">
         <h1 class="text-h2 mb-6 font-weight-bold tracking-wide">Modo Multijugador</h1>
         <p class="text-h5 mb-10 text-grey-lighten-1">Página en desarrollo...</p>
-        <v-btn to="/menu" color="cyan-accent-3" variant="outlined" rounded="xl" size="large">
+        <v-btn to="/" color="cyan-accent-3" variant="outlined" rounded="xl" size="large">
             Volver al Menú
         </v-btn>
     </v-container>

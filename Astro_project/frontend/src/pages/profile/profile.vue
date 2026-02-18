@@ -2,7 +2,7 @@
     <v-container class="fill-height d-flex justify-center align-center">
         <!-- Usamos un estilo 'glass' (vidrio) para que se vea moderno pero el código es simple -->
         <v-card width="500" class="glass-card text-center pa-8" elevation="0">
-            
+
             <!-- Avatar brillante -->
             <div class="d-flex justify-center mb-6">
                 <v-avatar size="150" class="avatar-border">
@@ -36,11 +36,13 @@
 
             <!-- Botones de Acción -->
             <div class="d-flex flex-column gap-4">
-                <v-btn block color="cyan-accent-3" size="large" rounded="xl" variant="flat" @click="goHome" class="font-weight-bold mb-3">
+                <v-btn block color="cyan-accent-3" size="large" rounded="xl" variant="flat" @click="goHome"
+                    class="font-weight-bold mb-3">
                     VOLVER AL MENÚ
                 </v-btn>
 
-                <v-btn block color="white" variant="outlined" size="large" rounded="xl" @click="changePlan" class="font-weight-bold">
+                <v-btn block color="white" variant="outlined" size="large" rounded="xl" @click="changePlan"
+                    class="font-weight-bold">
                     ACTUALIZAR PLAN
                 </v-btn>
             </div>
@@ -56,7 +58,7 @@ const router = useRouter()
 
 // Función simple para volver
 function goHome() {
-    router.push('/') // o /singleplayer
+    router.push('/')
 }
 
 function changePlan() {
@@ -67,15 +69,20 @@ function changePlan() {
 <style scoped>
 /* Estilo efecto vidrio (Glassmorphism) */
 .glass-card {
-    background: rgba(255, 255, 255, 0.05) !important; /* Fondo semi-transparente */
-    backdrop-filter: blur(10px); /* Desenfoque del fondo */
-    border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil */
-    border-radius: 24px; /* Bordes redondeados */
+    background: rgba(255, 255, 255, 0.05) !important;
+    /* Fondo semi-transparente */
+    backdrop-filter: blur(10px);
+    /* Desenfoque del fondo */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Borde sutil */
+    border-radius: 24px;
+    /* Bordes redondeados */
 }
 
 /* Borde brillante para el avatar */
 .avatar-border {
     border: 3px solid #00e5ff;
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); /* Resplandor */
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+    /* Resplandor */
 }
 </style>
