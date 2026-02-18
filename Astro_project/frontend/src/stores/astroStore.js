@@ -16,7 +16,7 @@ export const useAstroStore = defineStore('astro', {
         async registerTripulante(userData) {
             this.error = null;
             try {
-                const response = await fetch('http://localhost:3000/api/auth/register', {
+                const response = await fetch('http://localhost:3001/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData)
@@ -33,11 +33,11 @@ export const useAstroStore = defineStore('astro', {
                 this.error = error.message;
                 return { success: false, message: this.error };
             }
-        },  
+        },
         async loginTripulante(credentials) {
             this.error = null;
             try {
-                const response = await fetch('http://localhost:3000/api/auth/login', {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(credentials)
@@ -69,7 +69,7 @@ export const useAstroStore = defineStore('astro', {
             // Evitar duplicar conexiones si ya existe una activa
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
 
-            const ws = new WebSocket('ws://localhost:3000');
+            const ws = new WebSocket('ws://localhost:3001');
 
             ws.onopen = () => {
                 this.isConnected = true;
@@ -97,7 +97,7 @@ export const useAstroStore = defineStore('astro', {
                 this.isConnected = false;
                 this.socket = null;
                 console.warn("⚠️ Trayectoria perdida: Conexión cerrada", event.reason);
-                
+
                 // Intento de reconexión automática tras 5 segundos si el usuario sigue logueado
                 if (this.token) {
                     setTimeout(() => this.connectWebSocket(), 5000);

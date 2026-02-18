@@ -1,36 +1,92 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center">
-    <v-card elevation="24" width="450" class="pa-8 login-card"
-      style="border: 1px solid rgba(0, 242, 255, 0.3); background: #0d1117;">
-      <div class="text-center mb-6">
-        <h1 class="text-h4 font-weight-bold text-primary tracking-widest">ASTRO</h1>
-        <div class="text-overline text-secondary">{{ selectedPlan }} MISSION ACCESS</div>
+  <v-container fluid class="fill-height login-container d-flex align-center justify-center">
+    <!-- Background overlay for depth -->
+    <div class="stars-overlay"></div>
+    
+    <v-card
+      elevation="24"
+      max-width="450"
+      width="100%"
+      class="pa-8 glass-panel"
+    >
+      <div class="text-center mb-8 header-section">
+        <div class="hologram-effect mb-4">
+          <v-icon color="cyan-accent-3" size="64" class="pulse-icon">mdi-planet</v-icon>
+        </div>
+        <h1 class="text-h3 font-weight-black text-white tracking-widest neon-text mb-2">
+          ASTRO
+        </h1>
+        <div class="text-overline text-cyan-lighten-3 tracking-wide border-bottom-pulse">
+          ACCESO AL SISTEMA DE MISIÓN
+        </div>
       </div>
 
       <v-form @submit.prevent="handleLogin">
-        <v-text-field v-model="username" label="ID DE TRIPULANTE" placeholder="Ej: JOEL" variant="outlined"
-          prepend-inner-icon="mdi-account-circle-outline" color="primary" class="mb-2"
-          persistent-placeholder></v-text-field>
+        <v-row dense>
+          <v-col cols="12">
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">IDENTIFICACIÓN</div>
+            <v-text-field
+              v-model="username"
+              placeholder="NOMBRE DE USUARIO / ID TRIPULANTE"
+              variant="solo-filled"
+              bg-color="rgba(0, 20, 40, 0.6)"
+              prepend-inner-icon="mdi-account-circle-outline"
+              color="cyan-accent-3"
+              class="future-input"
+              hide-details="auto"
+              :rules="[v => !!v || 'Identificación requerida']"
+            ></v-text-field>
+          </v-col>
 
-        <v-text-field v-model="password" label="CÓDIGO DE ENCRIPTACIÓN" type="password" variant="outlined"
-          prepend-inner-icon="mdi-lock-outline" color="primary" class="mb-4"></v-text-field>
+          <v-col cols="12" class="mt-4">
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">CREDENCIALES DE VUELO</div>
+            <v-text-field
+              v-model="password"
+              placeholder="CÓDIGO DE ACCESO"
+              type="password"
+              variant="solo-filled"
+              bg-color="rgba(0, 20, 40, 0.6)"
+              prepend-inner-icon="mdi-lock-outline"
+              color="cyan-accent-3"
+              class="future-input"
+              hide-details="auto"
+              :rules="[v => !!v || 'Código requerido']"
+            ></v-text-field>
+          </v-col>
+        </v-row>
 
-        <v-btn block size="x-large" color="primary" type="submit" class="login-btn font-weight-black"
-          :loading="loading">
+        <!-- Status Display -->
+        <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
+          <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
+          <span class="text-red-lighten-1 font-weight-bold">{{ errorMessage }}</span>
+        </div>
+
+        <v-btn
+          block
+          height="64"
+          color="cyan-accent-3"
+          type="submit"
+          class="login-btn font-weight-black mt-8 text-h6"
+          :loading="loading"
+        >
+          <v-icon start class="mr-2">mdi-radar</v-icon>
           INICIAR SINCRONIZACIÓN
+          <div class="btn-glow"></div>
         </v-btn>
       </v-form>
 
-      <v-card-actions class="justify-center mt-6">
-        <v-btn variant="text" size="small" color="grey-lighten-1" @click="$emit('back')">
-          <v-icon start>mdi-arrow-left</v-icon> CAMBIAR PLAN
-        </v-btn>
-      </v-card-actions>
+      <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
+        <!-- Back action if needed, otherwise register link -->
+        <div v-if="props.selectedPlan" class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="$emit('back')">
+           <v-icon start size="small">mdi-arrow-left</v-icon> CAMBIAR PLAN
+        </div>
+        <div v-else class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="router.push('/register')">
+           <v-icon start size="small">mdi-account-plus</v-icon> ALISTARSE
+        </div>
 
-      <v-divider class="my-4" color="primary"></v-divider>
-
-      <div class="text-center text-caption text-grey">
-        ESTADO DEL SISTEMA: <span class="text-green">OPERATIVO</span>
+        <div class="status-display text-body-2 font-weight-bold text-cyan-lighten-4 font-weight-mono d-flex align-center">
+          ESTADO: <span class="text-green-accent-3 glow-text ml-1">OPERATIVO</span>
+        </div>
       </div>
     </v-card>
   </v-container>
@@ -41,6 +97,7 @@ import { ref } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useRouter } from 'vue-router';
 
+// Props and Emits for flexibility
 const props = defineProps(['selectedPlan']);
 const emit = defineEmits(['back']);
 
@@ -53,47 +110,170 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const handleLogin = async () => {
+  if (!username.value || !password.value) {
+      errorMessage.value = "Identificación y código requeridos";
+      return;
+  }
+
   loading.value = true;
   errorMessage.value = '';
 
-  // Intentamos la sincronización con el servidor
   const result = await astroStore.loginTripulante({
     user: username.value,
     password: password.value
   });
 
   if (result.success) {
-    // Si es éxito, vamos al menú (según esquema de pantallas) [cite: 41]
     setTimeout(() => {
       loading.value = false;
       router.push('/singleplayer');
     }, 1000);
   } else {
     loading.value = false;
-    errorMessage.value = result.message; // "Credenciales no reconocidas"
+    errorMessage.value = result.message || "Credenciales no reconocidas";
   }
 };
 </script>
 
 <style scoped>
-.login-card {
-  border-radius: 16px;
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.1) !important;
+/* Container & Background */
+.login-container {
+  background: radial-gradient(circle at center, #0b1021 0%, #000000 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-.tracking-widest {
-  letter-spacing: 0.5rem !important;
+.stars-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(white 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.5) 2px, transparent 2px);
+  background-size: 50px 50px, 150px 150px;
+  background-position: 0 0, 40px 60px;
+  opacity: 0.2;
+  animation: starMove 120s linear infinite;
 }
 
-.login-btn {
-  background: linear-gradient(45deg, #00f2ff, #7000ff) !important;
-  color: white !important;
-  border: none;
+@keyframes starMove {
+  from { transform: translateY(0); }
+  to { transform: translateY(-1000px); }
+}
+
+/* Glass Card */
+.glass-panel {
+  background: rgba(10, 25, 41, 0.75) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 242, 255, 0.15);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 242, 255, 0.05) !important;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header Elements */
+.neon-text {
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: 0.15em !important;
+}
+
+.border-bottom-pulse {
+  border-bottom: 2px solid rgba(0, 242, 255, 0.3);
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+.pulse-icon {
+  animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+  0% { text-shadow: 0 0 0 rgba(0, 242, 255, 0.4); }
+  50% { text-shadow: 0 0 20px rgba(0, 242, 255, 0.8); }
+  100% { text-shadow: 0 0 0 rgba(0, 242, 255, 0.4); }
+}
+
+/* Inputs */
+.future-input :deep(.v-field) {
+  border-radius: 0;
+  border: 1px solid rgba(0, 242, 255, 0.2);
   transition: all 0.3s ease;
 }
 
+.future-input :deep(.v-field--focused) {
+  border-color: #00f2ff;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+}
+
+.future-input :deep(input) {
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: 1px;
+  color: white !important;
+}
+
+/* Button */
+.login-btn {
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, rgba(0,242,255,0.8) 0%, rgba(0,180,255,0.8) 100%) !important;
+}
+
 .login-btn:hover {
-  filter: brightness(1.2);
-  box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+}
+
+.btn-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
+  transform: rotate(45deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-150%) rotate(45deg); }
+  100% { transform: translateX(150%) rotate(45deg); }
+}
+
+/* Error Display */
+.error-display {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-left: 4px solid #ff4081;
+}
+
+/* Footer Tech Details */
+.border-top-tech {
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.font-weight-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+.glow-text {
+  text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
+}
+
+.hover-bright {
+  transition: color 0.3s;
+}
+.hover-bright:hover {
+  color: white !important;
+}
+
+:deep(.v-field__input) {
+    color: white !important;
 }
 </style>

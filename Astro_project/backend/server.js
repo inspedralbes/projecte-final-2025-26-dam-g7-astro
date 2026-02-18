@@ -43,7 +43,7 @@ async function initializeUsers() {
 // --- ENDPOINT DE LOGIN (Connectat a Atlas) ---
 app.post('/api/auth/login', async (req, res) => {
     const { user, password } = req.body;
-    
+
     try {
         const db = getDB();
         // Busquem a la base de dades real
@@ -112,7 +112,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (data) => {
         try {
             const message = JSON.parse(data);
-            
+
             if (message.type === 'UPDATE_SCORE') {
                 console.log(`Puntuación de ${message.user}: ${message.pts} pts`);
             }
@@ -131,12 +131,13 @@ wss.on('connection', (ws) => {
 // --- INICI DEL SERVIDOR ---
 // 1. Connectar BD -> 2. Generar Usuaris -> 3. Aixecar Port
 connectDB().then(async () => {
-    
+
     // Generem els usuaris si no existeixen
     await initializeUsers();
 
-    server.listen(3000, () => {
-        console.log('🚀 Servidor de Misión ASTRO operando en puerto 3000');
+    const PORT = process.env.PORT || 3001;
+    server.listen(PORT, () => {
+        console.log(`🚀 Servidor de Misión ASTRO operando en puerto ${PORT}`);
     });
 
 }).catch(err => {
