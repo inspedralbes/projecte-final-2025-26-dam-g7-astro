@@ -6,6 +6,7 @@ export const useAstroStore = defineStore('astro', {
         user: null,
         plan: null,
         rank: null,
+        coins: 0, // <--- AÑADE ESTO
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -54,7 +55,7 @@ export const useAstroStore = defineStore('astro', {
 
                 const text = await response.text();
                 if (!text) throw new Error("El servidor no envió datos de respuesta.");
-                
+
                 const data = JSON.parse(text);
 
                 if (!response.ok) throw new Error(data.message || "Error de autenticación");
@@ -63,6 +64,7 @@ export const useAstroStore = defineStore('astro', {
                 this.user = data.profile.name;
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
+                this.coins = data.profile.coins;
                 this.token = data.token;
 
                 localStorage.setItem('astro_token', data.token);
