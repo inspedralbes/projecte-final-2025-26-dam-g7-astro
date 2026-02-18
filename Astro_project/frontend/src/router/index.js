@@ -52,13 +52,18 @@ const router = createRouter({
       component: Plans,
       meta: { requiresAuth: true }
     }
+    {
+      path: '/achievements',
+      name: 'Achievements',
+      component: () => import('@/pages/achievements/achievements.vue')
+    },
   ],
 })
 
 // GUARD DE NAVEGACIÓN
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
   const isAuthenticated = !!localStorage.getItem('astro_token');
 
