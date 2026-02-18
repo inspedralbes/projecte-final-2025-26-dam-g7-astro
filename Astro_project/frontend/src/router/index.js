@@ -24,44 +24,74 @@ const router = createRouter({
       component: login,
       props: true,
     },
+    // --- RUTAS PROTEGIDAS (Requieren Login) ---
     {
       path: '/plans',
       name: 'Plans',
       component: Plans,
-    },
-    {
-      // Mantenemos /planes por compatibilidad si la usábamos
-      path: '/planes',
-      redirect: '/plans'
+      meta: { requiresAuth: true }
     },
     {
       path: '/singleplayer',
       name: 'SinglePlayer',
       component: () => import('@/pages/training/singleplayer.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/multiplayer',
       name: 'MultiPlayer',
       component: () => import('@/pages/training/multiplayer.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/shop',
       name: 'Shop',
       component: () => import('@/pages/shop/shop.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/profile/profile.vue'),
+      meta: { requiresAuth: true }
+    },
+    // --- REDIRECCIONES ---
+    {
+      path: '/planes',
+      redirect: '/plans'
     },
     {
       path: '/menu',
       redirect: '/singleplayer'
     },
-    {
-      path: '/profile',
-      name: 'Profile',
-      component: () => import('@/pages/profile/profile.vue')
-    },
   ],
 })
 
-// Mantenemos la lógica de error para imports dinámicos
+/**
+ * GUARD DE NAVEGACIÓN
+ * Se ejecuta antes de cada cambio de ruta
+ */
+router.beforeEach((to, from, next) => {
+  // Comprobamos si la ruta a la que va requiere autenticación
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  
+  // Verificamos si existe una sesión en el localStorage
+  // IMPORTANTE: Asegúrate de que en tu Login.vue hagas localStorage.setItem('user-session', 'true')
+  const isAuthenticated = !!localStorage.getItem('user-session');
+
+  if (requiresAuth && !isAuthenticated) {
+    // Si intenta entrar a zona privada sin estar logueado -> Al Login
+    next('/login');
+  } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
+    // Si ya está logueado e intenta ir a login/registro -> Al Menú principal
+    next('/singleplayer');
+  } else {
+    // En cualquier otro caso, permitimos el paso
+    next();
+  }
+});
+
+// Lógica de error para imports dinámicos
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
     if (localStorage.getItem('vuetify:dynamic-reload')) {
