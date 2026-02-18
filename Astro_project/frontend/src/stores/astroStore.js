@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
-import { markRaw } from 'vue'; // Importante para objetos no reactivos
+import { markRaw } from 'vue';
 
 export const useAstroStore = defineStore('astro', {
     state: () => ({
         user: null,
         plan: null,
         rank: null,
-        token: localStorage.getItem('astro_token') || null, // Persistencia básica
+        token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
         error: null
@@ -16,70 +16,82 @@ export const useAstroStore = defineStore('astro', {
         async registerTripulante(userData) {
             this.error = null;
             try {
-                const response = await fetch('http://localhost:3001/api/auth/register', {
+                // CORRECCIÓN: Puerto 3000 según tu server.js
+                const response = await fetch('http://localhost:3000/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    // IMPORTANTE: Asegúrate que userData envíe { username, password, rank }
                     body: JSON.stringify(userData)
                 });
 
-                const data = await response.json();
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
 
                 if (!response.ok) throw new Error(data.message || "Error al registrar");
 
-                return { success: true };
+                return { success: true, message: data.message };
 
             } catch (error) {
-                console.error(error);
+                console.error("❌ Error en registro:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
             }
         },
+
         async loginTripulante(credentials) {
             this.error = null;
             try {
-                const response = await fetch('http://localhost:3001/api/auth/login', {
+                // CORRECCIÓN: Puerto 3000
+                const response = await fetch('http://localhost:3000/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(credentials)
+                    // El servidor espera { user, password }
+                    body: JSON.stringify({
+                        user: credentials.username || credentials.user,
+                        password: credentials.password || credentials.pass
+                    })
                 });
 
-                const data = await response.json();
+                const text = await response.text();
+                if (!text) throw new Error("El servidor no envió datos de respuesta.");
+                
+                const data = JSON.parse(text);
 
                 if (!response.ok) throw new Error(data.message || "Error de autenticación");
 
-                // Asignación de datos
+                // Asignación de datos basada en tu server.js
                 this.user = data.profile.name;
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
                 this.token = data.token;
 
-                // Guardar token para recargas de página
                 localStorage.setItem('astro_token', data.token);
 
                 this.connectWebSocket();
                 return { success: true };
 
             } catch (error) {
+                console.error("❌ Error en login:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
             }
         },
 
         connectWebSocket() {
-            // Evitar duplicar conexiones si ya existe una activa
-            if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
+            // CORRECCIÓN: Puerto 3000 y evitar duplicados
+            if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) return;
 
-            const ws = new WebSocket('ws://localhost:3001');
+            const ws = new WebSocket('ws://localhost:3000');
 
             ws.onopen = () => {
                 this.isConnected = true;
-                console.log("🚀 Sincronización completada: WebSocket activo");
+                console.log("🚀 Sincronización completada: WebSocket activo en puerto 3000");
 
                 ws.send(JSON.stringify({
                     type: 'IDENTIFY',
                     user: this.user,
                     plan: this.plan,
-                    token: this.token // Enviamos token para validar en el server
+                    token: this.token
                 }));
             };
 
@@ -87,7 +99,6 @@ export const useAstroStore = defineStore('astro', {
                 try {
                     const data = JSON.parse(event.data);
                     console.log("📡 Mensaje de la flota:", data);
-                    // Aquí podrías disparar otras acciones según el tipo de mensaje
                 } catch (e) {
                     console.error("Error procesando mensaje:", e);
                 }
@@ -96,19 +107,18 @@ export const useAstroStore = defineStore('astro', {
             ws.onclose = (event) => {
                 this.isConnected = false;
                 this.socket = null;
-                console.warn("⚠️ Trayectoria perdida: Conexión cerrada", event.reason);
+                console.warn("⚠️ Trayectoria perdida: Conexión cerrada");
 
-                // Intento de reconexión automática tras 5 segundos si el usuario sigue logueado
+                // Reconexión automática si hay sesión activa
                 if (this.token) {
                     setTimeout(() => this.connectWebSocket(), 5000);
                 }
             };
 
             ws.onerror = (err) => {
-                console.error("❌ Error en el motor de comunicación:", err);
+                console.error("❌ Error en el motor de comunicación (WS)");
             };
 
-            // Usamos markRaw para que Vue no intente "observar" el objeto WebSocket
             this.socket = markRaw(ws);
         },
 
@@ -116,7 +126,7 @@ export const useAstroStore = defineStore('astro', {
             if (this.socket) {
                 this.socket.close();
             }
-            this.$reset(); // Limpia todo el estado de golpe
+            this.$reset();
             localStorage.removeItem('astro_token');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
         }
