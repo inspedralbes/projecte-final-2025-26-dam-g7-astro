@@ -18,7 +18,7 @@
 
         <template v-slot:append>
             <div class="pa-6 border-t border-color-white-alpha">
-                <v-btn block color="cyan-accent-3" variant="outlined" rounded="xl" size="large">
+                <v-btn block color="cyan-accent-3" variant="outlined" rounded="xl" size="large" @click="handleLogout">
                     Cerrar Sesión
                 </v-btn>
             </div>
@@ -28,6 +28,16 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAstroStore } from '@/stores/astroStore'
+
+const router = useRouter()
+const store = useAstroStore()
+
+const handleLogout = () => {
+    store.logout()
+    router.push('/')
+}
 
 const menuItems = ref([
     { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
