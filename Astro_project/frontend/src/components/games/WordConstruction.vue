@@ -89,7 +89,7 @@
       <p class="text-h5 text-cyan-accent-2 mb-6">Punts Totals: {{ score }}</p>
       
       <v-btn @click="emitExit" color="red-accent-2" variant="flat" size="large" rounded="pill">
-        Tornar a la Nau
+        Kim
       </v-btn>
     </v-card>
 
