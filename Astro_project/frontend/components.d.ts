@@ -12,7 +12,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
