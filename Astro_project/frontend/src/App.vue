@@ -1,7 +1,7 @@
 <template>
   <v-app class="app-container">
-    <LeftSidebar v-if="!isIndexPage" />
-    <RightSidebar v-if="!isIndexPage" />
+    <LeftSidebar v-if="showLayoutElements" />
+    <RightSidebar v-if="showLayoutElements" />
 
     <v-main class="main-content">
       <router-view />
@@ -16,7 +16,12 @@ import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
 
 const route = useRoute()
-const isIndexPage = computed(() => route.path === '/')
+
+// Agregamos /login y /register a la lista de exclusión
+const showLayoutElements = computed(() => {
+  const excludedPaths = ['/', '/login', '/register']
+  return !excludedPaths.includes(route.path)
+})
 </script>
 
 <style>
