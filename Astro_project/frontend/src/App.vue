@@ -1,7 +1,7 @@
 <template>
   <v-app class="app-container">
-    <LeftSidebar v-if="!hideSidebar" />
-    <RightSidebar v-if="!hideSidebar" />
+    <LeftSidebar v-if="showLayoutElements" />
+    <RightSidebar v-if="showLayoutElements" />
 
     <v-main class="main-content">
       <router-view />
@@ -18,12 +18,14 @@ import RightSidebar from '@/components/layout/RightSidebar.vue'
 const route = useRoute()
 
 // Define routes where sidebars should be hidden
-const hideSidebar = computed(() => {
+const showLayoutElements = computed(() => {
   const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
   const hiddenNames = ['index', 'register', 'login', 'Plans']
   
-  return hiddenPaths.includes(route.path) || 
-         (route.name && hiddenNames.includes(route.name))
+  const isHidden = hiddenPaths.includes(route.path) || 
+                   (route.name && hiddenNames.includes(route.name))
+                   
+  return !isHidden
 })
 </script>
 

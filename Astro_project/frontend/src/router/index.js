@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-// Importaciones de las vistas principales
 import register from '@/pages/auth/register.vue'
 import login from '@/pages/auth/login.vue'
 import Plans from '@/pages/plans/plans.vue'
@@ -22,61 +20,62 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: login,
-      props: true,
     },
-    {
-      path: '/plans',
-      name: 'Plans',
-      component: Plans,
-    },
-    {
-      // Mantenemos /planes por compatibilidad si la usábamos
-      path: '/planes',
-      redirect: '/plans'
-    },
+    // RUTAS PROTEGIDAS
     {
       path: '/singleplayer',
       name: 'SinglePlayer',
       component: () => import('@/pages/training/singleplayer.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/multiplayer',
       name: 'MultiPlayer',
       component: () => import('@/pages/training/multiplayer.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/profile/profile.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/shop',
       name: 'Shop',
       component: () => import('@/pages/shop/shop.vue'),
+      meta: { requiresAuth: true }
     },
     {
-      path: '/menu',
-      redirect: '/singleplayer'
+      path: '/plans',
+      name: 'Plans',
+      component: Plans,
+      meta: { requiresAuth: true }
     },
     {
-      path: '/profile',
-      name: 'Profile',
-      component: () => import('@/pages/profile/profile.vue')
+      path: '/achievements',
+      name: 'Achievements',
+      component: () => import('@/pages/achievements/achievements.vue')
     },
   ],
 })
 
-// Mantenemos la lógica de error para imports dinámicos
-router.onError((err, to) => {
-  if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-    if (localStorage.getItem('vuetify:dynamic-reload')) {
-      console.error('Dynamic import error', err)
-    } else {
-      localStorage.setItem('vuetify:dynamic-reload', 'true')
-      location.assign(to.fullPath)
-    }
+// GUARD DE NAVEGACIÓN
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+  // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
+  const isAuthenticated = !!localStorage.getItem('astro_token');
+
+  if (requiresAuth && !isAuthenticated) {
+    // Si la ruta es privada y no hay token, al login
+    next('/login');
+  } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
+    // Si ya está logueado y va a login/register, al simulador
+    next('/singleplayer');
   } else {
-    console.error(err)
+    next();
   }
-})
+});
 
-router.isReady().then(() => {
-  localStorage.removeItem('vuetify:dynamic-reload')
-})
-
-export default router
+export default router;

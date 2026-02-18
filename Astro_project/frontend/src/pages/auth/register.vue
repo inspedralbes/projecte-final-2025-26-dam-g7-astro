@@ -1,6 +1,10 @@
+Entendido, vamos a aplicar la misma lógica de "Abortar Misión" al componente de Registro, manteniendo la coherencia visual con el botón de retroceso que pusimos en el Login.
+
+Aquí tienes el código completo para tu archivo de registro:
+Fragmento de código
+
 <template>
   <v-container fluid class="fill-height register-container d-flex align-center justify-center">
-    <!-- Background overlay for depth -->
     <div class="stars-overlay"></div>
     
     <v-card
@@ -9,6 +13,19 @@
       width="100%"
       class="pa-8 register-card glass-panel"
     >
+      <div class="d-flex justify-start mb-4">
+        <v-btn
+          variant="text"
+          density="compact"
+          color="cyan-lighten-3"
+          class="back-btn-tech"
+          @click="router.push('/')"
+        >
+          <v-icon start size="small">mdi-chevron-left</v-icon>
+          <span class="text-caption font-weight-bold">ABORTAR / VOLVER A BASE</span>
+        </v-btn>
+      </div>
+
       <div class="text-center mb-8 header-section">
         <div class="hologram-effect mb-4">
           <v-icon color="cyan-accent-3" size="64" class="pulse-icon">mdi-shield-account-outline</v-icon>
@@ -40,8 +57,6 @@
               *Este será tu nombre visible en la misión
             </div>
           </v-col>
-
-          <!-- Rank selection removed as requested -->
 
           <v-col cols="12" sm="6" class="mt-4">
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">CREDENCIALES</div>
@@ -76,7 +91,6 @@
           </v-col>
         </v-row>
 
-        <!-- Status Display -->
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
           <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
           <span class="text-red-lighten-1 font-weight-bold">{{ errorMessage }}</span>
@@ -148,20 +162,17 @@ const handleRegister = async () => {
         const tripulanteData = {
             username: formData.value.username,
             password: formData.value.password,
-            // Rank eliminado, el backend asignará 'Cadete de Vuelo' por defecto
         };
 
         const result = await astroStore.registerTripulante(tripulanteData);
         
         if (result.success) {
-            console.log("✅ Tripulante registrado en Mongo Atlas:", tripulanteData.username);
             router.push('/login'); 
         } else {
             errorMessage.value = result.message || "Error al procesar el alta.";
         }
         
     } catch (err) {
-        console.error(err);
         errorMessage.value = "Error crítico: No se ha podido contactar con la base.";
     } finally {
         loading.value = false;

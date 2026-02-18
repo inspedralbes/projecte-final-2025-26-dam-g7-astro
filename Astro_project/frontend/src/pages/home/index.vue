@@ -21,15 +21,24 @@
           Plataforma de entrenamiento visual y neurocognitivo de alto rendimiento.
           Agilidad lectora y decodificación sin límites.
         </p>
-        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4" to="/singleplayer">
-          INICIAR MISIÓN
-          <v-icon end icon="mdi-rocket-launch-outline" class="ms-2"></v-icon>
+        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4"
+          :to="isLoggedIn ? '/singleplayer' : '/register'">
+          {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR MISIÓN' }}
+          <v-icon end :icon="isLoggedIn ? 'mdi-rocket' : 'mdi-rocket-launch-outline'" class="ms-2"></v-icon>
         </v-btn>
       </div>
     </section>
   </v-container>
 </template>
 
+<script setup>
+import { computed } from 'vue';
+
+// Verificamos si existe el token en el localStorage
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('user-session');
+});
+</script>
 
 <style scoped>
 .main-scroll-container {

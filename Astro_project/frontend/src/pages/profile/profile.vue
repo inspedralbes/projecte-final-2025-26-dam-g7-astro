@@ -62,7 +62,7 @@ function goHome() {
 }
 
 function changePlan() {
-    router.push('/planes')
+    router.push('/plans')
 }
 </script>
 

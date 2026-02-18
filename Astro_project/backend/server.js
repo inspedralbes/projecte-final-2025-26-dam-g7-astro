@@ -12,8 +12,7 @@ app.use(express.json());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// --- DADES INICIALS (LLAVOR) ---
-// Aquests usuaris s'inseriran a Atlas si la base de dades està buida
+// Dades inicials per provar (obsolet)
 const initialUsers = [
     { id: 1, user: "JOEL", pass: "123", plan: "INDIVIDUAL", rank: "Cadete de Vuelo" },
     { id: 2, user: "Escuela_Astro", pass: "admin", plan: "GRUPAL", students: ["BIEL", "ANTONIO"] }
@@ -135,7 +134,7 @@ connectDB().then(async () => {
     // Generem els usuaris si no existeixen
     await initializeUsers();
 
-    const PORT = process.env.PORT || 3001;
+    const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
         console.log(`🚀 Servidor de Misión ASTRO operando en puerto ${PORT}`);
     });

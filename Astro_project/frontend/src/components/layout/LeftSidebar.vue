@@ -45,6 +45,7 @@ const menuItems = ref([
     { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
     { title: 'Multijugador', icon: 'mdi-account-group', to: '/multiplayer' },
     { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
+    { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
     { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
 ])
 </script>

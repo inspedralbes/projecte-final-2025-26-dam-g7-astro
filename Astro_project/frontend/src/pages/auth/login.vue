@@ -1,6 +1,5 @@
 <template>
   <v-container fluid class="fill-height login-container d-flex align-center justify-center">
-    <!-- Background overlay for depth -->
     <div class="stars-overlay"></div>
     
     <v-card
@@ -9,6 +8,19 @@
       width="100%"
       class="pa-8 glass-panel"
     >
+      <div class="d-flex justify-start mb-4">
+        <v-btn
+          variant="text"
+          density="compact"
+          color="cyan-lighten-3"
+          class="back-btn-tech"
+          @click="router.push('/')"
+        >
+          <v-icon start size="small">mdi-chevron-left</v-icon>
+          <span class="text-caption font-weight-bold">ABORTAR / VOLVER A BASE</span>
+        </v-btn>
+      </div>
+
       <div class="text-center mb-8 header-section">
         <div class="hologram-effect mb-4">
           <v-icon color="cyan-accent-3" size="64" class="pulse-icon">mdi-planet</v-icon>
@@ -55,7 +67,6 @@
           </v-col>
         </v-row>
 
-        <!-- Status Display -->
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
           <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
           <span class="text-red-lighten-1 font-weight-bold">{{ errorMessage }}</span>
@@ -76,7 +87,6 @@
       </v-form>
 
       <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
-        <!-- Back action if needed, otherwise register link -->
         <div v-if="props.selectedPlan" class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="$emit('back')">
            <v-icon start size="small">mdi-arrow-left</v-icon> CAMBIAR PLAN
         </div>
@@ -97,7 +107,7 @@ import { ref } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useRouter } from 'vue-router';
 
-// Props and Emits for flexibility
+// Props and Emits
 const props = defineProps(['selectedPlan']);
 const emit = defineEmits(['back']);
 
