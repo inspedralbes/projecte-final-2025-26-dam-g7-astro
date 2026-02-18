@@ -91,7 +91,7 @@ import { ref, computed, onMounted } from 'vue';
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
 
-// --- DADES DEL JOC ---
+// Luego lo podemos conectar a la base de datos
 const words = [
   { word: 'NAU', hint: 'Vehicle espacial' },
   { word: 'ASTRE', hint: 'Cos celeste' },
