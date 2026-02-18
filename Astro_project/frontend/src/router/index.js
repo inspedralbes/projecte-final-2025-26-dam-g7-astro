@@ -51,7 +51,7 @@ const router = createRouter({
       name: 'Plans',
       component: Plans,
       meta: { requiresAuth: true }
-    }
+    },
     {
       path: '/achievements',
       name: 'Achievements',
