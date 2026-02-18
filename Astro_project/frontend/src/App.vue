@@ -1,7 +1,7 @@
 <template>
   <v-app class="app-container">
-    <LeftSidebar v-if="!isIndexPage" />
-    <RightSidebar v-if="!isIndexPage" />
+    <LeftSidebar v-if="!hideSidebar" />
+    <RightSidebar v-if="!hideSidebar" />
 
     <v-main class="main-content">
       <router-view />
@@ -16,7 +16,15 @@ import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
 
 const route = useRoute()
-const isIndexPage = computed(() => route.path === '/')
+
+// Define routes where sidebars should be hidden
+const hideSidebar = computed(() => {
+  const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
+  const hiddenNames = ['index', 'register', 'login', 'Plans']
+  
+  return hiddenPaths.includes(route.path) || 
+         (route.name && hiddenNames.includes(route.name))
+})
 </script>
 
 <style>
