@@ -331,6 +331,7 @@ const plans = [
         desc: 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
         recommended: true
     },
+/*
     { 
         id: 'GRUPAL', 
         icon: 'mdi-account-group-outline', 
@@ -339,6 +340,7 @@ const plans = [
         desc: 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
         recommended: false
     }
+    */
 ]
 
 const selectPlan = (planId) => {
@@ -363,7 +365,8 @@ const login = async () => {
     })
 
     if (result.success) {
-        router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
+        // Redirigimos al perfil o a una ruta existente ya que el multiplayer no existe aún
+        router.push('/profile') 
     } else {
         alert(result.message)
     }
@@ -377,8 +380,8 @@ const createGroup = async () => {
     console.log("Creando grupo:", newGroupName.value)
     
     // Simulación de éxito
-    alert(`Escuadra "${newGroupName.value}" fundada con éxito. Protocolo iniciado.`)
-    router.push('/multiplayer')
+    alert(`Escuadra "${newGroupName.value}" fundada con éxito. Protocolo iniciado. (Modo multijugador próximamente)`)
+    router.push('/profile')
 }
 </script>
 

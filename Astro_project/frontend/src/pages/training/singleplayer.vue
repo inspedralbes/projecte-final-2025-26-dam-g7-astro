@@ -39,10 +39,12 @@ import { ref, shallowRef } from 'vue';
 // 1. Importem els jocs disponibles
 // Nota: Fem servir shallowRef per components per rendiment
 import WordConstruction from '@/components/games/WordConstruction.vue';
+import SpelledRosco from '@/components/games/SpelledRosco.vue';
 
 // 2. Llista de jocs (ara només un, però preparat per més)
 const gamesList = [
-    WordConstruction
+    // WordConstruction,
+    SpelledRosco
 ];
 
 const activeGameComponent = shallowRef(null);

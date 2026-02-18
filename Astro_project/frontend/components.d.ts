@@ -17,6 +17,7 @@ declare module 'vue' {
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
     WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']
   }
 }

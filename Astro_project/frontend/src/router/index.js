@@ -28,12 +28,7 @@ const router = createRouter({
       component: () => import('@/pages/training/singleplayer.vue'),
       meta: { requiresAuth: true }
     },
-    {
-      path: '/multiplayer',
-      name: 'MultiPlayer',
-      component: () => import('@/pages/training/multiplayer.vue'),
-      meta: { requiresAuth: true }
-    },
+
     {
       path: '/profile',
       name: 'Profile',
