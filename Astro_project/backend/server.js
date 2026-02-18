@@ -21,7 +21,7 @@ const WHEEL_ITEMS = [
     { id: 2, label: 'Avatar Ninja', icon: 'mdi-ninja', color: '#2196F3', weight: 5 },
     { id: 3, label: 'Monedas', icon: 'mdi-currency-usd', color: '#FFC107', weight: 30 },
     { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 },
-    { id: 5, label: 'Escudo', icon: 'mdi-shield', color: '#607D8B', weight: 0 } 
+    { id: 5, label: 'Escudo', icon: 'mdi-shield', color: '#607D8B', weight: 0 }
 ];
 
 // --- DATOS INICIALES (Tu lógica original) ---
@@ -47,7 +47,7 @@ async function initializeUsers() {
 
 // --- ENDPOINT DE LA RULETA (NUEVO) ---
 app.post('/api/shop/spin', async (req, res) => {
-    const { user } = req.body; 
+    const { user } = req.body;
     console.log(`🎰 Intento de giro recibido para: ${user}`);
 
     if (!user) return res.status(400).json({ success: false, message: "Usuario no identificado" });
@@ -71,7 +71,7 @@ app.post('/api/shop/spin', async (req, res) => {
         const itemsDisponibles = WHEEL_ITEMS.filter(i => i.weight > 0);
         const totalWeight = itemsDisponibles.reduce((sum, item) => sum + item.weight, 0);
         let random = Math.random() * totalWeight;
-        let selectedItem = itemsDisponibles[0]; 
+        let selectedItem = itemsDisponibles[0];
 
         for (const item of itemsDisponibles) {
             if (random < item.weight) {
@@ -108,6 +108,33 @@ app.post('/api/shop/spin', async (req, res) => {
     }
 });
 
+// --- ENDPOINT DE LOGROS (NUEVO) ---
+app.put('/api/user/achievements', async (req, res) => {
+    const { user, achievements } = req.body;
+    console.log(`🏅 Actualizando logros para: ${user}`, achievements);
+
+    if (!user) return res.status(400).json({ success: false, message: "Usuario no identificado" });
+    if (!Array.isArray(achievements) || achievements.length > 3) {
+        return res.status(400).json({ success: false, message: "Lista de logros no válida (máximo 3)" });
+    }
+
+    try {
+        const db = getDB();
+        const usersCol = db.collection('users');
+
+        await usersCol.updateOne(
+            { user: user },
+            { $set: { selectedAchievements: achievements } }
+        );
+
+        res.json({ success: true, message: "Logros actualizados correctamente" });
+
+    } catch (error) {
+        console.error("Error al actualizar logros:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+});
+
 // --- RUTAS DE AUTH (Tus originales) ---
 app.post('/api/auth/login', async (req, res) => {
     const { user, password } = req.body;
@@ -122,7 +149,8 @@ app.post('/api/auth/login', async (req, res) => {
                     name: foundUser.user,
                     plan: foundUser.plan,
                     rank: foundUser.rank || "Administrador",
-                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000
+                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
+                    selectedAchievements: foundUser.selectedAchievements || []
                 }
             });
         } else {
@@ -163,7 +191,7 @@ wss.on('connection', (ws) => {
         try {
             const message = JSON.parse(data);
             if (message.type === 'UPDATE_SCORE') console.log(`Score: ${message.pts}`);
-        } catch (e) {}
+        } catch (e) { }
     });
     ws.send(JSON.stringify({ msg: "Conectado" }));
 });
@@ -171,9 +199,9 @@ wss.on('connection', (ws) => {
 // --- ARRANQUE ---
 connectDB().then(async () => {
     await initializeUsers();
-    
+
     // AQUÍ ESTÁ LA CLAVE: EL PUERTO 3000 ES TUYO
-    const PORT = 3000; 
+    const PORT = 3000;
     server.listen(PORT, () => {
         console.log(`------------------------------------------------`);
         console.log(`🚀 SERVIDOR OPERATIVO EN EL PUERTO ${PORT}`);

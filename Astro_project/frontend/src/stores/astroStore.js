@@ -6,6 +6,7 @@ export const useAstroStore = defineStore('astro', {
         user: null,
         plan: null,
         rank: null,
+        selectedAchievements: [null, null, null], // Siempre 3 slots
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -54,7 +55,7 @@ export const useAstroStore = defineStore('astro', {
 
                 const text = await response.text();
                 if (!text) throw new Error("El servidor no envió datos de respuesta.");
-                
+
                 const data = JSON.parse(text);
 
                 if (!response.ok) throw new Error(data.message || "Error de autenticación");
@@ -63,6 +64,13 @@ export const useAstroStore = defineStore('astro', {
                 this.user = data.profile.name;
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
+                // Nos aseguramos de tener siempre 3 slots
+                const saved = data.profile.selectedAchievements || [];
+                this.selectedAchievements = [
+                    saved[0] || null,
+                    saved[1] || null,
+                    saved[2] || null
+                ];
                 this.token = data.token;
 
                 localStorage.setItem('astro_token', data.token);
@@ -129,6 +137,31 @@ export const useAstroStore = defineStore('astro', {
             this.$reset();
             localStorage.removeItem('astro_token');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
+        },
+
+        async updateAchievements(achievements) {
+            this.error = null;
+            try {
+                const response = await fetch('http://localhost:3000/api/user/achievements', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        achievements: achievements
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "Error al actualizar logros");
+
+                this.selectedAchievements = achievements;
+                return { success: true };
+
+            } catch (error) {
+                console.error("❌ Error actualizando logros:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
         }
     }
 });

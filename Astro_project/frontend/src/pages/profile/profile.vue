@@ -36,6 +36,27 @@
                 </v-col>
             </v-row>
 
+            <v-divider class="mb-4 border-opacity-25"></v-divider>
+
+            <h3 class="text-subtitle-1 font-weight-bold text-cyan-accent-1 mb-4">LOGROS SELECCIONADOS</h3>
+
+            <v-row class="mb-6 justify-center">
+                <v-col v-for="i in 3" :key="i" cols="4" class="pa-1">
+                    <v-tooltip bottom>
+                        <template v-slot:activator="{ props }">
+                            <v-card v-bind="props" variant="outlined" color="cyan-accent-3"
+                                class="achievement-slot d-flex align-center justify-center"
+                                @click="openSelection(i - 1)" height="80">
+                                <v-icon v-if="getAchievement(selectedAchievements[i - 1])"
+                                    :icon="getAchievement(selectedAchievements[i - 1]).icon" size="32"></v-icon>
+                                <v-icon v-else icon="mdi-plus" size="24" class="opacity-30"></v-icon>
+                            </v-card>
+                        </template>
+                        <span>{{ getAchievement(selectedAchievements[i - 1])?.title || 'Elegir Logro' }}</span>
+                    </v-tooltip>
+                </v-col>
+            </v-row>
+
             <v-divider class="mb-8 border-opacity-25"></v-divider>
 
             <!-- Botones de Acción -->
@@ -52,19 +73,76 @@
             </div>
 
         </v-card>
+
+        <!-- Diálogo de Selección de Logros -->
+        <v-dialog v-model="selectionDialog" max-width="500">
+            <v-card class="glass-card pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    Seleccionar Logro
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="selectionDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-list bg-color="transparent" class="text-white">
+                        <v-list-item v-for="achievement in ACHIEVEMENTS" :key="achievement.id"
+                            :prepend-icon="achievement.icon" :title="achievement.title"
+                            :subtitle="achievement.description" @click="selectAchievement(achievement.id)"
+                            class="mb-2 achievement-list-item"
+                            :class="{ 'selected': selectedAchievements.includes(achievement.id) }">
+                        </v-list-item>
+                        <v-divider class="my-2 border-opacity-20"></v-divider>
+                        <v-list-item prepend-icon="mdi-delete-outline" title="Quitar Logro"
+                            @click="selectAchievement(null)" class="text-error"></v-list-item>
+                    </v-list>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore' // Importamos el store
 import { storeToRefs } from 'pinia' // Para mantener la reactividad
+import { ACHIEVEMENTS } from '@/constants/achievements'
 
 const router = useRouter()
 const astroStore = useAstroStore()
 
 // Extraemos los datos del usuario de forma reactiva
-const { user, rank, plan } = storeToRefs(astroStore)
+const { user, rank, plan, selectedAchievements } = storeToRefs(astroStore)
+
+const selectionDialog = ref(false)
+const currentSlotIndex = ref(null)
+
+function getAchievement(id) {
+    return ACHIEVEMENTS.find(a => a.id === id)
+}
+
+function openSelection(index) {
+    currentSlotIndex.value = index
+    selectionDialog.value = true
+}
+
+async function selectAchievement(achievementId) {
+    // Clonamos la selección actual (que siempre tiene 3 elementos)
+    let newSelection = [...selectedAchievements.value]
+
+    // Si el logro ya estaba en otro slot, lo quitamos de ahí para evitar duplicados
+    if (achievementId !== null) {
+        const existingIndex = newSelection.indexOf(achievementId)
+        if (existingIndex !== -1) {
+            newSelection[existingIndex] = null
+        }
+    }
+
+    // Ponemos el nuevo logro (o null si es para quitar) en el slot actual
+    newSelection[currentSlotIndex.value] = achievementId
+
+    // Guardamos la selección completa (incluyendo nulos) para mantener las posiciones
+    await astroStore.updateAchievements(newSelection)
+    selectionDialog.value = false
+}
 
 function goHome() {
     router.push('/')
@@ -93,5 +171,36 @@ function changePlan() {
     border: 3px solid #00e5ff;
     box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
     /* Resplandor */
+}
+
+.achievement-slot {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.achievement-slot:hover {
+    background: rgba(0, 229, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+}
+
+.achievement-list-item {
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.achievement-list-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.achievement-list-item.selected {
+    background: rgba(0, 229, 255, 0.2);
+    border: 1px solid rgba(0, 229, 255, 0.5);
+}
+
+.opacity-30 {
+    opacity: 0.3;
 }
 </style>
