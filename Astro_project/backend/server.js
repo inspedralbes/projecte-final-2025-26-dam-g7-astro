@@ -44,8 +44,27 @@ async function initializeUsers() {
         console.error('❌ Error generant usuaris inicials:', error);
     }
 }
+// --- ENDPOINT PARA CONSULTAR SALDO ---
+app.get('/api/shop/balance/:user', async (req, res) => {
+    const userName = req.params.user;
+    try {
+        const db = getDB();
+        const user = await db.collection('users').findOne({ user: userName });
+        
+        if (!user) return res.json({ coins: 0 }); // Si no existe, 0 monedas
+
+        // Si el usuario no tiene campo 'coins', asumimos 1000 por defecto
+        const coins = user.coins !== undefined ? user.coins : 1000;
+        
+        res.json({ coins: coins });
+    } catch (error) {
+        console.error("Error al obtener saldo:", error);
+        res.status(500).json({ coins: 0 });
+    }
+});
 
 // --- ENDPOINT DE LA RULETA (NUEVO) ---
+
 app.post('/api/shop/spin', async (req, res) => {
     const { user } = req.body; 
     console.log(`🎰 Intento de giro recibido para: ${user}`);
