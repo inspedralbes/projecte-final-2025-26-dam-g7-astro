@@ -4,9 +4,11 @@
             <h1 class="text-h3 font-weight-bold text-white tracking-wide">ASTRO</h1>
         </div>
 
+        <v-divider class="mx-6 border-opacity-25 mb-4" color="white"></v-divider>
+
         <v-list class="pa-0 bg-transparent">
             <v-list-item v-for="(item, index) in menuItems" :key="index" :to="item.to" link
-                class="menu-item py-6 px-8 mb-2">
+                class="menu-item py-6 px-8 mb-2 mx-4 rounded-xl" active-class="active-menu-item">
                 <template v-slot:prepend>
                     <v-icon :icon="item.icon" color="cyan-accent-2" class="mr-4"></v-icon>
                 </template>
@@ -64,12 +66,18 @@ const menuItems = ref([
 
 .menu-item {
     transition: all 0.3s ease;
-    border-left: 3px solid transparent;
+    border: 1px solid transparent;
 }
 
 .menu-item:hover {
-    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0%, transparent 100%);
-    border-left: 3px solid #00e5ff;
+    background: rgba(0, 229, 255, 0.05) !important;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.active-menu-item {
+    background: linear-gradient(90deg, rgba(0, 229, 255, 0.15) 0%, rgba(41, 121, 255, 0.1) 100%) !important;
+    border: 1px solid rgba(0, 229, 255, 0.4) !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
 }
 
 .border-color-white-alpha {
