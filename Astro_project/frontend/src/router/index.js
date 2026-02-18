@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-// Importaciones de las vistas principales
 import register from '@/pages/auth/register.vue'
 import login from '@/pages/auth/login.vue'
 import Plans from '@/pages/plans/plans.vue'
@@ -22,15 +20,8 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: login,
-      props: true,
     },
-    // --- RUTAS PROTEGIDAS (Requieren Login) ---
-    {
-      path: '/plans',
-      name: 'Plans',
-      component: Plans,
-      meta: { requiresAuth: true }
-    },
+    // RUTAS PROTEGIDAS
     {
       path: '/singleplayer',
       name: 'SinglePlayer',
@@ -44,69 +35,42 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/pages/profile/profile.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/shop',
       name: 'Shop',
       component: () => import('@/pages/shop/shop.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/profile',
-      name: 'Profile',
-      component: () => import('@/pages/profile/profile.vue'),
+      path: '/plans',
+      name: 'Plans',
+      component: Plans,
       meta: { requiresAuth: true }
-    },
-    // --- REDIRECCIONES ---
-    {
-      path: '/planes',
-      redirect: '/plans'
-    },
-    {
-      path: '/menu',
-      redirect: '/singleplayer'
-    },
+    }
   ],
 })
 
-/**
- * GUARD DE NAVEGACIÓN
- * Se ejecuta antes de cada cambio de ruta
- */
+// GUARD DE NAVEGACIÓN
 router.beforeEach((to, from, next) => {
-  // Comprobamos si la ruta a la que va requiere autenticación
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   
-  // Verificamos si existe una sesión en el localStorage
-  // IMPORTANTE: Asegúrate de que en tu Login.vue hagas localStorage.setItem('user-session', 'true')
-  const isAuthenticated = !!localStorage.getItem('user-session');
+  // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
+  const isAuthenticated = !!localStorage.getItem('astro_token');
 
   if (requiresAuth && !isAuthenticated) {
-    // Si intenta entrar a zona privada sin estar logueado -> Al Login
+    // Si la ruta es privada y no hay token, al login
     next('/login');
   } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
-    // Si ya está logueado e intenta ir a login/registro -> Al Menú principal
+    // Si ya está logueado y va a login/register, al simulador
     next('/singleplayer');
   } else {
-    // En cualquier otro caso, permitimos el paso
     next();
   }
 });
 
-// Lógica de error para imports dinámicos
-router.onError((err, to) => {
-  if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-    if (localStorage.getItem('vuetify:dynamic-reload')) {
-      console.error('Dynamic import error', err)
-    } else {
-      localStorage.setItem('vuetify:dynamic-reload', 'true')
-      location.assign(to.fullPath)
-    }
-  } else {
-    console.error(err)
-  }
-})
-
-router.isReady().then(() => {
-  localStorage.removeItem('vuetify:dynamic-reload')
-})
-
-export default router
+export default router;

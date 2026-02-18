@@ -135,7 +135,7 @@ connectDB().then(async () => {
     // Generem els usuaris si no existeixen
     await initializeUsers();
 
-    const PORT = process.env.PORT || 3001;
+    const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
         console.log(`🚀 Servidor de Misión ASTRO operando en puerto ${PORT}`);
     });

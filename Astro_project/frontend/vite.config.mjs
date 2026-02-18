@@ -61,6 +61,10 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    port: 3001,      // <--- CAMBIA A 3001 (Vite)
+    strictPort: true,
+    hmr: {
+      port: 3001     // <--- Asegura que el Hot Reload use el puerto correcto
+    }
   },
 })
