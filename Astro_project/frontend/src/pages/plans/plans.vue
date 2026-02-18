@@ -8,11 +8,9 @@
 
                 <v-row justify="center">
                     <v-col cols="12" md="5" v-for="plan in plans" :key="plan.id">
-                        <v-card 
-                            variant="outlined" 
+                        <v-card variant="outlined"
                             :class="['pa-6', plan.id === 'INDIVIDUAL' ? 'border-primary' : 'border-secondary']"
-                            @click="selectPlan(plan.id)"
-                        >
+                            @click="selectPlan(plan.id)">
                             <v-icon size="48" :color="plan.color">{{ plan.icon }}</v-icon>
                             <h2 class="text-h5 mt-4">{{ plan.id }}</h2>
                             <p class="text-caption mt-2" style="min-height: 40px;">
@@ -30,33 +28,14 @@
                 <v-card variant="flat" class="pa-8 bg-transparent text-center border">
                     <h2 class="text-h4 mb-6">{{ selectedPlan }} LOGIN</h2>
 
-                    <v-text-field 
-                        label="Usuario" 
-                        variant="outlined" 
-                        density="comfortable" 
-                        color="primary"
-                        v-model="user"
-                        @keyup.enter="login"
-                    ></v-text-field>
+                    <v-text-field label="Usuario" variant="outlined" density="comfortable" color="primary"
+                        v-model="user" @keyup.enter="login"></v-text-field>
 
-                    <v-text-field 
-                        label="Contraseña" 
-                        type="password" 
-                        variant="outlined" 
-                        density="comfortable"
-                        color="primary" 
-                        v-model="password"
-                        @keyup.enter="login"
-                    ></v-text-field>
+                    <v-text-field label="Contraseña" type="password" variant="outlined" density="comfortable"
+                        color="primary" v-model="password" @keyup.enter="login"></v-text-field>
 
-                    <v-btn 
-                        block 
-                        size="large" 
-                        color="primary" 
-                        @click="login" 
-                        class="mt-4"
-                        :disabled="!user || !password"
-                    >
+                    <v-btn block size="large" color="primary" @click="login" class="mt-4"
+                        :disabled="!user || !password">
                         INICIAR SESIÓN
                     </v-btn>
 
@@ -102,7 +81,7 @@ const selectPlan = (plan) => {
 
 const login = async () => {
     if (!user.value || !password.value) return
-    
+
     // Llamamos a la sincronización real con el servidor
     const result = await astroStore.loginTripulante({
         user: user.value,
@@ -111,7 +90,7 @@ const login = async () => {
 
     if (result.success) {
         // Redirigimos al Menú Principal si la trayectoria es correcta
-        router.push('/menu')
+        router.push('/singleplayer')
     } else {
         alert(result.message) // "Trayectoria fallida: Credenciales no reconocidas" [cite: 15]
     }

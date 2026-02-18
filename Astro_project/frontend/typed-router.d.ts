@@ -21,6 +21,9 @@ declare module 'vue-router/auto-routes' {
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/register': RouteRecordInfo<'/auth/register', '/auth/register', Record<never, never>, Record<never, never>>,
     '/home/': RouteRecordInfo<'/home/', '/home', Record<never, never>, Record<never, never>>,
+    '/plans/plans': RouteRecordInfo<'/plans/plans', '/plans/plans', Record<never, never>, Record<never, never>>,
+    '/profile/profile': RouteRecordInfo<'/profile/profile', '/profile/profile', Record<never, never>, Record<never, never>>,
+    '/shop/shop': RouteRecordInfo<'/shop/shop', '/shop/shop', Record<never, never>, Record<never, never>>,
     '/training/multiplayer': RouteRecordInfo<'/training/multiplayer', '/training/multiplayer', Record<never, never>, Record<never, never>>,
     '/training/singleplayer': RouteRecordInfo<'/training/singleplayer', '/training/singleplayer', Record<never, never>, Record<never, never>>,
   }
@@ -46,6 +49,18 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/home/index.vue': {
       routes: '/home/'
+      views: never
+    }
+    'src/pages/plans/plans.vue': {
+      routes: '/plans/plans'
+      views: never
+    }
+    'src/pages/profile/profile.vue': {
+      routes: '/profile/profile'
+      views: never
+    }
+    'src/pages/shop/shop.vue': {
+      routes: '/shop/shop'
       views: never
     }
     'src/pages/training/multiplayer.vue': {

@@ -21,7 +21,7 @@
           Plataforma de entrenamiento visual y neurocognitivo de alto rendimiento.
           Agilidad lectora y decodificación sin límites.
         </p>
-        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4" to="/menu">
+        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4" to="/singleplayer">
           INICIAR MISIÓN
           <v-icon end icon="mdi-rocket-launch-outline" class="ms-2"></v-icon>
         </v-btn>

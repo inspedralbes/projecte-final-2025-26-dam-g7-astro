@@ -1,46 +1,22 @@
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
-    <v-card
-      elevation="24"
-      width="450"
-      class="pa-8 login-card"
-      style="border: 1px solid rgba(0, 242, 255, 0.3); background: #0d1117;"
-    >
+    <v-card elevation="24" width="450" class="pa-8 login-card"
+      style="border: 1px solid rgba(0, 242, 255, 0.3); background: #0d1117;">
       <div class="text-center mb-6">
         <h1 class="text-h4 font-weight-bold text-primary tracking-widest">ASTRO</h1>
         <div class="text-overline text-secondary">{{ selectedPlan }} MISSION ACCESS</div>
       </div>
 
       <v-form @submit.prevent="handleLogin">
-        <v-text-field
-          v-model="username"
-          label="ID DE TRIPULANTE"
-          placeholder="Ej: JOEL"
-          variant="outlined"
-          prepend-inner-icon="mdi-account-circle-outline"
-          color="primary"
-          class="mb-2"
-          persistent-placeholder
-        ></v-text-field>
+        <v-text-field v-model="username" label="ID DE TRIPULANTE" placeholder="Ej: JOEL" variant="outlined"
+          prepend-inner-icon="mdi-account-circle-outline" color="primary" class="mb-2"
+          persistent-placeholder></v-text-field>
 
-        <v-text-field
-          v-model="password"
-          label="CÓDIGO DE ENCRIPTACIÓN"
-          type="password"
-          variant="outlined"
-          prepend-inner-icon="mdi-lock-outline"
-          color="primary"
-          class="mb-4"
-        ></v-text-field>
+        <v-text-field v-model="password" label="CÓDIGO DE ENCRIPTACIÓN" type="password" variant="outlined"
+          prepend-inner-icon="mdi-lock-outline" color="primary" class="mb-4"></v-text-field>
 
-        <v-btn
-          block
-          size="x-large"
-          color="primary"
-          type="submit"
-          class="login-btn font-weight-black"
-          :loading="loading"
-        >
+        <v-btn block size="x-large" color="primary" type="submit" class="login-btn font-weight-black"
+          :loading="loading">
           INICIAR SINCRONIZACIÓN
         </v-btn>
       </v-form>
@@ -50,9 +26,9 @@
           <v-icon start>mdi-arrow-left</v-icon> CAMBIAR PLAN
         </v-btn>
       </v-card-actions>
-      
+
       <v-divider class="my-4" color="primary"></v-divider>
-      
+
       <div class="text-center text-caption text-grey">
         ESTADO DEL SISTEMA: <span class="text-green">OPERATIVO</span>
       </div>
@@ -90,7 +66,7 @@ const handleLogin = async () => {
     // Si es éxito, vamos al menú (según esquema de pantallas) [cite: 41]
     setTimeout(() => {
       loading.value = false;
-      router.push('/menu');
+      router.push('/singleplayer');
     }, 1000);
   } else {
     loading.value = false;
