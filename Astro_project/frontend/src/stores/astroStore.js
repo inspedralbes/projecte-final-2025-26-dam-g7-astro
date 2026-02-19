@@ -4,10 +4,11 @@ import { markRaw } from 'vue';
 export const useAstroStore = defineStore('astro', {
     state: () => ({
         user: localStorage.getItem('astro_user') || null,
-        plan: localStorage.getItem('astro_plan') || null,
+        plan: localStorage.getItem('astro_plan') || 'INDIVIDUAL_FREE',
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
+        avatar: localStorage.getItem('astro_avatar') || 'Felix', // Seed por defecto
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -231,7 +232,14 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_rank');
             localStorage.removeItem('astro_plan');
             localStorage.removeItem('astro_selected_achievements');
+            localStorage.removeItem('astro_avatar');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
+        },
+
+        updateAvatar(seed) {
+            this.avatar = seed;
+            localStorage.setItem('astro_avatar', seed);
+            console.log("👤 Avatar actualizado localmente:", seed);
         },
 
         async updateAchievements(achievements) {
@@ -275,6 +283,45 @@ export const useAstroStore = defineStore('astro', {
                 this.error = "Error al guardar en el servidor: " + error.message;
                 // NO hacemos rollback para que el usuario no vea que sus logros desaparecen.
                 // Se quedan guardados localmente en el localStorage.
+                return { success: false, message: this.error };
+            }
+        },
+
+        async updatePlan(planType) {
+            this.error = null;
+
+            if (!this.user) {
+                this.user = localStorage.getItem('astro_user');
+            }
+
+            // Actualización local inmediata (Optimistic)
+            this.plan = planType;
+            localStorage.setItem('astro_plan', planType);
+
+            if (!this.user) {
+                this.error = "Usuario no identificado para actualizar el plan.";
+                return { success: false, message: this.error };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/user/plan', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        plan: planType
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "Error al actualizar el plan en el servidor");
+
+                console.log(`✅ Plan sincronizado en servidor: ${planType}`);
+                return { success: true };
+
+            } catch (error) {
+                console.error("❌ Error sincronizando plan:", error);
+                this.error = "Error al conectar con el servidor: " + error.message;
                 return { success: false, message: this.error };
             }
         }

@@ -17,14 +17,6 @@
                 </v-list-item-title>
             </v-list-item>
         </v-list>
-
-        <template v-slot:append>
-            <div class="pa-6 border-t border-color-white-alpha">
-                <v-btn block color="cyan-accent-3" variant="outlined" rounded="xl" size="large" @click="handleLogout">
-                    Cerrar Sesión
-                </v-btn>
-            </div>
-        </template>
     </v-navigation-drawer>
 </template>
 

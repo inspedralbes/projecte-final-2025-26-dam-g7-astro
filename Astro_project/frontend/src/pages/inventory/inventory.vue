@@ -65,7 +65,6 @@ const activeCategory = ref('all');
 
 const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
-    { id: 'avatar', name: 'Avatares', icon: 'mdi-account-circle' },
     { id: 'skins', name: 'Skins', icon: 'mdi-palette' },
     { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
     { id: 'trails', name: 'Rastros', icon: 'mdi-creation' }
@@ -73,7 +72,6 @@ const categories = [
 
 // Datos de ejemplo: lo ideal sería traerlos del Backend/Store
 const inventoryItems = ref([
-    { id: 1, name: 'Ava Predeterminado', cat: 'avatar', icon: 'mdi-account', color: 'cyan', equipped: true, desc: 'Identidad base de la flota.', bgColor: 'rgba(0, 229, 255, 0.1)' },
     { id: 102, name: 'Skin Cyberpunk', cat: 'skins', icon: 'mdi-robot', color: 'purple-accent-3', equipped: false, desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
     { id: 103, name: 'Mascota Dron', cat: 'pets', icon: 'mdi-quadcopter', color: 'green-accent-3', equipped: false, desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' }
 ]);
@@ -85,9 +83,6 @@ const filteredItems = computed(() => {
 
 function toggleEquip(item) {
     // Lógica simple para demo
-    if (item.cat === 'avatar') {
-        inventoryItems.value.forEach(i => { if (i.cat === 'avatar') i.equipped = false; });
-    }
     item.equipped = !item.equipped;
 }
 </script>

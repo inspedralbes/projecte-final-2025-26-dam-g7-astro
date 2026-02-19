@@ -43,13 +43,16 @@ defineProps({
 <style scoped>
 .medal-container {
   width: 140px;
-  height: 140px;
+  height: 180px;
+  /* Aumentado para contener la cinta */
+  padding-top: 40px;
+  /* Espacio para la cinta */
   cursor: default;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   transform-origin: center center;
 }
 
@@ -108,7 +111,8 @@ defineProps({
 /* Ribbon */
 .ribbon {
   position: absolute;
-  top: -40px;
+  top: 0;
+  /* Cambio: Empieza en el borde superior del contenedor */
   left: 50%;
   transform: translateX(-50%);
   width: 60px;
