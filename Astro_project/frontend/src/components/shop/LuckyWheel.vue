@@ -33,10 +33,21 @@
 <script setup>
 import { ref, computed } from 'vue';
 
+// RECIBIMOS EL USUARIO DESDE EL COMPONENTE PADRE (Shop.vue)
+const props = defineProps({
+  user: {
+    type: String,
+    required: true,
+    default: ""
+  }
+});
+
+const emit = defineEmits(['win', 'update-balance']);
+
 const isSpinning = ref(false);
 const currentRotation = ref(0);
 
-// Items visuales (deben coincidir con el backend)
+// Items visuales (deben coincidir en orden/ID con server.js)
 const items = [
     { id: 0, icon: 'mdi-heart', color: '#FF5252' },
     { id: 1, icon: 'mdi-decagram', color: '#9C27B0' },
@@ -45,8 +56,6 @@ const items = [
     { id: 4, icon: 'mdi-emoticon-sad', color: '#795548' },
     { id: 5, icon: 'mdi-shield', color: '#607D8B' }
 ];
-
-const emit = defineEmits(['win', 'update-balance']);
 
 const wheelStyle = computed(() => {
   const degrees = 360 / items.length;
@@ -70,15 +79,15 @@ const getSegmentStyle = (index) => {
 };
 
 async function spin() {
-  if (isSpinning.value) return;
+  if (isSpinning.value || !props.user) return;
   isSpinning.value = true;
 
   try {
-    // PETICIÓN AL PUERTO 3000 (BACKEND)
+    // LLAMADA AL BACKEND USANDO EL USUARIO DE LAS PROPS
     const response = await fetch('http://localhost:3000/api/shop/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: "JOEL" }) 
+        body: JSON.stringify({ user: props.user }) 
     });
     
     const data = await response.json();
@@ -87,26 +96,37 @@ async function spin() {
         throw new Error(data.message || "Error al girar");
     }
 
-    // Animación visual basada en el resultado del servidor
+    // LÓGICA DE GIRO
     const winnerIndex = items.findIndex(i => i.id === data.prize.id);
     const degreePerItem = 360 / items.length;
+    
+    // Calculamos el ángulo para que el premio quede arriba (bajo el marcador)
+    // 360 * 5 para dar 5 vueltas completas antes de frenar
     const extraSpins = 360 * 5; 
     const stopAngle = extraSpins - (winnerIndex * degreePerItem) - (degreePerItem / 2);
 
+    // Sumamos a la rotación actual para que siempre gire hacia adelante
     currentRotation.value += stopAngle;
 
+    // Esperamos a que termine la animación de 4 segundos
     setTimeout(() => {
       isSpinning.value = false;
-      emit('win', data.prize); 
+      
+      // Notificamos al padre el premio y el nuevo saldo
+      emit('win', {
+          ...data.prize,
+          color: items[winnerIndex].color // Añadimos el color para el diálogo de éxito
+      }); 
+      
       if (data.newBalance !== undefined) {
           emit('update-balance', data.newBalance);
       }
     }, 4000);
 
   } catch (e) {
-    console.error(e);
+    console.error("❌ Error en la ruleta:", e);
     isSpinning.value = false;
-    alert(e.message || "Error de conexión con el servidor (Puerto 3000)");
+    alert(e.message || "Error de comunicación con el centro de mando");
   }
 }
 </script>

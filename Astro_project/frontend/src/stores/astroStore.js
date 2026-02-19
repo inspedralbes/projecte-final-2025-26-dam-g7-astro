@@ -3,10 +3,10 @@ import { markRaw } from 'vue';
 
 export const useAstroStore = defineStore('astro', {
     state: () => ({
-        user: localStorage.getItem('astro_user') || null,
-        plan: localStorage.getItem('astro_plan') || null,
-        rank: localStorage.getItem('astro_rank') || null,
-        selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
+        user: null,
+        plan: null,
+        rank: null,
+        coins: 0, // <--- AÑADE ESTO
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -64,13 +64,7 @@ export const useAstroStore = defineStore('astro', {
                 this.user = data.profile.name;
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
-                // Nos aseguramos de tener siempre 3 slots
-                const saved = data.profile.selectedAchievements || [];
-                this.selectedAchievements = [
-                    saved[0] || null,
-                    saved[1] || null,
-                    saved[2] || null
-                ];
+                this.coins = data.profile.coins;
                 this.token = data.token;
 
                 localStorage.setItem('astro_token', data.token);

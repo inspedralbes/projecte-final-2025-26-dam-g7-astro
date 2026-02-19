@@ -12,12 +12,13 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
+    WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']
   }
 }

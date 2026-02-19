@@ -23,7 +23,6 @@
                     <v-card
                         class="plan-card d-flex flex-column align-center justify-space-between w-100 pa-8 ma-2"
                         :class="[plan.id === 'INDIVIDUAL' ? 'plan-individual' : 'plan-grupal', { 'recommended-card': plan.recommended }]"
-                        @click="selectPlan(plan.id)"
                         elevation="10"
                         rounded="xl"
                     >
@@ -46,17 +45,29 @@
 
                         <v-btn
                             block
-                            size="x-large"
                             :color="plan.color"
                             :variant="plan.recommended ? 'flat' : 'outlined'"
                             class="plan-btn mt-auto font-weight-bold"
                             rounded="lg"
+                            @click="selectPlan(plan.id)"
                         >
                             {{ plan.recommended ? 'SELECCIONAR' : 'SELECCIONAR' }}
                         </v-btn>
                     </v-card>
                 </v-col>
             </v-row>
+
+            <div class="mt-8">
+                <v-btn
+                    variant="text"
+                    color="grey-lighten-1"
+                    prepend-icon="mdi-arrow-left"
+                    @click="router.push('/profile')"
+                    class="hover-bright text-caption"
+                >
+                    VOLVER AL PERFIL
+                </v-btn>
+            </div>
         </v-container>
 
         <!-- SECTION 2: GROUP OPTIONS (Create vs Join) -->
@@ -320,6 +331,7 @@ const plans = [
         desc: 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
         recommended: true
     },
+/*
     { 
         id: 'GRUPAL', 
         icon: 'mdi-account-group-outline', 
@@ -328,6 +340,7 @@ const plans = [
         desc: 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
         recommended: false
     }
+    */
 ]
 
 const selectPlan = (planId) => {
@@ -352,7 +365,8 @@ const login = async () => {
     })
 
     if (result.success) {
-        router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
+        // Redirigimos al perfil o a una ruta existente ya que el multiplayer no existe aún
+        router.push('/profile') 
     } else {
         alert(result.message)
     }
@@ -366,8 +380,8 @@ const createGroup = async () => {
     console.log("Creando grupo:", newGroupName.value)
     
     // Simulación de éxito
-    alert(`Escuadra "${newGroupName.value}" fundada con éxito. Protocolo iniciado.`)
-    router.push('/multiplayer')
+    alert(`Escuadra "${newGroupName.value}" fundada con éxito. Protocolo iniciado. (Modo multijugador próximamente)`)
+    router.push('/profile')
 }
 </script>
 
@@ -414,8 +428,7 @@ const createGroup = async () => {
     background: rgba(20, 25, 40, 0.7) !important;
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08); /* Fallback */
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
+    cursor: default;
     overflow: hidden;
     position: relative;
 }
@@ -428,11 +441,6 @@ const createGroup = async () => {
     pointer-events: none;
 }
 
-.plan-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-    z-index: 10;
-}
 
 /* RECOMMENDED / INDIVIDUAL */
 .recommended-badge {
@@ -454,19 +462,11 @@ const createGroup = async () => {
     background: rgba(0, 40, 60, 0.6) !important;
 }
 
-.plan-individual:hover {
-    border-color: #00e5ff;
-    box-shadow: 0 0 40px rgba(0, 229, 255, 0.2), inset 0 0 20px rgba(0, 229, 255, 0.05);
-}
 .plan-individual .plan-icon {
     filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.5));
 }
 
 /* GRUPAL PLAN SPECIFIC */
-.plan-grupal:hover {
-    border-color: #e040fb;
-    box-shadow: 0 0 40px rgba(224, 64, 251, 0.2), inset 0 0 20px rgba(224, 64, 251, 0.05);
-}
 .plan-grupal .plan-icon {
     filter: drop-shadow(0 0 15px rgba(224, 64, 251, 0.5));
 }
@@ -485,27 +485,16 @@ const createGroup = async () => {
     border-radius: 50%;
     filter: blur(40px);
     opacity: 0.2;
-    transition: opacity 0.3s ease;
 }
 
-.plan-card:hover .icon-glow {
-    opacity: 0.5;
-}
 
 /* BUTTON STYLES */
 .plan-btn {
     border-width: 2px;
-    transition: all 0.3s ease;
     text-transform: none;
     letter-spacing: 1px;
 }
 
-.plan-btn:hover {
-    background-color: currentColor !important;
-    color: white !important; /* Changed to white for better visibility */
-    box-shadow: 0 0 25px currentColor;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8); /* Ensures readability on bright backgrounds */
-}
 
 /* HOLO PANEL STYLES (NEW FORMS) */
 .holo-panel {
@@ -561,17 +550,12 @@ const createGroup = async () => {
     box-shadow: 0 5px 20px rgba(224, 64, 251, 0.3);
     border: 1px solid rgba(255,255,255,0.1);
 }
-.glow-btn-secondary:hover {
-    box-shadow: 0 0 30px rgba(224, 64, 251, 0.6);
-}
 
 .glow-btn-success {
     box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
     border: 1px solid rgba(255,255,255,0.1);
 }
-.glow-btn-success:hover {
-    box-shadow: 0 0 30px rgba(0, 230, 118, 0.6);
-}
+
 
 .hover-bright {
     transition: color 0.3s;
@@ -582,5 +566,40 @@ const createGroup = async () => {
 
 .glass-icon {
     text-shadow: 0 0 15px currentColor;
+}
+
+/* --- FORCED NO-ANIMATION OVERRIDES --- */
+
+/* 1. Stop Card scaling/movement */
+.plan-card:hover {
+    transform: none !important;
+    box-shadow: none !important; /* Or keep default shadow but no CHANGE */
+}
+
+/* 2. Stop Button overlay (darkening/lightening) */
+.plan-btn:hover .v-btn__overlay,
+.v-btn:hover > .v-btn__overlay {
+    opacity: 0 !important;
+}
+
+/* 3. Stop Button color change */
+.plan-btn:hover {
+    background-color: transparent !important; /* If outlined, transparent. If flat, original color. */
+    /* This is tricky because flat needs color. */
+}
+
+/* Better approach for buttons: */
+.plan-btn.v-btn--variant-outlined:hover {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+.plan-btn.v-btn--variant-flat:hover {
+    /* For flat buttons (recommended), we want to keep the original background color */
+    /* Vuetify handles this via class, but hover adds overlay. 
+       Disabling overlay (above) handles the visual change mostly. 
+       But we ensure no transform/shadow change. */
+    box-shadow: none !important;
+    transform: none !important;
 }
 </style>

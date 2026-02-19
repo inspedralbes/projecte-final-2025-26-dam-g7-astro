@@ -25,7 +25,6 @@ declare module 'vue-router/auto-routes' {
     '/plans/plans': RouteRecordInfo<'/plans/plans', '/plans/plans', Record<never, never>, Record<never, never>>,
     '/profile/profile': RouteRecordInfo<'/profile/profile', '/profile/profile', Record<never, never>, Record<never, never>>,
     '/shop/shop': RouteRecordInfo<'/shop/shop', '/shop/shop', Record<never, never>, Record<never, never>>,
-    '/training/multiplayer': RouteRecordInfo<'/training/multiplayer', '/training/multiplayer', Record<never, never>, Record<never, never>>,
     '/training/singleplayer': RouteRecordInfo<'/training/singleplayer', '/training/singleplayer', Record<never, never>, Record<never, never>>,
   }
 
@@ -66,10 +65,6 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/shop/shop.vue': {
       routes: '/shop/shop'
-      views: never
-    }
-    'src/pages/training/multiplayer.vue': {
-      routes: '/training/multiplayer'
       views: never
     }
     'src/pages/training/singleplayer.vue': {
