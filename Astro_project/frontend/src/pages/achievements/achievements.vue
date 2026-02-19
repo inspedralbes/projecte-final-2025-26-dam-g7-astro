@@ -1,7 +1,7 @@
 <template>
     <v-container fluid class="pa-8">
         <div class="header mb-16 text-center">
-            <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">MEDALLAS DE HONOR</h1>
+            <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">LOGROS</h1>
             <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
             <div class="d-flex justify-center flex-wrap ga-2 mt-4">
                 <v-chip color="cyan-accent-3" variant="outlined">Partidas: {{ stats.gamesPlayed }}</v-chip>
@@ -34,13 +34,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ACHIEVEMENTS } from '@/constants/achievements'
 import Medal from '@/components/achievements/Medal.vue'
+import { useAstroStore } from '@/stores/astroStore'
+
+const astroStore = useAstroStore()
+const loading = ref(false)
+const loadError = ref(null)
+
+const stats = ref({
+    gamesPlayed: 12,
+    coins: astroStore.coins || 1000,
+    inventoryCount: 3
+})
 
 const achievements = ref(ACHIEVEMENTS.map(a => ({
     ...a,
-    unlocked: [1, 3].includes(a.id) // Mantener lógica de desbloqueo original para demo
+    unlocked: [1, 3].includes(a.id)
 })))
 </script>
 

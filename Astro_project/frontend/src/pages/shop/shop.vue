@@ -51,7 +51,10 @@
                                 </v-avatar>
                                 <div class="flex-grow-1">
                                     <div class="text-h6 font-weight-bold text-white">{{ item.name }}</div>
-                                    <div class="text-caption text-grey-lighten-2 line-clamp-1">{{ item.desc }}</div>
+                                    <div class="text-caption text-grey-lighten-2" style="line-height: 1.2;">{{ item.desc }}</div>
+                                    <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold mt-1" style="font-size: 0.65rem !important;">
+                                        {{ item.limitacio }}
+                                    </div>
                                 </div>
                                 <v-btn height="40" width="100" :color="userCoins >= item.price ? 'cyan-accent-3' : 'grey'" variant="tonal" class="font-weight-bold rounded-lg ml-2" :disabled="userCoins < item.price">
                                     {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
@@ -125,7 +128,9 @@ const lastPrize = ref(null);
 // Arrays separados para las dos secciones (puedes unirlos y filtrar con computeds)
 const basicItems = ref([
     { id: 1, name: 'Pack de Vidas', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
-    { id: 2, name: 'Congelar Racha', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' }
+    { id: 2, name: 'Congelar Racha', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
+    { id: 3, name: 'Doble de Monedas', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
+    { id: 4, name: 'Doble Puntuación', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
 ]);
 
 const premiumItems = ref([
