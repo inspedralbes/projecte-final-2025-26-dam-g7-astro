@@ -6,11 +6,11 @@
             <!-- Avatar brillante -->
             <div class="d-flex justify-center mb-4">
                 <div class="position-relative">
-                    <v-avatar size="110" class="avatar-border">
-                        <v-img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar"></v-img>
+                    <v-avatar size="90" class="avatar-border">
+                        <v-img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar}`" alt="Avatar"></v-img>
                     </v-avatar>
                     <v-btn icon="mdi-plus" size="x-small" color="cyan-accent-3" class="edit-avatar-btn" elevation="4"
-                        @click="goToInventory"></v-btn>
+                        @click="avatarDialog = true"></v-btn>
                 </div>
             </div>
 
@@ -51,10 +51,10 @@
                             <template v-slot:activator="{ props }">
                                 <v-card v-bind="props" variant="outlined" color="cyan-accent-3"
                                     class="achievement-slot d-flex align-center justify-center overflow-hidden"
-                                    @click="openSelection(i - 1)" height="80" width="100%">
+                                    @click="openSelection(i - 1)" height="110" width="100%">
                                     <Medal v-if="getAchievement(selectedAchievements[i - 1])"
                                         :type="getAchievement(selectedAchievements[i - 1]).type"
-                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.45"
+                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.55"
                                         :icon-size="48" />
                                     <v-icon v-else icon="mdi-plus" size="24" class="opacity-30"></v-icon>
                                 </v-card>
@@ -72,20 +72,24 @@
             <v-divider class="my-3 border-opacity-25"></v-divider>
 
             <!-- Botones de Acción -->
-            <div class="d-flex flex-column gap-2">
-                <v-btn block color="cyan-accent-3" size="default" rounded="xl" variant="flat" @click="goHome"
-                    class="font-weight-bold mb-1">
-                    VOLVER AL MENÚ
+            <div class="d-flex flex-column ga-4">
+                <v-btn block color="white" size="large" rounded="xl" variant="outlined" @click="goToInventory"
+                    class="font-weight-bold action-btn">
+                    VER MI INVENTARIO
                 </v-btn>
 
-                <v-btn block color="white" variant="outlined" size="default" rounded="xl" @click="changePlan"
-                    class="font-weight-bold">
+                <v-btn block color="white" size="large" rounded="xl" variant="outlined" @click="changePlan"
+                    class="font-weight-bold action-btn">
                     ACTUALIZAR PLAN
+                </v-btn>
+
+                <v-btn block color="cyan-accent-3" size="large" rounded="xl" variant="flat" @click="handleLogout"
+                    class="font-weight-bold action-btn text-black">
+                    Cerrar sesión
                 </v-btn>
             </div>
 
         </v-card>
-
         <!-- Diálogo de Selección de Logros -->
         <v-dialog v-model="selectionDialog" max-width="500">
             <v-card class="glass-popup pa-4">
@@ -117,6 +121,26 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+
+        <!-- Diálogo de Selección de Avatar -->
+        <v-dialog v-model="avatarDialog" max-width="400">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    Elegir Avatar
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="avatarDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-row class="mt-2 text-center">
+                        <v-col v-for="seed in avatarSeeds" :key="seed" cols="3" class="pa-2">
+                            <v-avatar size="60" class="avatar-option" :class="{ 'active-avatar': avatar === seed }"
+                                @click="selectAvatar(seed)">
+                                <v-img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`"></v-img>
+                            </v-avatar>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -132,10 +156,13 @@ const router = useRouter()
 const astroStore = useAstroStore()
 
 // Extraemos los datos del usuario de forma reactiva
-const { user, rank, plan, selectedAchievements } = storeToRefs(astroStore)
+const { user, rank, plan, selectedAchievements, avatar } = storeToRefs(astroStore)
 
 const selectionDialog = ref(false)
+const avatarDialog = ref(false)
 const currentSlotIndex = ref(null)
+
+const avatarSeeds = ['Felix', 'Aneka', 'Mason', 'Jocelyn', 'Spooky', 'Ginger', 'Toby', 'Pepper', 'Zoe', 'Caleb', 'Molly', 'Oliver']
 
 // Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
 const allAchievements = computed(() => {
@@ -195,8 +222,9 @@ async function selectAchievement(achievementId) {
     }
 }
 
-function goHome() {
-    router.push('/')
+function handleLogout() {
+    astroStore.logout()
+    router.push('/login')
 }
 
 function changePlan() {
@@ -206,7 +234,13 @@ function changePlan() {
 function goToInventory() {
     router.push('/inventory')
 }
+
+function selectAvatar(seed) {
+    astroStore.updateAvatar(seed)
+    avatarDialog.value = false
+}
 </script>
+
 
 <style scoped>
 /* Estilo efecto vidrio (Glassmorphism) */
@@ -285,5 +319,26 @@ function goToInventory() {
 
 .opacity-30 {
     opacity: 0.3;
+}
+
+.avatar-option {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.avatar-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.active-avatar {
+    border-color: #00e5ff !important;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.action-btn {
+    letter-spacing: 1px;
+    height: 48px !important;
 }
 </style>

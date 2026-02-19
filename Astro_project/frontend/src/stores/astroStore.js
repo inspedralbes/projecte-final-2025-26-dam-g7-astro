@@ -8,6 +8,7 @@ export const useAstroStore = defineStore('astro', {
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
+        avatar: localStorage.getItem('astro_avatar') || 'Felix', // Seed por defecto
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -231,7 +232,14 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_rank');
             localStorage.removeItem('astro_plan');
             localStorage.removeItem('astro_selected_achievements');
+            localStorage.removeItem('astro_avatar');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
+        },
+
+        updateAvatar(seed) {
+            this.avatar = seed;
+            localStorage.setItem('astro_avatar', seed);
+            console.log("👤 Avatar actualizado localmente:", seed);
         },
 
         async updateAchievements(achievements) {

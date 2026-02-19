@@ -1,39 +1,37 @@
 <template>
-    <v-container fluid class="pa-8">
-        <div class="header mb-16 text-center">
-            <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">LOGROS</h1>
-            <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
-            <div class="d-flex justify-center flex-wrap ga-2 mt-4">
-                <v-chip color="cyan-accent-3" variant="outlined">Partidas: {{ stats.gamesPlayed }}</v-chip>
-                <v-chip color="amber-accent-3" variant="outlined">Monedas: {{ stats.coins }}</v-chip>
-                <v-chip color="green-accent-3" variant="outlined">Inventario: {{ stats.inventoryCount }}</v-chip>
+    <div class="scroll-container">
+        <v-container fluid class="pa-8">
+            <div class="header mb-16 text-center">
+                <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">LOGROS</h1>
+                <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
             </div>
-        </div>
 
-        <v-alert v-if="loadError" type="warning" variant="tonal" class="mb-8">
-            {{ loadError }}
-        </v-alert>
+            <v-alert v-if="loadError" type="warning" variant="tonal" class="mb-8">
+                {{ loadError }}
+            </v-alert>
 
-        <div v-if="loading" class="d-flex justify-center mb-8">
-            <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
-        </div>
+            <div v-if="loading" class="d-flex justify-center mb-8">
+                <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
+            </div>
 
-        <v-row class="mt-8">
-            <v-col v-for="achievement in achievements" :key="achievement.id" cols="12" sm="6" md="4" lg="3"
-                class="d-flex justify-center flex-column align-center">
-                <Medal :type="achievement.type" :icon="achievement.icon" :locked="!achievement.unlocked" />
+            <v-row class="mt-8 pb-16">
+                <v-col v-for="achievement in achievements" :key="achievement.id" cols="12" sm="6" md="4" lg="3"
+                    class="d-flex justify-center flex-column align-center mb-10">
+                    <Medal :type="achievement.type" :icon="achievement.icon" :locked="!achievement.unlocked" />
 
-                <!-- Medal Info -->
-                <div class="medal-info text-center mt-4">
-                    <h3 class="text-h6 font-weight-bold text-white mb-1">{{ achievement.title }}</h3>
-                    <p class="text-caption text-grey-lighten-1">{{ achievement.description }}</p>
-                </div>
-            </v-col>
-        </v-row>
-    </v-container>
+                    <!-- Medal Info -->
+                    <div class="medal-info text-center mt-2">
+                        <h3 class="text-h6 font-weight-bold text-white mb-1">{{ achievement.title }}</h3>
+                        <p class="text-caption text-grey-lighten-1">{{ achievement.description }}</p>
+                    </div>
+                </v-col>
+            </v-row>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
+// EASTER EGG: NIL TONTO TONTO NIGGA
 import { ref, onMounted } from 'vue'
 import { ACHIEVEMENTS } from '@/constants/achievements'
 import Medal from '@/components/achievements/Medal.vue'
@@ -56,6 +54,12 @@ const achievements = ref(ACHIEVEMENTS.map(a => ({
 </script>
 
 <style scoped>
+.scroll-container {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+}
+
 .tracking-wide {
     letter-spacing: 0.15em;
     background: linear-gradient(to right, #00e5ff, #2979ff);
