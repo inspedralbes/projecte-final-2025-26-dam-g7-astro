@@ -19,7 +19,7 @@
                 </v-btn>
 
                 <v-btn to="/" color="grey-lighten-1" variant="text" rounded="xl">
-                    Tornar al Pont de Comandament
+                    Tornar al Inici
                 </v-btn>
             </div>
         </div>
