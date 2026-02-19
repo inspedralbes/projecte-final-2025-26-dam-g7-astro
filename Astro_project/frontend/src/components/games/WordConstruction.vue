@@ -99,9 +99,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import draggable from 'vuedraggable';
+import { useAstroStore } from '@/stores/astroStore';
 
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
+const astroStore = useAstroStore();
 
 // Luego lo podemos conectar a la base de datos
 const words = Object.freeze([
@@ -208,6 +210,7 @@ const message = ref('');
 const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
+const gameSaved = ref(false);
 
 // Gamificació: Progrés de construcció
 const currentStep = ref(0);
@@ -282,9 +285,18 @@ const checkAnswer = () => {
   }
 };
 
-const finishGame = () => {
+const finishGame = async () => {
+  if (gameFinished.value) return;
+
   gameFinished.value = true;
-  // Opcional: Enviar puntuació a la store/backend aquí
+
+  if (!astroStore.user || gameSaved.value) return;
+  gameSaved.value = true;
+
+  const result = await astroStore.registerCompletedGame('WordConstruction', score.value);
+  if (!result.success) {
+    console.error("No s'ha pogut registrar la partida:", result.message);
+  }
 };
 
 const emitExit = () => {

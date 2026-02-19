@@ -6,7 +6,8 @@ export const useAstroStore = defineStore('astro', {
         user: null,
         plan: null,
         rank: null,
-        coins: 0, // <--- AÑADE ESTO
+        coins: 0,
+        partides: 0,
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -65,6 +66,7 @@ export const useAstroStore = defineStore('astro', {
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
                 this.coins = data.profile.coins;
+                this.partides = data.profile.gamesPlayed || 0;
                 this.token = data.token;
 
                 localStorage.setItem('astro_token', data.token);
@@ -74,6 +76,91 @@ export const useAstroStore = defineStore('astro', {
 
             } catch (error) {
                 console.error("❌ Error en login:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async fetchUserStats() {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay una sesión activa." };
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/stats`);
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+
+                if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
+
+                this.coins = data.coins !== undefined ? data.coins : this.coins;
+                this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
+
+                return { success: true, stats: data };
+            } catch (error) {
+                console.error("❌ Error obteniendo estadísticas:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async fetchUserBalance() {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay una sesión activa." };
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/shop/balance/${encodeURIComponent(this.user)}`);
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+
+                if (!response.ok) throw new Error(data.message || "No se pudo obtener el saldo.");
+
+                this.coins = data.coins !== undefined ? data.coins : this.coins;
+                this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
+
+                return { success: true, balance: data };
+            } catch (error) {
+                console.error("❌ Error obteniendo saldo:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async registerCompletedGame(game, score = 0) {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay una sesión activa." };
+            }
+
+            if (!game) {
+                return { success: false, message: "Nombre de juego inválido." };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/games/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        game,
+                        score
+                    })
+                });
+
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+
+                if (!response.ok) throw new Error(data.message || "No se pudo registrar la partida.");
+
+                this.coins = data.newBalance !== undefined ? data.newBalance : this.coins;
+                this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
+
+                return { success: true, data };
+            } catch (error) {
+                console.error("❌ Error registrando partida:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
             }
