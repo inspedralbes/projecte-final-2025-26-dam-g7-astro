@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+# Vite por defecto usa el 5173. 
+# El flag --host es necesario para que Docker pueda exponer el puerto
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host"]

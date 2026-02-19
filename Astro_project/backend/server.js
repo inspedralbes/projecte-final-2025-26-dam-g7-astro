@@ -71,7 +71,7 @@ async function getUserStats(username) {
 
     return {
         user: userDoc.user,
-        plan: userDoc.plan || 'INDIVIDUAL',
+        plan: userDoc.plan || 'INDIVIDUAL_FREE',
         rank: userDoc.rank || 'Cadete de Vuelo',
         coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
         inventoryCount: Array.isArray(userDoc.inventory) ? userDoc.inventory.length : 0,
@@ -79,6 +79,96 @@ async function getUserStats(username) {
         gamesByType
     };
 }
+
+// --- ESTADÍSTICAS Y PARTIDAS ---
+
+app.get('/api/users/:username/stats', async (req, res) => {
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ message: "Usuario requerido." });
+    }
+
+    try {
+        const stats = await getUserStats(username);
+        if (!stats) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error("Error obteniendo estadísticas:", error);
+        res.status(500).json({ message: "No se pudieron obtener las estadísticas." });
+    }
+});
+
+app.get('/api/shop/balance/:username', async (req, res) => {
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ message: "Usuario requerido." });
+    }
+
+    try {
+        const stats = await getUserStats(username);
+        if (!stats) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        res.json({
+            user: stats.user,
+            coins: stats.coins,
+            gamesPlayed: stats.gamesPlayed
+        });
+    } catch (error) {
+        console.error("Error obteniendo saldo:", error);
+        res.status(500).json({ message: "No se pudo obtener el saldo." });
+    }
+});
+
+app.post('/api/games/complete', async (req, res) => {
+    const { user, game, score = 0 } = req.body;
+
+    if (!user || !game) {
+        return res.status(400).json({ message: "Usuario y juego son requeridos." });
+    }
+
+    try {
+        const { users, partides } = getCollections();
+        const currentUser = await users.findOne({ user });
+        if (!currentUser) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        const parsedScore = Number.parseInt(score, 10);
+        const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
+        const coinsEarned = Math.max(20, Math.floor(normalizedScore / 10));
+        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
+        const newBalance = currentCoins + coinsEarned;
+
+        await Promise.all([
+            partides.insertOne({
+                user,
+                game,
+                score: normalizedScore,
+                coinsEarned,
+                createdAt: new Date()
+            }),
+            users.updateOne({ user }, { $set: { coins: newBalance } })
+        ]);
+
+        const gamesPlayed = await partides.countDocuments({ user });
+
+        res.json({
+            success: true,
+            message: "Partida registrada correctamente.",
+            coinsEarned,
+            newBalance,
+            gamesPlayed
+        });
+    } catch (error) {
+        console.error("Error registrando partida:", error);
+        res.status(500).json({ message: "No se pudo registrar la partida." });
+    }
+});
 
 // --- LÓGICA DE USUARIOS ---
 
@@ -100,7 +190,7 @@ app.post('/api/auth/register', async (req, res) => {
             user: username,
             pass: password,
             rank: rank || "Cadete de Vuelo",
-            plan: "INDIVIDUAL",
+            plan: "INDIVIDUAL_FREE",
             coins: 1000,
             inventory: [],
             createdAt: new Date()
@@ -132,7 +222,7 @@ app.post('/api/auth/login', async (req, res) => {
                 token: "session_token_" + Math.random().toString(36).substr(2),
                 profile: {
                     name: foundUser.user,
-                    plan: foundUser.plan || "INDIVIDUAL",
+                    plan: foundUser.plan || "INDIVIDUAL_FREE",
                     rank: foundUser.rank || "Cadete de Vuelo",
                     coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
                     selectedAchievements: foundUser.selectedAchievements || [null, null, null]
@@ -215,6 +305,30 @@ app.put('/api/user/achievements', async (req, res) => {
 
     } catch (error) {
         console.error("Error al actualizar logros:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+});
+
+// --- ENDPOINT DE PLAN ---
+app.put('/api/user/plan', async (req, res) => {
+    const { user, plan } = req.body;
+    console.log(`🌌 Actualizando plan para: ${user} -> ${plan}`);
+
+    if (!user || !plan) return res.status(400).json({ success: false, message: "Usuario y plan requeridos" });
+
+    try {
+        const db = getDB();
+        const usersCol = db.collection('users');
+
+        await usersCol.updateOne(
+            { user: user },
+            { $set: { plan: plan } }
+        );
+
+        res.json({ success: true, message: "Plan actualizado correctamente" });
+
+    } catch (error) {
+        console.error("Error al actualizar plan:", error);
         res.status(500).json({ message: "Error interno del servidor" });
     }
 });
