@@ -140,7 +140,7 @@ app.post('/api/games/complete', async (req, res) => {
 
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-        const coinsEarned = Math.max(20, Math.floor(normalizedScore / 10));
+        const coinsEarned = Math.floor(normalizedScore / 10);
         const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
         const newBalance = currentCoins + coinsEarned;
 

@@ -34,38 +34,66 @@
 </template>
 
 <script setup>
-import { ref, shallowRef } from 'vue';
+import { shallowRef } from 'vue';
+import { useAstroStore } from '@/stores/astroStore'; // Importamos el store
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import RadarScan from '@/components/games/RadarScan.vue'; // <-- 1. Importem el nou joc
+import RadarScan from '@/components/games/RadarScan.vue'; 
 
-// 2. Afegim el joc a la llista d'opcions
+const astroStore = useAstroStore(); // Instanciamos la única fuente de verdad
+
 const gamesList = [
     WordConstruction,
     SpelledRosco,
-    RadarScan // <-- 3. Afegit a l'array
+    RadarScan 
 ];
 
 const activeGameComponent = shallowRef(null);
 
-// 3. Funció per triar un joc aleatori
 const startRandomGame = () => {
     const randomIndex = Math.floor(Math.random() * gamesList.length);
     activeGameComponent.value = gamesList[randomIndex];
 };
 
-// 4. Gestionar el final del joc
-const handleGameOver = (finalScore) => {
+const handleGameOver = async (finalScore) => {
     console.log(`Missió finalitzada. Puntuació: ${finalScore}`);
     
-    // Aquí podries cridar a l'store per guardar la puntuació al backend via WebSocket
-    // const astroStore = useAstroStore();
-    // astroStore.sendScore(finalScore);
+    // Si hay un usuario logueado, enviamos la puntuación al servidor
+    if (astroStore.user) {
+        try {
+            const response = await fetch('http://localhost:3000/api/games/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    user: astroStore.user, 
+                    game: activeGameComponent.value.__name || 'Minijuego',
+                    score: finalScore 
+                })
+            });
 
-    activeGameComponent.value = null; // Tanca el joc i torna al menú
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "Error al registrar la partida");
+            }
+
+            // ACTUALIZAMOS LA FUENTE DE VERDAD: Esto hará que tu RightSidebar 
+            // y tu Tienda se actualicen visualmente al instante gracias a la reactividad.
+            astroStore.coins = data.newBalance;
+            
+            console.log(`Has ganado ${data.coinsEarned} monedas. Nuevo saldo: ${data.newBalance}`);
+
+        } catch (error) {
+            console.error("❌ Error de comunicación con la base de datos:", error);
+        }
+    } else {
+        console.warn("No hay usuario logueado. La puntuación no se ha guardado.");
+    }
+
+    // Cerramos el juego y volvemos al menú
+    activeGameComponent.value = null; 
 };
-
 </script>
 
 <style scoped>
