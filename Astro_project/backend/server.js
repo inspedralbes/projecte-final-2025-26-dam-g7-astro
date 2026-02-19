@@ -21,7 +21,6 @@ const WHEEL_ITEMS = [
     { id: 3, label: 'Monedas', icon: 'mdi-currency-usd', color: '#FFC107', weight: 30 },
     { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 }
 ];
-const GAME_COMPLETION_REWARD = 100;
 let indexesReady = false;
 
 function getCollections() {
@@ -243,19 +242,20 @@ app.post('/api/games/complete', async (req, res) => {
         }
 
         const safeScore = Number.isFinite(Number(score)) ? Number(score) : 0;
+        const rewardCoins = Math.max(0, Math.floor(safeScore / 10));
 
         await partides.insertOne({
             user,
             game,
             score: safeScore,
             completed: true,
-            rewardCoins: GAME_COMPLETION_REWARD,
+            rewardCoins,
             createdAt: new Date()
         });
 
         await users.updateOne(
             { user },
-            { $inc: { coins: GAME_COMPLETION_REWARD } }
+            { $inc: { coins: rewardCoins } }
         );
 
         const userStats = await getUserStats(user);
@@ -263,7 +263,7 @@ app.post('/api/games/complete', async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Partida registrada correctamente.",
-            rewardCoins: GAME_COMPLETION_REWARD,
+            rewardCoins,
             gamesPlayed: userStats?.gamesPlayed || 0,
             newBalance: userStats?.coins !== undefined ? userStats.coins : 0
         });
