@@ -8,7 +8,8 @@ export const useAstroStore = defineStore('astro', {
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
-        avatar: localStorage.getItem('astro_avatar') || 'Felix', // Seed por defecto
+        avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
+        mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -233,6 +234,7 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_plan');
             localStorage.removeItem('astro_selected_achievements');
             localStorage.removeItem('astro_avatar');
+            localStorage.removeItem('astro_mascot');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
         },
 
@@ -240,6 +242,12 @@ export const useAstroStore = defineStore('astro', {
             this.avatar = seed;
             localStorage.setItem('astro_avatar', seed);
             console.log("👤 Avatar actualizado localmente:", seed);
+        },
+
+        updateMascot(mascotFile) {
+            this.mascot = mascotFile;
+            localStorage.setItem('astro_mascot', mascotFile);
+            console.log("🐾 Mascota actualizada localmente:", mascotFile);
         },
 
         async updateAchievements(achievements) {

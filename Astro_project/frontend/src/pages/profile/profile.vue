@@ -1,94 +1,121 @@
 <template>
     <v-container class="fill-height d-flex justify-center align-center">
-        <!-- Usamos un estilo 'glass' (vidrio) para que se vea moderno pero el código es simple -->
-        <v-card width="500" class="glass-card text-center pa-4" elevation="0">
-
-            <!-- Avatar brillante -->
-            <div class="d-flex justify-center mb-4">
-                <div class="position-relative">
-                    <v-avatar size="90" class="avatar-border">
-                        <v-img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar}`" alt="Avatar"></v-img>
-                    </v-avatar>
-                    <v-btn icon="mdi-plus" size="x-small" color="cyan-accent-3" class="edit-avatar-btn" elevation="4"
-                        @click="avatarDialog = true"></v-btn>
-                </div>
+        <v-card width="620" class="profile-card" elevation="24">
+            
+            <!-- BANNER SUPERIOR (LinkedIn Style) -->
+            <div class="banner-section">
+                <v-img src="/fondo3.jpg" cover height="180" class="banner-image">
+                    <template v-slot:placeholder>
+                        <div class="d-flex align-center justify-center fill-height">
+                            <v-progress-circular indeterminate color="cyan"></v-progress-circular>
+                        </div>
+                    </template>
+                </v-img>
             </div>
 
-            <!-- Nombre y Rango -->
-            <h1 class="text-h4 font-weight-bold text-white mb-2">
-                {{ user || 'Tripulante Desconocido' }}
-            </h1>
-
-            <v-chip color="cyan-accent-3" variant="outlined" class="mb-4">
-                {{ rank || 'Cadete de Vuelo' }}
-            </v-chip>
-
-            <v-row class="mb-2">
-                <v-col cols="3">
-                    <div class="text-h5 font-weight-bold text-cyan-accent-3">1</div>
-                    <div class="text-caption text-grey">Nivel</div>
-                </v-col>
-                <v-col cols="6">
-                    <div class="text-h5 font-weight-bold text-white">
-                        {{ plan || 'S/N' }}
+            <!-- CONTENIDO DE CABECERA (Overlap) -->
+            <div class="profile-header-wrap px-8">
+                <div class="avatar-overlap-container">
+                    <!-- Avatar Principal -->
+                    <div class="main-avatar-box">
+                        <v-avatar size="180" class="avatar-circle">
+                            <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
+                        </v-avatar>
+                        <v-btn icon="mdi-camera" size="small" color="cyan-accent-3" class="btn-edit-avatar" elevation="4"
+                            @click="avatarDialog = true"></v-btn>
                     </div>
-                    <div class="text-caption text-grey">Plan de Vuelo</div>
-                </v-col>
-                <v-col cols="3">
-                    <v-icon :color="user ? 'green' : 'red'" icon="mdi-circle-small"></v-icon>
-                    <div class="text-caption text-grey">{{ user ? 'Online' : 'Offline' }}</div>
-                </v-col>
-            </v-row>
 
-            <v-divider class="my-2 border-opacity-25"></v-divider>
+                    <!-- Mascota Integrada -->
+                    <div class="mascot-overlap-box">
+                        <v-avatar v-if="mascot" size="85" class="mascot-badge-big" @click="mascotDialog = true">
+                            <v-img :src="`/${mascot}`" cover></v-img>
+                        </v-avatar>
+                        <v-btn v-else icon="mdi-paw-plus" size="large" color="purple-accent-1" class="btn-add-mascot" @click="mascotDialog = true"></v-btn>
+                    </div>
+                </div>
 
-            <h3 class="text-subtitle-1 font-weight-bold text-cyan-accent-1 mb-2">LOGROS SELECCIONADOS</h3>
-
-            <v-row class="mb-6 justify-center">
-                <v-col v-for="i in 3" :key="i" cols="4" class="pa-1">
-                    <div class="d-flex flex-column align-center">
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ props }">
-                                <v-card v-bind="props" variant="outlined" color="cyan-accent-3"
-                                    class="achievement-slot d-flex align-center justify-center overflow-hidden"
-                                    @click="openSelection(i - 1)" height="110" width="100%">
-                                    <Medal v-if="getAchievement(selectedAchievements[i - 1])"
-                                        :type="getAchievement(selectedAchievements[i - 1]).type"
-                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.55"
-                                        :icon-size="48" />
-                                    <v-icon v-else icon="mdi-plus" size="24" class="opacity-30"></v-icon>
-                                </v-card>
-                            </template>
-                            <span>{{ getAchievement(selectedAchievements[i - 1])?.title || 'Elegir Logro' }}</span>
-                        </v-tooltip>
-                        <div class="text-caption text-white text-truncate w-100 px-1 mt-2"
-                            style="max-width: 100px; line-height: 1.2;">
-                            {{ getAchievement(selectedAchievements[i - 1])?.title || 'Vacío' }}
+                <!-- Datos del Usuario -->
+                <div class="user-info-section text-left mt-4">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <h1 class="text-h3 font-weight-black text-white mb-0 capitalize">
+                                {{ user || 'Explorador' }}
+                            </h1>
+                            <div class="d-flex align-center ga-2 mt-1">
+                                <v-chip color="cyan-accent-3" size="small" variant="flat" class="text-black font-weight-bold">
+                                    {{ rank || 'Cadete Estelar' }}
+                                </v-chip>
+                                <span class="text-grey-lighten-1 text-body-2">• Nivel 1</span>
+                                <div class="d-flex align-center ga-1 ml-2">
+                                    <div class="status-dot-large" :class="user ? 'online' : 'offline'"></div>
+                                    <span class="text-caption text-grey">{{ user ? 'En órbita' : 'En base' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-h4 font-weight-bold text-white mb-n1">0</div>
+                            <div class="text-caption text-grey">Créditos</div>
                         </div>
                     </div>
-                </v-col>
-            </v-row>
+                </div>
 
-            <v-divider class="my-3 border-opacity-25"></v-divider>
+                <v-divider class="my-6 border-opacity-10"></v-divider>
 
-            <!-- Botones de Acción -->
-            <div class="d-flex flex-column ga-4">
-                <v-btn block color="white" size="large" rounded="xl" variant="outlined" @click="goToInventory"
-                    class="font-weight-bold action-btn">
-                    VER MI INVENTARIO
-                </v-btn>
+                <!-- Plan y Estadísticas Rápidas -->
+                <div class="quick-stats d-flex justify-space-between mb-8">
+                    <div class="stat-card">
+                        <span class="label">PLAN ACTUAL</span>
+                        <span class="value text-cyan-accent-3">{{ plan || 'INDIVIDUAL_FREE' }}</span>
+                    </div>
+                    <div class="stat-card text-center">
+                        <span class="label">MISIÓN</span>
+                        <span class="value">EXPLORACIÓN</span>
+                    </div>
+                    <div class="stat-card text-right">
+                        <span class="label">SISTEMA</span>
+                        <span class="value">ASTRO-V1</span>
+                    </div>
+                </div>
 
-                <v-btn block color="white" size="large" rounded="xl" variant="outlined" @click="changePlan"
-                    class="font-weight-bold action-btn">
-                    ACTUALIZAR PLAN
-                </v-btn>
+                <!-- Logros Seleccionados -->
+                <div class="achievements-section mb-8">
+                    <div class="d-flex align-center justify-space-between mb-4">
+                        <h3 class="text-overline font-weight-black text-grey-lighten-1">CONDECORACIONES ACTIVAS</h3>
+                        <span class="text-caption text-cyan-accent-3 cursor-pointer" @click="goToInventory">Gestionar</span>
+                    </div>
+                    <v-row dense>
+                        <v-col v-for="i in 3" :key="i" cols="4">
+                            <v-card variant="flat" color="#1a1d26" class="achievement-display-box"
+                                @click="openSelection(i - 1)" height="120">
+                                <Medal v-if="getAchievement(selectedAchievements[i - 1])"
+                                    :type="getAchievement(selectedAchievements[i - 1]).type"
+                                    :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.65"
+                                    :icon-size="48" />
+                                <v-icon v-else icon="mdi-plus" color="grey-darken-3" size="36"></v-icon>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </div>
 
-                <v-btn block color="cyan-accent-3" size="large" rounded="xl" variant="flat" @click="handleLogout"
-                    class="font-weight-bold action-btn text-black">
-                    Cerrar sesión
-                </v-btn>
+                <!-- Botonera Final -->
+                <div class="actions-grid ga-3 mb-8">
+                    <v-row dense>
+                        <v-col cols="6">
+                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="goToInventory" class="font-weight-bold">
+                                INVENTARIO
+                            </v-btn>
+                        </v-col>
+                        <v-col cols="6">
+                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="changePlan" class="font-weight-bold">
+                                CAMBIAR PLAN
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+                    <v-btn block color="#c62828" height="48" rounded="lg" @click="handleLogout" class="font-weight-bold mt-2">
+                        ABORTAR MISIÓN Y SALIR
+                    </v-btn>
+                </div>
             </div>
-
         </v-card>
         <!-- Diálogo de Selección de Logros -->
         <v-dialog v-model="selectionDialog" max-width="500">
@@ -123,19 +150,47 @@
         </v-dialog>
 
         <!-- Diálogo de Selección de Avatar -->
-        <v-dialog v-model="avatarDialog" max-width="400">
+        <v-dialog v-model="avatarDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    Elegir Avatar
+                    Traje de Astronauta
                     <v-btn icon="mdi-close" variant="text" color="white" @click="avatarDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
                     <v-row class="mt-2 text-center">
-                        <v-col v-for="seed in avatarSeeds" :key="seed" cols="3" class="pa-2">
-                            <v-avatar size="60" class="avatar-option" :class="{ 'active-avatar': avatar === seed }"
-                                @click="selectAvatar(seed)">
-                                <v-img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`"></v-img>
+                        <v-col v-for="opt in avatarOptions" :key="opt.file" cols="4" sm="3" class="pa-2">
+                            <v-avatar size="70" class="avatar-option" :class="{ 'active-avatar': avatar === opt.file }"
+                                @click="selectAvatar(opt.file)">
+                                <v-img :src="`/${opt.file}`"></v-img>
                             </v-avatar>
+                            <div class="text-caption text-grey-lighten-1 mt-1">{{ opt.label }}</div>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
+        <!-- Diálogo de Selección de Mascota -->
+        <v-dialog v-model="mascotDialog" max-width="500">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    Compañero de Misión
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="mascotDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-row class="mt-2 text-center">
+                        <v-col v-for="m in mascotOptions" :key="m.file" cols="4" sm="3" class="pa-2">
+                            <v-avatar size="70" class="avatar-option" :class="{ 'active-avatar': mascot === m.file }"
+                                @click="selectMascot(m.file)">
+                                <v-img :src="`/${m.file}`"></v-img>
+                            </v-avatar>
+                            <div class="text-caption text-grey-lighten-1 mt-1">{{ m.label }}</div>
+                        </v-col>
+                        <v-col cols="4" sm="3" class="pa-2">
+                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center" @click="selectMascot(null)" style="border: 1px dashed rgba(255,255,255,0.3)">
+                                <v-icon color="grey">mdi-close</v-icon>
+                            </v-avatar>
+                            <div class="text-caption text-grey-lighten-1 mt-1">Ninguno</div>
                         </v-col>
                     </v-row>
                 </v-card-text>
@@ -155,14 +210,30 @@ import Medal from '@/components/achievements/Medal.vue'
 const router = useRouter()
 const astroStore = useAstroStore()
 
-// Extraemos los datos del usuario de forma reactiva
-const { user, rank, plan, selectedAchievements, avatar } = storeToRefs(astroStore)
-
 const selectionDialog = ref(false)
 const avatarDialog = ref(false)
+const mascotDialog = ref(false)
 const currentSlotIndex = ref(null)
 
-const avatarSeeds = ['Felix', 'Aneka', 'Mason', 'Jocelyn', 'Spooky', 'Ginger', 'Toby', 'Pepper', 'Zoe', 'Caleb', 'Molly', 'Oliver']
+const avatarOptions = [
+    { label: 'Blanc', file: 'Astronauta_blanc.jpg' },
+    { label: 'Groc', file: 'Astronauta_groc.jpg' },
+    { label: 'Lila', file: 'Astronauta_lila.jpg' },
+    { label: 'Negre', file: 'Astronauta_negre.jpg' },
+    { label: 'Taronja', file: 'Astronauta_taronja.jpg' },
+    { label: 'Verd', file: 'Astronauta_verd.jpg' },
+    { label: 'Vermell', file: 'Astronauta_vermell.jpg' }
+]
+
+const mascotOptions = [
+    { label: 'Balena', file: 'Balena_alien.jpg' },
+    { label: 'Alien', file: 'Mascota_alien2.jpg' },
+    { label: 'Dron', file: 'Mascota_dron.jpg' },
+    { label: 'Pop', file: 'Pop_alien.jpg' }
+]
+
+// Extraemos los datos del usuario de forma reactiva
+const { user, rank, plan, selectedAchievements, avatar, mascot } = storeToRefs(astroStore)
 
 // Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
 const allAchievements = computed(() => {
@@ -235,90 +306,187 @@ function goToInventory() {
     router.push('/inventory')
 }
 
-function selectAvatar(seed) {
-    astroStore.updateAvatar(seed)
+function selectAvatar(file) {
+    astroStore.updateAvatar(file)
     avatarDialog.value = false
+}
+
+function selectMascot(file) {
+    astroStore.updateMascot(file)
+    mascotDialog.value = false
 }
 </script>
 
 
 <style scoped>
-/* Estilo efecto vidrio (Glassmorphism) */
-.glass-card {
-    background: rgba(255, 255, 255, 0.05) !important;
-    /* Fondo semi-transparente */
-    backdrop-filter: blur(10px);
-    /* Desenfoque del fondo */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    /* Borde sutil */
-    border-radius: 24px;
-    /* Bordes redondeados */
+/* Estilo Base */
+.fill-height {
+    background: url('/fondo1.jpg') center center / cover no-repeat fixed !important;
 }
 
-/* Glass Popup sync with missions */
-.glass-popup {
-    background: rgba(15, 15, 25, 0.9) !important;
-    backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5) !important;
+/* Tarjeta Principal (Sólida, no Glassmorphism) */
+.profile-card {
+    background: #0d0f14 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    overflow: hidden;
 }
 
-/* Borde brillante para el avatar */
-.avatar-border {
-    border: 3px solid #00e5ff;
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-    /* Resplandor */
+/* Banner superior */
+.banner-section {
+    position: relative;
+    background: #1a1d26;
 }
 
-.achievement-slot {
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+.banner-image {
+    filter: brightness(0.7);
 }
 
-.achievement-slot:hover {
-    background: rgba(0, 229, 255, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+/* Contenedor de Avatar con Overlap */
+.profile-header-wrap {
+    position: relative;
+    z-index: 1;
 }
 
-.achievement-list-item {
-    border-radius: 8px;
-    transition: background 0.2s;
+.avatar-overlap-container {
+    position: relative;
+    margin-top: -70px; /* LinkedIn Style Overlap */
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
 }
 
-.achievement-list-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.achievement-list-item.selected {
-    background: rgba(0, 229, 255, 0.2);
-    border: 1px solid rgba(0, 229, 255, 0.5);
-}
-
-.locked-item {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.position-relative {
+.main-avatar-box {
     position: relative;
 }
 
-.edit-avatar-btn {
-    position: absolute;
-    bottom: 0;
-    right: 5px;
-    border: 3px solid #0f0f19 !important;
-    color: #0f0f19 !important;
-    width: 32px !important;
-    height: 32px !important;
+.avatar-circle {
+    border: 6px solid #0d0f14;
+    background: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.opacity-30 {
-    opacity: 0.3;
+.avatar-circle :deep(.v-img__img) {
+    border-radius: 50%;
+    transform: scale(1.4);
+    transform-origin: center center;
+    object-position: center center;
+}
+
+.btn-edit-avatar {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    border: 4px solid #0d0f14 !important;
+    z-index: 2;
+}
+
+/* Mascota Integrada en la Cabecera */
+.mascot-overlap-box {
+    margin-bottom: 5px;
+}
+
+.mascot-badge-big {
+    border: 5px solid #0d0f14;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.mascot-badge-big :deep(.v-img__img) {
+    border-radius: 50%;
+    transform: scale(1.4);
+    transform-origin: center center;
+    object-position: center center;
+}
+
+.mascot-badge-big:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.btn-add-mascot {
+    border: 3px solid #0d0f14 !important;
+}
+
+/* Datos de Usuario */
+.capitalize {
+    text-transform: capitalize;
+}
+
+.status-dot-large {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-dot-large.online { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+.status-dot-large.offline { background: #f44336; }
+
+/* Tarjetas de Estadísticas */
+.quick-stats {
+    gap: 10px;
+}
+
+.stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-card .label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #616161;
+    letter-spacing: 1px;
+}
+
+.stat-card .value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e0e0e0;
+}
+
+/* Logros */
+.achievement-display-box {
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.achievement-display-box:hover {
+    background: #242835 !important;
+    border-color: rgba(0, 229, 255, 0.3);
+    transform: translateY(-4px);
+}
+
+/* Diálogos (Sí mantenemos un poco de glass para los popups) */
+.glass-popup {
+    background: rgba(15, 17, 23, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+}
+
+.achievement-list-item {
+    border-radius: 12px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.02);
+}
+
+.achievement-list-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.achievement-list-item.selected {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
 }
 
 .avatar-option {
@@ -329,16 +497,16 @@ function selectAvatar(seed) {
 
 .avatar-option:hover {
     transform: scale(1.1);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: #00e5ff;
 }
 
 .active-avatar {
     border-color: #00e5ff !important;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
 }
 
-.action-btn {
-    letter-spacing: 1px;
-    height: 48px !important;
+.locked-item {
+    opacity: 0.4;
+    filter: grayscale(1);
 }
 </style>
