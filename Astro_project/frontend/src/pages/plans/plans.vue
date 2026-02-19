@@ -44,11 +44,12 @@
                         </p>
 
                         <v-btn
-                            block
                             :color="plan.color"
                             :variant="plan.recommended ? 'flat' : 'outlined'"
                             class="plan-btn mt-auto font-weight-bold"
                             rounded="lg"
+                            height="48"
+                            min-width="200"
                             @click="selectPlan(plan.id)"
                         >
                             {{ (plan.id === 'INDIVIDUAL' && astroStore.plan?.startsWith('INDIVIDUAL')) || (plan.id === 'GRUPAL' && astroStore.plan === 'GRUPAL') ? 'GESTIONAR' : 'SELECCIONAR' }}
@@ -104,7 +105,7 @@
                         <p class="text-body-1 text-grey-lighten-2 mt-2">
                             Exploración básica. <br> Sin acceso a telemetría avanzada.
                         </p>
-                        <v-btn block color="cyan-accent-3" variant="outlined" class="mt-6" rounded="lg">
+                        <v-btn color="cyan-accent-3" variant="outlined" class="mt-6" rounded="lg" height="48" min-width="180">
                             {{ astroStore.plan === 'INDIVIDUAL_FREE' ? 'PLAN ACTUAL' : 'SELECCIONAR' }}
                         </v-btn>
                     </v-card>
@@ -131,7 +132,7 @@
                         <p class="text-body-1 text-grey-lighten-2 mt-2">
                             Acceso Total. <br> Estadísticas, rendimiento y soporte Élite.
                         </p>
-                        <v-btn block color="orange-accent-3" :variant="astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'tonal' : 'flat'" class="mt-6 font-weight-bold" rounded="lg">
+                        <v-btn color="orange-accent-3" :variant="astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'tonal' : 'flat'" class="mt-6 font-weight-bold" rounded="lg" height="48" min-width="180">
                             {{ astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'PLAN ACTUAL' : 'DESBLOQUEAR' }}
                         </v-btn>
                     </v-card>
@@ -270,12 +271,12 @@
                 </v-row>
 
                 <v-btn
-                    block
-                    height="64"
+                    height="54"
+                    min-width="280"
                     color="purple-accent-2"
                     @click="login"
                     :disabled="!user || !password"
-                    class="mb-6 font-weight-bold glow-btn-secondary text-h6"
+                    class="mb-6 font-weight-bold glow-btn-secondary text-h6 mx-auto"
                     rounded="lg"
                 >
                     <v-icon start class="mr-2">mdi-connection</v-icon>
@@ -356,12 +357,12 @@
                 </v-row>
 
                 <v-btn
-                    block
-                    height="64"
+                    height="54"
+                    min-width="280"
                     color="green-accent-3"
                     @click="createGroup"
                     :disabled="!newGroupName || !newGroupPassword || newGroupPassword !== newGroupPasswordConfirm"
-                    class="mb-6 font-weight-bold glow-btn-success text-h6 text-black"
+                    class="mb-6 font-weight-bold glow-btn-success text-h6 text-black mx-auto"
                     rounded="lg"
                 >
                     <v-icon start class="mr-2">mdi-check-decagram</v-icon>
