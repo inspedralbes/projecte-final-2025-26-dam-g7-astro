@@ -6,12 +6,17 @@
       <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
     </div>
 
-    <div class="board d-flex flex-wrap justify-center align-center" :style="{ width: boardSize + 'px' }">
+    <div 
+      class="board d-flex flex-wrap justify-center align-center" 
+      :style="{ width: boardSize + 'px' }"
+      :class="{ 'board-transitioning': isTransitioning && !correctClicked }"
+    >
       <div 
         v-for="(letter, index) in board" 
         :key="index"
         class="letter-cell d-flex justify-center align-center text-h4 font-weight-bold cursor-pointer"
         :style="{ width: cellSize + 'px', height: cellSize + 'px' }"
+        :class="{ 'letter-correct': correctClicked && index === targetIndex }"
         @click="checkLetter(index)"
       >
         {{ letter }}
@@ -20,6 +25,7 @@
 
     <div 
       class="flashlight-overlay" 
+      :class="{ 'flashlight-hidden': isTransitioning }"
       :style="{ 
         '--mouseX': mouseX + 'px', 
         '--mouseY': mouseY + 'px',
@@ -38,6 +44,7 @@
         </v-btn>
       </v-card>
     </v-overlay>
+
     <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
         <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
@@ -56,33 +63,36 @@ import { ref, computed, onBeforeUnmount } from 'vue';
 
 const emit = defineEmits(['game-over']);
 
-// Variables d'estat
+// --- VARIABLES D'ESTAT ---
 const showStartOverlay = ref(true);
+const showGameOverOverlay = ref(false);
+const isTransitioning = ref(false);
+const correctClicked = ref(false);
 const score = ref(0);
 const timeLeft = ref(60);
 let timerInterval = null;
 
-// Sistema de visió (Llanterna)
+// --- SISTEMA DE VISIÓ ---
 const mouseX = ref(0);
 const mouseY = ref(0);
 const gameArea = ref(null);
 
-// Lògica del tauler
+// --- LÒGICA DEL TAULER ---
 const board = ref([]);
 const currentLevel = ref(1);
 const targetIndex = ref(-1);
 const targetChar = ref('');
 
-// Configuració de nivells (escalat de dificultat)
+// --- CONFIGURACIÓ DE NIVELLS ---
 const levels = [
-  { distractor: 'p', target: 'q', grid: 5, tunnel: 250 }, // Nivell 1: Fàcil, llanterna gran
-  { distractor: 'b', target: 'd', grid: 7, tunnel: 200 }, // Nivell 2: Mitjà, llanterna normal
-  { distractor: 'm', target: 'n', grid: 9, tunnel: 150 }, // Nivell 3: Difícil, llanterna petita
-  { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },// Nivell 4: Moltes lletres
-  { distractor: 'E', target: 'F', grid: 15, tunnel: 100 } // Nivell 5+: Extrem
+  { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
+  { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
+  { distractor: 'm', target: 'n', grid: 9, tunnel: 150 },
+  { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },
+  { distractor: 'E', target: 'F', grid: 15, tunnel: 100 }
 ];
 
-// Computades per l'estil del tauler
+// --- COMPUTADES ---
 const currentConfig = computed(() => {
   return levels[Math.min(currentLevel.value - 1, levels.length - 1)];
 });
@@ -90,6 +100,7 @@ const currentTunnelSize = computed(() => currentConfig.value.tunnel);
 const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid));
 const boardSize = computed(() => currentConfig.value.grid * cellSize.value);
 
+// --- FUNCIONS CORE ---
 const updateFlashlight = (e) => {
   if (!gameArea.value) return;
   const rect = gameArea.value.getBoundingClientRect();
@@ -102,10 +113,7 @@ const generateBoard = () => {
   const totalCells = config.grid * config.grid;
   targetChar.value = config.target;
   
-  // Omplim el tauler amb distractors
   let newBoard = Array(totalCells).fill(config.distractor);
-  
-  // Col·loquem l'objectiu aleatòriament
   targetIndex.value = Math.floor(Math.random() * totalCells);
   newBoard[targetIndex.value] = config.target;
   
@@ -113,56 +121,60 @@ const generateBoard = () => {
 };
 
 const nextRound = () => {
-  score.value += (currentLevel.value * 10); // Més punts per nivells més alts
-  timeLeft.value = Math.min(60, timeLeft.value + 3); // Bonificació de temps
+  score.value += (currentLevel.value * 10);
+  timeLeft.value = Math.min(60, timeLeft.value + 3);
   currentLevel.value++;
   generateBoard();
 };
 
 const checkLetter = (index) => {
-  if (showStartOverlay.value || timeLeft.value <= 0) return;
+  if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
 
   if (index === targetIndex.value) {
-    nextRound();
+    isTransitioning.value = true;
+    correctClicked.value = true;
+    
+    setTimeout(() => {
+      correctClicked.value = false;
+      nextRound(); 
+      
+      setTimeout(() => {
+        isTransitioning.value = false;
+      }, 200);
+      
+    }, 800);
+
   } else {
-    // Penalització severa per fer clics a cegues
     timeLeft.value = Math.max(0, timeLeft.value - 3);
     score.value = Math.max(0, score.value - 5);
-    
-    // Si el temps arriba a 0 per la penalització, acabem al moment
     if (timeLeft.value === 0) endGame();
   }
 };
 
 const startGame = () => {
   showStartOverlay.value = false;
+  showGameOverOverlay.value = false;
+  isTransitioning.value = false;
+  correctClicked.value = false;
   score.value = 0;
   timeLeft.value = 60;
   currentLevel.value = 1;
   generateBoard();
   
   timerInterval = setInterval(() => {
-    timeLeft.value--;
-    if (timeLeft.value <= 0) {
-      endGame();
+    if (!isTransitioning.value && timeLeft.value > 0) {
+      timeLeft.value--;
+      if (timeLeft.value <= 0) endGame();
     }
   }, 1000);
 };
 
-// Afegeix aquesta variable amb la resta de variables d'estat
-const showGameOverOverlay = ref(false);
-
-// ... (la resta del codi es manté igual fins al final) ...
-
-// Substitueix l'antiga funció endGame per aquestes dues:
 const endGame = () => {
   clearInterval(timerInterval);
-  // En lloc d'emetre directament, mostrem el popup
   showGameOverOverlay.value = true; 
 };
 
 const returnToMenu = () => {
-  // Ara sí, l'usuari ha clicat el botó i avisem al pare per sortir
   emit('game-over', score.value); 
 };
 
@@ -182,35 +194,53 @@ onBeforeUnmount(() => {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  user-select: none; /* Evita que l'usuari seleccioni text fent doble clic */
+  user-select: none;
 }
 
 .board {
   max-width: 90%;
   max-height: 90%;
-  z-index: 2; /* Per sota de la llanterna però els clics passen gràcies al pointer-events */
+  z-index: 2;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.board-transitioning {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 .letter-cell {
-  color: #334155; /* Color fosc per defecte perquè es vegi poc si falla la llanterna */
+  color: #334155;
   transition: color 0.2s;
 }
 
-/* LA MÀGIA DEL TÚNEL */
+.letter-correct {
+  color: #00e5ff !important;
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+  transform: scale(1.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+}
+
 .flashlight-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* IMPORTANTÍSSIM: Permet que els clics travessin aquesta capa fosca */
+  pointer-events: none;
   z-index: 5;
+  transition: opacity 0.4s ease-in-out; 
   background: radial-gradient(
     circle var(--tunnelSize) at var(--mouseX) var(--mouseY), 
     transparent 0%, 
     rgba(11, 17, 32, 0.98) 80%, 
     rgba(11, 17, 32, 1) 100%
   );
+}
+
+.flashlight-hidden {
+  opacity: 0 !important;
 }
 
 .bg-slate-800 { background-color: #1e293b; }
