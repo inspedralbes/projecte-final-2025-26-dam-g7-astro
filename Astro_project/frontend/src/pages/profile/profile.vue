@@ -1,13 +1,17 @@
 <template>
     <v-container class="fill-height d-flex justify-center align-center">
         <!-- Usamos un estilo 'glass' (vidrio) para que se vea moderno pero el código es simple -->
-        <v-card width="500" class="glass-card text-center pa-8" elevation="0">
+        <v-card width="500" class="glass-card text-center pa-4" elevation="0">
 
             <!-- Avatar brillante -->
-            <div class="d-flex justify-center mb-6">
-                <v-avatar size="150" class="avatar-border">
-                    <v-img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar"></v-img>
-                </v-avatar>
+            <div class="d-flex justify-center mb-4">
+                <div class="position-relative">
+                    <v-avatar size="110" class="avatar-border">
+                        <v-img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar"></v-img>
+                    </v-avatar>
+                    <v-btn icon="mdi-plus" size="x-small" color="cyan-accent-3" class="edit-avatar-btn" elevation="4"
+                        @click="goToInventory"></v-btn>
+                </div>
             </div>
 
             <!-- Nombre y Rango -->
@@ -15,11 +19,11 @@
                 {{ user || 'Tripulante Desconocido' }}
             </h1>
 
-            <v-chip color="cyan-accent-3" variant="outlined" class="mb-8">
+            <v-chip color="cyan-accent-3" variant="outlined" class="mb-4">
                 {{ rank || 'Cadete de Vuelo' }}
             </v-chip>
 
-            <v-row class="mb-8">
+            <v-row class="mb-2">
                 <v-col cols="3">
                     <div class="text-h5 font-weight-bold text-cyan-accent-3">1</div>
                     <div class="text-caption text-grey">Nivel</div>
@@ -36,9 +40,9 @@
                 </v-col>
             </v-row>
 
-            <v-divider class="mb-4 border-opacity-25"></v-divider>
+            <v-divider class="my-2 border-opacity-25"></v-divider>
 
-            <h3 class="text-subtitle-1 font-weight-bold text-cyan-accent-1 mb-4">LOGROS SELECCIONADOS</h3>
+            <h3 class="text-subtitle-1 font-weight-bold text-cyan-accent-1 mb-2">LOGROS SELECCIONADOS</h3>
 
             <v-row class="mb-6 justify-center">
                 <v-col v-for="i in 3" :key="i" cols="4" class="pa-1">
@@ -47,10 +51,10 @@
                             <template v-slot:activator="{ props }">
                                 <v-card v-bind="props" variant="outlined" color="cyan-accent-3"
                                     class="achievement-slot d-flex align-center justify-center overflow-hidden"
-                                    @click="openSelection(i - 1)" height="100" width="100%">
+                                    @click="openSelection(i - 1)" height="80" width="100%">
                                     <Medal v-if="getAchievement(selectedAchievements[i - 1])"
                                         :type="getAchievement(selectedAchievements[i - 1]).type"
-                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.55"
+                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.45"
                                         :icon-size="48" />
                                     <v-icon v-else icon="mdi-plus" size="24" class="opacity-30"></v-icon>
                                 </v-card>
@@ -65,16 +69,16 @@
                 </v-col>
             </v-row>
 
-            <v-divider class="mb-8 border-opacity-25"></v-divider>
+            <v-divider class="my-3 border-opacity-25"></v-divider>
 
             <!-- Botones de Acción -->
-            <div class="d-flex flex-column gap-4">
-                <v-btn block color="cyan-accent-3" size="large" rounded="xl" variant="flat" @click="goHome"
-                    class="font-weight-bold mb-3">
+            <div class="d-flex flex-column gap-2">
+                <v-btn block color="cyan-accent-3" size="default" rounded="xl" variant="flat" @click="goHome"
+                    class="font-weight-bold mb-1">
                     VOLVER AL MENÚ
                 </v-btn>
 
-                <v-btn block color="white" variant="outlined" size="large" rounded="xl" @click="changePlan"
+                <v-btn block color="white" variant="outlined" size="default" rounded="xl" @click="changePlan"
                     class="font-weight-bold">
                     ACTUALIZAR PLAN
                 </v-btn>
@@ -188,6 +192,10 @@ function goHome() {
 function changePlan() {
     router.push('/plans')
 }
+
+function goToInventory() {
+    router.push('/inventory')
+}
 </script>
 
 <style scoped>
@@ -244,6 +252,20 @@ function changePlan() {
 .achievement-list-item.selected {
     background: rgba(0, 229, 255, 0.2);
     border: 1px solid rgba(0, 229, 255, 0.5);
+}
+
+.position-relative {
+    position: relative;
+}
+
+.edit-avatar-btn {
+    position: absolute;
+    bottom: 0;
+    right: 5px;
+    border: 3px solid #0f0f19 !important;
+    color: #0f0f19 !important;
+    width: 32px !important;
+    height: 32px !important;
 }
 
 .opacity-30 {
