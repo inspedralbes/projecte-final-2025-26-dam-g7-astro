@@ -95,15 +95,18 @@
                 </v-card-title>
                 <v-card-text>
                     <v-list bg-color="transparent" class="text-white">
-                        <v-list-item v-for="achievement in unlockedAchievements" :key="achievement.id"
+                        <v-list-item v-for="achievement in allAchievements" :key="achievement.id"
                             :title="achievement.title" :subtitle="achievement.description"
-                            @click="selectAchievement(achievement.id)" class="mb-2 achievement-list-item"
-                            :class="{ 'selected': selectedAchievements.includes(achievement.id) }">
+                            @click="achievement.unlocked ? selectAchievement(achievement.id) : null"
+                            :disabled="!achievement.unlocked" class="mb-2 achievement-list-item" :class="{
+                                'selected': isSelected(achievement.id),
+                                'locked-item': !achievement.unlocked
+                            }">
                             <template v-slot:prepend>
                                 <div class="mr-4 d-flex align-center justify-center"
                                     style="width: 60px; height: 60px; overflow: hidden;">
                                     <Medal :type="achievement.type" :icon="achievement.icon" :scale="0.3"
-                                        :icon-size="48" />
+                                        :icon-size="48" :locked="!achievement.unlocked" />
                                 </div>
                             </template>
                         </v-list-item>
@@ -134,10 +137,17 @@ const { user, rank, plan, selectedAchievements } = storeToRefs(astroStore)
 const selectionDialog = ref(false)
 const currentSlotIndex = ref(null)
 
-// Filtramos solo los logros desbloqueados (Demo: IDs 1 y 3)
-const unlockedAchievements = computed(() => {
-    return ACHIEVEMENTS.filter(a => [1, 3].includes(a.id))
+// Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
+const allAchievements = computed(() => {
+    return ACHIEVEMENTS.map(a => ({
+        ...a,
+        unlocked: [1, 3].includes(a.id)
+    }))
 })
+
+function isSelected(id) {
+    return selectedAchievements.value.some(sid => sid !== null && Number(sid) === Number(id))
+}
 
 function getAchievement(id) {
     if (id === null || id === undefined) return null
@@ -252,6 +262,11 @@ function goToInventory() {
 .achievement-list-item.selected {
     background: rgba(0, 229, 255, 0.2);
     border: 1px solid rgba(0, 229, 255, 0.5);
+}
+
+.locked-item {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .position-relative {
