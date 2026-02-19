@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+# Definimos variable de entorno para optimizar librerías como Express
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY package*.json ./
+# Instalamos solo dependencias de producción (omite devDependencies)
+RUN npm ci --only=production
+
+COPY . .
+
+# Usuario no-root por seguridad
+USER node
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
