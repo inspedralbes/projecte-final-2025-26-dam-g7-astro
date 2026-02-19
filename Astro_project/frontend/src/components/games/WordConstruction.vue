@@ -99,9 +99,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import draggable from 'vuedraggable';
+import { useAstroStore } from '@/stores/astroStore';
 
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
+const astroStore = useAstroStore();
 
 // Luego lo podemos conectar a la base de datos
 const words = Object.freeze([
@@ -115,7 +117,88 @@ const words = Object.freeze([
   { word: 'ORBITA', hint: 'Trajectòria al voltant d\'un cos' },
   { word: 'COMETA', hint: 'Cos amb cua brillant' },
   { word: 'NEBULOSA', hint: 'Núvol de gas i pols a l\'espai' },
-  { word: 'SUPERNOVA', hint: 'Explosió final d\'una estrella' }
+  { word: 'SUPERNOVA', hint: 'Explosió final d\'una estrella' },
+
+  { word: 'SOL', hint: 'L\'estrella del nostre sistema' },
+  { word: 'MART', hint: 'El planeta vermell' },
+  { word: 'LLUM', hint: 'Viatja molt ràpid per l\'espai' },
+  { word: 'OVNI', hint: 'Objecte Volador No Identificat' },
+  { word: 'CEL', hint: 'El veus si mires amunt' },
+  { word: 'GAS', hint: 'Estat de la matèria a les nebuloses' },
+  { word: 'FORAT', hint: 'Pot ser negre i engolir-ho tot' },
+
+  // --- TEMA: TECNOLOGIA I INFORMÀTICA ---
+  { word: 'CODI', hint: 'Instruccions per a un programa' },
+  { word: 'DADES', hint: 'Informació que processa la IA' },
+  { word: 'XIP', hint: 'Cervell de silici d\'un ordinador' },
+  { word: 'WEB', hint: 'Pàgina d\'Internet' },
+  { word: 'APP', hint: 'Programa per a mòbil' },
+  { word: 'BOT', hint: 'Programa que fa tasques automàtiques' },
+  { word: 'WIFI', hint: 'Connexió sense cables' },
+  { word: 'XARXA', hint: 'Conjunt d\'ordinadors connectats' },
+  { word: 'NODE', hint: 'Punt de connexió' },
+  { word: 'RAM', hint: 'Memòria temporal' },
+  { word: 'RATOLI', hint: 'Per moure el cursor (sense accent)' }, // "Ratolí" té 6, "MOUSE" 5, però "RATOLI" sense accent entra si acceptes treure accents. Si no:
+  { word: 'TECLA', hint: 'La prems per escriure' },
+  { word: 'PIXEL', hint: 'Punt de color en una pantalla' },
+
+  // --- TEMA: NATURA I ANIMALS ---
+  { word: 'GAT', hint: 'Felí domèstic' },
+  { word: 'GOS', hint: 'El millor amic de l\'home' },
+  { word: 'PEIX', hint: 'Viu sota l\'aigua' },
+  { word: 'BOSC', hint: 'Lloc ple d\'arbres' },
+  { word: 'RIU', hint: 'Corrent d\'aigua dolça' },
+  { word: 'MAR', hint: 'Massa d\'aigua salada' },
+  { word: 'AVE', hint: 'Animal amb plomes que vola' },
+  { word: 'TIGRE', hint: 'Felí gran i ratllat' },
+  { word: 'LLEO', hint: 'Rei de la selva' },
+  { word: 'FLOR', hint: 'Part acolorida d\'una planta' },
+  { word: 'ARBRE', hint: 'Planta gran amb tronc' },
+  { word: 'MUNT', hint: 'Elevació del terreny (muntanya curta)' },
+
+  // --- TEMA: CASA I OBJECTES ---
+  { word: 'LLIT', hint: 'Mobles per dormir' },
+  { word: 'TAULA', hint: 'Moble per menjar o treballar' },
+  { word: 'SOFA', hint: 'Seient còmode per a varis' },
+  { word: 'CLAU', hint: 'Obre panys' },
+  { word: 'PORTA', hint: 'Entrada a una habitació' },
+  { word: 'MUR', hint: 'Paret gruixuda' },
+  { word: 'EINA', hint: 'Utensili per treballar' },
+  { word: 'GOT', hint: 'Recipient per beure' },
+  { word: 'PLAT', hint: 'On es serveix el menjar' },
+
+  // --- TEMA: COS HUMÀ ---
+  { word: 'ULL', hint: 'Òrgan per veure' },
+  { word: 'PEU', hint: 'Part del cos per caminar' },
+  { word: 'BOCA', hint: 'Per parlar i menjar' },
+  { word: 'DIT', hint: 'En tens cinc a cada mà' },
+  { word: 'COR', hint: 'Bomba la sang' },
+  { word: 'SANG', hint: 'Líquid vermell vital' },
+  { word: 'PELL', hint: 'Cobreix tot el cos' },
+  { word: 'DENT', hint: 'Peça dura per mastegar' },
+  { word: 'OS', hint: 'Part dura de l\'esquelet' },
+
+  // --- TEMA: MENJAR ---
+  { word: 'POMA', hint: 'Fruita vermella o verda' },
+  { word: 'PERA', hint: 'Fruita amb forma de bombeta' },
+  { word: 'PA', hint: 'Aliment bàsic de farina' },
+  { word: 'COCA', hint: 'Menjar típic dolç o salat' },
+  { word: 'MEL', hint: 'La fan les abelles' },
+  { word: 'OLI', hint: 'Or líquid per cuinar' },
+  { word: 'SAL', hint: 'Dona gust salat' },
+  { word: 'ARROS', hint: 'Ingredient de la paella' },
+  { word: 'SOPA', hint: 'Plat líquid i calent' },
+  { word: 'CARN', hint: 'Aliment proteic animal' },
+
+  // --- TEMA: TEMPS I ABSTRACTE ---
+  { word: 'ANY', hint: '365 dies' },
+  { word: 'MES', hint: 'Part d\'un any' },
+  { word: 'DIA', hint: 'Té 24 hores' },
+  { word: 'HORA', hint: '60 minuts' },
+  { word: 'ESTIU', hint: 'L\'estació més calorosa' },
+  { word: 'HIVERN', hint: 'L\'estació més freda' },
+  { word: 'NOM', hint: 'Com es diu una persona' },
+  { word: 'MON', hint: 'El planeta Terra (abstracte)' }
 ]);
 
 // --- ESTAT ---
@@ -127,6 +210,7 @@ const message = ref('');
 const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
+const gameSaved = ref(false);
 
 // Gamificació: Progrés de construcció
 const currentStep = ref(0);
@@ -201,9 +285,18 @@ const checkAnswer = () => {
   }
 };
 
-const finishGame = () => {
+const finishGame = async () => {
+  if (gameFinished.value) return;
+
   gameFinished.value = true;
-  // Opcional: Enviar puntuació a la store/backend aquí
+
+  if (!astroStore.user || gameSaved.value) return;
+  gameSaved.value = true;
+
+  const result = await astroStore.registerCompletedGame('WordConstruction', score.value);
+  if (!result.success) {
+    console.error("No s'ha pogut registrar la partida:", result.message);
+  }
 };
 
 const emitExit = () => {

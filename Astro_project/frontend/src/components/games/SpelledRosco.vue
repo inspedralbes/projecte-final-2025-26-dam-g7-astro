@@ -155,8 +155,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { useAstroStore } from '@/stores/astroStore';
 
 const emit = defineEmits(['game-over']);
+const astroStore = useAstroStore();
 
 // --- DADES DEL JOC ---
 // Un petit set de dades per exemple. En un cas real, n'hi hauria 26.
@@ -200,6 +202,7 @@ const showFeedback = ref(false);
 const feedbackMessage = ref('');
 const feedbackColor = ref('info');
 const hiddenInput = ref(null);
+const gameSaved = ref(false);
 
 // Computed
 const currentLetter = computed(() => {
@@ -344,9 +347,19 @@ const advanceTurn = () => {
     }
 };
 
-const finishGame = () => {
+const finishGame = async () => {
+    if (gameFinished.value) return;
+
     gameFinished.value = true;
     clearInterval(timerInterval);
+
+    if (!astroStore.user || gameSaved.value) return;
+    gameSaved.value = true;
+
+    const result = await astroStore.registerCompletedGame('SpelledRosco', score.value);
+    if (!result.success) {
+        console.error("No s'ha pogut registrar la partida:", result.message);
+    }
 };
 
 const emitExit = () => {

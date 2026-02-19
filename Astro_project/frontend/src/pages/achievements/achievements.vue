@@ -3,6 +3,19 @@
         <div class="header mb-16 text-center">
             <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">MEDALLAS DE HONOR</h1>
             <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
+            <div class="d-flex justify-center flex-wrap ga-2 mt-4">
+                <v-chip color="cyan-accent-3" variant="outlined">Partidas: {{ stats.gamesPlayed }}</v-chip>
+                <v-chip color="amber-accent-3" variant="outlined">Monedas: {{ stats.coins }}</v-chip>
+                <v-chip color="green-accent-3" variant="outlined">Inventario: {{ stats.inventoryCount }}</v-chip>
+            </div>
+        </div>
+
+        <v-alert v-if="loadError" type="warning" variant="tonal" class="mb-8">
+            {{ loadError }}
+        </v-alert>
+
+        <div v-if="loading" class="d-flex justify-center mb-8">
+            <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
         </div>
 
         <v-row class="mt-8">
@@ -26,6 +39,7 @@
                     <div class="medal-info text-center mt-4">
                         <h3 class="text-h6 font-weight-bold text-white mb-1">{{ achievement.title }}</h3>
                         <p class="text-caption text-grey-lighten-1">{{ achievement.description }}</p>
+                        <p class="text-caption text-cyan-accent-2 mt-1">{{ achievement.progress }}</p>
                     </div>
                 </div>
             </v-col>
@@ -34,50 +48,87 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useAstroStore } from '@/stores/astroStore'
 
-const achievements = ref([
+const astroStore = useAstroStore();
+const loading = ref(false);
+const loadError = ref('');
+const stats = ref({
+    gamesPlayed: astroStore.partides || 0,
+    coins: astroStore.coins || 0,
+    inventoryCount: 0
+});
+
+const achievements = computed(() => ([
     {
         id: 1,
         title: 'Primer Vuelo',
         description: 'Completa tu primera misión.',
         icon: 'mdi-rocket-launch',
-        unlocked: true,
-        type: 'bronze'
+        unlocked: stats.value.gamesPlayed >= 1,
+        type: 'bronze',
+        progress: `${Math.min(stats.value.gamesPlayed, 1)}/1`
     },
     {
         id: 2,
         title: 'As de la Flota',
-        description: '10 victorias consecutivas.',
+        description: 'Completa 10 partidas.',
         icon: 'mdi-star-shooting',
-        unlocked: false,
-        type: 'gold'
+        unlocked: stats.value.gamesPlayed >= 10,
+        type: 'gold',
+        progress: `${Math.min(stats.value.gamesPlayed, 10)}/10`
     },
     {
         id: 3,
         title: 'Comerciante',
-        description: 'Primera compra en la tienda.',
+        description: 'Consigue tu primer objeto de inventario.',
         icon: 'mdi-cart-heart',
-        unlocked: true,
-        type: 'silver'
+        unlocked: stats.value.inventoryCount >= 1,
+        type: 'silver',
+        progress: `${Math.min(stats.value.inventoryCount, 1)}/1`
     },
     {
         id: 4,
         title: 'Veterano',
-        description: 'Nivel 20 de tripulante.',
+        description: 'Completa 25 partidas.',
         icon: 'mdi-shield-star',
-        unlocked: false,
-        type: 'gold'
+        unlocked: stats.value.gamesPlayed >= 25,
+        type: 'gold',
+        progress: `${Math.min(stats.value.gamesPlayed, 25)}/25`
     },
     {
         id: 5,
         title: 'Cazador',
-        description: 'Recoge 1000 monedas.',
+        description: 'Acumula 2500 monedas.',
         icon: 'mdi-currency-usd-circle',
-        unlocked: false,
-        type: 'silver'
+        unlocked: stats.value.coins >= 2500,
+        type: 'silver',
+        progress: `${Math.min(stats.value.coins, 2500)}/2500`
     }
-])
+]));
+
+onMounted(async () => {
+    if (!astroStore.user) {
+        loadError.value = 'Inicia sesión para ver tus logros reales.';
+        return;
+    }
+
+    loading.value = true;
+    const result = await astroStore.fetchUserStats();
+
+    if (result.success) {
+        stats.value = {
+            gamesPlayed: result.stats.gamesPlayed || 0,
+            coins: result.stats.coins || 0,
+            inventoryCount: result.stats.inventoryCount || 0
+        };
+    } else {
+        loadError.value = result.message || 'No se pudieron cargar las estadísticas.';
+    }
+
+    loading.value = false;
+});
 </script>
 
 <style scoped>

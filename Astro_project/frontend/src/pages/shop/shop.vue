@@ -27,6 +27,9 @@
                             <span class="text-h6 font-weight-bold text-amber-accent-3 mr-1">{{ userCoins }}</span>
                             <v-icon color="amber-accent-3" size="small">mdi-currency-usd</v-icon>
                         </div>
+                        <div class="mt-3 text-caption text-cyan-accent-2">
+                            Partidas completadas: <strong>{{ userGames }}</strong>
+                        </div>
                         <div class="mt-4 text-caption text-grey-lighten-1">
                             Coste de giro: <strong>50</strong> <v-icon size="x-small">mdi-currency-usd</v-icon>
                         </div>
@@ -114,8 +117,8 @@ import { useAstroStore } from '@/stores/astroStore';
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
 
 const astroStore = useAstroStore();
-const currentUser = computed(() => astroStore.user);
 const userCoins = computed(() => astroStore.coins);
+const userGames = computed(() => astroStore.partides);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
 
@@ -137,13 +140,10 @@ onMounted(async () => {
 });
 
 async function fetchUserBalance() {
-    try {
-        const res = await fetch(`http://localhost:3000/api/shop/balance/${astroStore.user}`);
-        if (res.ok) {
-            const data = await res.json();
-            astroStore.coins = data.coins;
-        }
-    } catch (e) { console.error("Error:", e); }
+    const result = await astroStore.fetchUserBalance();
+    if (!result.success) {
+        console.error("Error:", result.message);
+    }
 }
 
 const handleWin = (prize) => {
