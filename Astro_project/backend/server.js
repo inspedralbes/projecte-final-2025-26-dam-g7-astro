@@ -74,7 +74,8 @@ app.post('/api/auth/login', async (req, res) => {
                     name: foundUser.user,
                     plan: foundUser.plan || "INDIVIDUAL",
                     rank: foundUser.rank || "Cadete de Vuelo",
-                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000
+                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
+                    selectedAchievements: foundUser.selectedAchievements || [null, null, null]
                 }
             });
         } else {
@@ -129,6 +130,33 @@ app.post('/api/shop/spin', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: "Error en la ruleta" });
+    }
+});
+
+// --- ENDPOINT DE LOGROS ---
+app.put('/api/user/achievements', async (req, res) => {
+    const { user, achievements } = req.body;
+    console.log(`🏅 Actualizando logros para: ${user}`, achievements);
+
+    if (!user) return res.status(400).json({ success: false, message: "Usuario no identificado" });
+    if (!Array.isArray(achievements) || achievements.length > 3) {
+        return res.status(400).json({ success: false, message: "Lista de logros no válida (máximo 3)" });
+    }
+
+    try {
+        const db = getDB();
+        const usersCol = db.collection('users');
+
+        await usersCol.updateOne(
+            { user: user },
+            { $set: { selectedAchievements: achievements } }
+        );
+
+        res.json({ success: true, message: "Logros actualizados correctamente" });
+
+    } catch (error) {
+        console.error("Error al actualizar logros:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
     }
 });
 

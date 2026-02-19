@@ -91,7 +91,7 @@
                 </v-card-title>
                 <v-card-text>
                     <v-list bg-color="transparent" class="text-white">
-                        <v-list-item v-for="achievement in ACHIEVEMENTS" :key="achievement.id"
+                        <v-list-item v-for="achievement in unlockedAchievements" :key="achievement.id"
                             :title="achievement.title" :subtitle="achievement.description"
                             @click="selectAchievement(achievement.id)" class="mb-2 achievement-list-item"
                             :class="{ 'selected': selectedAchievements.includes(achievement.id) }">
@@ -114,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore' // Importamos el store
 import { storeToRefs } from 'pinia' // Para mantener la reactividad
@@ -129,6 +129,11 @@ const { user, rank, plan, selectedAchievements } = storeToRefs(astroStore)
 
 const selectionDialog = ref(false)
 const currentSlotIndex = ref(null)
+
+// Filtramos solo los logros desbloqueados (Demo: IDs 1 y 3)
+const unlockedAchievements = computed(() => {
+    return ACHIEVEMENTS.filter(a => [1, 3].includes(a.id))
+})
 
 function getAchievement(id) {
     if (id === null || id === undefined) return null
@@ -147,6 +152,9 @@ async function selectAchievement(achievementId) {
         return;
     }
 
+    // Cerramos el diálogo inmediatamente para mejor UX
+    selectionDialog.value = false;
+
     // Convertimos a número si no es null
     const targetId = achievementId !== null ? Number(achievementId) : null;
 
@@ -164,14 +172,12 @@ async function selectAchievement(achievementId) {
     // Ponemos el nuevo logro en el slot actual
     newSelection[currentSlotIndex.value] = targetId;
 
-    // Guardamos la selección completa
+    // Guardamos la selección completa (la store se encarga de la actualización optimista)
     console.log(`🎯 Seleccionando logro ${targetId} para slot ${currentSlotIndex.value}`);
     const result = await astroStore.updateAchievements(newSelection);
 
-    if (result.success) {
-        selectionDialog.value = false;
-    } else {
-        console.error("❌ Error al guardar:", result.message);
+    if (!result.success) {
+        console.error("❌ Error al sincronizar con el servidor:", result.message);
     }
 }
 
