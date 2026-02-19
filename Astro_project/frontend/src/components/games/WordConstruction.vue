@@ -62,6 +62,7 @@
         block
         rounded="lg"
         class="font-weight-bold text-black mb-3"
+        :disabled="isRoundLocked"
       >
         Construir Bloc
       </v-btn>
@@ -72,6 +73,7 @@
         variant="outlined"
         block
         rounded="lg"
+        :disabled="isRoundLocked"
       >
         Barrejar de nou
       </v-btn>
@@ -211,6 +213,7 @@ const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
 const gameSaved = ref(false);
+const isRoundLocked = ref(false);
 
 // Gamificació: Progrés de construcció
 const currentStep = ref(0);
@@ -262,12 +265,14 @@ const loadNextWord = () => {
 };
 
 const checkAnswer = () => {
-  if (!scrambledLetters.value.length) return;
+  if (!scrambledLetters.value.length || isRoundLocked.value) return;
 
   const guess = orderedGuess.value.toUpperCase().trim();
   const correct = currentWordObj.value.word.toUpperCase();
 
   if (guess === correct) {
+    isRoundLocked.value = true;
+
     // Correcte
     score.value += 100 + (level.value * 10);
     currentStep.value++;
@@ -276,6 +281,7 @@ const checkAnswer = () => {
     
     setTimeout(() => {
       loadNextWord();
+      isRoundLocked.value = false;
     }, 1000);
   } else {
     // Incorrecte
