@@ -51,7 +51,7 @@
                             rounded="lg"
                             @click="selectPlan(plan.id)"
                         >
-                            {{ plan.recommended ? 'SELECCIONAR' : 'SELECCIONAR' }}
+                            {{ (plan.id === 'INDIVIDUAL' && astroStore.plan?.startsWith('INDIVIDUAL')) || (plan.id === 'GRUPAL' && astroStore.plan === 'GRUPAL') ? 'GESTIONAR' : 'SELECCIONAR' }}
                         </v-btn>
                     </v-card>
                 </v-col>
@@ -70,7 +70,88 @@
             </div>
         </v-container>
 
-        <!-- SECTION 2: GROUP OPTIONS (Create vs Join) -->
+        <!-- SECTION 2: INDIVIDUAL OPTIONS (Free vs Premium) -->
+        <v-container v-else-if="step === 'individual-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
+            <div class="header-section mb-10">
+                <v-icon size="60" color="cyan-accent-3" class="mb-4 text-glow">mdi-account-star</v-icon>
+                <h2 class="text-h3 font-weight-bold text-white mb-2 tracking-wide text-glow">
+                    MODALIDAD INDIVIDUAL
+                </h2>
+                <p class="text-h6 text-grey-lighten-1 font-weight-light">
+                    Define tu nivel de acceso a la base de datos
+                </p>
+            </div>
+
+            <v-row justify="center" align="stretch" class="plans-row">
+                <!-- Option: Free -->
+                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
+                    <v-card
+                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-individual"
+                        @click="setIndividualPlan('INDIVIDUAL_FREE')"
+                        elevation="10"
+                        rounded="xl"
+                        :disabled="astroStore.plan === 'INDIVIDUAL_FREE'"
+                        :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_FREE' }"
+                    >
+                        <div class="icon-wrapper mb-6">
+                            <v-icon size="70" color="cyan-accent-3" class="plan-icon">mdi-robot-outline</v-icon>
+                            <div class="icon-glow" style="background: #00e5ff"></div>
+                        </div>
+                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+                            FREE
+                        </h2>
+                        <v-divider class="my-4 w-25" color="cyan-accent-3"></v-divider>
+                        <p class="text-body-1 text-grey-lighten-2 mt-2">
+                            Exploración básica. <br> Sin acceso a telemetría avanzada.
+                        </p>
+                        <v-btn block color="cyan-accent-3" variant="outlined" class="mt-6" rounded="lg">
+                            {{ astroStore.plan === 'INDIVIDUAL_FREE' ? 'PLAN ACTUAL' : 'SELECCIONAR' }}
+                        </v-btn>
+                    </v-card>
+                </v-col>
+
+                <!-- Option: Premium -->
+                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
+                    <v-card
+                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal premium-card"
+                        @click="setIndividualPlan('INDIVIDUAL_PREMIUM')"
+                        elevation="10"
+                        rounded="xl"
+                        :disabled="astroStore.plan === 'INDIVIDUAL_PREMIUM'"
+                        :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_PREMIUM' }"
+                    >
+                        <div class="icon-wrapper mb-6">
+                            <v-icon size="70" color="orange-accent-3" class="plan-icon">mdi-crown</v-icon>
+                            <div class="icon-glow" style="background: #ffab40"></div>
+                        </div>
+                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+                            PREMIUM
+                        </h2>
+                        <v-divider class="my-4 w-25" color="orange-accent-3"></v-divider>
+                        <p class="text-body-1 text-grey-lighten-2 mt-2">
+                            Acceso Total. <br> Estadísticas, rendimiento y soporte Élite.
+                        </p>
+                        <v-btn block color="orange-accent-3" :variant="astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'tonal' : 'flat'" class="mt-6 font-weight-bold" rounded="lg">
+                            {{ astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'PLAN ACTUAL' : 'DESBLOQUEAR' }}
+                        </v-btn>
+                    </v-card>
+                </v-col>
+            </v-row>
+
+            <div class="mt-8">
+                <v-btn
+                    variant="text"
+                    color="grey-lighten-1"
+                    prepend-icon="mdi-arrow-left"
+                    @click="step = 'select-plan'"
+                    class="hover-bright"
+                >
+                    VOLVER A SELECCIÓN
+                </v-btn>
+            </div>
+        </v-container>
+
+        <!-- SECTION 3: GROUP OPTIONS (Create vs Join) -->
         <v-container v-else-if="step === 'group-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
             <div class="header-section mb-10">
                 <v-icon size="60" color="purple-accent-2" class="mb-4 text-glow">mdi-account-group</v-icon>
@@ -331,7 +412,6 @@ const plans = [
         desc: 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
         recommended: true
     },
-/*
     { 
         id: 'GRUPAL', 
         icon: 'mdi-account-group-outline', 
@@ -340,19 +420,31 @@ const plans = [
         desc: 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
         recommended: false
     }
-    */
 ]
 
 const selectPlan = (planId) => {
+    selectedPlan.value = planId
+    
     if (planId === 'INDIVIDUAL') {
-        router.push('/profile')
+        step.value = 'individual-options'
         return
     }
-    selectedPlan.value = planId
     
     // Si es grupal, vamos al paso intermedio de opciones
     if (planId === 'GRUPAL') {
         step.value = 'group-options'
+    }
+}
+
+const setIndividualPlan = async (planType) => {
+    const result = await astroStore.updatePlan(planType)
+    
+    if (result.success) {
+        router.push('/profile')
+    } else {
+        console.error("No se pudo sincronizar el plan:", result.message)
+        // Opcional: router.push('/profile') si quieres que navegue igual aunque falle el server
+        router.push('/profile')
     }
 }
 
@@ -365,8 +457,7 @@ const login = async () => {
     })
 
     if (result.success) {
-        // Redirigimos al perfil o a una ruta existente ya que el multiplayer no existe aún
-        router.push('/profile') 
+        router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
     } else {
         alert(result.message)
     }
@@ -376,12 +467,17 @@ const createGroup = async () => {
     if (!newGroupName.value || !newGroupPassword.value) return
     
     // Aquí iría la lógica para crear el grupo en el backend
-    // Por ahora simulamos éxito y redirigimos
     console.log("Creando grupo:", newGroupName.value)
     
-    // Simulación de éxito
-    alert(`Escuadra "${newGroupName.value}" fundada con éxito. Protocolo iniciado. (Modo multijugador próximamente)`)
-    router.push('/profile')
+    // Sincronizamos el plan "GRUPAL" con el servidor
+    const result = await astroStore.updatePlan('GRUPAL')
+    
+    if (result.success) {
+        router.push('/multiplayer')
+    } else {
+        console.error("Error al establecer plan grupal:", result.message)
+        router.push('/multiplayer')
+    }
 }
 </script>
 
@@ -601,5 +697,12 @@ const createGroup = async () => {
        But we ensure no transform/shadow change. */
     box-shadow: none !important;
     transform: none !important;
+}
+.premium-card {
+    border: 1px solid rgba(255, 171, 64, 0.2) !important;
+}
+
+.premium-card:hover {
+    border-color: #ffab40 !important;
 }
 </style>
