@@ -21,7 +21,7 @@
         </v-btn>
       </div>
 
-      <div class="text-center mb-8 header-section">
+      <div class="text-center mb-6 header-section">
         <div class="hologram-effect mb-4">
           <v-icon color="cyan-accent-3" size="64" class="pulse-icon">mdi-shield-account-outline</v-icon>
         </div>
@@ -29,7 +29,7 @@
           ALISTAMIENTO
         </h1>
         <div class="text-overline text-cyan-lighten-3 tracking-wide border-bottom-pulse">
-          NUEVO TRIPULANTE ASTRO
+          REGISTRO DE NUEVO TRIPULANTE
         </div>
       </div>
 
@@ -39,18 +39,31 @@
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">IDENTIFICACIÓN</div>
             <v-text-field
               v-model="formData.username"
-              placeholder="NOMBRE DE USUARIO (TU ID)"
+              placeholder="ID TRIPULANTE (NICK)"
               variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
               prepend-inner-icon="mdi-account-box-outline"
               color="cyan-accent-3"
               class="future-input"
-              :rules="[v => !!v || 'ID Requerido']"
+              :rules="[v => !!v || 'ID Requerido', v => v.length >= 3 || 'Mínimo 3 caracteres']"
               hide-details="auto"
             ></v-text-field>
-            <div class="text-caption text-grey-lighten-1 mt-1 ml-1 font-italic">
-              *Este será tu nombre visible en la misión
-            </div>
+          </v-col>
+
+          <v-col cols="12" class="mt-4">
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">CANAL DE ENLACE (EMAIL)</div>
+            <v-text-field
+              v-model="formData.email"
+              placeholder="CORREO ELECTRÓNICO"
+              type="email"
+              variant="solo-filled"
+              bg-color="rgba(0, 20, 40, 0.6)"
+              prepend-inner-icon="mdi-email-outline"
+              color="cyan-accent-3"
+              class="future-input"
+              :rules="emailRules"
+              hide-details="auto"
+            ></v-text-field>
           </v-col>
 
           <v-col cols="12" sm="6" class="mt-4">
@@ -64,7 +77,7 @@
               prepend-inner-icon="mdi-lock-outline"
               color="cyan-accent-3"
               class="future-input"
-              :rules="[v => !!v || 'Código Requerido']"
+              :rules="[v => !!v || 'Código Requerido', v => v.length >= 6 || 'Mínimo 6 caracteres']"
               hide-details="auto"
             ></v-text-field>
           </v-col>
@@ -73,7 +86,7 @@
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">VERIFICACIÓN</div>
             <v-text-field
               v-model="formData.confirmPassword"
-              placeholder="CONFIRMAR CONTRASEÑA"
+              placeholder="REPETIR CÓDIGO"
               type="password"
               variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
@@ -98,7 +111,7 @@
           type="submit"
           class="register-btn font-weight-black mt-8 text-h6"
           :loading="loading"
-          :disabled="!!passwordMatchError"
+          :disabled="isFormInvalid"
         >
           <v-icon start class="mr-2">mdi-rocket-launch</v-icon>
           INICIAR PROTOCOLO DE ALTA
@@ -129,52 +142,59 @@ const astroStore = useAstroStore();
 
 const loading = ref(false);
 const errorMessage = ref('');
+const registerForm = ref(null);
 
 const formData = ref({
   username: '',
+  email: '',
   password: '',
   confirmPassword: ''
 });
 
+// Reglas de validación
+const emailRules = [
+  v => !!v || 'Email requerido para notificaciones de flota',
+  v => /.+@.+\..+/.test(v) || 'El formato de coordenadas (email) es inválido'
+];
+
 const passwordMatchError = computed(() => {
   if (!formData.value.confirmPassword) return '';
   return formData.value.password !== formData.value.confirmPassword 
-    ? 'Los códigos no coinciden' 
+    ? 'Los códigos de acceso no coinciden' 
     : '';
 });
 
+const isFormInvalid = computed(() => {
+  return !!passwordMatchError.value || !formData.value.username || !formData.value.email || formData.value.password.length < 6;
+});
+
 const handleRegister = async () => {
-    if (passwordMatchError.value) return;
-    if (!formData.value.username || !formData.value.password) {
-        errorMessage.value = "Todos los campos son obligatorios.";
-        return;
-    }
+    const { valid } = await registerForm.value.validate();
+    if (!valid || isFormInvalid.value) return;
     
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const tripulanteData = {
+        const result = await astroStore.registerTripulante({
             username: formData.value.username,
-            password: formData.value.password,
-        };
-
-        const result = await astroStore.registerTripulante(tripulanteData);
+            email: formData.value.email,
+            password: formData.value.password
+        });
         
         if (result.success) {
+            // Podrías mostrar un mensaje de éxito antes de redirigir
             router.push('/login'); 
         } else {
-            errorMessage.value = result.message || "Error al procesar el alta.";
+            errorMessage.value = result.message || "Fallo en la secuencia de alta.";
         }
-        
     } catch (err) {
-        errorMessage.value = "Error crítico: No se ha podido contactar con la base.";
+        errorMessage.value = "ERROR CRÍTICO: El servidor de la flota no responde.";
     } finally {
         loading.value = false;
     }
 };
 </script>
-
 <style scoped>
 /* Container & Background */
 .register-container {

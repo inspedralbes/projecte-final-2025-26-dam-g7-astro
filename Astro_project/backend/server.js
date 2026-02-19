@@ -5,6 +5,10 @@ const http = require('http');
 const cors = require('cors');
 const { connectDB, getDB } = require('./db');
 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const validator = require('validator'); // Para validar emails
+
 const app = express();
 
 // --- CONFIGURACIÓN ---
@@ -82,24 +86,37 @@ async function getUserStats(username) {
 
 // --- LÓGICA DE USUARIOS ---
 
-// Endpoint de Registro (Ajustado a astroStore)
+// --- REGISTRO MEJORADO ---
 app.post('/api/auth/register', async (req, res) => {
-    const { username, password, rank } = req.body; // Recibe lo que envía el Store
+    const { username, email, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ message: "Nombre y contraseña requeridos." });
+    // 1. Validaciones básicas
+    if (!username || !email || !password) {
+        return res.status(400).json({ message: "Todos los campos son obligatorios." });
+    }
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: "Formato de correo inválido." });
     }
 
     try {
         const db = getDB();
-        const existingUser = await db.collection('users').findOne({ user: username });
+        // 2. Verificar si el usuario O el correo ya existen
+        const existingUser = await db.collection('users').findOne({ 
+            $or: [{ user: username }, { email: email }] 
+        });
 
-        if (existingUser) return res.status(409).json({ message: "El ID de tripulante ya existe." });
+        if (existingUser) {
+            return res.status(409).json({ message: "El ID o el Correo ya están en uso." });
+        }
+
+        // 3. Encriptar contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = {
             user: username,
-            pass: password,
-            rank: rank || "Cadete de Vuelo",
+            email: email.toLowerCase(),
+            pass: hashedPassword,
+            rank: "Cadete de Vuelo",
             plan: "INDIVIDUAL_FREE",
             coins: 1000,
             inventory: [],
@@ -107,42 +124,53 @@ app.post('/api/auth/register', async (req, res) => {
         };
 
         await db.collection('users').insertOne(newUser);
-        res.status(201).json({ message: "Reclutamiento completado exitosamente." });
+        res.status(201).json({ message: "Tripulante registrado en la base de datos." });
     } catch (error) {
-        res.status(500).json({ message: "Error en el sistema de registro." });
+        res.status(500).json({ message: "Error crítico en motores de registro." });
     }
 });
 
-// Endpoint de Login (Sincronizado con astroStore)
+// --- LOGIN MEJORADO (Email o Username) ---
 app.post('/api/auth/login', async (req, res) => {
-    // El store envía credentials.username o credentials.user
-    const username = req.body.username || req.body.user;
-    const password = req.body.password || req.body.pass;
+    const { identifier, password } = req.body; // 'identifier' puede ser email o user
 
     try {
         const db = getDB();
-        const foundUser = await db.collection('users').findOne({ user: username, pass: password });
+        // Buscar por nombre de usuario O por correo
+        const user = await db.collection('users').findOne({
+            $or: [{ user: identifier }, { email: identifier }]
+        });
 
-        if (foundUser) {
-            const userStats = await getUserStats(foundUser.user);
-
-            console.log(`🚀 Sesión iniciada: ${foundUser.user}`);
-            res.json({
-                status: "Sincronización completada",
-                token: "session_token_" + Math.random().toString(36).substr(2),
-                profile: {
-                    name: foundUser.user,
-                    plan: foundUser.plan || "INDIVIDUAL_FREE",
-                    rank: foundUser.rank || "Cadete de Vuelo",
-                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
-                    selectedAchievements: foundUser.selectedAchievements || [null, null, null]
-                }
-            });
-        } else {
-            res.status(401).json({ status: "Error", message: "Credenciales no reconocidas" });
+        if (!user) {
+            return res.status(401).json({ message: "Credenciales no reconocidas por el radar." });
         }
+
+        // Comparar contraseñas encriptadas
+        const match = await bcrypt.compare(password, user.pass);
+        if (!match) {
+            return res.status(401).json({ message: "Código de acceso incorrecto." });
+        }
+
+        // Generar JWT Real
+        const token = jwt.sign(
+            { userId: user._id, username: user.user }, 
+            process.env.JWT_SECRET || 'SUPER_SECRET_ASTRO_KEY', 
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            status: "Sincronización completada",
+            token,
+            profile: {
+                name: user.user,
+                email: user.email,
+                plan: user.plan,
+                rank: user.rank,
+                coins: user.coins || 0
+            }
+        });
     } catch (error) {
-        res.status(500).json({ message: "Error interno del servidor" });
+        res.status(500).json({ message: "Fallo de conexión con el núcleo." });
     }
 });
 
