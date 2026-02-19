@@ -38,8 +38,8 @@
           <v-col cols="12">
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">IDENTIFICACIÓN</div>
             <v-text-field
-              v-model="identifier"
-              placeholder="USUARIO O CORREO ELECTRÓNICO"
+              v-model="username"
+              placeholder="NOMBRE DE USUARIO / ID TRIPULANTE"
               variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
               prepend-inner-icon="mdi-account-circle-outline"
@@ -107,20 +107,20 @@ import { ref } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useRouter } from 'vue-router';
 
+// Props and Emits
 const props = defineProps(['selectedPlan']);
 const emit = defineEmits(['back']);
 
 const astroStore = useAstroStore();
 const router = useRouter();
 
-// Usamos 'identifier' para representar username o email
-const identifier = ref('');
+const username = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 
 const handleLogin = async () => {
-  if (!identifier.value || !password.value) {
+  if (!username.value || !password.value) {
       errorMessage.value = "Identificación y código requeridos";
       return;
   }
@@ -128,24 +128,23 @@ const handleLogin = async () => {
   loading.value = true;
   errorMessage.value = '';
 
-  // Enviamos 'identifier' al store
   const result = await astroStore.loginTripulante({
-    identifier: identifier.value,
+    user: username.value,
     password: password.value
   });
 
   if (result.success) {
-    // Pequeño delay para el efecto visual de sincronización
     setTimeout(() => {
       loading.value = false;
       router.push('/singleplayer');
-    }, 800);
+    }, 1000);
   } else {
     loading.value = false;
-    errorMessage.value = result.message || "Credenciales no reconocidas por el sistema";
+    errorMessage.value = result.message || "Credenciales no reconocidas";
   }
 };
 </script>
+
 
 <style scoped>
 /* Container & Background */
