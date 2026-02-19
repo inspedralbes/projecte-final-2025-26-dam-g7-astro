@@ -80,6 +80,96 @@ async function getUserStats(username) {
     };
 }
 
+// --- ESTADÍSTICAS Y PARTIDAS ---
+
+app.get('/api/users/:username/stats', async (req, res) => {
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ message: "Usuario requerido." });
+    }
+
+    try {
+        const stats = await getUserStats(username);
+        if (!stats) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        res.json(stats);
+    } catch (error) {
+        console.error("Error obteniendo estadísticas:", error);
+        res.status(500).json({ message: "No se pudieron obtener las estadísticas." });
+    }
+});
+
+app.get('/api/shop/balance/:username', async (req, res) => {
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ message: "Usuario requerido." });
+    }
+
+    try {
+        const stats = await getUserStats(username);
+        if (!stats) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        res.json({
+            user: stats.user,
+            coins: stats.coins,
+            gamesPlayed: stats.gamesPlayed
+        });
+    } catch (error) {
+        console.error("Error obteniendo saldo:", error);
+        res.status(500).json({ message: "No se pudo obtener el saldo." });
+    }
+});
+
+app.post('/api/games/complete', async (req, res) => {
+    const { user, game, score = 0 } = req.body;
+
+    if (!user || !game) {
+        return res.status(400).json({ message: "Usuario y juego son requeridos." });
+    }
+
+    try {
+        const { users, partides } = getCollections();
+        const currentUser = await users.findOne({ user });
+        if (!currentUser) {
+            return res.status(404).json({ message: "Usuario no encontrado." });
+        }
+
+        const parsedScore = Number.parseInt(score, 10);
+        const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
+        const coinsEarned = Math.max(20, Math.floor(normalizedScore / 10));
+        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
+        const newBalance = currentCoins + coinsEarned;
+
+        await Promise.all([
+            partides.insertOne({
+                user,
+                game,
+                score: normalizedScore,
+                coinsEarned,
+                createdAt: new Date()
+            }),
+            users.updateOne({ user }, { $set: { coins: newBalance } })
+        ]);
+
+        const gamesPlayed = await partides.countDocuments({ user });
+
+        res.json({
+            success: true,
+            message: "Partida registrada correctamente.",
+            coinsEarned,
+            newBalance,
+            gamesPlayed
+        });
+    } catch (error) {
+        console.error("Error registrando partida:", error);
+        res.status(500).json({ message: "No se pudo registrar la partida." });
+    }
+});
+
 // --- LÓGICA DE USUARIOS ---
 
 // Endpoint de Registro (Ajustado a astroStore)
