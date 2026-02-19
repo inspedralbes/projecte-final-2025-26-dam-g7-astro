@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
 import register from '@/pages/auth/register.vue'
 import login from '@/pages/auth/login.vue'
 import Plans from '@/pages/plans/plans.vue'
@@ -48,9 +49,16 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/inventory',
+      name: 'Inventory',
+      component: () => import('@/pages/inventory/inventory.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/achievements',
       name: 'Achievements',
-      component: () => import('@/pages/achievements/achievements.vue')
+      component: () => import('@/pages/achievements/achievements.vue'),
+      meta: { requiresAuth: true }
     },
   ],
 })

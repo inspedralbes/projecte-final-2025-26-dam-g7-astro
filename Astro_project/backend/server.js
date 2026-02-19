@@ -21,7 +21,6 @@ const WHEEL_ITEMS = [
     { id: 3, label: 'Monedas', icon: 'mdi-currency-usd', color: '#FFC107', weight: 30 },
     { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 }
 ];
-const GAME_COMPLETION_REWARD = 100;
 let indexesReady = false;
 
 function getCollections() {
@@ -86,15 +85,15 @@ async function getUserStats(username) {
 // Endpoint de Registro (Ajustado a astroStore)
 app.post('/api/auth/register', async (req, res) => {
     const { username, password, rank } = req.body; // Recibe lo que envía el Store
-    
+
     if (!username || !password) {
         return res.status(400).json({ message: "Nombre y contraseña requeridos." });
     }
 
     try {
-        const { users } = getCollections();
-        const existingUser = await users.findOne({ user: username });
-        
+        const db = getDB();
+        const existingUser = await db.collection('users').findOne({ user: username });
+
         if (existingUser) return res.status(409).json({ message: "El ID de tripulante ya existe." });
 
         const newUser = {
@@ -106,8 +105,8 @@ app.post('/api/auth/register', async (req, res) => {
             inventory: [],
             createdAt: new Date()
         };
-        
-        await users.insertOne(newUser);
+
+        await db.collection('users').insertOne(newUser);
         res.status(201).json({ message: "Reclutamiento completado exitosamente." });
     } catch (error) {
         res.status(500).json({ message: "Error en el sistema de registro." });
@@ -121,9 +120,9 @@ app.post('/api/auth/login', async (req, res) => {
     const password = req.body.password || req.body.pass;
 
     try {
-        const { users } = getCollections();
-        const foundUser = await users.findOne({ user: username, pass: password });
-        
+        const db = getDB();
+        const foundUser = await db.collection('users').findOne({ user: username, pass: password });
+
         if (foundUser) {
             const userStats = await getUserStats(foundUser.user);
 
@@ -133,10 +132,10 @@ app.post('/api/auth/login', async (req, res) => {
                 token: "session_token_" + Math.random().toString(36).substr(2),
                 profile: {
                     name: foundUser.user,
-                    plan: userStats?.plan || "INDIVIDUAL",
-                    rank: userStats?.rank || "Cadete de Vuelo",
-                    coins: userStats?.coins !== undefined ? userStats.coins : 1000,
-                    gamesPlayed: userStats?.gamesPlayed || 0
+                    plan: foundUser.plan || "INDIVIDUAL",
+                    rank: foundUser.rank || "Cadete de Vuelo",
+                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
+                    selectedAchievements: foundUser.selectedAchievements || [null, null, null]
                 }
             });
         } else {
@@ -150,7 +149,7 @@ app.post('/api/auth/login', async (req, res) => {
 // --- RULETA Y SALDO ---
 
 app.post('/api/shop/spin', async (req, res) => {
-    const { user } = req.body; 
+    const { user } = req.body;
     try {
         const { users: usersCol } = getCollections();
         const currentUser = await usersCol.findOne({ user: user });
@@ -186,89 +185,37 @@ app.post('/api/shop/spin', async (req, res) => {
         res.json({
             success: true,
             prize: { id: prize.id, label: prize.label, icon: prize.icon },
-            newBalance: finalCoins 
+            newBalance: finalCoins
         });
     } catch (error) {
         res.status(500).json({ message: "Error en la ruleta" });
     }
 });
 
-app.get('/api/shop/balance/:user', async (req, res) => {
-    try {
-        const username = req.params.user;
-        const userStats = await getUserStats(username);
+// --- ENDPOINT DE LOGROS ---
+app.put('/api/user/achievements', async (req, res) => {
+    const { user, achievements } = req.body;
+    console.log(`🏅 Actualizando logros para: ${user}`, achievements);
 
-        if (!userStats) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
-        }
-
-        res.json({
-            user: userStats.user,
-            coins: userStats.coins,
-            gamesPlayed: userStats.gamesPlayed
-        });
-    } catch (error) {
-        res.status(500).json({ message: "Error obteniendo saldo" });
-    }
-});
-
-app.get('/api/users/:user/stats', async (req, res) => {
-    try {
-        const username = req.params.user;
-        const userStats = await getUserStats(username);
-
-        if (!userStats) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
-        }
-
-        res.json(userStats);
-    } catch (error) {
-        res.status(500).json({ message: "Error obteniendo estadísticas" });
-    }
-});
-
-app.post('/api/games/complete', async (req, res) => {
-    const { user, game, score } = req.body;
-
-    if (!user || !game) {
-        return res.status(400).json({ message: "Usuario y juego son obligatorios." });
+    if (!user) return res.status(400).json({ success: false, message: "Usuario no identificado" });
+    if (!Array.isArray(achievements) || achievements.length > 3) {
+        return res.status(400).json({ success: false, message: "Lista de logros no válida (máximo 3)" });
     }
 
     try {
-        const { users, partides } = getCollections();
-        const currentUser = await users.findOne({ user });
+        const db = getDB();
+        const usersCol = db.collection('users');
 
-        if (!currentUser) {
-            return res.status(404).json({ message: "Usuario no encontrado." });
-        }
-
-        const safeScore = Number.isFinite(Number(score)) ? Number(score) : 0;
-
-        await partides.insertOne({
-            user,
-            game,
-            score: safeScore,
-            completed: true,
-            rewardCoins: GAME_COMPLETION_REWARD,
-            createdAt: new Date()
-        });
-
-        await users.updateOne(
-            { user },
-            { $inc: { coins: GAME_COMPLETION_REWARD } }
+        await usersCol.updateOne(
+            { user: user },
+            { $set: { selectedAchievements: achievements } }
         );
 
-        const userStats = await getUserStats(user);
+        res.json({ success: true, message: "Logros actualizados correctamente" });
 
-        res.status(201).json({
-            success: true,
-            message: "Partida registrada correctamente.",
-            rewardCoins: GAME_COMPLETION_REWARD,
-            gamesPlayed: userStats?.gamesPlayed || 0,
-            newBalance: userStats?.coins !== undefined ? userStats.coins : 0
-        });
     } catch (error) {
-        res.status(500).json({ message: "Error registrando la partida" });
+        console.error("Error al actualizar logros:", error);
+        res.status(500).json({ message: "Error interno del servidor" });
     }
 });
 
@@ -279,20 +226,14 @@ wss.on('connection', (ws) => {
         try {
             const msg = JSON.parse(data);
             if (msg.type === 'IDENTIFY') console.log(`👤 Usuario identificado en WS: ${msg.user}`);
-        } catch (e) {}
+        } catch (e) { }
     });
 });
 
 // --- ARRANQUE ---
-connectDB()
-    .then(async () => {
-        await ensureIndexes();
-        const PORT = 3000;
-        server.listen(PORT, () => {
-            console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);
-        });
-    })
-    .catch((error) => {
-        console.error("❌ Error arrancando servidor:", error);
-        process.exit(1);
+connectDB().then(() => {
+    const PORT = 3000;
+    server.listen(PORT, () => {
+        console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);
     });
+});
