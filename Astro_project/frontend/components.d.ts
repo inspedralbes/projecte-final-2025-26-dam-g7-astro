@@ -15,6 +15,7 @@ declare module 'vue' {
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
+    Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

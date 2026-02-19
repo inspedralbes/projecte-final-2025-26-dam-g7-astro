@@ -3,10 +3,10 @@ import { markRaw } from 'vue';
 
 export const useAstroStore = defineStore('astro', {
     state: () => ({
-        user: null,
-        plan: null,
-        rank: null,
-        selectedAchievements: [null, null, null], // Siempre 3 slots
+        user: localStorage.getItem('astro_user') || null,
+        plan: localStorage.getItem('astro_plan') || null,
+        rank: localStorage.getItem('astro_rank') || null,
+        selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
         token: localStorage.getItem('astro_token') || null,
         socket: null,
         isConnected: false,
@@ -74,6 +74,10 @@ export const useAstroStore = defineStore('astro', {
                 this.token = data.token;
 
                 localStorage.setItem('astro_token', data.token);
+                localStorage.setItem('astro_user', this.user);
+                localStorage.setItem('astro_rank', this.rank);
+                localStorage.setItem('astro_plan', this.plan);
+                localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
 
                 this.connectWebSocket();
                 return { success: true };
@@ -136,11 +140,33 @@ export const useAstroStore = defineStore('astro', {
             }
             this.$reset();
             localStorage.removeItem('astro_token');
+            localStorage.removeItem('astro_user');
+            localStorage.removeItem('astro_rank');
+            localStorage.removeItem('astro_plan');
+            localStorage.removeItem('astro_selected_achievements');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
         },
 
         async updateAchievements(achievements) {
             this.error = null;
+
+            // Si por alguna razón el usuario es null pero tenemos token, intentamos recuperar (o simplemente logueamos el error)
+            if (!this.user) {
+                console.warn("⚠️ Intento de actualizar logros sin usuario identificado. Intentando recuperar de localStorage...");
+                this.user = localStorage.getItem('astro_user');
+            }
+
+            // Actualizamos localmente y en storage de inmediato (Optimistic)
+            this.selectedAchievements = achievements;
+            localStorage.setItem('astro_selected_achievements', JSON.stringify(achievements));
+            localStorage.setItem('astro_user', this.user); // Aseguramos persistencia
+
+            if (!this.user) {
+                this.error = "Usuario no identificado. Los cambios se guardarán localmente pero no en el servidor.";
+                console.error("❌ " + this.error);
+                return { success: false, message: this.error };
+            }
+
             try {
                 const response = await fetch('http://localhost:3000/api/user/achievements', {
                     method: 'PUT',
@@ -154,12 +180,14 @@ export const useAstroStore = defineStore('astro', {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message || "Error al actualizar logros");
 
-                this.selectedAchievements = achievements;
+                console.log(`✅ Logros actualizados en servidor para ${this.user}:`, achievements);
                 return { success: true };
 
             } catch (error) {
-                console.error("❌ Error actualizando logros:", error);
-                this.error = error.message;
+                console.error("❌ Error sincronizando con servidor:", error);
+                this.error = "Error al guardar en el servidor: " + error.message;
+                // NO hacemos rollback para que el usuario no vea que sus logros desaparecen.
+                // Se quedan guardados localmente en el localStorage.
                 return { success: false, message: this.error };
             }
         }
