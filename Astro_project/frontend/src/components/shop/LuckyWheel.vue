@@ -33,7 +33,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-// RECIBIMOS EL USUARIO DESDE EL COMPONENTE PADRE (Shop.vue)
 const props = defineProps({
   user: {
     type: String,
@@ -47,14 +46,13 @@ const emit = defineEmits(['win', 'update-balance']);
 const isSpinning = ref(false);
 const currentRotation = ref(0);
 
-// Items visuales (deben coincidir en orden/ID con server.js)
+// CORRECCIÓ 1: L'array ha de coincidir exactament amb els 5 ítems del backend.
 const items = [
     { id: 0, icon: 'mdi-heart', color: '#FF5252' },
     { id: 1, icon: 'mdi-decagram', color: '#9C27B0' },
     { id: 2, icon: 'mdi-ninja', color: '#2196F3' },
     { id: 3, icon: 'mdi-currency-usd', color: '#FFC107' },
-    { id: 4, icon: 'mdi-emoticon-sad', color: '#795548' },
-    { id: 5, icon: 'mdi-shield', color: '#607D8B' }
+    { id: 4, icon: 'mdi-emoticon-sad', color: '#795548' }
 ];
 
 const wheelStyle = computed(() => {
@@ -83,7 +81,6 @@ async function spin() {
   isSpinning.value = true;
 
   try {
-    // LLAMADA AL BACKEND USANDO EL USUARIO DE LAS PROPS
     const response = await fetch('http://localhost:3000/api/shop/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,26 +93,30 @@ async function spin() {
         throw new Error(data.message || "Error al girar");
     }
 
-    // LÓGICA DE GIRO
     const winnerIndex = items.findIndex(i => i.id === data.prize.id);
+    if (winnerIndex === -1) {
+        throw new Error("El servidor ha retornat un premi no reconegut pel client.");
+    }
+
     const degreePerItem = 360 / items.length;
     
-    // Calculamos el ángulo para que el premio quede arriba (bajo el marcador)
-    // 360 * 5 para dar 5 vueltas completas antes de frenar
-    const extraSpins = 360 * 5; 
-    const stopAngle = extraSpins - (winnerIndex * degreePerItem) - (degreePerItem / 2);
+    // CORRECCIÓ 2: Càlcul de l'angle objectiu dins d'una única circumferència (0-360)
+    // Utilitzem un valor negatiu equivalent a la rotació necessària per alinear el segment a les 12 en punt.
+    const targetAngle = 360 - (winnerIndex * degreePerItem) - (degreePerItem / 2);
 
-    // Sumamos a la rotación actual para que siempre gire hacia adelante
-    currentRotation.value += stopAngle;
+    // Comptem quantes voltes completes porta l'estat actual per no retrocedir
+    const currentSpins = Math.floor(currentRotation.value / 360);
+    const extraSpins = 5;
 
-    // Esperamos a que termine la animación de 4 segundos
+    // Fixem la nova rotació: voltes actuals + 5 voltes d'inèrcia + angle on ha de caure
+    currentRotation.value = (currentSpins + extraSpins) * 360 + targetAngle;
+
     setTimeout(() => {
       isSpinning.value = false;
       
-      // Notificamos al padre el premio y el nuevo saldo
       emit('win', {
           ...data.prize,
-          color: items[winnerIndex].color // Añadimos el color para el diálogo de éxito
+          color: items[winnerIndex].color 
       }); 
       
       if (data.newBalance !== undefined) {
@@ -126,7 +127,7 @@ async function spin() {
   } catch (e) {
     console.error("❌ Error en la ruleta:", e);
     isSpinning.value = false;
-    alert(e.message || "Error de comunicación con el centro de mando");
+    alert(e.message || "Error de comunicació amb el centre de comandament");
   }
 }
 </script>

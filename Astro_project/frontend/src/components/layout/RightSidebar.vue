@@ -14,10 +14,10 @@
                         <div class="text-caption text-grey" style="font-size: 0.7rem !important;">Racha</div>
                     </div>
                     <div class="text-center">
-                        <v-icon icon="mdi-circle-multiple-outline" color="yellow-accent-3" size="large"
-                            class="mb-0 glow-icon"></v-icon>
-                        <div class="text-h6 font-weight-bold text-white">1.250</div>
-                        <div class="text-caption text-grey" style="font-size: 0.7rem !important;">Monedas</div>
+                         <v-icon icon="mdi-circle-multiple-outline" color="yellow-accent-3" size="large"
+                          class="mb-0 glow-icon"></v-icon>
+                          <div class="text-h6 font-weight-bold text-white">{{ userCoins }}</div>
+                         <div class="text-caption text-grey" style="font-size: 0.7rem !important;">Monedas</div>
                     </div>
                 </div>
             </v-card>
@@ -148,7 +148,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAstroStore } from '@/stores/astroStore' 
+
+const astroStore = useAstroStore()
+
+const userCoins = computed(() => astroStore.coins)
 
 const dialogMisiones = ref(false)
 const dialogDiarias = ref(false)
