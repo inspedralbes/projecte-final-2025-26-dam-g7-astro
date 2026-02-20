@@ -9,14 +9,15 @@ services:
 
   backend:
     build:
-      context: ./backend
+      # Change this to point exactly where your backend Dockerfile is
+      context: ./backend 
       dockerfile: Dockerfile.dev
     container_name: astro_backend
     ports:
       - "3000:3000"
     volumes:
       - ./backend:/app
-      - /app/node_modules # Evita que los nodos locales sobrescriban los del contenedor
+      - /app/node_modules
     depends_on:
       - mongodb
     environment:
@@ -25,18 +26,20 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      # UPDATE THIS: Point to the 'web' folder inside 'frontend'
+      context: ./frontend/web
       dockerfile: Dockerfile.dev
     container_name: astro_frontend
     ports:
       - "3001:3001"
     volumes:
-      - ./frontend:/app
+      # UPDATE THIS: Ensure the volume also points to the 'web' folder
+      - ./frontend/web:/app
       - /app/node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true # Ayuda al hot-reload en algunos sistemas
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
 
 volumes:
-  mongo_data:
+  mongo_data:s
