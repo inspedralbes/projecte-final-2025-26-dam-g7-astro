@@ -59,31 +59,55 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useAstroStore } from '@/stores/astroStore';
 
+const astroStore = useAstroStore();
 const activeCategory = ref('all');
+const inventoryItems = ref([]); // Empezamos con el array vacío
 
 const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
     { id: 'skins', name: 'Skins', icon: 'mdi-palette' },
     { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
-    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' }
+    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
+    { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
 ];
 
-// Datos de ejemplo: lo ideal sería traerlos del Backend/Store
-const inventoryItems = ref([
-    { id: 102, name: 'Skin Cyberpunk', cat: 'skins', icon: 'mdi-robot', color: 'purple-accent-3', equipped: false, desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
-    { id: 103, name: 'Mascota Dron', cat: 'pets', icon: 'mdi-quadcopter', color: 'green-accent-3', equipped: false, desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' }
-]);
+// 1. Cargar el inventario real desde MongoDB al montar el componente
+onMounted(async () => {
+    if (astroStore.user) {
+        const items = await astroStore.fetchUserInventory();
+        inventoryItems.value = items;
+    }
+});
 
 const filteredItems = computed(() => {
     if (activeCategory.value === 'all') return inventoryItems.value;
     return inventoryItems.value.filter(item => item.cat === activeCategory.value);
 });
 
-function toggleEquip(item) {
-    // Lógica simple para demo
-    item.equipped = !item.equipped;
+// 2. Función para equipar que guarda en la base de datos
+async function toggleEquip(item) {
+    // Llamamos al nuevo endpoint que pusimos en el server.js
+    try {
+        const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user: astroStore.user,
+                itemId: item.id
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Actualizamos la lista local con lo que nos devuelve el servidor
+            inventoryItems.value = data.inventory;
+        }
+    } catch (error) {
+        console.error("Error al equipar item:", error);
+    }
 }
 </script>
 

@@ -7,6 +7,7 @@ export const useAstroStore = defineStore('astro', {
         plan: localStorage.getItem('astro_plan') || 'INDIVIDUAL_FREE',
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
+        partides: 0,
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
@@ -175,6 +176,34 @@ export const useAstroStore = defineStore('astro', {
                 console.error("❌ Error registrando partida:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
+            }
+        },
+        async buyItem(item) {
+            try {
+                const response = await fetch('http://localhost:3000/api/shop/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, item: item })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+
+                this.coins = data.newBalance; // Actualiza el dinero en la UI instantáneamente
+                return { success: true };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        },
+
+        async fetchUserInventory() {
+            if (!this.user) return [];
+            try {
+                const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/inventory`);
+                const data = await response.json();
+                return data.inventory || [];
+            } catch (error) {
+                console.error("Error al traer inventario:", error);
+                return [];
             }
         },
 

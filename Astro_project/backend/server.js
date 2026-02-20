@@ -333,6 +333,112 @@ app.put('/api/user/plan', async (req, res) => {
     }
 });
 
+// --- SISTEMA DE TIENDA E INVENTARIO ---
+
+// 1. Endpoint para realizar una compra
+app.post('/api/shop/buy', async (req, res) => {
+    const { user, item } = req.body; // 'item' contiene {id, name, price, icon, color, cat...}
+
+    if (!user || !item) {
+        return res.status(400).json({ message: "Datos de compra incompletos." });
+    }
+
+    try {
+        const { users } = getCollections();
+        const currentUser = await users.findOne({ user: user });
+
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 0;
+
+        // Validar si tiene dinero
+        if (currentCoins < item.price) {
+            return res.status(400).json({ message: "Saldo insuficiente en créditos estelares." });
+        }
+
+        // Validar si ya lo tiene (evitar duplicados)
+        const hasItem = currentUser.inventory && currentUser.inventory.some(i => i.id === item.id);
+        if (hasItem) {
+            return res.status(400).json({ message: "Ya posees este artículo en tu inventario." });
+        }
+
+        const newBalance = currentCoins - item.price;
+
+        // El item se guarda con una propiedad 'equipped' por defecto en false
+        const itemToSave = { ...item, equipped: false, purchasedAt: new Date() };
+
+        await users.updateOne(
+            { user: user },
+            {
+                $set: { coins: newBalance },
+                $push: { inventory: itemToSave }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: `¡${item.name} adquirido!`,
+            newBalance: newBalance,
+            inventory: [...(currentUser.inventory || []), itemToSave]
+        });
+    } catch (error) {
+        console.error("Error en la compra:", error);
+        res.status(500).json({ message: "Error procesando la transacción." });
+    }
+});
+
+// 2. Endpoint para obtener el inventario real del usuario
+app.get('/api/users/:username/inventory', async (req, res) => {
+    const username = req.params.username;
+    try {
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: username }, { projection: { inventory: 1 } });
+
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        res.json({ inventory: userDoc.inventory || [] });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener el inventario." });
+    }
+});
+
+app.post('/api/inventory/toggle-equip', async (req, res) => {
+    const { user, itemId } = req.body;
+    try {
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: user });
+
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        // 1. Buscamos el item que el usuario quiere equipar/desequipar una sola vez
+        const itemTarget = userDoc.inventory.find(i => i.id === itemId);
+        if (!itemTarget) return res.status(404).json({ message: "Item no encontrado en inventario" });
+
+        const isEquipping = !itemTarget.equipped; // ¿Va a pasar a estar equipado?
+
+        // 2. Mapeamos el inventario con la lógica de exclusividad
+        const updatedInventory = userDoc.inventory.map(item => {
+            // Si es el item clickeado, invertimos su estado
+            if (item.id === itemId) {
+                return { ...item, equipped: isEquipping };
+            }
+
+            // Si el usuario está EQUIPANDO una skin/mascota, desequipamos las demás del mismo tipo
+            if (isEquipping && item.cat === itemTarget.cat && item.equipped) {
+                return { ...item, equipped: false };
+            }
+
+            return item;
+        });
+
+        await users.updateOne({ user: user }, { $set: { inventory: updatedInventory } });
+
+        res.json({ success: true, inventory: updatedInventory });
+    } catch (error) {
+        console.error("Error toggle-equip:", error);
+        res.status(500).json({ message: "Error al cambiar equipamiento." });
+    }
+});
 // --- WEBSOCKETS ---
 wss.on('connection', (ws) => {
     console.log("📡 Nueva conexión WS establecida");

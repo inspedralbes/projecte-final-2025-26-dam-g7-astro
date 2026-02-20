@@ -2,7 +2,7 @@
     <div class="scroll-container space-background">
         <v-container fluid class="pa-4 pa-md-6 content-wrapper">
             <v-row justify="center">
-                
+
                 <v-col cols="12" class="text-center mt-2 mb-6">
                     <h1 class="text-h3 font-weight-bold text-uppercase text-cyan-accent-3 glow-text">
                         Bazar Espacial
@@ -19,7 +19,7 @@
                             <h2 class="text-h5 font-weight-bold text-white">Suerte Diaria</h2>
                             <v-icon color="amber-accent-3" class="ml-2">mdi-star-four-points</v-icon>
                         </div>
-                       
+
                         <LuckyWheel :user="astroStore.user" @win="handleWin" @update-balance="updateCoins" />
 
                         <div class="mt-8 px-6 py-3 rounded-pill balance-pill d-flex align-center justify-center">
@@ -45,18 +45,24 @@
 
                     <v-row class="px-2 mb-10">
                         <v-col v-for="item in basicItems" :key="item.id" cols="12" sm="6">
-                            <v-card class="mx-auto item-card rounded-xl pt-4 pb-4 d-flex align-center px-4" color="#1e293b">
+                            <v-card class="mx-auto item-card rounded-xl pt-4 pb-4 d-flex align-center px-4"
+                                color="#1e293b">
                                 <v-avatar size="60" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'" class="mr-4">
                                     <v-icon size="30" :color="item.color">{{ item.icon }}</v-icon>
                                 </v-avatar>
                                 <div class="flex-grow-1">
                                     <div class="text-h6 font-weight-bold text-white">{{ item.name }}</div>
-                                    <div class="text-caption text-grey-lighten-2" style="line-height: 1.2;">{{ item.desc }}</div>
-                                    <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold mt-1" style="font-size: 0.65rem !important;">
+                                    <div class="text-caption text-grey-lighten-2" style="line-height: 1.2;">{{ item.desc
+                                        }}</div>
+                                    <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold mt-1"
+                                        style="font-size: 0.65rem !important;">
                                         {{ item.limitacio }}
                                     </div>
                                 </div>
-                                <v-btn height="40" width="100" :color="userCoins >= item.price ? 'cyan-accent-3' : 'grey'" variant="tonal" class="font-weight-bold rounded-lg ml-2" :disabled="userCoins < item.price">
+                                <v-btn height="40" width="100"
+                                    :color="userCoins >= item.price ? 'cyan-accent-3' : 'grey'" variant="tonal"
+                                    class="font-weight-bold rounded-lg ml-2" :disabled="userCoins < item.price"
+                                    @click="buyProduct(item)">
                                     {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
                                 </v-btn>
                             </v-card>
@@ -73,9 +79,11 @@
 
                     <v-row class="px-2">
                         <v-col v-for="item in premiumItems" :key="item.id" cols="12" sm="6" md="3">
-                            <v-card class="mx-auto item-card premium-card rounded-xl pt-6 pb-4" color="#1e293b" elevation="6">
+                            <v-card class="mx-auto item-card premium-card rounded-xl pt-6 pb-4" color="#1e293b"
+                                elevation="6">
                                 <div class="text-center mb-4">
-                                    <v-avatar size="80" :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'" class="elevation-4">
+                                    <v-avatar size="80" :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
+                                        class="elevation-4">
                                         <v-icon size="40" :color="item.color">{{ item.icon }}</v-icon>
                                     </v-avatar>
                                 </div>
@@ -83,7 +91,11 @@
                                     {{ item.name }}
                                 </v-card-title>
                                 <v-card-actions class="justify-center px-4 pb-2">
-                                    <v-btn block height="40" :color="userCoins >= item.price ? 'amber-accent-3' : 'grey'" :variant="userCoins >= item.price ? 'flat' : 'outlined'" class="font-weight-bold rounded-lg text-black" :disabled="userCoins < item.price">
+                                    <v-btn block height="40"
+                                        :color="userCoins >= item.price ? 'amber-accent-3' : 'grey'"
+                                        :variant="userCoins >= item.price ? 'flat' : 'outlined'"
+                                        class="font-weight-bold rounded-lg text-black"
+                                        :disabled="userCoins < item.price" @click="buyProduct(item)">
                                         {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
                                     </v-btn>
                                 </v-card-actions>
@@ -103,7 +115,8 @@
                     </div>
                     <h3 class="text-h5 font-weight-bold mb-2 text-white">¡RECOMPENSA!</h3>
                     <p class="text-body-1 text-cyan-accent-3 mb-6">{{ lastPrize?.label }}</p>
-                    <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" class="font-weight-bold text-black" @click="showWinDialog = false">
+                    <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" class="font-weight-bold text-black"
+                        @click="showWinDialog = false">
                         Aceptar
                     </v-btn>
                 </v-card>
@@ -125,19 +138,31 @@ const userGames = computed(() => astroStore.partides);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
 
+const buyProduct = async (item) => {
+    const confirm = window.confirm(`¿Quieres comprar ${item.name} por ${item.price} monedas?`);
+    if (!confirm) return;
+
+    const result = await astroStore.buyItem(item); // Esta función la creamos ahora en la store
+    if (result.success) {
+        alert("¡Compra realizada con éxito!");
+    } else {
+        alert(result.message);
+    }
+};
+
 // Arrays separados para las dos secciones (puedes unirlos y filtrar con computeds)
 const basicItems = ref([
-    { id: 1, name: 'Pack de Vidas', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
-    { id: 2, name: 'Congelar Racha', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
-    { id: 3, name: 'Doble de Monedas', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
-    { id: 4, name: 'Doble Puntuación', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
+    { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
+    { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
+    { id: 3, name: 'Doble de Monedas', cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
+    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
 ]);
 
 const premiumItems = ref([
-    { id: 101, name: 'Pin Comandante', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
-    { id: 102, name: 'Skin Cyberpunk', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
-    { id: 103, name: 'Mascota Dron', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
-    { id: 104, name: 'Rastro de Neón', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' }
+    { id: 101, name: 'Pin Comandante', cat: 'skins', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
+    { id: 102, name: 'Skin Cyberpunk', cat: 'skins', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
+    { id: 103, name: 'Mascota Dron', cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
+    { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' }
 ]);
 
 onMounted(async () => {
@@ -193,21 +218,44 @@ const updateCoins = (newBalance) => {
     box-shadow: 0 10px 30px rgba(255, 193, 7, 0.2) !important;
 }
 
-.glow-text { text-shadow: 0 0 20px rgba(0, 229, 255, 0.4); }
+.glow-text {
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
 .balance-pill {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
-.border-cyan { border-color: #00e5ff !important; }
-.border-amber { border-color: #ffc107 !important; }
-.bg-slate-900 { background-color: #0f172a !important; }
+.border-cyan {
+    border-color: #00e5ff !important;
+}
+
+.border-amber {
+    border-color: #ffc107 !important;
+}
+
+.bg-slate-900 {
+    background-color: #0f172a !important;
+}
 
 @keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-.animate-bounce { animation: bounce 2s infinite ease-in-out; }
 
-.drop-shadow { filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.animate-bounce {
+    animation: bounce 2s infinite ease-in-out;
+}
+
+.drop-shadow {
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
+}
 </style>
