@@ -29,6 +29,24 @@
             <!-- Component dinàmic: Aquí es carregarà el joc -->
             <component :is="activeGameComponent" @game-over="handleGameOver" />
         </div>
+        <v-dialog v-model="showLevelUpDialog" max-width="400" persistent z-index="200">
+            <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #00e5ff;">
+                <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="80" class="mb-2 animate-bounce"></v-icon>
+                <h2 class="text-h3 font-weight-black text-white mb-2">¡NIVELL {{ newLevelData.level }}!</h2>
+                
+                <div v-if="newLevelData.rankChanged" class="my-4 pa-3 rounded-lg" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
+                    <div class="text-caption text-grey-lighten-1 text-uppercase">Nou Rang Assolit</div>
+                    <div class="text-h6 font-weight-bold text-amber-accent-3">{{ newLevelData.rank }}</div>
+                </div>
+                
+                <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
+                    Has guanyat més experiència i ets un pas més a prop de dominar la galàxia.
+                </p>
+                <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large" class="font-weight-bold text-black" @click="showLevelUpDialog = false">
+                    CONTINUAR
+                </v-btn>
+            </v-card>
+        </v-dialog>
 
     </v-container>
 </template>
@@ -59,41 +77,38 @@ const startRandomGame = () => {
 };
 
 const handleGameOver = async (finalScore) => {
-    console.log(`Missió finalitzada. Puntuació: ${finalScore}`);
-    
-    // Si hay un usuario logueado, enviamos la puntuación al servidor
     if (astroStore.user) {
         try {
-            const response = await fetch('http://localhost:3000/api/games/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    user: astroStore.user, 
-                    game: activeGameComponent.value.__name || 'Minijuego',
-                    score: finalScore 
-                })
-            });
+            // 1. Guardem el rang antic per saber si l'hem de felicitar per l'ascens
+            const previousRank = astroStore.rank; 
 
-            const data = await response.json();
+            // 2. CRIDA ÚNICA: Deleguem tota la feina bruta a l'Store
+            const result = await astroStore.registerCompletedGame(
+                activeGameComponent.value.__name || 'Minijuego', 
+                finalScore
+            );
 
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || "Error al registrar la partida");
+            // 3. Gestionem errors
+            if (!result.success) throw new Error(result.message);
+
+            // 4. Llegim la resposta empaquetada que ens retorna l'Store
+            if (result.data.leveledUp) {
+                newLevelData.value = {
+                    level: result.data.newLevel,
+                    rank: result.data.newRank,
+                    rankChanged: previousRank !== result.data.newRank
+                };
+                showLevelUpDialog.value = true;
             }
 
-            // ACTUALIZAMOS LA FUENTE DE VERDAD: Esto hará que tu RightSidebar 
-            // y tu Tienda se actualicen visualmente al instante gracias a la reactividad.
-            astroStore.coins = data.newBalance;
-            
-            console.log(`Has ganado ${data.coinsEarned} monedas. Nuevo saldo: ${data.newBalance}`);
-
         } catch (error) {
-            console.error("❌ Error de comunicación con la base de datos:", error);
+            console.error("❌ Error al registrar la partida:", error);
         }
     } else {
-        console.warn("No hay usuario logueado. La puntuación no se ha guardado.");
+        console.warn("⚠️ Mode convidat: No s'ha guardat la puntuació.");
     }
-
-    // Cerramos el juego y volvemos al menú
+    
+    // 5. Tanquem el joc immediatament perquè es vegi el menú (i el popup per sobre)
     activeGameComponent.value = null; 
 };
 </script>

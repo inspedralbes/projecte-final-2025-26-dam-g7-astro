@@ -36,8 +36,8 @@
 
                 <!-- Datos del Usuario -->
                 <div class="user-info-section text-left mt-4">
-                    <div class="d-flex align-center justify-space-between">
-                        <div>
+                    <div class="d-flex align-center justify-space-between w-100">
+                        <div class="flex-grow-1 pr-6">
                             <h1 class="text-h3 font-weight-black text-white mb-0 capitalize">
                                 {{ user || 'Explorador' }}
                             </h1>
@@ -46,11 +46,25 @@
                                     class="text-black font-weight-bold">
                                     {{ rank || 'Cadete Estelar' }}
                                 </v-chip>
-                                <span class="text-grey-lighten-1 text-body-2">• Nivel 1</span>
-                                <div class="d-flex align-center ga-1 ml-2">
+                                <span class="text-grey-lighten-1 text-body-2">• Nivel {{ level || 1 }}</span>
+                                <div class="d-flex align-center ga-1 ml-3">
                                     <div class="status-dot-large" :class="user ? 'online' : 'offline'"></div>
                                     <span class="text-caption text-grey">{{ user ? 'En órbita' : 'En base' }}</span>
                                 </div>
+                            </div>
+                            
+                            <div class="d-flex align-center w-100 mt-2">
+                                <v-progress-linear
+                                    :model-value="(xp / xpRequired) * 100"
+                                    color="cyan-accent-3"
+                                    height="8"
+                                    rounded
+                                    bg-color="rgba(255,255,255,0.1)"
+                                    class="mr-3 shadow-cyan"
+                                ></v-progress-linear>
+                                <span class="text-caption text-cyan-accent-3 font-weight-bold" style="white-space: nowrap;">
+                                    {{ xp }} / {{ xpRequired }} XP
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -214,6 +228,11 @@ const selectionDialog = ref(false)
 const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const currentSlotIndex = ref(null)
+const { user, rank, plan, selectedAchievements, avatar, mascot, level, coins, xp } = storeToRefs(astroStore)
+
+ const xpRequired = computed(() => {
+    return 100 + ((level.value || 1) - 1) * 50;
+})
 
 const avatarOptions = [
     { label: 'Blanc', file: 'Astronauta_blanc.jpg' },
@@ -233,7 +252,6 @@ const mascotOptions = [
 ]
 
 // Extraemos los datos del usuario de forma reactiva
-const { user, rank, plan, selectedAchievements, avatar, mascot } = storeToRefs(astroStore)
 
 // Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
 const allAchievements = computed(() => {
@@ -319,6 +337,10 @@ function selectMascot(file) {
 
 
 <style scoped>
+
+.shadow-cyan { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4)); }
+.tracking-wider { letter-spacing: 1px; }
+
 /* Estilo Base */
 .profile-container {
     background: #000000 !important;
