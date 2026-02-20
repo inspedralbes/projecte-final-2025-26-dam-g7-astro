@@ -39,14 +39,16 @@ import { useAstroStore } from '@/stores/astroStore'; // Importamos el store
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import RadarScan from '@/components/games/RadarScan.vue'; 
+import RadarScan from '@/components/games/RadarScan.vue';
+import SyllableQuest from '@/components/games/SyllableQuest.vue'; 
 
 const astroStore = useAstroStore(); // Instanciamos la única fuente de verdad
 
 const gamesList = [
     WordConstruction,
     SpelledRosco,
-    RadarScan 
+    RadarScan,
+    SyllableQuest
 ];
 
 const activeGameComponent = shallowRef(null);
