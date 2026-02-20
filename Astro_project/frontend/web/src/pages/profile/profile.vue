@@ -24,6 +24,14 @@
                         <v-btn icon="mdi-camera" size="small" color="cyan-accent-3" class="btn-edit-avatar"
                             elevation="4" @click="avatarDialog = true"></v-btn>
                     </div>
+                    <!-- Mascota Integrada -->
+                    <div class="mascot-overlap-box">
+                        <v-avatar v-if="mascot" size="85" class="mascot-badge-big" @click="mascotDialog = true">
+                            <v-img :src="`/${mascot}`" cover></v-img>
+                        </v-avatar>
+                        <v-btn v-else icon="mdi-paw-plus" size="large" color="purple-accent-1" class="btn-add-mascot"
+                            @click="mascotDialog = true"></v-btn>
+                    </div>
                 </div>
 
                 <!-- Datos del Usuario -->
