@@ -21,10 +21,10 @@ const route = useRoute()
 const showLayoutElements = computed(() => {
   const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
   const hiddenNames = ['index', 'register', 'login', 'Plans']
-  
-  const isHidden = hiddenPaths.includes(route.path) || 
-                   (route.name && hiddenNames.includes(route.name))
-                   
+
+  const isHidden = hiddenPaths.includes(route.path) ||
+    (route.name && hiddenNames.includes(route.name))
+
   return !isHidden
 })
 </script>
@@ -34,7 +34,7 @@ const showLayoutElements = computed(() => {
   background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%) !important;
   color: white !important;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .main-content {
