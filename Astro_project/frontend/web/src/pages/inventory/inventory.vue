@@ -28,7 +28,7 @@
                         <v-col v-for="item in filteredItems" :key="item.id" cols="12" sm="6" lg="4">
                             <v-card class="item-card glass-card h-100 pa-4 d-flex flex-column align-center"
                                 rounded="xl">
-                                <v-avatar size="90" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'"
+                                <v-avatar size="90" :style="{ backgroundColor: item.color + '20' }"
                                     class="mb-4 medal-glow">
                                     <v-icon size="45" :color="item.color">{{ item.icon }}</v-icon>
                                 </v-avatar>
@@ -64,32 +64,31 @@ import { useAstroStore } from '@/stores/astroStore';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
-const inventoryItems = ref([]); // Empezamos con el array vacío
 
 const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
-    { id: 'skins', name: 'Skins', icon: 'mdi-palette' },
+    { id: 'skin', name: 'Skins', icon: 'mdi-palette' },
     { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
-    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
+    { id: 'collectible', name: 'Coleccionables', icon: 'mdi-trophy' },
     { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
 ];
 
-// 1. Cargar el inventario real desde MongoDB al montar el componente
-onMounted(async () => {
-    if (astroStore.user) {
-        const items = await astroStore.fetchUserInventory();
-        inventoryItems.value = items;
-    }
-});
+// Usamos SIEMPRE el estado global de Pinia
+const inventoryItems = computed(() => astroStore.inventory || []);
 
 const filteredItems = computed(() => {
     if (activeCategory.value === 'all') return inventoryItems.value;
     return inventoryItems.value.filter(item => item.cat === activeCategory.value);
 });
 
-// 2. Función para equipar que guarda en la base de datos
+// Solo un onMounted para traer los datos al cargar la vista
+onMounted(async () => {
+    if (astroStore.user) {
+        await astroStore.fetchUserInventory();
+    }
+});
+
 async function toggleEquip(item) {
-    // Llamamos al nuevo endpoint que pusimos en el server.js
     try {
         const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
             method: 'POST',
@@ -99,11 +98,11 @@ async function toggleEquip(item) {
                 itemId: item.id
             })
         });
-        
+
         const data = await response.json();
         if (data.success) {
-            // Actualizamos la lista local con lo que nos devuelve el servidor
-            inventoryItems.value = data.inventory;
+            // Actualizamos el estado global con el inventario devuelto por el servidor
+            astroStore.inventory = data.inventory;
         }
     } catch (error) {
         console.error("Error al equipar item:", error);

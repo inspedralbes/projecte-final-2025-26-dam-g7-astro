@@ -59,11 +59,15 @@
                                         {{ item.limitacio }}
                                     </div>
                                 </div>
-                                <v-btn height="40" width="100"
-                                    :color="userCoins >= item.price ? 'cyan-accent-3' : 'grey'" variant="tonal"
-                                    class="font-weight-bold rounded-lg ml-2" :disabled="userCoins < item.price"
-                                    @click="buyProduct(item)">
-                                    {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
+                                <v-btn block height="40"
+                                    :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
+                                    class="font-weight-bold rounded-lg text-black" @click="buyProduct(item)">
+                                    <template v-if="isOwned(item.id)">
+                                        ADQUIRIDO <v-icon end>mdi-check</v-icon>
+                                    </template>
+                                    <template v-else>
+                                        {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
+                                    </template>
                                 </v-btn>
                             </v-card>
                         </v-col>
@@ -92,11 +96,17 @@
                                 </v-card-title>
                                 <v-card-actions class="justify-center px-4 pb-2">
                                     <v-btn block height="40"
-                                        :color="userCoins >= item.price ? 'amber-accent-3' : 'grey'"
-                                        :variant="userCoins >= item.price ? 'flat' : 'outlined'"
+                                        :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
+                                        :variant="isOwned(item.id) ? 'tonal' : (userCoins >= item.price ? 'flat' : 'outlined')"
                                         class="font-weight-bold rounded-lg text-black"
-                                        :disabled="userCoins < item.price" @click="buyProduct(item)">
-                                        {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
+                                        :disabled="userCoins < item.price && !isOwned(item.id)"
+                                        @click="buyProduct(item)">
+                                        <template v-if="isOwned(item.id)">
+                                            ADQUIRIDO <v-icon end>mdi-check</v-icon>
+                                        </template>
+                                        <template v-else>
+                                            {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
+                                        </template>
                                     </v-btn>
                                 </v-card-actions>
                             </v-card>
@@ -138,15 +148,33 @@ const userGames = computed(() => astroStore.partides);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
 
-const buyProduct = async (item) => {
-    const confirm = window.confirm(`¿Quieres comprar ${item.name} por ${item.price} monedas?`);
-    if (!confirm) return;
+const isOwned = (itemId) => {
+    return astroStore.inventory?.some(i => i.id === itemId);
+};
 
-    const result = await astroStore.buyItem(item); // Esta función la creamos ahora en la store
-    if (result.success) {
-        alert("¡Compra realizada con éxito!");
-    } else {
-        alert(result.message);
+const buyProduct = async (item) => {
+    // 1. Verificar si el usuario ya tiene el item (evita llamadas innecesarias al server)
+    const alreadyOwned = astroStore.inventory?.some(i => i.id === item.id);
+    if (alreadyOwned) {
+        alert(`¡Ya tienes ${item.name} en tu inventario!`);
+        return;
+    }
+
+    // 2. Confirmación
+    if (!confirm(`¿Quieres comprar ${item.name} por ${item.price} créditos?`)) return;
+
+    // 3. Llamada a la Store
+    try {
+        const result = await astroStore.buyItem(item);
+        if (result.success) {
+            // El backend ya nos devolvió el nuevo saldo y el inventario actualizado
+            // Si usas Pinia, la UI se actualizará sola
+            console.log("Compra exitosa");
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error("Error en la tienda:", error);
     }
 };
 
@@ -159,8 +187,8 @@ const basicItems = ref([
 ]);
 
 const premiumItems = ref([
-    { id: 101, name: 'Pin Comandante', cat: 'skins', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
-    { id: 102, name: 'Skin Cyberpunk', cat: 'skins', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
+    { id: 101, name: 'Pin Comandante', cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
+    { id: 102, name: 'Skin Cyberpunk', cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
     { id: 103, name: 'Mascota Dron', cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
     { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' }
 ]);

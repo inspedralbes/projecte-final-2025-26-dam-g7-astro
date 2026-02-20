@@ -262,12 +262,26 @@ app.post('/api/shop/spin', async (req, res) => {
             random -= item.weight;
         }
 
+        // Dentro de app.post('/api/shop/spin', ...)
+        // --- DENTRO DE app.post('/api/shop/spin') ---
+
         let finalCoins = currentCoins - SPIN_COST;
         if (prize.label === 'Monedas') finalCoins += 100;
 
         const updateData = { $set: { coins: finalCoins } };
+
+        // Si el premio es un objeto (no es "Nada" ni "Monedas")
         if (prize.label !== 'Nada' && prize.label !== 'Monedas') {
-            updateData.$push = { inventory: prize.label };
+            const itemToSave = {
+                id: `prize_${Date.now()}_${prize.id}`, // ID único para evitar conflictos
+                name: prize.label,
+                icon: prize.icon,
+                color: prize.color,
+                cat: prize.id === 2 ? 'skin' : 'collectible', // Asigna una categoría
+                equipped: false,
+                purchasedAt: new Date()
+            };
+            updateData.$push = { inventory: itemToSave };
         }
 
         await usersCol.updateOne({ user: user }, updateData);
@@ -337,11 +351,7 @@ app.put('/api/user/plan', async (req, res) => {
 
 // 1. Endpoint para realizar una compra
 app.post('/api/shop/buy', async (req, res) => {
-    const { user, item } = req.body; // 'item' contiene {id, name, price, icon, color, cat...}
-
-    if (!user || !item) {
-        return res.status(400).json({ message: "Datos de compra incompletos." });
-    }
+    const { user, item } = req.body;
 
     try {
         const { users } = getCollections();
@@ -349,23 +359,34 @@ app.post('/api/shop/buy', async (req, res) => {
 
         if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 0;
-
-        // Validar si tiene dinero
+        // VALIDACIÓN DE SEGURIDAD BÁSICA
+        const currentCoins = currentUser.coins || 0;
         if (currentCoins < item.price) {
-            return res.status(400).json({ message: "Saldo insuficiente en créditos estelares." });
+            return res.status(400).json({ message: "Créditos insuficientes." });
         }
 
-        // Validar si ya lo tiene (evitar duplicados)
-        const hasItem = currentUser.inventory && currentUser.inventory.some(i => i.id === item.id);
-        if (hasItem) {
-            return res.status(400).json({ message: "Ya posees este artículo en tu inventario." });
+        // EVITAR DUPLICADOS por ID
+        const alreadyOwned = currentUser.inventory?.some(i => i.id === item.id);
+        if (alreadyOwned) {
+            return res.status(400).json({ message: "Ya tienes este artículo." });
         }
 
         const newBalance = currentCoins - item.price;
 
-        // El item se guarda con una propiedad 'equipped' por defecto en false
-        const itemToSave = { ...item, equipped: false, purchasedAt: new Date() };
+        // ESTRUCTURA UNIFICADA
+        // EN server.js (dentro de app.post('/api/shop/buy'))
+
+        const itemToSave = {
+            id: item.id,
+            name: item.name,
+            desc: item.desc, // <--- AÑADE ESTA LÍNEA
+            icon: item.icon,
+            color: item.color,
+            cat: item.cat || 'general',
+            price: item.price,
+            equipped: false,
+            purchasedAt: new Date()
+        };
 
         await users.updateOne(
             { user: user },
@@ -375,15 +396,9 @@ app.post('/api/shop/buy', async (req, res) => {
             }
         );
 
-        res.json({
-            success: true,
-            message: `¡${item.name} adquirido!`,
-            newBalance: newBalance,
-            inventory: [...(currentUser.inventory || []), itemToSave]
-        });
+        res.json({ success: true, newBalance, item: itemToSave });
     } catch (error) {
-        console.error("Error en la compra:", error);
-        res.status(500).json({ message: "Error procesando la transacción." });
+        res.status(500).json({ message: "Error en la transacción estelar." });
     }
 });
 
@@ -451,7 +466,9 @@ wss.on('connection', (ws) => {
 });
 
 // --- ARRANQUE ---
-connectDB().then(() => {
+// --- ARRANQUE MODIFICADO ---
+connectDB().then(async () => { // Añadimos async
+    await ensureIndexes();      // <--- Ejecutamos la creación de índices
     const PORT = 3000;
     server.listen(PORT, () => {
         console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);
