@@ -36,9 +36,11 @@ export default defineConfig({
       },
     }),
   ],
+  // OPTIMIZACIÓN APLICADA AQUÍ: Pre-empaquetamos todo para evitar recargas en caliente infinitas
   optimizeDeps: {
-    exclude: [
-      // 'vuetify', // Comentado para evitar errores 404 en módulos virtuales SASS
+    include: [
+      'vue',
+      'vuetify',
       'vue-router',
       'unplugin-vue-router/runtime',
       'unplugin-vue-router/data-loaders',
@@ -62,7 +64,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 3001,      // <--- CAMBIA A 3001 (Vite)
+    port: 3001,      // <--- Puerto Vite
     strictPort: true,
     hmr: {
       port: 3001     // <--- Asegura que el Hot Reload use el puerto correcto
