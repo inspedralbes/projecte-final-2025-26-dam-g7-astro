@@ -262,12 +262,26 @@ app.post('/api/shop/spin', async (req, res) => {
             random -= item.weight;
         }
 
+        // Dentro de app.post('/api/shop/spin', ...)
+        // --- DENTRO DE app.post('/api/shop/spin') ---
+
         let finalCoins = currentCoins - SPIN_COST;
         if (prize.label === 'Monedas') finalCoins += 100;
 
         const updateData = { $set: { coins: finalCoins } };
+
+        // Si el premio es un objeto (no es "Nada" ni "Monedas")
         if (prize.label !== 'Nada' && prize.label !== 'Monedas') {
-            updateData.$push = { inventory: prize.label };
+            const itemToSave = {
+                id: `prize_${Date.now()}_${prize.id}`, // ID único para evitar conflictos
+                name: prize.label,
+                icon: prize.icon,
+                color: prize.color,
+                cat: prize.id === 2 ? 'skin' : 'collectible', // Asigna una categoría
+                equipped: false,
+                purchasedAt: new Date()
+            };
+            updateData.$push = { inventory: itemToSave };
         }
 
         await usersCol.updateOne({ user: user }, updateData);
@@ -333,6 +347,113 @@ app.put('/api/user/plan', async (req, res) => {
     }
 });
 
+// --- SISTEMA DE TIENDA E INVENTARIO ---
+
+// 1. Endpoint para realizar una compra
+app.post('/api/shop/buy', async (req, res) => {
+    const { user, item } = req.body;
+
+    try {
+        const { users } = getCollections();
+        const currentUser = await users.findOne({ user: user });
+
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        // VALIDACIÓN DE SEGURIDAD BÁSICA
+        const currentCoins = currentUser.coins || 0;
+        if (currentCoins < item.price) {
+            return res.status(400).json({ message: "Créditos insuficientes." });
+        }
+
+        // EVITAR DUPLICADOS por ID
+        const alreadyOwned = currentUser.inventory?.some(i => i.id === item.id);
+        if (alreadyOwned) {
+            return res.status(400).json({ message: "Ya tienes este artículo." });
+        }
+
+        const newBalance = currentCoins - item.price;
+
+        // ESTRUCTURA UNIFICADA
+        // EN server.js (dentro de app.post('/api/shop/buy'))
+
+        const itemToSave = {
+            id: item.id,
+            name: item.name,
+            desc: item.desc, // <--- AÑADE ESTA LÍNEA
+            icon: item.icon,
+            color: item.color,
+            cat: item.cat || 'general',
+            price: item.price,
+            equipped: false,
+            purchasedAt: new Date()
+        };
+
+        await users.updateOne(
+            { user: user },
+            {
+                $set: { coins: newBalance },
+                $push: { inventory: itemToSave }
+            }
+        );
+
+        res.json({ success: true, newBalance, item: itemToSave });
+    } catch (error) {
+        res.status(500).json({ message: "Error en la transacción estelar." });
+    }
+});
+
+// 2. Endpoint para obtener el inventario real del usuario
+app.get('/api/users/:username/inventory', async (req, res) => {
+    const username = req.params.username;
+    try {
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: username }, { projection: { inventory: 1 } });
+
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        res.json({ inventory: userDoc.inventory || [] });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener el inventario." });
+    }
+});
+
+app.post('/api/inventory/toggle-equip', async (req, res) => {
+    const { user, itemId } = req.body;
+    try {
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: user });
+
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        // 1. Buscamos el item que el usuario quiere equipar/desequipar una sola vez
+        const itemTarget = userDoc.inventory.find(i => i.id === itemId);
+        if (!itemTarget) return res.status(404).json({ message: "Item no encontrado en inventario" });
+
+        const isEquipping = !itemTarget.equipped; // ¿Va a pasar a estar equipado?
+
+        // 2. Mapeamos el inventario con la lógica de exclusividad
+        const updatedInventory = userDoc.inventory.map(item => {
+            // Si es el item clickeado, invertimos su estado
+            if (item.id === itemId) {
+                return { ...item, equipped: isEquipping };
+            }
+
+            // Si el usuario está EQUIPANDO una skin/mascota, desequipamos las demás del mismo tipo
+            if (isEquipping && item.cat === itemTarget.cat && item.equipped) {
+                return { ...item, equipped: false };
+            }
+
+            return item;
+        });
+
+        await users.updateOne({ user: user }, { $set: { inventory: updatedInventory } });
+
+        res.json({ success: true, inventory: updatedInventory });
+    } catch (error) {
+        console.error("Error toggle-equip:", error);
+        res.status(500).json({ message: "Error al cambiar equipamiento." });
+    }
+});
 // --- WEBSOCKETS ---
 wss.on('connection', (ws) => {
     console.log("📡 Nueva conexión WS establecida");
@@ -345,7 +466,9 @@ wss.on('connection', (ws) => {
 });
 
 // --- ARRANQUE ---
-connectDB().then(() => {
+// --- ARRANQUE MODIFICADO ---
+connectDB().then(async () => { // Añadimos async
+    await ensureIndexes();      // <--- Ejecutamos la creación de índices
     const PORT = 3000;
     server.listen(PORT, () => {
         console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);

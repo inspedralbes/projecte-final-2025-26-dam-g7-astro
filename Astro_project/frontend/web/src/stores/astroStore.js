@@ -7,6 +7,8 @@ export const useAstroStore = defineStore('astro', {
         plan: localStorage.getItem('astro_plan') || 'INDIVIDUAL_FREE',
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
+        partides: 0,
+        inventory: [],
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
@@ -45,11 +47,9 @@ export const useAstroStore = defineStore('astro', {
         async loginTripulante(credentials) {
             this.error = null;
             try {
-                // CORRECCIÓN: Puerto 3000
                 const response = await fetch('http://localhost:3000/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // El servidor espera { user, password }
                     body: JSON.stringify({
                         user: credentials.username || credentials.user,
                         password: credentials.password || credentials.pass
@@ -58,32 +58,38 @@ export const useAstroStore = defineStore('astro', {
 
                 const text = await response.text();
                 if (!text) throw new Error("El servidor no envió datos de respuesta.");
-
                 const data = JSON.parse(text);
 
                 if (!response.ok) throw new Error(data.message || "Error de autenticación");
 
-                // Asignación de datos basada en tu server.js
+                // 1. Sincronizar datos básicos del perfil
                 this.user = data.profile.name;
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
                 this.coins = data.profile.coins;
-                // Nos aseguramos de tener siempre 3 slots
+                this.token = data.token;
+
+                // 2. Formatear logros (siempre 3 slots)
                 const saved = data.profile.selectedAchievements || [];
                 this.selectedAchievements = [
                     saved[0] || null,
                     saved[1] || null,
                     saved[2] || null
                 ];
-                this.token = data.token;
 
+                // 3. CARGA CRÍTICA: Traer el inventario de MongoDB antes de finalizar
+                await this.fetchUserInventory();
+
+                // 4. Persistencia en LocalStorage
                 localStorage.setItem('astro_token', data.token);
                 localStorage.setItem('astro_user', this.user);
                 localStorage.setItem('astro_rank', this.rank);
                 localStorage.setItem('astro_plan', this.plan);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
 
+                // 5. Iniciar comunicaciones en tiempo real
                 this.connectWebSocket();
+
                 return { success: true };
 
             } catch (error) {
@@ -175,6 +181,39 @@ export const useAstroStore = defineStore('astro', {
                 console.error("❌ Error registrando partida:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
+            }
+        },
+        async buyItem(item) {
+            try {
+                const response = await fetch('http://localhost:3000/api/shop/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, item: item })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+
+                // ACTUALIZACIÓN DEL ESTADO GLOBAL
+                this.coins = data.newBalance;
+                this.inventory.push(data.item); // <--- Guardamos el inventario actualizado
+
+                return { success: true };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        },
+
+        async fetchUserInventory() {
+            if (!this.user) return [];
+            try {
+                const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/inventory`);
+                const data = await response.json();
+
+                this.inventory = data.inventory || []; // <--- Actualizamos el state
+                return this.inventory;
+            } catch (error) {
+                console.error("Error al traer inventario:", error);
+                return [];
             }
         },
 
