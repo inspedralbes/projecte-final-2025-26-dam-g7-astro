@@ -1,7 +1,7 @@
 <template>
-    <v-container class="fill-height d-flex justify-center align-center">
+    <v-container class="profile-container d-flex justify-center">
         <v-card width="620" class="profile-card" elevation="24">
-            
+
             <!-- BANNER SUPERIOR (LinkedIn Style) -->
             <div class="banner-section">
                 <v-img src="/fondo3.jpg" cover height="180" class="banner-image">
@@ -21,16 +21,8 @@
                         <v-avatar size="180" class="avatar-circle">
                             <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
                         </v-avatar>
-                        <v-btn icon="mdi-camera" size="small" color="cyan-accent-3" class="btn-edit-avatar" elevation="4"
-                            @click="avatarDialog = true"></v-btn>
-                    </div>
-
-                    <!-- Mascota Integrada -->
-                    <div class="mascot-overlap-box">
-                        <v-avatar v-if="mascot" size="85" class="mascot-badge-big" @click="mascotDialog = true">
-                            <v-img :src="`/${mascot}`" cover></v-img>
-                        </v-avatar>
-                        <v-btn v-else icon="mdi-paw-plus" size="large" color="purple-accent-1" class="btn-add-mascot" @click="mascotDialog = true"></v-btn>
+                        <v-btn icon="mdi-camera" size="small" color="cyan-accent-3" class="btn-edit-avatar"
+                            elevation="4" @click="avatarDialog = true"></v-btn>
                     </div>
                 </div>
 
@@ -42,7 +34,8 @@
                                 {{ user || 'Explorador' }}
                             </h1>
                             <div class="d-flex align-center ga-2 mt-1">
-                                <v-chip color="cyan-accent-3" size="small" variant="flat" class="text-black font-weight-bold">
+                                <v-chip color="cyan-accent-3" size="small" variant="flat"
+                                    class="text-black font-weight-bold">
                                     {{ rank || 'Cadete Estelar' }}
                                 </v-chip>
                                 <span class="text-grey-lighten-1 text-body-2">• Nivel 1</span>
@@ -51,10 +44,6 @@
                                     <span class="text-caption text-grey">{{ user ? 'En órbita' : 'En base' }}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-h4 font-weight-bold text-white mb-n1">0</div>
-                            <div class="text-caption text-grey">Créditos</div>
                         </div>
                     </div>
                 </div>
@@ -80,13 +69,12 @@
                 <!-- Logros Seleccionados -->
                 <div class="achievements-section mb-8">
                     <div class="d-flex align-center justify-space-between mb-4">
-                        <h3 class="text-overline font-weight-black text-grey-lighten-1">CONDECORACIONES ACTIVAS</h3>
-                        <span class="text-caption text-cyan-accent-3 cursor-pointer" @click="goToInventory">Gestionar</span>
+                        <h3 class="text-overline font-weight-black text-grey-lighten-1">LOGROS ACTIVOS</h3>
                     </div>
                     <v-row dense>
                         <v-col v-for="i in 3" :key="i" cols="4">
                             <v-card variant="flat" color="#1a1d26" class="achievement-display-box"
-                                @click="openSelection(i - 1)" height="120">
+                                @click="openSelection(i - 1)">
                                 <Medal v-if="getAchievement(selectedAchievements[i - 1])"
                                     :type="getAchievement(selectedAchievements[i - 1]).type"
                                     :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.65"
@@ -101,18 +89,21 @@
                 <div class="actions-grid ga-3 mb-8">
                     <v-row dense>
                         <v-col cols="6">
-                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="goToInventory" class="font-weight-bold">
+                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="goToInventory"
+                                class="font-weight-bold">
                                 INVENTARIO
                             </v-btn>
                         </v-col>
                         <v-col cols="6">
-                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="changePlan" class="font-weight-bold">
+                            <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="changePlan"
+                                class="font-weight-bold">
                                 CAMBIAR PLAN
                             </v-btn>
                         </v-col>
                     </v-row>
-                    <v-btn block color="#c62828" height="48" rounded="lg" @click="handleLogout" class="font-weight-bold mt-2">
-                        ABORTAR MISIÓN Y SALIR
+                    <v-btn block color="#c62828" height="48" rounded="lg" @click="handleLogout"
+                        class="font-weight-bold mt-2">
+                        CERRAR SESSIÓN Y SALIR
                     </v-btn>
                 </div>
             </div>
@@ -187,7 +178,8 @@
                             <div class="text-caption text-grey-lighten-1 mt-1">{{ m.label }}</div>
                         </v-col>
                         <v-col cols="4" sm="3" class="pa-2">
-                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center" @click="selectMascot(null)" style="border: 1px dashed rgba(255,255,255,0.3)">
+                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center"
+                                @click="selectMascot(null)" style="border: 1px dashed rgba(255,255,255,0.3)">
                                 <v-icon color="grey">mdi-close</v-icon>
                             </v-avatar>
                             <div class="text-caption text-grey-lighten-1 mt-1">Ninguno</div>
@@ -320,8 +312,12 @@ function selectMascot(file) {
 
 <style scoped>
 /* Estilo Base */
-.fill-height {
-    background: url('/fondo1.jpg') center center / cover no-repeat fixed !important;
+.profile-container {
+    background: #000000 !important;
+    min-height: 100vh;
+    padding-top: 40px;
+    padding-bottom: 120px;
+    /* Aumentado para mejor scroll */
 }
 
 /* Tarjeta Principal (Sólida, no Glassmorphism) */
@@ -350,7 +346,8 @@ function selectMascot(file) {
 
 .avatar-overlap-container {
     position: relative;
-    margin-top: -70px; /* LinkedIn Style Overlap */
+    margin-top: -70px;
+    /* LinkedIn Style Overlap */
     margin-bottom: 20px;
     display: flex;
     align-items: flex-end;
@@ -364,7 +361,7 @@ function selectMascot(file) {
 .avatar-circle {
     border: 6px solid #0d0f14;
     background: white;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -394,7 +391,7 @@ function selectMascot(file) {
 .mascot-badge-big {
     border: 5px solid #0d0f14;
     background: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     cursor: pointer;
     transition: all 0.2s ease-in-out;
 }
@@ -425,8 +422,14 @@ function selectMascot(file) {
     border-radius: 50%;
 }
 
-.status-dot-large.online { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
-.status-dot-large.offline { background: #f44336; }
+.status-dot-large.online {
+    background: #4caf50;
+    box-shadow: 0 0 10px #4caf50;
+}
+
+.status-dot-large.offline {
+    background: #f44336;
+}
 
 /* Tarjetas de Estadísticas */
 .quick-stats {
@@ -454,7 +457,12 @@ function selectMascot(file) {
 
 /* Logros */
 .achievement-display-box {
-    border: 1px solid rgba(255,255,255,0.05);
+    height: 150px;
+    /* Tamaño fijo para todos los huecos */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -477,11 +485,11 @@ function selectMascot(file) {
 .achievement-list-item {
     border-radius: 12px;
     margin-bottom: 8px;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .achievement-list-item:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .achievement-list-item.selected {

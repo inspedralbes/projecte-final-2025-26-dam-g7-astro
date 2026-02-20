@@ -61,7 +61,7 @@ export default defineConfig({
     ],
   },
   server: {
-    hosst: true,
+    host: true,
     port: 3001,      // <--- CAMBIA A 3001 (Vite)
     strictPort: true,
     hmr: {
