@@ -44,31 +44,43 @@
                     </div>
 
                     <v-row class="px-2 mb-10">
-                        <v-col v-for="item in basicItems" :key="item.id" cols="12" sm="6">
-                            <v-card class="mx-auto item-card rounded-xl pt-4 pb-4 d-flex align-center px-4"
-                                color="#1e293b">
-                                <v-avatar size="60" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'" class="mr-4">
-                                    <v-icon size="30" :color="item.color">{{ item.icon }}</v-icon>
-                                </v-avatar>
-                                <div class="flex-grow-1">
-                                    <div class="text-h6 font-weight-bold text-white">{{ item.name }}</div>
-                                    <div class="text-caption text-grey-lighten-2" style="line-height: 1.2;">{{ item.desc
-                                        }}</div>
-                                    <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold mt-1"
-                                        style="font-size: 0.65rem !important;">
-                                        {{ item.limitacio }}
+                        <v-col v-for="item in basicItems" :key="item.id" cols="12" md="6">
+                            <v-card class="mx-auto item-card rounded-xl pa-4 d-flex align-center" color="#1e293b">
+                                <div class="d-flex align-center flex-grow-1 mr-4" style="min-width: 0;">
+                                    <v-avatar size="50" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'"
+                                        class="mr-3 flex-shrink-0">
+                                        <v-icon size="24" :color="item.color">{{ item.icon }}</v-icon>
+                                    </v-avatar>
+
+                                    <div class="text-truncate">
+                                        <div class="text-subtitle-1 font-weight-bold text-white text-truncate">{{
+                                            item.name }}</div>
+                                        <div class="text-caption text-grey-lighten-2 text-truncate"
+                                            style="line-height: 1.2;">
+                                            {{ item.desc }}
+                                        </div>
+                                        <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold"
+                                            style="font-size: 0.65rem !important;">
+                                            {{ item.limitacio }}
+                                        </div>
                                     </div>
                                 </div>
-                                <v-btn block height="40"
-                                    :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
-                                    class="font-weight-bold rounded-lg text-black" @click="buyProduct(item)">
-                                    <template v-if="isOwned(item.id)">
-                                        ADQUIRIDO <v-icon end>mdi-check</v-icon>
-                                    </template>
-                                    <template v-else>
-                                        {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
-                                    </template>
-                                </v-btn>
+
+                                <div style="min-width: 120px;">
+                                    <v-btn block height="44"
+                                        :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
+                                        :variant="isOwned(item.id) ? 'tonal' : 'flat'"
+                                        class="font-weight-bold rounded-lg text-black"
+                                        :disabled="userCoins < item.price && !isOwned(item.id)"
+                                        @click="buyProduct(item)">
+                                        <template v-if="isOwned(item.id)">
+                                            <v-icon>mdi-check</v-icon>
+                                        </template>
+                                        <template v-else>
+                                            {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
+                                        </template>
+                                    </v-btn>
+                                </div>
                             </v-card>
                         </v-col>
                     </v-row>
