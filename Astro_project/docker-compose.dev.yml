@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:latest
@@ -9,8 +11,7 @@ services:
 
   backend:
     build:
-      # Change this to point exactly where your backend Dockerfile is
-      context: ./backend 
+      context: ./backend
       dockerfile: Dockerfile.dev
     container_name: astro_backend
     ports:
@@ -24,16 +25,14 @@ services:
       - MONGO_URI=mongodb://mongodb:27017/astro_db
       - PORT=3000
 
-  frontend:
+  frontend:  # <--- ESTO ESTABA MAL ALINEADO ANTES
     build:
-      # UPDATE THIS: Point to the 'web' folder inside 'frontend'
       context: ./frontend/web
       dockerfile: Dockerfile.dev
     container_name: astro_frontend
     ports:
       - "3001:3001"
     volumes:
-      # UPDATE THIS: Ensure the volume also points to the 'web' folder
       - ./frontend/web:/app
       - /app/node_modules
     environment:
@@ -42,4 +41,4 @@ services:
       - backend
 
 volumes:
-  mongo_data:s
+  mongo_data: {}
