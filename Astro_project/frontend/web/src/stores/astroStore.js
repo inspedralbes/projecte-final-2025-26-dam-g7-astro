@@ -8,6 +8,8 @@ export const useAstroStore = defineStore('astro', {
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
         partides: 0,
+        level: Number(localStorage.getItem('astro_level')) || 1,  
+        xp: Number(localStorage.getItem('astro_xp')) || 0,        
         inventory: [],
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
@@ -67,6 +69,8 @@ export const useAstroStore = defineStore('astro', {
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
                 this.coins = data.profile.coins;
+                this.level = data.profile.level; 
+                this.xp = data.profile.xp;       
                 this.token = data.token;
 
                 // 2. Formatear logros (siempre 3 slots)
@@ -85,6 +89,8 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_user', this.user);
                 localStorage.setItem('astro_rank', this.rank);
                 localStorage.setItem('astro_plan', this.plan);
+                localStorage.setItem('astro_level', this.level); 
+                localStorage.setItem('astro_xp', this.xp);       
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
@@ -113,6 +119,8 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
                 this.coins = data.coins !== undefined ? data.coins : this.coins;
+                this.level = data.stats?.level !== undefined ? data.stats.level : this.level; 
+                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;             
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
 
                 return { success: true, stats: data };
@@ -174,7 +182,14 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudo registrar la partida.");
 
                 this.coins = data.newBalance !== undefined ? data.newBalance : this.coins;
+                this.level = data.newLevel !== undefined ? data.newLevel : this.level; 
+                this.xp = data.newXp !== undefined ? data.newXp : this.xp;             
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
+
+                if (data.newRank) {
+                    this.rank = data.newRank;
+                    localStorage.setItem('astro_rank', this.rank);
+                }
 
                 return { success: true, data };
             } catch (error) {
@@ -183,6 +198,7 @@ export const useAstroStore = defineStore('astro', {
                 return { success: false, message: this.error };
             }
         },
+        
         async buyItem(item) {
             try {
                 const response = await fetch('http://localhost:3000/api/shop/buy', {
@@ -271,6 +287,8 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_user');
             localStorage.removeItem('astro_rank');
             localStorage.removeItem('astro_plan');
+            localStorage.removeItem('astro_level'); // Opcional, pero buena práctica
+            localStorage.removeItem('astro_xp');    // Opcional, pero buena práctica
             localStorage.removeItem('astro_selected_achievements');
             localStorage.removeItem('astro_avatar');
             localStorage.removeItem('astro_mascot');
