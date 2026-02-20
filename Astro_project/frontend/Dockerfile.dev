@@ -1,14 +1,16 @@
-FROM node:20-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
+# Instalamos dependencias primero para aprovechar la caché
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-# Vite por defecto usa el 5173. 
-# El flag --host es necesario para que Docker pueda exponer el puerto
-EXPOSE 5173
+# Exponemos el puerto de Vite
+EXPOSE 3001
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# IMPORTANTE: Usamos --host 0.0.0.0 para que sea accesible fuera del contenedor
+# y forzamos el puerto 3001
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3001"]
