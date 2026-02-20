@@ -38,7 +38,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: [
-      'vuetify',
+      // 'vuetify', // Comentado para evitar errores 404 en módulos virtuales SASS
       'vue-router',
       'unplugin-vue-router/runtime',
       'unplugin-vue-router/data-loaders',
@@ -61,7 +61,7 @@ export default defineConfig({
     ],
   },
   server: {
-    hosst: true,
+    host: true,
     port: 3001,      // <--- CAMBIA A 3001 (Vite)
     strictPort: true,
     hmr: {
