@@ -149,10 +149,10 @@ app.post('/api/games/complete', async (req, res) => {
 
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-        
+
         // Recompensas: 1 moneda y 1 XP por cada 10 puntos
         const rewards = Math.floor(normalizedScore / 10);
-        
+
         const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
         const newBalance = currentCoins + rewards;
 
@@ -186,14 +186,14 @@ app.post('/api/games/complete', async (req, res) => {
                 createdAt: new Date()
             }),
             users.updateOne(
-                { user }, 
-                { 
-                    $set: { 
-                        coins: newBalance, 
-                        level: currentLevel, 
-                        xp: currentXp, 
-                        rank: currentRank 
-                    } 
+                { user },
+                {
+                    $set: {
+                        coins: newBalance,
+                        level: currentLevel,
+                        xp: currentXp,
+                        rank: currentRank
+                    }
                 }
             )
         ]);
@@ -215,6 +215,29 @@ app.post('/api/games/complete', async (req, res) => {
     } catch (error) {
         console.error("Error registrando partida:", error);
         res.status(500).json({ message: "Error al registrar la partida." });
+    }
+});
+
+app.get('/api/users', async (req, res) => {
+    try {
+        const { users } = getCollections();
+        const allUsers = await users.find({}, {
+            projection: { user: 1, level: 1, inventory: 1 }
+        }).toArray();
+
+        const formattedUsers = allUsers.map(u => {
+            const equippedPet = u.inventory?.find(item => item.cat === 'pets' && item.equipped);
+            return {
+                name: u.user,
+                level: u.level || 1,
+                pet: equippedPet ? { name: equippedPet.name, icon: equippedPet.icon } : null
+            };
+        });
+
+        res.json(formattedUsers);
+    } catch (error) {
+        console.error("Error obteniendo usuarios:", error);
+        res.status(500).json({ message: "Error al obtener la lista de usuarios." });
     }
 });
 
@@ -415,7 +438,7 @@ app.post('/api/shop/buy', async (req, res) => {
         const itemToSave = {
             id: item.id,
             name: item.name,
-            desc: item.desc, 
+            desc: item.desc,
             icon: item.icon,
             color: item.color,
             cat: item.cat || 'general',

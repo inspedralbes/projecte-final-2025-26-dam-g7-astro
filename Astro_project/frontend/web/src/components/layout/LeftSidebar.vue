@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer permanent width="300" class="sidebar left-sidebar" elevation="0">
+    <v-navigation-drawer permanent width="260" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
         <div class="menu-header d-flex justify-center align-center py-10">
             <h1 class="text-h3 font-weight-bold text-white tracking-wide">ASTRO</h1>
         </div>
@@ -37,6 +37,7 @@ const menuItems = ref([
     { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
     { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
     { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
+    { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
     { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
 ])
 </script>
@@ -44,7 +45,7 @@ const menuItems = ref([
 <style scoped>
 .sidebar {
     background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 

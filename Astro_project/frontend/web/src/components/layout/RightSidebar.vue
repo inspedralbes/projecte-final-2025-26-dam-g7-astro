@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer permanent location="right" width="280" class="sidebar right-sidebar" elevation="0">
+    <v-navigation-drawer permanent location="right" width="240" class="sidebar right-sidebar" elevation="0" mobile-breakpoint="lg">
         <div class="d-flex flex-column h-100 pa-3">
             <!-- Stats Card -->
             <v-card class="glass-card mb-3 pa-3" elevation="0">
@@ -204,7 +204,7 @@ const weeklyMissions = ref([
 .shadow-cyan { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4)); }
 .sidebar {
     background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
     border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 

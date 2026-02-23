@@ -52,8 +52,15 @@
 </template>
 
 <script setup>
-import { shallowRef } from 'vue';
+import { ref, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore'; // Importamos el store
+
+const showLevelUpDialog = ref(false);
+const newLevelData = ref({
+    level: 1,
+    rank: '',
+    rankChanged: false
+});
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
