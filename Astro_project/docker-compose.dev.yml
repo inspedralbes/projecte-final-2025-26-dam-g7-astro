@@ -1,6 +1,9 @@
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:latest
+    container_name: astro_db
     ports:
       - "27017:27017"
     volumes:
@@ -10,6 +13,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    container_name: astro_backend
     ports:
       - "3000:3000"
     volumes:
@@ -21,17 +25,20 @@ services:
       - MONGO_URI=mongodb://mongodb:27017/astro_db
       - PORT=3000
 
-  frontend:
+  frontend:  # <--- ESTO ESTABA MAL ALINEADO ANTES
     build:
-      context: ./frontend
+      context: ./frontend/web
       dockerfile: Dockerfile.dev
+    container_name: astro_frontend
     ports:
       - "3001:3001"
     volumes:
-      - ./frontend:/app
+      - ./frontend/web:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
 
 volumes:
-  mongo_data:
+  mongo_data: {}

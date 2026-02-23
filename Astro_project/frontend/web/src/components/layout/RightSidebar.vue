@@ -21,6 +21,23 @@
                     </div>
                 </div>
             </v-card>
+            <v-card class="glass-card mb-3 pa-4" elevation="0">
+                <div class="d-flex justify-space-between align-center mb-1">
+                    <span class="text-subtitle-2 text-white font-weight-black">NIVEL {{ userLevel }}</span>
+                    <span class="text-caption text-cyan-accent-3 font-weight-bold">{{ userXp }} / {{ xpRequired }} XP</span>
+                </div>
+                <v-progress-linear
+                    :model-value="(userXp / xpRequired) * 100"
+                    color="cyan-accent-3"
+                    height="10"
+                    rounded
+                    bg-color="rgba(255,255,255,0.1)"
+                    class="my-2 shadow-cyan"
+                ></v-progress-linear>
+                <div class="text-caption text-grey text-center" style="font-size: 0.7rem !important; line-height: 1;">
+                    Falten {{ xpRequired - userXp }} XP per al següent nivell
+                </div>
+            </v-card>
 
             <!-- Daily Missions -->
             <v-card class="glass-card pa-3 mb-3 flex-grow-1 d-flex flex-column" elevation="0">
@@ -84,6 +101,7 @@
                 </v-list>
             </v-card>
         </div>
+        
 
     </v-navigation-drawer>
 
@@ -150,10 +168,15 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAstroStore } from '@/stores/astroStore'
-
 const astroStore = useAstroStore()
 
 const userCoins = computed(() => astroStore.coins)
+const userLevel = computed(() => astroStore.level)
+const userXp = computed(() => astroStore.xp)
+
+const xpRequired = computed(() => {
+    return 100 + (userLevel.value - 1) * 50;
+})
 
 const dialogMisiones = ref(false)
 const dialogDiarias = ref(false)
@@ -178,6 +201,7 @@ const weeklyMissions = ref([
 </script>
 
 <style scoped>
+.shadow-cyan { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4)); }
 .sidebar {
     background: rgba(255, 255, 255, 0.03) !important;
     backdrop-filter: blur(20px);

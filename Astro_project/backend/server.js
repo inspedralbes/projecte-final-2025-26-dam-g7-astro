@@ -21,6 +21,17 @@ const WHEEL_ITEMS = [
     { id: 3, label: 'Monedas', icon: 'mdi-currency-usd', color: '#FFC107', weight: 30 },
     { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 }
 ];
+
+// --- CONSTANTES DE PROGRESIÓN ---
+const JERARQUIA = [
+    "Cadete de Vuelo",      // Niveles 1-2
+    "Explorador Estelar",   // Niveles 3-4
+    "Navegante Galáctico",  // Niveles 5-6
+    "Capitán de Flota",     // Niveles 7-8
+    "Comandante Cósmico",   // Niveles 9-10
+    "Almirante del Universo" // Niveles 11+
+];
+
 let indexesReady = false;
 
 function getCollections() {
@@ -49,7 +60,7 @@ async function getUserStats(username) {
 
     const userDoc = await users.findOne(
         { user: username },
-        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1 } }
+        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1, level: 1, xp: 1 } }
     );
 
     if (!userDoc) return null;
@@ -73,6 +84,8 @@ async function getUserStats(username) {
         user: userDoc.user,
         plan: userDoc.plan || 'INDIVIDUAL_FREE',
         rank: userDoc.rank || 'Cadete de Vuelo',
+        level: userDoc.level || 1,
+        xp: userDoc.xp || 0,
         coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
         inventoryCount: Array.isArray(userDoc.inventory) ? userDoc.inventory.length : 0,
         gamesPlayed,
@@ -127,32 +140,62 @@ app.get('/api/shop/balance/:username', async (req, res) => {
 app.post('/api/games/complete', async (req, res) => {
     const { user, game, score = 0 } = req.body;
 
-    if (!user || !game) {
-        return res.status(400).json({ message: "Usuario y juego son requeridos." });
-    }
+    if (!user || !game) return res.status(400).json({ message: "Usuario y juego requeridos." });
 
     try {
         const { users, partides } = getCollections();
         const currentUser = await users.findOne({ user });
-        if (!currentUser) {
-            return res.status(404).json({ message: "Usuario no encontrado." });
-        }
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado." });
 
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-        const coinsEarned = Math.floor(normalizedScore / 10);
+
+        // Recompensas: 1 moneda y 1 XP por cada 10 puntos
+        const rewards = Math.floor(normalizedScore / 10);
+
         const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-        const newBalance = currentCoins + coinsEarned;
+        const newBalance = currentCoins + rewards;
+
+        // --- LÓGICA DE NIVEL Y XP ---
+        let currentLevel = currentUser.level || 1;
+        let currentXp = currentUser.xp || 0;
+        currentXp += rewards;
+
+        // Fórmula: XP necesaria = 100 + (nivel - 1) * 50
+        let xpNeeded = 100 + (currentLevel - 1) * 50;
+        let leveledUp = false;
+
+        while (currentXp >= xpNeeded) {
+            currentXp -= xpNeeded;
+            currentLevel++;
+            xpNeeded = 100 + (currentLevel - 1) * 50;
+            leveledUp = true;
+        }
+
+        // --- LÓGICA DE RANGO ---
+        const rankIndex = Math.min(Math.floor((currentLevel - 1) / 2), JERARQUIA.length - 1);
+        const currentRank = JERARQUIA[rankIndex];
 
         await Promise.all([
             partides.insertOne({
                 user,
                 game,
                 score: normalizedScore,
-                coinsEarned,
+                coinsEarned: rewards,
+                xpEarned: rewards,
                 createdAt: new Date()
             }),
-            users.updateOne({ user }, { $set: { coins: newBalance } })
+            users.updateOne(
+                { user },
+                {
+                    $set: {
+                        coins: newBalance,
+                        level: currentLevel,
+                        xp: currentXp,
+                        rank: currentRank
+                    }
+                }
+            )
         ]);
 
         const gamesPlayed = await partides.countDocuments({ user });
@@ -160,21 +203,25 @@ app.post('/api/games/complete', async (req, res) => {
         res.json({
             success: true,
             message: "Partida registrada correctamente.",
-            coinsEarned,
+            coinsEarned: rewards,
+            xpEarned: rewards,
             newBalance,
+            newLevel: currentLevel,
+            newXp: currentXp,
+            newRank: currentRank,
+            leveledUp,
             gamesPlayed
         });
     } catch (error) {
         console.error("Error registrando partida:", error);
-        res.status(500).json({ message: "No se pudo registrar la partida." });
+        res.status(500).json({ message: "Error al registrar la partida." });
     }
 });
 
 // --- LÓGICA DE USUARIOS ---
 
-// Endpoint de Registro (Ajustado a astroStore)
 app.post('/api/auth/register', async (req, res) => {
-    const { username, password, rank } = req.body; // Recibe lo que envía el Store
+    const { username, password, rank } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ message: "Nombre y contraseña requeridos." });
@@ -192,6 +239,8 @@ app.post('/api/auth/register', async (req, res) => {
             rank: rank || "Cadete de Vuelo",
             plan: "INDIVIDUAL_FREE",
             coins: 1000,
+            level: 1,
+            xp: 0,
             inventory: [],
             createdAt: new Date()
         };
@@ -203,9 +252,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Endpoint de Login (Sincronizado con astroStore)
 app.post('/api/auth/login', async (req, res) => {
-    // El store envía credentials.username o credentials.user
     const username = req.body.username || req.body.user;
     const password = req.body.password || req.body.pass;
 
@@ -214,8 +261,6 @@ app.post('/api/auth/login', async (req, res) => {
         const foundUser = await db.collection('users').findOne({ user: username, pass: password });
 
         if (foundUser) {
-            const userStats = await getUserStats(foundUser.user);
-
             console.log(`🚀 Sesión iniciada: ${foundUser.user}`);
             res.json({
                 status: "Sincronización completada",
@@ -225,6 +270,8 @@ app.post('/api/auth/login', async (req, res) => {
                     plan: foundUser.plan || "INDIVIDUAL_FREE",
                     rank: foundUser.rank || "Cadete de Vuelo",
                     coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
+                    level: foundUser.level || 1,
+                    xp: foundUser.xp || 0,
                     selectedAchievements: foundUser.selectedAchievements || [null, null, null]
                 }
             });
@@ -251,7 +298,6 @@ app.post('/api/shop/spin', async (req, res) => {
 
         if (currentCoins < SPIN_COST) return res.status(402).json({ success: false, message: "Saldo insuficiente" });
 
-        // Lógica de probabilidad
         const items = WHEEL_ITEMS.filter(i => i.weight > 0);
         const totalWeight = items.reduce((sum, i) => sum + i.weight, 0);
         let random = Math.random() * totalWeight;
@@ -266,8 +312,18 @@ app.post('/api/shop/spin', async (req, res) => {
         if (prize.label === 'Monedas') finalCoins += 100;
 
         const updateData = { $set: { coins: finalCoins } };
+
         if (prize.label !== 'Nada' && prize.label !== 'Monedas') {
-            updateData.$push = { inventory: prize.label };
+            const itemToSave = {
+                id: `prize_${Date.now()}_${prize.id}`,
+                name: prize.label,
+                icon: prize.icon,
+                color: prize.color,
+                cat: prize.id === 2 ? 'skin' : 'collectible',
+                equipped: false,
+                purchasedAt: new Date()
+            };
+            updateData.$push = { inventory: itemToSave };
         }
 
         await usersCol.updateOne({ user: user }, updateData);
@@ -333,92 +389,98 @@ app.put('/api/user/plan', async (req, res) => {
     }
 });
 
-// --- ENDPOINT DE COMPRA ---
-app.post('/api/shop/purchase', async (req, res) => {
-    const { user, itemId, price } = req.body;
-    console.log(`💰 Compra intentada por ${user}: Item ${itemId} por ${price} coins`);
+// --- SISTEMA DE TIENDA E INVENTARIO ---
 
-    if (!user || !itemId || price === undefined) {
-        return res.status(400).json({ success: false, message: "Datos incompletos" });
-    }
+app.post('/api/shop/buy', async (req, res) => {
+    const { user, item } = req.body;
 
     try {
-        const { users: usersCol } = getCollections();
-        const currentUser = await usersCol.findOne({ user });
+        const { users } = getCollections();
+        const currentUser = await users.findOne({ user: user });
 
-        if (!currentUser) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-        if (currentCoins < price) {
-            return res.status(402).json({ success: false, message: "Saldo insuficiente" });
+        const currentCoins = currentUser.coins || 0;
+        if (currentCoins < item.price) {
+            return res.status(400).json({ message: "Créditos insuficientes." });
         }
 
-        const newBalance = currentCoins - price;
-        await usersCol.updateOne(
-            { user },
+        const alreadyOwned = currentUser.inventory?.some(i => i.id === item.id);
+        if (alreadyOwned) {
+            return res.status(400).json({ message: "Ya tienes este artículo." });
+        }
+
+        const newBalance = currentCoins - item.price;
+
+        const itemToSave = {
+            id: item.id,
+            name: item.name,
+            desc: item.desc,
+            icon: item.icon,
+            color: item.color,
+            cat: item.cat || 'general',
+            price: item.price,
+            equipped: false,
+            purchasedAt: new Date()
+        };
+
+        await users.updateOne(
+            { user: user },
             {
                 $set: { coins: newBalance },
-                $push: { inventory: { id: itemId, purchasedAt: new Date() } }
+                $push: { inventory: itemToSave }
             }
         );
 
-        res.json({ success: true, newBalance });
+        res.json({ success: true, newBalance, item: itemToSave });
     } catch (error) {
-        console.error("Error en compra:", error);
-        res.status(500).json({ message: "Error procesando la compra" });
+        res.status(500).json({ message: "Error en la transacción estelar." });
     }
 });
 
-// --- ENDPOINT DE EQUIPAR ---
-app.post('/api/user/equip', async (req, res) => {
-    const { user, itemId, category } = req.body;
-    console.log(`🛡️ Equipando para ${user}: ${category} -> ${itemId}`);
-
-    if (!user || itemId === undefined || !category) {
-        return res.status(400).json({ success: false, message: "Datos incompletos" });
-    }
-
+app.get('/api/users/:username/inventory', async (req, res) => {
+    const username = req.params.username;
     try {
-        const { users: usersCol } = getCollections();
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: username }, { projection: { inventory: 1 } });
 
-        // Estructura de equipo en el documento: equipped: { skins: id, pets: id, trails: id }
-        const updateKey = `equipped.${category}`;
-        await usersCol.updateOne(
-            { user },
-            { $set: { [updateKey]: itemId } }
-        );
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        res.json({ success: true });
+        res.json({ inventory: userDoc.inventory || [] });
     } catch (error) {
-        console.error("Error al equipar:", error);
-        res.status(500).json({ message: "Error al actualizar equipo" });
+        res.status(500).json({ message: "Error al obtener el inventario." });
     }
 });
 
-// --- ENDPOINTS DE PERFIL (Avatar y Mascota) ---
-app.put('/api/user/avatar', async (req, res) => {
-    const { user, avatar } = req.body;
-    if (!user || !avatar) return res.status(400).json({ message: "Faltan datos" });
-
+app.post('/api/inventory/toggle-equip', async (req, res) => {
+    const { user, itemId } = req.body;
     try {
-        const { users: usersCol } = getCollections();
-        await usersCol.updateOne({ user }, { $set: { avatar } });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ message: "Error al actualizar avatar" });
-    }
-});
+        const { users } = getCollections();
+        const userDoc = await users.findOne({ user: user });
 
-app.put('/api/user/mascot', async (req, res) => {
-    const { user, mascot } = req.body;
-    if (!user) return res.status(400).json({ message: "Usuario requerido" });
+        if (!userDoc) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    try {
-        const { users: usersCol } = getCollections();
-        await usersCol.updateOne({ user }, { $set: { mascot } });
-        res.json({ success: true });
+        const itemTarget = userDoc.inventory.find(i => i.id === itemId);
+        if (!itemTarget) return res.status(404).json({ message: "Item no encontrado en inventario" });
+
+        const isEquipping = !itemTarget.equipped;
+
+        const updatedInventory = userDoc.inventory.map(item => {
+            if (item.id === itemId) {
+                return { ...item, equipped: isEquipping };
+            }
+            if (isEquipping && item.cat === itemTarget.cat && item.equipped) {
+                return { ...item, equipped: false };
+            }
+            return item;
+        });
+
+        await users.updateOne({ user: user }, { $set: { inventory: updatedInventory } });
+
+        res.json({ success: true, inventory: updatedInventory });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar mascota" });
+        console.error("Error toggle-equip:", error);
+        res.status(500).json({ message: "Error al cambiar equipamiento." });
     }
 });
 
@@ -434,7 +496,8 @@ wss.on('connection', (ws) => {
 });
 
 // --- ARRANQUE ---
-connectDB().then(() => {
+connectDB().then(async () => {
+    await ensureIndexes();
     const PORT = 3000;
     server.listen(PORT, () => {
         console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);
