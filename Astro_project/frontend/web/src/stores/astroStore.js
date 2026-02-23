@@ -1,6 +1,35 @@
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
 
+function readStoredArray(key, fallback = []) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) return fallback;
+
+    try {
+        const parsedValue = JSON.parse(rawValue);
+        return Array.isArray(parsedValue) ? parsedValue : fallback;
+    } catch (error) {
+        console.warn(`⚠️ Valor inválido en localStorage para ${key}. Se usa valor por defecto.`);
+        return fallback;
+    }
+}
+
+function normalizeSelectedAchievements(values = []) {
+    return [
+        values[0] ?? null,
+        values[1] ?? null,
+        values[2] ?? null
+    ];
+}
+
+function normalizeUnlockedAchievements(values = []) {
+    return [...new Set(
+        values
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value > 0)
+    )].sort((a, b) => a - b);
+}
+
 export const useAstroStore = defineStore('astro', {
     state: () => ({
         user: localStorage.getItem('astro_user') || null,
@@ -14,7 +43,8 @@ export const useAstroStore = defineStore('astro', {
         streakFreezes: Number(localStorage.getItem('astro_streak_freezes')) || 0,
         needsFreeze: false,
         inventory: [],
-        selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
+        selectedAchievements: normalizeSelectedAchievements(readStoredArray('astro_selected_achievements', [null, null, null])),
+        unlockedAchievements: normalizeUnlockedAchievements(readStoredArray('astro_unlocked_achievements', [])),
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
@@ -96,11 +126,8 @@ export const useAstroStore = defineStore('astro', {
 
                 // 2. Formatear logros (siempre 3 slots)
                 const saved = data.profile.selectedAchievements || [];
-                this.selectedAchievements = [
-                    saved[0] || null,
-                    saved[1] || null,
-                    saved[2] || null
-                ];
+                this.selectedAchievements = normalizeSelectedAchievements(saved);
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.profile.unlockedAchievements || []);
 
                 // 3. CARGA CRÍTICA: Traer el inventario de MongoDB antes de finalizar
                 await this.fetchUserInventory();
@@ -117,6 +144,7 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
                 this.connectWebSocket();
@@ -273,6 +301,73 @@ export const useAstroStore = defineStore('astro', {
             }
         },
 
+        async fetchUserAchievements() {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay una sesión activa." };
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/achievements`);
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+
+                if (!response.ok) throw new Error(data.message || "No se pudieron obtener los logros.");
+
+                this.selectedAchievements = normalizeSelectedAchievements(data.selectedAchievements || []);
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.unlockedAchievements || []);
+
+                localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
+
+                return { success: true, achievements: data };
+            } catch (error) {
+                console.error("❌ Error obteniendo logros:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async syncUnlockedAchievements(unlockedAchievements) {
+            this.error = null;
+            const normalizedUnlocked = normalizeUnlockedAchievements(unlockedAchievements);
+
+            this.unlockedAchievements = normalizedUnlocked;
+            localStorage.setItem('astro_unlocked_achievements', JSON.stringify(normalizedUnlocked));
+
+            if (!this.user) {
+                this.user = localStorage.getItem('astro_user');
+            }
+
+            if (!this.user) {
+                this.error = "Usuario no identificado. Los logros se guardaron solo en local.";
+                return { success: false, message: this.error };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/user/achievements/unlocked', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        unlockedAchievements: normalizedUnlocked
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "Error al guardar logros desbloqueados.");
+
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.unlockedAchievements || normalizedUnlocked);
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
+
+                return { success: true, unlockedAchievements: this.unlockedAchievements };
+            } catch (error) {
+                console.error("❌ Error sincronizando logros desbloqueados:", error);
+                this.error = "Error al guardar logros desbloqueados: " + error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
         connectWebSocket() {
             // CORRECCIÓN: Puerto 3000 y evitar duplicados
             if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) return;
@@ -330,6 +425,7 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_level'); // Opcional, pero buena práctica
             localStorage.removeItem('astro_xp');    // Opcional, pero buena práctica
             localStorage.removeItem('astro_selected_achievements');
+            localStorage.removeItem('astro_unlocked_achievements');
             localStorage.removeItem('astro_avatar');
             localStorage.removeItem('astro_mascot');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");

@@ -42,6 +42,16 @@ function getCollections() {
     };
 }
 
+function normalizeAchievementIds(ids = []) {
+    if (!Array.isArray(ids)) return [];
+
+    return [...new Set(
+        ids
+            .map((id) => Number(id))
+            .filter((id) => Number.isInteger(id) && id > 0)
+    )].sort((a, b) => a - b);
+}
+
 async function ensureIndexes() {
     if (indexesReady) return;
 
@@ -319,6 +329,8 @@ app.post('/api/auth/register', async (req, res) => {
             level: 1,
             xp: 0,
             inventory: [],
+            selectedAchievements: [null, null, null],
+            unlockedAchievements: [],
             streak: 0,
             streakFreezes: 0,
             lastActivity: new Date(),
@@ -356,6 +368,7 @@ app.post('/api/auth/login', async (req, res) => {
                     level: foundUser.level || 1,
                     xp: foundUser.xp || 0,
                     selectedAchievements: foundUser.selectedAchievements || [null, null, null],
+                    unlockedAchievements: normalizeAchievementIds(foundUser.unlockedAchievements || []),
                     streak: streakResult.streak,
                     streakFreezes: foundUser.streakFreezes || 0,
                     needsFreeze: streakResult.needsFreeze,
@@ -427,6 +440,73 @@ app.post('/api/shop/spin', async (req, res) => {
 });
 
 // --- ENDPOINT DE LOGROS ---
+app.get('/api/users/:username/achievements', async (req, res) => {
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).json({ success: false, message: "Usuario requerido." });
+    }
+
+    try {
+        const { users } = getCollections();
+        const userDoc = await users.findOne(
+            { user: username },
+            { projection: { selectedAchievements: 1, unlockedAchievements: 1 } }
+        );
+
+        if (!userDoc) {
+            return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+        }
+
+        res.json({
+            success: true,
+            selectedAchievements: Array.isArray(userDoc.selectedAchievements)
+                ? userDoc.selectedAchievements
+                : [null, null, null],
+            unlockedAchievements: normalizeAchievementIds(userDoc.unlockedAchievements || [])
+        });
+    } catch (error) {
+        console.error("Error obteniendo logros del usuario:", error);
+        res.status(500).json({ success: false, message: "No se pudieron obtener los logros." });
+    }
+});
+
+app.put('/api/user/achievements/unlocked', async (req, res) => {
+    const { user, unlockedAchievements } = req.body;
+
+    if (!user) {
+        return res.status(400).json({ success: false, message: "Usuario no identificado." });
+    }
+    if (!Array.isArray(unlockedAchievements)) {
+        return res.status(400).json({ success: false, message: "Formato de logros desbloqueados no válido." });
+    }
+
+    const normalizedUnlocked = normalizeAchievementIds(unlockedAchievements);
+    if (normalizedUnlocked.length > 200) {
+        return res.status(400).json({ success: false, message: "Demasiados logros desbloqueados." });
+    }
+
+    try {
+        const { users } = getCollections();
+        const result = await users.updateOne(
+            { user: user },
+            { $set: { unlockedAchievements: normalizedUnlocked } }
+        );
+
+        if (!result.matchedCount) {
+            return res.status(404).json({ success: false, message: "Usuario no encontrado." });
+        }
+
+        res.json({
+            success: true,
+            message: "Logros desbloqueados actualizados correctamente.",
+            unlockedAchievements: normalizedUnlocked
+        });
+    } catch (error) {
+        console.error("Error actualizando logros desbloqueados:", error);
+        res.status(500).json({ success: false, message: "Error interno del servidor." });
+    }
+});
+
 app.put('/api/user/achievements', async (req, res) => {
     const { user, achievements } = req.body;
     console.log(`🏅 Actualizando logros para: ${user}`, achievements);
