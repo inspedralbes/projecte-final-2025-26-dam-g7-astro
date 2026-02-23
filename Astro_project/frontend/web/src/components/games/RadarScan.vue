@@ -1,33 +1,37 @@
 <template>
   <div class="game-container" @mousemove="updateFlashlight" ref="gameArea">
+    <!-- HUD -->
     <div class="hud d-flex justify-space-between align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
       <div class="text-h6 text-white bg-slate-800 px-4 py-1 rounded-pill border-cyan">Objectiu: Troba la '{{ targetChar }}'</div>
       <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
     </div>
 
-    <!-- Afegim la classe board-hidden per quan estem regenerant -->
+    <!-- TAULER -->
     <div 
       class="board d-flex flex-wrap justify-center align-center" 
       :style="{ width: boardSize + 'px' }"
       :class="{ 
-        'board-transitioning': isTransitioning && !correctClicked,
         'board-hidden': isChangingLevel 
       }"
     >
+      <!-- FIX: Usem :data-char per evitar Ctrl+F -->
       <div 
         v-for="(letter, index) in board" 
         :key="index"
-        class="letter-cell d-flex justify-center align-center text-h4 font-weight-bold cursor-pointer"
-        :style="{ width: cellSize + 'px', height: cellSize + 'px' }"
+        class="letter-cell d-flex justify-center align-center font-weight-black cursor-pointer"
+        :data-char="letter"
+        :style="{ 
+          width: cellSize + 'px', 
+          height: cellSize + 'px',
+          fontSize: (cellSize * 0.6) + 'px' 
+        }"
         :class="{ 'letter-correct': correctClicked && index === targetIndex }"
         @click="checkLetter(index)"
-      >
-        {{ letter }}
-      </div>
+      ></div>
     </div>
 
-    <!-- La capa de foscor/llanterna -->
+    <!-- LLANTERNA (Capa fosca) -->
     <div 
       class="flashlight-overlay" 
       :class="{ 
@@ -41,10 +45,11 @@
       }"
     ></div>
 
-    <!-- Overlays de Inici i Final (es mantenen igual) -->
+    <!-- OVERLAYS (Inici / Final) -->
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
         <h2 class="text-h4 font-weight-bold text-white mb-4">Escàner de Ràdar</h2>
+        <p class="text-body-1 text-grey-lighten-1 mb-6">Troba la lletra diferent. La teva llanterna és l'única guia.</p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black block" @click="startGame">
           COMENÇAR
         </v-btn>
@@ -52,10 +57,13 @@
     </v-overlay>
 
     <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="450">
+      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
+        <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
         <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
         <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
-        <v-btn color="cyan-accent-3" size="x-large" rounded="xl" @click="returnToMenu">TORNAR AL MENÚ</v-btn>
+        <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
+          TORNAR AL MENÚ
+        </v-btn>
       </v-card>
     </v-overlay>
   </div>
@@ -68,8 +76,8 @@ const emit = defineEmits(['game-over']);
 
 const showStartOverlay = ref(true);
 const showGameOverOverlay = ref(false);
-const isTransitioning = ref(false); // Controla la il·luminació d'èxit
-const isChangingLevel = ref(false);  // Controla el fosc total i canvi de lletres
+const isTransitioning = ref(false);
+const isChangingLevel = ref(false);
 const correctClicked = ref(false);
 const score = ref(0);
 const timeLeft = ref(60);
@@ -85,16 +93,16 @@ const targetIndex = ref(-1);
 const targetChar = ref('');
 
 const levels = [
-  { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
-  { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
-  { distractor: 'm', target: 'n', grid: 9, tunnel: 150 },
+  { distractor: 'p', target: 'q', grid: 6, tunnel: 180 },
+  { distractor: 'b', target: 'd', grid: 8, tunnel: 160 },
+  { distractor: 'm', target: 'n', grid: 10, tunnel: 140 },
   { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },
   { distractor: 'E', target: 'F', grid: 15, tunnel: 100 }
 ];
 
 const currentConfig = computed(() => levels[Math.min(currentLevel.value - 1, levels.length - 1)]);
 const currentTunnelSize = computed(() => currentConfig.value.tunnel);
-const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid));
+const cellSize = computed(() => Math.max(30, 580 / currentConfig.value.grid));
 const boardSize = computed(() => currentConfig.value.grid * cellSize.value);
 
 const updateFlashlight = (e) => {
@@ -118,31 +126,25 @@ const checkLetter = (index) => {
   if (showStartOverlay.value || showGameOverOverlay.value || isTransitioning.value || isChangingLevel.value) return;
 
   if (index === targetIndex.value) {
-    // 1. Fase d'èxit: Il·luminem tot
     isTransitioning.value = true;
     correctClicked.value = true;
     
     setTimeout(() => {
-      // 2. Fase de fosc total: Amaguem el tauler
       correctClicked.value = false;
       isChangingLevel.value = true;
       
       setTimeout(() => {
-        // 3. Canvi de lletres (mentre està tot negre)
         score.value += (currentLevel.value * 10);
         timeLeft.value = Math.min(60, timeLeft.value + 3);
         currentLevel.value++;
         generateBoard();
 
-        // 4. Tornem a la normalitat
         setTimeout(() => {
           isTransitioning.value = false;
           isChangingLevel.value = false;
-        }, 300); // Temps perquè l'usuari es prepari
-        
-      }, 400); // Temps que roman en fosc total
-      
-    }, 800); // Temps que roman il·luminat per l'èxit
+        }, 200);
+      }, 300);
+    }, 700);
 
   } else {
     timeLeft.value = Math.max(0, timeLeft.value - 3);
@@ -186,7 +188,7 @@ onBeforeUnmount(() => clearInterval(timerInterval));
   width: 100%;
   height: 100%;
   min-height: 600px;
-  background-color: #0b1120; /* Color fons molt fosc */
+  background-color: #020617; /* Fons extremadament fosc */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -195,29 +197,36 @@ onBeforeUnmount(() => clearInterval(timerInterval));
 }
 
 .board {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 95%;
+  max-height: 95%;
   z-index: 2;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
-/* Quan canviem de nivell, el tauler desapareix totalment */
 .board-hidden {
   opacity: 0 !important;
 }
 
+/* LLETRES */
 .letter-cell {
-  color: #1e293b; /* Color de les lletres a la foscor */
-  transition: color 0.2s, transform 0.2s;
+  color: #f8fafc; /* Color de la lletra (ara molt clar per veure-la bé) */
+  position: relative;
+}
+
+/* ANTI CTRL+F: La lletra no existeix al DOM com a text */
+.letter-cell::before {
+  content: attr(data-char);
 }
 
 .letter-correct {
   color: #00e5ff !important;
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
-  transform: scale(1.4);
+  text-shadow: 0 0 20px rgba(0, 229, 255, 1);
+  transform: scale(1.5);
   z-index: 10;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* LLANTERNA */
 .flashlight-overlay {
   position: absolute;
   top: 0;
@@ -227,23 +236,23 @@ onBeforeUnmount(() => clearInterval(timerInterval));
   pointer-events: none;
   z-index: 5;
   transition: opacity 0.3s ease;
+  /* Llanterna més forta: transparent al centre, negre opac ràpidament */
   background: radial-gradient(
     circle var(--tunnelSize) at var(--mouseX) var(--mouseY), 
     transparent 0%, 
-    rgba(11, 17, 32, 0.98) 80%, 
-    rgba(11, 17, 32, 1) 100%
+    transparent 40%, 
+    rgba(2, 6, 23, 0.95) 75%, 
+    rgba(2, 6, 23, 1) 100%
   );
 }
 
-/* "Il·lumina tot" */
 .flashlight-off {
   opacity: 0;
 }
 
-/* "Fosc total" per tapar el canvi de lletres */
 .flashlight-full-dark {
   opacity: 1 !important;
-  background: #0b1120 !important; /* Tapem el gradient amb un color sòlid */
+  background: #020617 !important;
 }
 
 .bg-slate-800 { background-color: #1e293b; }
