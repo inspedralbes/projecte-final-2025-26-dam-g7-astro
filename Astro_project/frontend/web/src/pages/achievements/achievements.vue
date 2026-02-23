@@ -6,6 +6,16 @@
                 <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
             </div>
 
+            <v-alert
+                v-if="loadError"
+                type="warning"
+                variant="tonal"
+                color="orange-lighten-1"
+                class="mb-8"
+            >
+                {{ loadError }}
+            </v-alert>
+
             <div v-if="loading" class="d-flex justify-center align-center" style="height: 200px;">
                 <v-progress-circular indeterminate color="cyan-accent-3" size="64"></v-progress-circular>
             </div>
@@ -26,14 +36,20 @@
                             {{ achievement.description }}
                         </p>
 
-                        <div class="mt-2">
-                            <v-chip v-if="achievement.id === 1 && !achievement.unlocked" size="x-small" color="orange"
-                                variant="tonal">
-                                {{ astroStore.coins }} / 1000 Monedas
+                        <div class="mt-2 d-flex flex-column align-center">
+                            <v-progress-linear
+                                :model-value="achievement.progressPct"
+                                color="cyan-accent-2"
+                                bg-color="blue-grey-darken-4"
+                                height="6"
+                                rounded
+                                style="width: 150px;"
+                            />
+                            <v-chip v-if="!achievement.unlocked" size="x-small" color="cyan-accent-1" variant="tonal" class="mt-2">
+                                {{ achievement.progress }} / {{ achievement.goal }} {{ achievement.metricLabel }}
                             </v-chip>
-                            <v-chip v-if="achievement.id === 2 && !achievement.unlocked" size="x-small" color="blue"
-                                variant="tonal">
-                                {{ astroStore.partides }} / 5 Partidas
+                            <v-chip v-else size="x-small" color="green-accent-3" variant="tonal" class="mt-2">
+                                Desbloqueado
                             </v-chip>
                         </div>
                     </div>
@@ -44,67 +60,217 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { ACHIEVEMENTS } from '@/constants/achievements'
+import { ref, computed, onMounted, watch } from 'vue'
 import Medal from '@/components/achievements/Medal.vue'
 import { useAstroStore } from '@/stores/astroStore'
+
+const ACHIEVEMENT_DEFINITIONS = [
+    {
+        id: 1,
+        title: 'Primer Vuelo',
+        description: 'Completa 1 misión.',
+        icon: 'mdi-rocket-launch',
+        type: 'bronze',
+        metric: 'games',
+        goal: 1,
+        metricLabel: 'Partidas'
+    },
+    {
+        id: 2,
+        title: 'Tripulante Activo',
+        description: 'Completa 5 misiones.',
+        icon: 'mdi-gamepad-variant',
+        type: 'bronze',
+        metric: 'games',
+        goal: 5,
+        metricLabel: 'Partidas'
+    },
+    {
+        id: 3,
+        title: 'Veterano Estelar',
+        description: 'Completa 20 misiones.',
+        icon: 'mdi-star-four-points',
+        type: 'silver',
+        metric: 'games',
+        goal: 20,
+        metricLabel: 'Partidas'
+    },
+    {
+        id: 4,
+        title: 'Primer Botín',
+        description: 'Acumula 1.200 monedas.',
+        icon: 'mdi-currency-usd-circle',
+        type: 'bronze',
+        metric: 'coins',
+        goal: 1200,
+        metricLabel: 'Monedas'
+    },
+    {
+        id: 5,
+        title: 'Fortuna Galáctica',
+        description: 'Acumula 3.000 monedas.',
+        icon: 'mdi-cash-multiple',
+        type: 'gold',
+        metric: 'coins',
+        goal: 3000,
+        metricLabel: 'Monedas'
+    },
+    {
+        id: 6,
+        title: 'Primer Coleccionable',
+        description: 'Consigue 1 objeto en inventario.',
+        icon: 'mdi-package-variant-closed',
+        type: 'bronze',
+        metric: 'inventory',
+        goal: 1,
+        metricLabel: 'Objetos'
+    },
+    {
+        id: 7,
+        title: 'Coleccionista',
+        description: 'Consigue 5 objetos en inventario.',
+        icon: 'mdi-treasure-chest',
+        type: 'silver',
+        metric: 'inventory',
+        goal: 5,
+        metricLabel: 'Objetos'
+    },
+    {
+        id: 8,
+        title: 'Museo Orbital',
+        description: 'Consigue 10 objetos en inventario.',
+        icon: 'mdi-diamond-stone',
+        type: 'gold',
+        metric: 'inventory',
+        goal: 10,
+        metricLabel: 'Objetos'
+    },
+    {
+        id: 9,
+        title: 'Subiendo de Rango',
+        description: 'Alcanza el nivel 3.',
+        icon: 'mdi-shield-chevron-up',
+        type: 'bronze',
+        metric: 'level',
+        goal: 3,
+        metricLabel: 'Nivel'
+    },
+    {
+        id: 10,
+        title: 'Capitán Novato',
+        description: 'Alcanza el nivel 5.',
+        icon: 'mdi-shield-star',
+        type: 'silver',
+        metric: 'level',
+        goal: 5,
+        metricLabel: 'Nivel'
+    },
+    {
+        id: 11,
+        title: 'Comandante',
+        description: 'Alcanza el nivel 8.',
+        icon: 'mdi-crown',
+        type: 'gold',
+        metric: 'level',
+        goal: 8,
+        metricLabel: 'Nivel'
+    },
+    {
+        id: 12,
+        title: 'Energía Infinita',
+        description: 'Consigue 500 XP.',
+        icon: 'mdi-atom-variant',
+        type: 'platinum',
+        metric: 'xp',
+        goal: 500,
+        metricLabel: 'XP'
+    }
+]
 
 const astroStore = useAstroStore()
 const loading = ref(false)
 const loadError = ref(null)
+const readyToSync = ref(false)
+const syncingUnlocked = ref(false)
+
+const playerMetrics = computed(() => ({
+    coins: Number(astroStore.coins) || 0,
+    games: Number(astroStore.partides) || 0,
+    inventory: astroStore.inventory?.length || 0,
+    level: Number(astroStore.level) || 1,
+    xp: Number(astroStore.xp) || 0
+}))
 
 onMounted(async () => {
     loading.value = true
     try {
-        // Traemos datos frescos del servidor
-        await Promise.all([
+        const [statsResult, , achievementsResult] = await Promise.all([
             astroStore.fetchUserStats(),
-            astroStore.fetchUserInventory()
+            astroStore.fetchUserInventory(),
+            astroStore.fetchUserAchievements()
         ])
+
+        if (statsResult?.success === false || achievementsResult?.success === false) {
+            loadError.value = "No se pudo sincronizar completamente con MongoDB Atlas."
+        } else {
+            loadError.value = null
+        }
     } catch (err) {
         console.error("Error de sincronización:", err)
         loadError.value = "No se pudo sincronizar con la base de mando."
     } finally {
         loading.value = false
+        readyToSync.value = true
+        void syncUnlockedAchievementsIfNeeded(unlockedAchievementIds.value)
     }
 })
 
 const processedAchievements = computed(() => {
-    // Definimos los umbrales de victoria para facilitar el mantenimiento
-    const THRESHOLDS = {
-        COINS: 1000,
-        GAMES: 5,
-        INVENTORY: 3
-    }
+    const unlockedFromDb = new Set(astroStore.unlockedAchievements || [])
 
-    return ACHIEVEMENTS.map(achievement => {
-        let isUnlocked = false;
-
-        // Usamos >= para asegurar que si tienen 1000 o 1,000,000 se desbloquee igual
-        switch (achievement.id) {
-            case 1: // Cazador de Monedas
-                isUnlocked = (astroStore.coins || 0) >= THRESHOLDS.COINS;
-                break;
-            case 2: // Piloto Novato
-                isUnlocked = (astroStore.partides || 0) >= THRESHOLDS.GAMES;
-                break;
-            case 3: // Coleccionista
-                // Verificamos que inventory exista antes de leer su longitud
-                isUnlocked = (astroStore.inventory?.length || 0) >= THRESHOLDS.INVENTORY;
-                break;
-            default:
-                isUnlocked = false;
-        }
+    return ACHIEVEMENT_DEFINITIONS.map(achievement => {
+        const currentValue = playerMetrics.value[achievement.metric] || 0
+        const unlockedByProgress = currentValue >= achievement.goal
+        const unlocked = unlockedByProgress || unlockedFromDb.has(achievement.id)
+        const progress = Math.min(currentValue, achievement.goal)
+        const progressPct = Math.round((progress / achievement.goal) * 100)
 
         return {
             ...achievement,
-            unlocked: isUnlocked,
-            // Añadimos el progreso actual para mostrarlo en la UI si fuera necesario
-            progress: achievement.id === 1 ? astroStore.coins :
-                achievement.id === 2 ? astroStore.partides :
-                    astroStore.inventory?.length || 0
+            unlocked,
+            progress,
+            progressPct
         }
     })
+})
+
+const unlockedAchievementIds = computed(() => {
+    return processedAchievements.value
+        .filter(achievement => achievement.unlocked)
+        .map(achievement => achievement.id)
+        .sort((a, b) => a - b)
+})
+
+function idsToKey(ids = []) {
+    return ids.join(',')
+}
+
+async function syncUnlockedAchievementsIfNeeded(nextIds) {
+    if (!readyToSync.value || syncingUnlocked.value || !astroStore.user) return
+
+    const storedIds = [...(astroStore.unlockedAchievements || [])].sort((a, b) => a - b)
+    if (idsToKey(nextIds) === idsToKey(storedIds)) return
+
+    syncingUnlocked.value = true
+    try {
+        await astroStore.syncUnlockedAchievements(nextIds)
+    } finally {
+        syncingUnlocked.value = false
+    }
+}
+
+watch(unlockedAchievementIds, (nextIds) => {
+    void syncUnlockedAchievementsIfNeeded(nextIds)
 })
 </script>
 
