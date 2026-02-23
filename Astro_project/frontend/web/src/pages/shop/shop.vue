@@ -27,8 +27,18 @@
                             <span class="text-h6 font-weight-bold text-amber-accent-3 mr-1">{{ userCoins }}</span>
                             <v-icon color="amber-accent-3" size="small">mdi-currency-usd</v-icon>
                         </div>
-                        <div class="mt-3 text-caption text-cyan-accent-2">
-                            Partidas completadas: <strong>{{ userGames }}</strong>
+                        <div class="mt-3 d-flex align-center justify-center gap-4">
+                            <div class="text-caption text-cyan-accent-2">
+                                Partidas completadas: <strong>{{ userGames }}</strong>
+                            </div>
+                            <div class="text-caption d-flex align-center" 
+                                :class="isStreakActiveToday ? 'text-orange-accent-2' : 'text-grey-darken-1'">
+                                <v-icon size="x-small" class="mr-1" 
+                                    :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }">
+                                    {{ isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off' }}
+                                </v-icon>
+                                Racha: <strong>{{ userStreak }}</strong>
+                            </div>
                         </div>
                         <div class="mt-4 text-caption text-grey-lighten-1">
                             Coste de giro: <strong>50</strong> <v-icon size="x-small">mdi-currency-usd</v-icon>
@@ -157,6 +167,8 @@ import LuckyWheel from '../../components/shop/LuckyWheel.vue';
 const astroStore = useAstroStore();
 const userCoins = computed(() => astroStore.coins);
 const userGames = computed(() => astroStore.partides);
+const userStreak = computed(() => astroStore.streak);
+const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
 

@@ -8,17 +8,32 @@ export const useAstroStore = defineStore('astro', {
         rank: localStorage.getItem('astro_rank') || null,
         coins: 0,
         partides: 0,
-        level: Number(localStorage.getItem('astro_level')) || 1,  
-        xp: Number(localStorage.getItem('astro_xp')) || 0,        
+        level: Number(localStorage.getItem('astro_level')) || 1,
+        xp: Number(localStorage.getItem('astro_xp')) || 0,
+        streak: Number(localStorage.getItem('astro_streak')) || 0,
+        streakFreezes: Number(localStorage.getItem('astro_streak_freezes')) || 0,
+        needsFreeze: false,
         inventory: [],
         selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
+        lastActivity: localStorage.getItem('astro_last_activity') || null,
         socket: null,
         isConnected: false,
         error: null
     }),
+
+    getters: {
+        isStreakActiveToday: (state) => {
+            if (!state.lastActivity) return false;
+            const last = new Date(state.lastActivity);
+            const now = new Date();
+            return last.getFullYear() === now.getFullYear() &&
+                last.getMonth() === now.getMonth() &&
+                last.getDate() === now.getDate();
+        }
+    },
 
     actions: {
         async registerTripulante(userData) {
@@ -69,8 +84,12 @@ export const useAstroStore = defineStore('astro', {
                 this.plan = data.profile.plan;
                 this.rank = data.profile.rank;
                 this.coins = data.profile.coins;
-                this.level = data.profile.level; 
-                this.xp = data.profile.xp;       
+                this.level = data.profile.level;
+                this.xp = data.profile.xp;
+                this.streak = data.profile.streak || 0;
+                this.streakFreezes = data.profile.streakFreezes || 0;
+                this.needsFreeze = !!data.profile.needsFreeze;
+                this.lastActivity = data.profile.lastActivity || null;
                 this.token = data.token;
 
                 // 2. Formatear logros (siempre 3 slots)
@@ -89,8 +108,11 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_user', this.user);
                 localStorage.setItem('astro_rank', this.rank);
                 localStorage.setItem('astro_plan', this.plan);
-                localStorage.setItem('astro_level', this.level); 
-                localStorage.setItem('astro_xp', this.xp);       
+                localStorage.setItem('astro_level', this.level);
+                localStorage.setItem('astro_xp', this.xp);
+                localStorage.setItem('astro_streak', this.streak);
+                localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
@@ -119,9 +141,12 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
                 this.coins = data.coins !== undefined ? data.coins : this.coins;
-                this.level = data.stats?.level !== undefined ? data.stats.level : this.level; 
-                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;             
+                this.level = data.stats?.level !== undefined ? data.stats.level : this.level;
+                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
+                this.streak = data.stats?.streak !== undefined ? data.stats.streak : this.streak;
+                this.streakFreezes = data.stats?.streakFreezes !== undefined ? data.stats.streakFreezes : this.streakFreezes;
+                this.lastActivity = data.stats?.lastActivity !== undefined ? data.stats.lastActivity : this.lastActivity;
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -182,9 +207,12 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudo registrar la partida.");
 
                 this.coins = data.newBalance !== undefined ? data.newBalance : this.coins;
-                this.level = data.newLevel !== undefined ? data.newLevel : this.level; 
-                this.xp = data.newXp !== undefined ? data.newXp : this.xp;             
+                this.level = data.newLevel !== undefined ? data.newLevel : this.level;
+                this.xp = data.newXp !== undefined ? data.newXp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
+                this.streak = data.streak !== undefined ? data.streak : this.streak;
+                this.needsFreeze = !!data.needsFreeze;
+                this.lastActivity = new Date().toISOString(); // Acabamos de completar una partida
 
                 if (data.newRank) {
                     this.rank = data.newRank;
@@ -198,7 +226,7 @@ export const useAstroStore = defineStore('astro', {
                 return { success: false, message: this.error };
             }
         },
-        
+
         async buyItem(item) {
             try {
                 const response = await fetch('http://localhost:3000/api/shop/buy', {
@@ -212,6 +240,11 @@ export const useAstroStore = defineStore('astro', {
                 // ACTUALIZACIÓN DEL ESTADO GLOBAL
                 this.coins = data.newBalance;
                 this.inventory.push(data.item); // <--- Guardamos el inventario actualizado
+
+                if (item.id === 2) {
+                    this.streakFreezes++;
+                    localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                }
 
                 return { success: true };
             } catch (error) {
@@ -388,6 +421,27 @@ export const useAstroStore = defineStore('astro', {
                 console.error("❌ Error sincronizando plan:", error);
                 this.error = "Error al conectar con el servidor: " + error.message;
                 return { success: false, message: this.error };
+            }
+        },
+
+        async useStreakFreeze() {
+            if (!this.user) return { success: false, message: "No hay sesión activa." };
+            try {
+                const response = await fetch('http://localhost:3000/api/user/use-freeze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+
+                this.streakFreezes = data.streakFreezes;
+                this.needsFreeze = false;
+                localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+
+                return { success: true };
+            } catch (error) {
+                return { success: false, message: error.message };
             }
         }
     }

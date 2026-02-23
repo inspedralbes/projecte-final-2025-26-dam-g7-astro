@@ -9,8 +9,11 @@
                 </div>
                 <div class="d-flex justify-space-around">
                     <div class="text-center">
-                        <v-icon icon="mdi-fire" color="orange-accent-3" size="large" class="mb-0 glow-icon"></v-icon>
-                        <div class="text-h6 font-weight-bold text-white">12</div>
+                        <v-icon :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'" 
+                            :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'" 
+                            size="large" class="mb-0 glow-icon"
+                            :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }"></v-icon>
+                        <div class="text-h6 font-weight-bold text-white">{{ userStreak }}</div>
                         <div class="text-caption text-grey" style="font-size: 0.7rem !important;">Racha</div>
                     </div>
                     <div class="text-center">
@@ -166,13 +169,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAstroStore } from '@/stores/astroStore'
 const astroStore = useAstroStore()
 
 const userCoins = computed(() => astroStore.coins)
 const userLevel = computed(() => astroStore.level)
 const userXp = computed(() => astroStore.xp)
+const userStreak = computed(() => astroStore.streak)
+const userStreakFreezes = computed(() => astroStore.streakFreezes)
+const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday)
+
+const showFreezeDialog = ref(false)
 
 const xpRequired = computed(() => {
     return 100 + (userLevel.value - 1) * 50;
@@ -198,6 +206,22 @@ const weeklyMissions = ref([
     { id: 5, text: 'Desbloquear un logro', completed: true, progress: '1/1' },
     { id: 6, text: 'Invitar a un amigo', completed: false, progress: '0/1' }
 ])
+
+onMounted(() => {
+    if (astroStore.needsFreeze && astroStore.streakFreezes > 0) {
+        showFreezeDialog.value = true
+    }
+})
+
+const useFreeze = async () => {
+    const result = await astroStore.useStreakFreeze()
+    if (result.success) {
+        showFreezeDialog.value = false
+        alert('¡Racha salvada!')
+    } else {
+        alert('Error: ' + result.message)
+    }
+}
 </script>
 
 <style scoped>
