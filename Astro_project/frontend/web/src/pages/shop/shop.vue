@@ -68,17 +68,28 @@
                                 </div>
 
                                 <div class="mt-8 px-8 py-4 rounded-xl balance-pill d-flex align-center justify-space-between w-100 mx-auto mx-md-0">
-                                    <div>
+                                    <div class="flex-grow-1">
                                         <span class="text-caption text-grey-lighten-1 block text-uppercase">Saldo disponible</span>
-                                    <div class="text-center">
-                                        <div class="d-flex align-center justify-center">
+                                        <div class="d-flex align-center">
                                             <span class="text-h3 font-weight-black text-amber-accent-3 mr-2" style="text-shadow: 0 0 15px rgba(255, 193, 7, 0.4);">{{ userCoins }}</span>
                                             <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
                                         </div>
                                     </div>
-
+                                    
+                                    <div class="text-right d-flex flex-column align-end">
+                                        <div class="text-caption d-flex align-center mb-1" :class="isStreakActiveToday ? 'text-orange-accent-2' : 'text-grey-darken-1'">
+                                            <v-icon size="x-small" class="mr-1" :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }">
+                                                {{ isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off' }}
+                                            </v-icon>
+                                            Racha: <strong>{{ userStreak }}</strong>
+                                        </div>
+                                        <div class="text-caption text-cyan-accent-2" style="font-size: 0.7rem !important;">
+                                            Partidas: <strong>{{ userGames }}</strong>
+                                        </div>
                                     </div>
-                                
+                                </div>
+                                <div class="mt-2 text-center text-md-left px-2">
+                                    <span class="text-caption text-grey-darken-2">Coste de giro: 50 <v-icon size="x-small">mdi-currency-usd</v-icon></span>
                                 </div>
                             </v-col>
                         </v-row>
@@ -197,8 +208,6 @@
 </template>
 
 <script setup>
-// Nota: Aquí solo añado los arrays de ejemplo para que veas el renderizado, 
-// tú mantén tu lógica de astroStore.
 import { ref, onMounted, computed } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
@@ -206,6 +215,8 @@ import LuckyWheel from '../../components/shop/LuckyWheel.vue';
 const astroStore = useAstroStore();
 const userCoins = computed(() => astroStore.coins);
 const userGames = computed(() => astroStore.partides);
+const userStreak = computed(() => astroStore.streak);
+const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
 const luckyWheelRef = ref(null);
@@ -226,22 +237,17 @@ const isOwned = (itemId) => {
 };
 
 const buyProduct = async (item) => {
-    // 1. Verificar si el usuario ya tiene el item (evita llamadas innecesarias al server)
     const alreadyOwned = astroStore.inventory?.some(i => i.id === item.id);
-    if (alreadyOwned) {
+    if (alreadyOwned && item.cat !== 'items') {
         alert(`¡Ya tienes ${item.name} en tu inventario!`);
         return;
     }
 
-    // 2. Confirmación
     if (!confirm(`¿Quieres comprar ${item.name} por ${item.price} créditos?`)) return;
 
-    // 3. Llamada a la Store
     try {
         const result = await astroStore.buyItem(item);
         if (result.success) {
-            // El backend ya nos devolvió el nuevo saldo y el inventario actualizado
-            // Si usas Pinia, la UI se actualizará sola
             console.log("Compra exitosa");
         } else {
             alert(result.message);
@@ -251,7 +257,6 @@ const buyProduct = async (item) => {
     }
 };
 
-// Arrays separados para las dos secciones (puedes unirlos y filtrar con computeds)
 const basicItems = ref([
     { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
     { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
@@ -288,7 +293,13 @@ const updateCoins = (newBalance) => {
 </script>
 
 <style scoped>
-/* Estilos unificados del primer diseño */
+.scroll-container {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background-color: #0b1120 !important;
+}
+
 .wheel-card {
     background: #111827;
     border: 1px solid rgba(0, 229, 255, 0.15);
@@ -316,19 +327,6 @@ const updateCoins = (newBalance) => {
     100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
 }
 
-.scroll-container {
-    height: 100vh;
-    width: 100%;
-    overflow-y: auto;
-    background-color: #0b1120 !important;
-}
-
-.wheel-card {
-    background: #1e293b;
-    border: 1px solid rgba(0, 229, 255, 0.1);
-    max-width: 500px;
-}
-
 .item-card {
     background-color: #1e293b !important;
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -352,7 +350,7 @@ const updateCoins = (newBalance) => {
 
 .balance-pill {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 193, 7, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .border-cyan {
@@ -368,15 +366,8 @@ const updateCoins = (newBalance) => {
 }
 
 @keyframes bounce {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
 .animate-bounce {

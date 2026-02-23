@@ -142,7 +142,7 @@
       <p class="text-h5 text-white mb-6">Puntuació Final: {{ score }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
-        Tornar al Menú
+        Obtenir Recompensa
       </v-btn>
     </v-card>
 
@@ -352,14 +352,6 @@ const finishGame = async () => {
 
     gameFinished.value = true;
     clearInterval(timerInterval);
-
-    if (!astroStore.user || gameSaved.value) return;
-    gameSaved.value = true;
-
-    const result = await astroStore.registerCompletedGame('SpelledRosco', score.value);
-    if (!result.success) {
-        console.error("No s'ha pogut registrar la partida:", result.message);
-    }
 };
 
 const emitExit = () => {

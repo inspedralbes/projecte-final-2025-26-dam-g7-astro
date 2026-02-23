@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
 const client = new MongoClient(uri);
 let database = null;
 
@@ -46,7 +47,7 @@ async function closeDB() {
 }
 
 module.exports = {
-connectDB,
-getDB,
-closeDB
+    connectDB,
+    getDB,
+    closeDB
 };

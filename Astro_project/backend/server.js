@@ -60,7 +60,7 @@ async function getUserStats(username) {
 
     const userDoc = await users.findOne(
         { user: username },
-        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1, level: 1, xp: 1 } }
+        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1, level: 1, xp: 1, streak: 1, lastActivity: 1, streakFreezes: 1 } }
     );
 
     if (!userDoc) return null;
@@ -89,7 +89,11 @@ async function getUserStats(username) {
         coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
         inventoryCount: Array.isArray(userDoc.inventory) ? userDoc.inventory.length : 0,
         gamesPlayed,
-        gamesByType
+        gamesByType,
+        streak: userDoc.streak || 0,
+        streakFreezes: userDoc.streakFreezes || 0,
+        lastActivity: userDoc.lastActivity,
+        lastGame: userDoc.lastGame
     };
 }
 
@@ -137,6 +141,71 @@ app.get('/api/shop/balance/:username', async (req, res) => {
     }
 });
 
+async function updateStreak(username, isGame = false) {
+    const { users } = getCollections();
+    const userDoc = await users.findOne({ user: username });
+    if (!userDoc) return null;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const lastActivity = userDoc.lastActivity ? new Date(userDoc.lastActivity) : null;
+    const lastGame = userDoc.lastGame ? new Date(userDoc.lastGame) : null;
+
+    let newStreak = userDoc.streak || 0;
+    let needsFreeze = false;
+
+    // 1. Comprobar si la racha ha expirado (más de 1 día sin conexión)
+    if (lastActivity) {
+        const lastActivityDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+        const diffDays = Math.floor((today - lastActivityDay) / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 1) {
+            if ((userDoc.streakFreezes || 0) > 0) {
+                needsFreeze = true; // Se mantiene el número temporalmente para que el popup lo muestre
+            } else {
+                newStreak = 0; // Se pierde la racha por inactividad total
+            }
+        }
+    }
+
+    // 2. Lógica al Jugar (Solo aquí sube el número y se enciende el fuego)
+    if (isGame) {
+        // Si la racha estaba "en peligro" y no usó congelador antes de jugar, se reinicia a 1
+        if (needsFreeze) {
+            newStreak = 1;
+            needsFreeze = false;
+        } else if (newStreak === 0) {
+            newStreak = 1;
+        } else if (lastGame) {
+            const lastGameDay = new Date(lastGame.getFullYear(), lastGame.getMonth(), lastGame.getDate());
+            const diffGameDays = Math.floor((today - lastGameDay) / (1000 * 60 * 60 * 24));
+
+            if (diffGameDays >= 1) {
+                // Si juega en un día nuevo (sea el siguiente o tras varios días de solo login)
+                newStreak++;
+            }
+            // Si diffGameDays === 0, ya jugó hoy, no incrementamos
+        } else {
+            newStreak = 1;
+        }
+    }
+
+    const updateData = { $set: { streak: newStreak } };
+
+    // El login actualiza lastActivity para indicar que el usuario estuvo hoy (mantiene racha viva)
+    if (!isGame) {
+        updateData.$set.lastActivity = now;
+    } else {
+        // Al jugar, se actualiza tanto la actividad como el último juego
+        updateData.$set.lastActivity = now;
+        updateData.$set.lastGame = now;
+    }
+
+    await users.updateOne({ user: username }, updateData);
+    return { streak: newStreak, needsFreeze, lastGame: isGame ? now : userDoc.lastGame };
+}
+
 app.post('/api/games/complete', async (req, res) => {
     const { user, game, score = 0 } = req.body;
 
@@ -149,10 +218,10 @@ app.post('/api/games/complete', async (req, res) => {
 
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-        
+
         // Recompensas: 1 moneda y 1 XP por cada 10 puntos
         const rewards = Math.floor(normalizedScore / 10);
-        
+
         const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
         const newBalance = currentCoins + rewards;
 
@@ -176,6 +245,9 @@ app.post('/api/games/complete', async (req, res) => {
         const rankIndex = Math.min(Math.floor((currentLevel - 1) / 2), JERARQUIA.length - 1);
         const currentRank = JERARQUIA[rankIndex];
 
+        // --- LÓGICA DE RACHA ---
+        const streakResult = await updateStreak(user, true);
+
         await Promise.all([
             partides.insertOne({
                 user,
@@ -186,14 +258,16 @@ app.post('/api/games/complete', async (req, res) => {
                 createdAt: new Date()
             }),
             users.updateOne(
-                { user }, 
-                { 
-                    $set: { 
-                        coins: newBalance, 
-                        level: currentLevel, 
-                        xp: currentXp, 
-                        rank: currentRank 
-                    } 
+                { user },
+                {
+                    $set: {
+                        coins: newBalance,
+                        level: currentLevel,
+                        xp: currentXp,
+                        rank: currentRank,
+                        streak: streakResult.streak,
+                        lastActivity: new Date()
+                    }
                 }
             )
         ]);
@@ -210,7 +284,10 @@ app.post('/api/games/complete', async (req, res) => {
             newXp: currentXp,
             newRank: currentRank,
             leveledUp,
-            gamesPlayed
+            gamesPlayed,
+            streak: streakResult.streak,
+            needsFreeze: streakResult.needsFreeze,
+            lastGame: streakResult.lastGame
         });
     } catch (error) {
         console.error("Error registrando partida:", error);
@@ -242,6 +319,9 @@ app.post('/api/auth/register', async (req, res) => {
             level: 1,
             xp: 0,
             inventory: [],
+            streak: 0,
+            streakFreezes: 0,
+            lastActivity: new Date(),
             createdAt: new Date()
         };
 
@@ -262,6 +342,9 @@ app.post('/api/auth/login', async (req, res) => {
 
         if (foundUser) {
             console.log(`🚀 Sesión iniciada: ${foundUser.user}`);
+
+            const streakResult = await updateStreak(foundUser.user, false);
+
             res.json({
                 status: "Sincronización completada",
                 token: "session_token_" + Math.random().toString(36).substr(2),
@@ -272,7 +355,12 @@ app.post('/api/auth/login', async (req, res) => {
                     coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
                     level: foundUser.level || 1,
                     xp: foundUser.xp || 0,
-                    selectedAchievements: foundUser.selectedAchievements || [null, null, null]
+                    selectedAchievements: foundUser.selectedAchievements || [null, null, null],
+                    streak: streakResult.streak,
+                    streakFreezes: foundUser.streakFreezes || 0,
+                    needsFreeze: streakResult.needsFreeze,
+                    lastActivity: foundUser.lastActivity,
+                    lastGame: streakResult.lastGame
                 }
             });
         } else {
@@ -389,6 +477,36 @@ app.put('/api/user/plan', async (req, res) => {
     }
 });
 
+// --- ENDPOINT PARA USAR CONGELADOR ---
+app.post('/api/user/use-freeze', async (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ success: false, message: "Usuario requerido" });
+
+    try {
+        const { users } = getCollections();
+        const currentUser = await users.findOne({ user });
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        if ((currentUser.streakFreezes || 0) <= 0) {
+            return res.status(400).json({ message: "No tienes congeladores disponibles." });
+        }
+
+        await users.updateOne(
+            { user },
+            {
+                $inc: { streakFreezes: -1 },
+                $set: {
+                    lastActivity: new Date()
+                } // IMPORTANTE: Solo salvamos el día conectándolo, pero el fuego NO se enciende hasta que juegue
+            }
+        );
+
+        res.json({ success: true, streak: currentUser.streak, streakFreezes: currentUser.streakFreezes - 1 });
+    } catch (error) {
+        res.status(500).json({ message: "Error al usar el congelador." });
+    }
+});
+
 // --- SISTEMA DE TIENDA E INVENTARIO ---
 
 app.post('/api/shop/buy', async (req, res) => {
@@ -415,7 +533,7 @@ app.post('/api/shop/buy', async (req, res) => {
         const itemToSave = {
             id: item.id,
             name: item.name,
-            desc: item.desc, 
+            desc: item.desc,
             icon: item.icon,
             color: item.color,
             cat: item.cat || 'general',
@@ -424,13 +542,16 @@ app.post('/api/shop/buy', async (req, res) => {
             purchasedAt: new Date()
         };
 
-        await users.updateOne(
-            { user: user },
-            {
-                $set: { coins: newBalance },
-                $push: { inventory: itemToSave }
-            }
-        );
+        const updateData = {
+            $set: { coins: newBalance },
+            $push: { inventory: itemToSave }
+        };
+
+        if (item.id === 2) {
+            updateData.$inc = { streakFreezes: 1 };
+        }
+
+        await users.updateOne({ user: user }, updateData);
 
         res.json({ success: true, newBalance, item: itemToSave });
     } catch (error) {
