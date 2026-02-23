@@ -12,16 +12,33 @@
                     </p>
                 </v-col>
 
-                <v-col cols="12" class="d-flex flex-column align-center justify-center mb-12">
-                    <div class="wheel-card pa-6 pa-md-8 rounded-xl elevation-10 d-flex flex-column align-center">
-                        <div class="d-flex align-center mb-6">
-                            <v-icon color="amber-accent-3" class="mr-2">mdi-star-four-points</v-icon>
-                            <h2 class="text-h5 font-weight-bold text-white">Suerte Diaria</h2>
-                            <v-icon color="amber-accent-3" class="ml-2">mdi-star-four-points</v-icon>
-                        </div>
+                <v-col cols="12" max-width="1200" class="mb-12">
+                    <div class="wheel-card pa-6 pa-md-10 rounded-xl elevation-10 w-100 mx-auto">
+                        <v-row class="align-center w-100 mx-0">
+                            
+                            <v-col cols="12" md="6" class="d-flex justify-center position-relative py-8">
+                                <div class="nebula-bg"></div>
+                                <LuckyWheel 
+                                    ref="luckyWheelRef" 
+                                    :user="astroStore.user" 
+                                    @win="handleWin" 
+                                    @update-balance="updateCoins" 
+                                    @spin-start="isSpinning = true"
+                                    @spin-end="isSpinning = false"
+                                />
+                            </v-col>
 
-                        <LuckyWheel :user="astroStore.user" @win="handleWin" @update-balance="updateCoins" />
+                            <v-col cols="12" md="6" class="d-flex flex-column justify-center pl-md-10 mt-6 mt-md-0">
+                                <div class="d-flex align-center mb-4 justify-center justify-md-start">
+                                    <v-icon color="purple-accent-3" class="mr-3" size="x-large">mdi-black-hole</v-icon>
+                                    <h2 class="text-h3 font-weight-black text-white text-uppercase" style="letter-spacing: 2px;">Vòrtex Quàntic</h2>
+                                </div>
+                                
+                                <p class="text-body-1 text-grey-lighten-1 mb-8 text-center text-md-left">
+                                    Gira el vòrtex per obtenir subministraments únics, monedes o aspectes èpics. La sort afavoreix als audaços.
+                                </p>
 
+<<<<<<< HEAD
                         <div class="mt-8 px-6 py-3 rounded-pill balance-pill d-flex align-center justify-center">
                             <span class="text-body-2 text-grey-lighten-3 mr-3">Saldo Actual:</span>
                             <span class="text-h6 font-weight-bold text-amber-accent-3 mr-1">{{ userCoins }}</span>
@@ -43,6 +60,52 @@
                         <div class="mt-4 text-caption text-grey-lighten-1">
                             Coste de giro: <strong>50</strong> <v-icon size="x-small">mdi-currency-usd</v-icon>
                         </div>
+=======
+                                <div class="d-flex flex-column gap-4 w-100 px-4 px-md-0">
+                                    <v-btn 
+                                        color="cyan-accent-3" 
+                                        size="x-large" 
+                                        rounded="xl" 
+                                        class="font-weight-black text-black w-100 mb-4"
+                                        elevation="8"
+                                        :loading="isSpinning" 
+                                        :disabled="isSpinning"
+                                        @click="triggerSingleSpin"
+                                    >
+                                        <v-icon start>mdi-ticket</v-icon>
+                                        EXTRAURE (50 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                    </v-btn>
+
+                                    <v-btn 
+                                        color="purple-accent-3" 
+                                        size="x-large" 
+                                        rounded="xl" 
+                                        class="font-weight-black text-white w-100"
+                                        elevation="8"
+                                        :disabled="isSpinning"
+                                        @click="triggerMultiSpin"
+                                    >
+                                        <v-icon start>mdi-ticket-percent</v-icon>
+                                        X10 EXTRACCIONS (450 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                    </v-btn>
+                                </div>
+
+                                <div class="mt-8 px-8 py-4 rounded-xl balance-pill d-flex align-center justify-space-between w-100 mx-auto mx-md-0">
+                                    <div>
+                                        <span class="text-caption text-grey-lighten-1 block text-uppercase">Saldo disponible</span>
+                                    <div class="text-center">
+                                        <div class="d-flex align-center justify-center">
+                                            <span class="text-h3 font-weight-black text-amber-accent-3 mr-2" style="text-shadow: 0 0 15px rgba(255, 193, 7, 0.4);">{{ userCoins }}</span>
+                                            <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
+                                        </div>
+                                    </div>
+
+                                    </div>
+                                
+                                </div>
+                            </v-col>
+                        </v-row>
+>>>>>>> 11e7b42610ebeea784567b06f26057bc0dcc121d
                     </div>
                 </v-col>
 
@@ -171,6 +234,18 @@ const userStreak = computed(() => astroStore.streak);
 const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday);
 const showWinDialog = ref(false);
 const lastPrize = ref(null);
+const luckyWheelRef = ref(null);
+const isSpinning = ref(false);
+
+const triggerSingleSpin = () => {
+    if (luckyWheelRef.value) {
+        luckyWheelRef.value.spin();
+    }
+};
+
+const triggerMultiSpin = () => {
+    alert("Bloqueig d'Arquitectura: Necessites crear un endpoint al servidor (/api/shop/spin-multi) que calculi i retorni 10 premis de cop abans de poder fer servir això.");
+};
 
 const isOwned = (itemId) => {
     return astroStore.inventory?.some(i => i.id === itemId);
@@ -240,6 +315,33 @@ const updateCoins = (newBalance) => {
 
 <style scoped>
 /* Estilos unificados del primer diseño */
+.wheel-card {
+    background: #111827;
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    position: relative;
+    overflow: hidden;
+    max-width: 1200px !important;
+}
+
+.nebula-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(224, 64, 251, 0.2) 0%, rgba(0, 229, 255, 0.1) 50%, transparent 80%);
+    filter: blur(25px);
+    z-index: 0;
+    border-radius: 50%;
+    animation: pulse 4s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
 .scroll-container {
     height: 100vh;
     width: 100%;
