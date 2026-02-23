@@ -19,6 +19,7 @@ export const useAstroStore = defineStore('astro', {
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
         lastActivity: localStorage.getItem('astro_last_activity') || null,
+        lastGame: localStorage.getItem('astro_last_game') || null,
         socket: null,
         isConnected: false,
         error: null
@@ -26,8 +27,8 @@ export const useAstroStore = defineStore('astro', {
 
     getters: {
         isStreakActiveToday: (state) => {
-            if (!state.lastActivity) return false;
-            const last = new Date(state.lastActivity);
+            if (!state.lastGame) return false;
+            const last = new Date(state.lastGame);
             const now = new Date();
             return last.getFullYear() === now.getFullYear() &&
                 last.getMonth() === now.getMonth() &&
@@ -90,6 +91,7 @@ export const useAstroStore = defineStore('astro', {
                 this.streakFreezes = data.profile.streakFreezes || 0;
                 this.needsFreeze = !!data.profile.needsFreeze;
                 this.lastActivity = data.profile.lastActivity || null;
+                this.lastGame = data.profile.lastGame || null;
                 this.token = data.token;
 
                 // 2. Formatear logros (siempre 3 slots)
@@ -113,6 +115,7 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_streak', this.streak);
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
                 localStorage.setItem('astro_last_activity', this.lastActivity);
+                localStorage.setItem('astro_last_game', this.lastGame);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
@@ -147,6 +150,7 @@ export const useAstroStore = defineStore('astro', {
                 this.streak = data.stats?.streak !== undefined ? data.stats.streak : this.streak;
                 this.streakFreezes = data.stats?.streakFreezes !== undefined ? data.stats.streakFreezes : this.streakFreezes;
                 this.lastActivity = data.stats?.lastActivity !== undefined ? data.stats.lastActivity : this.lastActivity;
+                this.lastGame = data.stats?.lastGame !== undefined ? data.stats.lastGame : this.lastGame;
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -212,7 +216,10 @@ export const useAstroStore = defineStore('astro', {
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
                 this.streak = data.streak !== undefined ? data.streak : this.streak;
                 this.needsFreeze = !!data.needsFreeze;
-                this.lastActivity = new Date().toISOString(); // Acabamos de completar una partida
+                this.lastActivity = new Date().toISOString();
+                this.lastGame = new Date().toISOString();
+                localStorage.setItem('astro_last_activity', this.lastActivity);
+                localStorage.setItem('astro_last_game', this.lastGame);
 
                 if (data.newRank) {
                     this.rank = data.newRank;

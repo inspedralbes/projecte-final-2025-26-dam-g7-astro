@@ -92,7 +92,8 @@ async function getUserStats(username) {
         gamesByType,
         streak: userDoc.streak || 0,
         streakFreezes: userDoc.streakFreezes || 0,
-        lastActivity: userDoc.lastActivity
+        lastActivity: userDoc.lastActivity,
+        lastGame: userDoc.lastGame
     };
 }
 
@@ -147,39 +148,62 @@ async function updateStreak(username, isGame = false) {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const lastActivity = userDoc.lastActivity ? new Date(userDoc.lastActivity) : null;
+    const lastGame = userDoc.lastGame ? new Date(userDoc.lastGame) : null;
 
     let newStreak = userDoc.streak || 0;
     let needsFreeze = false;
 
-    if (!lastActivity) {
-        if (isGame) newStreak = 1;
-    } else {
-        const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
-        const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
+    // 1. Comprobar si la racha ha expirado (más de 1 día sin conexión)
+    if (lastActivity) {
+        const lastActivityDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+        const diffDays = Math.floor((today - lastActivityDay) / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 1) {
-            if (isGame) newStreak++;
-        } else if (diffDays > 1) {
+        if (diffDays > 1) {
             if ((userDoc.streakFreezes || 0) > 0) {
-                needsFreeze = true;
+                needsFreeze = true; // Se mantiene el número temporalmente para que el popup lo muestre
             } else {
-                newStreak = isGame ? 1 : 0;
+                newStreak = 0; // Se pierde la racha por inactividad total
             }
         }
     }
 
-    const updateData = {
-        $set: { streak: newStreak }
-    };
-
-    // Solo actualizamos lastActivity si es una partida real
+    // 2. Lógica al Jugar (Solo aquí sube el número y se enciende el fuego)
     if (isGame) {
+        // Si la racha estaba "en peligro" y no usó congelador antes de jugar, se reinicia a 1
+        if (needsFreeze) {
+            newStreak = 1;
+            needsFreeze = false;
+        } else if (newStreak === 0) {
+            newStreak = 1;
+        } else if (lastGame) {
+            const lastGameDay = new Date(lastGame.getFullYear(), lastGame.getMonth(), lastGame.getDate());
+            const diffGameDays = Math.floor((today - lastGameDay) / (1000 * 60 * 60 * 24));
+
+            if (diffGameDays >= 1) {
+                // Si juega en un día nuevo (sea el siguiente o tras varios días de solo login)
+                newStreak++;
+            }
+            // Si diffGameDays === 0, ya jugó hoy, no incrementamos
+        } else {
+            newStreak = 1;
+        }
+    }
+
+    const updateData = { $set: { streak: newStreak } };
+
+    // El login actualiza lastActivity para indicar que el usuario estuvo hoy (mantiene racha viva)
+    if (!isGame) {
         updateData.$set.lastActivity = now;
+    } else {
+        // Al jugar, se actualiza tanto la actividad como el último juego
+        updateData.$set.lastActivity = now;
+        updateData.$set.lastGame = now;
     }
 
     await users.updateOne({ user: username }, updateData);
-    return { streak: newStreak, needsFreeze, lastActivity: userDoc.lastActivity };
+    return { streak: newStreak, needsFreeze, lastGame: isGame ? now : userDoc.lastGame };
 }
 
 app.post('/api/games/complete', async (req, res) => {
@@ -262,7 +286,8 @@ app.post('/api/games/complete', async (req, res) => {
             leveledUp,
             gamesPlayed,
             streak: streakResult.streak,
-            needsFreeze: streakResult.needsFreeze
+            needsFreeze: streakResult.needsFreeze,
+            lastGame: streakResult.lastGame
         });
     } catch (error) {
         console.error("Error registrando partida:", error);
@@ -334,7 +359,8 @@ app.post('/api/auth/login', async (req, res) => {
                     streak: streakResult.streak,
                     streakFreezes: foundUser.streakFreezes || 0,
                     needsFreeze: streakResult.needsFreeze,
-                    lastActivity: streakResult.lastActivity
+                    lastActivity: foundUser.lastActivity,
+                    lastGame: streakResult.lastGame
                 }
             });
         } else {
@@ -469,7 +495,9 @@ app.post('/api/user/use-freeze', async (req, res) => {
             { user },
             {
                 $inc: { streakFreezes: -1 },
-                $set: { lastActivity: new Date() } // Al usarlo, lo marcamos como activo hoy
+                $set: {
+                    lastActivity: new Date()
+                } // IMPORTANTE: Solo salvamos el día conectándolo, pero el fuego NO se enciende hasta que juegue
             }
         );
 
