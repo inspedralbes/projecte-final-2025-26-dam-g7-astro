@@ -13,22 +13,26 @@
             <v-row v-else class="mt-8 pb-16">
                 <v-col v-for="achievement in processedAchievements" :key="achievement.id" cols="12" sm="6" md="4" lg="3"
                     class="d-flex justify-center flex-column align-center mb-10">
-                    
+
                     <Medal :type="achievement.type" :icon="achievement.icon" :locked="!achievement.unlocked" />
 
                     <div class="medal-info text-center mt-4">
-                        <h3 :class="['text-h6 font-weight-bold mb-1', achievement.unlocked ? 'text-white' : 'text-grey-darken-1']">
+                        <h3
+                            :class="['text-h6 font-weight-bold mb-1', achievement.unlocked ? 'text-white' : 'text-grey-darken-1']">
                             {{ achievement.title }}
                         </h3>
-                        <p class="text-caption text-grey-lighten-1" :style="{ opacity: achievement.unlocked ? 1 : 0.5 }">
+                        <p class="text-caption text-grey-lighten-1"
+                            :style="{ opacity: achievement.unlocked ? 1 : 0.5 }">
                             {{ achievement.description }}
                         </p>
 
                         <div class="mt-2">
-                            <v-chip v-if="achievement.id === 1 && !achievement.unlocked" size="x-small" color="orange" variant="tonal">
+                            <v-chip v-if="achievement.id === 1 && !achievement.unlocked" size="x-small" color="orange"
+                                variant="tonal">
                                 {{ astroStore.coins }} / 1000 Monedas
                             </v-chip>
-                            <v-chip v-if="achievement.id === 2 && !achievement.unlocked" size="x-small" color="blue" variant="tonal">
+                            <v-chip v-if="achievement.id === 2 && !achievement.unlocked" size="x-small" color="blue"
+                                variant="tonal">
                                 {{ astroStore.partides }} / 5 Partidas
                             </v-chip>
                         </div>
@@ -52,12 +56,13 @@ const loadError = ref(null)
 onMounted(async () => {
     loading.value = true
     try {
-        // Traemos datos frescos del servidor (monedas, partidas e inventario)
+        // Traemos datos frescos del servidor
         await Promise.all([
             astroStore.fetchUserStats(),
             astroStore.fetchUserInventory()
         ])
     } catch (err) {
+        console.error("Error de sincronización:", err)
         loadError.value = "No se pudo sincronizar con la base de mando."
     } finally {
         loading.value = false
@@ -65,18 +70,27 @@ onMounted(async () => {
 })
 
 const processedAchievements = computed(() => {
+    // Definimos los umbrales de victoria para facilitar el mantenimiento
+    const THRESHOLDS = {
+        COINS: 1000,
+        GAMES: 5,
+        INVENTORY: 3
+    }
+
     return ACHIEVEMENTS.map(achievement => {
         let isUnlocked = false;
 
+        // Usamos >= para asegurar que si tienen 1000 o 1,000,000 se desbloquee igual
         switch (achievement.id) {
             case 1: // Cazador de Monedas
-                isUnlocked = astroStore.coins >= 1000;
+                isUnlocked = (astroStore.coins || 0) >= THRESHOLDS.COINS;
                 break;
             case 2: // Piloto Novato
-                isUnlocked = astroStore.partides >= 5;
+                isUnlocked = (astroStore.partides || 0) >= THRESHOLDS.GAMES;
                 break;
             case 3: // Coleccionista
-                isUnlocked = astroStore.inventory.length >= 3;
+                // Verificamos que inventory exista antes de leer su longitud
+                isUnlocked = (astroStore.inventory?.length || 0) >= THRESHOLDS.INVENTORY;
                 break;
             default:
                 isUnlocked = false;
@@ -84,7 +98,11 @@ const processedAchievements = computed(() => {
 
         return {
             ...achievement,
-            unlocked: isUnlocked
+            unlocked: isUnlocked,
+            // Añadimos el progreso actual para mostrarlo en la UI si fuera necesario
+            progress: achievement.id === 1 ? astroStore.coins :
+                achievement.id === 2 ? astroStore.partides :
+                    astroStore.inventory?.length || 0
         }
     })
 })
