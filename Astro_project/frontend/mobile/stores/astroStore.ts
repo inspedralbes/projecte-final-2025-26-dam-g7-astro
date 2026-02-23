@@ -60,14 +60,38 @@ export const useAstroStore = create<AstroState>((set, get) => ({
     setCoins: (coins) => set({ coins }),
     setSelectedAchievements: (selectedAchievements) => set({ selectedAchievements }),
 
-    updateAvatar: (avatar) => {
+    updateAvatar: async (avatar) => {
+        const { user } = get();
         set({ avatar });
         AsyncStorage.setItem('astro_avatar', avatar);
+        if (user) {
+            try {
+                await fetch(`${API_BASE_URL}/api/user/avatar`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, avatar })
+                });
+            } catch (e) {
+                console.error("Error persisting avatar", e);
+            }
+        }
     },
 
-    updateMascot: (mascot) => {
+    updateMascot: async (mascot) => {
+        const { user } = get();
         set({ mascot });
         AsyncStorage.setItem('astro_mascot', mascot || '');
+        if (user) {
+            try {
+                await fetch(`${API_BASE_URL}/api/user/mascot`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, mascot })
+                });
+            } catch (e) {
+                console.error("Error persisting mascot", e);
+            }
+        }
     },
 
     logout: () => {

@@ -333,6 +333,95 @@ app.put('/api/user/plan', async (req, res) => {
     }
 });
 
+// --- ENDPOINT DE COMPRA ---
+app.post('/api/shop/purchase', async (req, res) => {
+    const { user, itemId, price } = req.body;
+    console.log(`💰 Compra intentada por ${user}: Item ${itemId} por ${price} coins`);
+
+    if (!user || !itemId || price === undefined) {
+        return res.status(400).json({ success: false, message: "Datos incompletos" });
+    }
+
+    try {
+        const { users: usersCol } = getCollections();
+        const currentUser = await usersCol.findOne({ user });
+
+        if (!currentUser) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+        const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
+        if (currentCoins < price) {
+            return res.status(402).json({ success: false, message: "Saldo insuficiente" });
+        }
+
+        const newBalance = currentCoins - price;
+        await usersCol.updateOne(
+            { user },
+            {
+                $set: { coins: newBalance },
+                $push: { inventory: { id: itemId, purchasedAt: new Date() } }
+            }
+        );
+
+        res.json({ success: true, newBalance });
+    } catch (error) {
+        console.error("Error en compra:", error);
+        res.status(500).json({ message: "Error procesando la compra" });
+    }
+});
+
+// --- ENDPOINT DE EQUIPAR ---
+app.post('/api/user/equip', async (req, res) => {
+    const { user, itemId, category } = req.body;
+    console.log(`🛡️ Equipando para ${user}: ${category} -> ${itemId}`);
+
+    if (!user || itemId === undefined || !category) {
+        return res.status(400).json({ success: false, message: "Datos incompletos" });
+    }
+
+    try {
+        const { users: usersCol } = getCollections();
+
+        // Estructura de equipo en el documento: equipped: { skins: id, pets: id, trails: id }
+        const updateKey = `equipped.${category}`;
+        await usersCol.updateOne(
+            { user },
+            { $set: { [updateKey]: itemId } }
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error al equipar:", error);
+        res.status(500).json({ message: "Error al actualizar equipo" });
+    }
+});
+
+// --- ENDPOINTS DE PERFIL (Avatar y Mascota) ---
+app.put('/api/user/avatar', async (req, res) => {
+    const { user, avatar } = req.body;
+    if (!user || !avatar) return res.status(400).json({ message: "Faltan datos" });
+
+    try {
+        const { users: usersCol } = getCollections();
+        await usersCol.updateOne({ user }, { $set: { avatar } });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar avatar" });
+    }
+});
+
+app.put('/api/user/mascot', async (req, res) => {
+    const { user, mascot } = req.body;
+    if (!user) return res.status(400).json({ message: "Usuario requerido" });
+
+    try {
+        const { users: usersCol } = getCollections();
+        await usersCol.updateOne({ user }, { $set: { mascot } });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar mascota" });
+    }
+});
+
 // --- WEBSOCKETS ---
 wss.on('connection', (ws) => {
     console.log("📡 Nueva conexión WS establecida");

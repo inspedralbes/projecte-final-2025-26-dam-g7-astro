@@ -9,6 +9,7 @@ import {
     Alert,
     Easing
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAstroStore } from '../../stores/astroStore';
 
@@ -37,10 +38,11 @@ const LuckyWheel = () => {
             const winnerIndex = WHEEL_ITEMS.findIndex(i => i.id === result.prize.id);
             const degreePerItem = 360 / WHEEL_ITEMS.length;
 
-            // Calculate target angle to land on the winner (aligned at top/pointer)
             const targetAngle = 360 - (winnerIndex * degreePerItem) - (degreePerItem / 2);
+            const currentVal = (rotation as any)._value || 0;
+            const currentSpins = Math.floor(currentVal / 360);
             const extraSpins = 5;
-            const finalValue = extraSpins * 360 + targetAngle;
+            const finalValue = (currentSpins + extraSpins) * 360 + targetAngle;
 
             Animated.timing(rotation, {
                 toValue: finalValue,
@@ -49,13 +51,11 @@ const LuckyWheel = () => {
                 useNativeDriver: true,
             }).start(() => {
                 setIsSpinning(false);
-                // Reset to small value to keep current position visually but allow next spin
-                rotation.setValue(targetAngle);
-                Alert.alert("¡Premio!", `Has ganado: ${WHEEL_ITEMS[winnerIndex].label}`);
+                Alert.alert("¡PREMIO!", `Has obtenido: ${WHEEL_ITEMS[winnerIndex].label.toUpperCase()}`);
             });
         } else {
             setIsSpinning(false);
-            Alert.alert("Error", result.message || "No se pudo girar la rueda");
+            Alert.alert("ERROR", result.message || "Error de comunicación con el centro de mando");
         }
     };
 
@@ -72,58 +72,73 @@ const LuckyWheel = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.pointer}>
-                <MaterialCommunityIcons name="triangle" size={30} color="#FF5252" style={{ transform: [{ rotate: '180deg' }] }} />
+            <View style={styles.pointerContainer}>
+                <MaterialCommunityIcons name="map-marker" size={44} color="#FF5252" style={styles.pointerIcon} />
             </View>
 
-            <View style={styles.wheelContainer}>
-                <Animated.View style={[styles.wheel, spinStyle]}>
-                    {WHEEL_ITEMS.map((item, index) => {
-                        const deg = 360 / WHEEL_ITEMS.length;
-                        const rotate = index * deg;
-                        return (
-                            <View
-                                key={item.id}
-                                style={[
-                                    styles.segment,
-                                    {
-                                        backgroundColor: item.color,
-                                        transform: [
-                                            { rotate: `${rotate}deg` },
-                                            { skewY: `${90 - deg}deg` } // Approximation for segments
-                                        ],
-                                    },
-                                ]}
-                            />
-                        );
-                    })}
-                    {/* Icons overlay */}
-                    {WHEEL_ITEMS.map((item, index) => {
-                        const deg = 360 / WHEEL_ITEMS.length;
-                        const rotate = index * deg + (deg / 2);
-                        return (
-                            <View
-                                key={`icon-${item.id}`}
-                                style={[
-                                    styles.iconBox,
-                                    { transform: [{ rotate: `${rotate}deg` }, { translateY: -100 }] }
-                                ]}
-                            >
-                                <MaterialCommunityIcons name={item.icon as any} size={32} color="white" />
-                            </View>
-                        );
-                    })}
-                </Animated.View>
-                <View style={styles.centerHub} />
+            <View style={styles.wheelShadowBox}>
+                <View style={styles.wheelContainer}>
+                    <Animated.View style={[styles.wheel, spinStyle]}>
+                        {WHEEL_ITEMS.map((item, index) => {
+                            const deg = 360 / WHEEL_ITEMS.length;
+                            const rotate = index * deg;
+                            return (
+                                <View
+                                    key={item.id}
+                                    style={[
+                                        styles.segment,
+                                        {
+                                            backgroundColor: item.color,
+                                            transform: [
+                                                { rotate: `${rotate}deg` },
+                                                { skewY: `${90 - deg}deg` }
+                                            ],
+                                        },
+                                    ]}
+                                />
+                            );
+                        })}
+                        {WHEEL_ITEMS.map((item, index) => {
+                            const deg = 360 / WHEEL_ITEMS.length;
+                            const rotate = index * deg + (deg / 2);
+                            return (
+                                <View
+                                    key={`icon-${item.id}`}
+                                    style={[
+                                        styles.iconBox,
+                                        { transform: [{ rotate: `${rotate}deg` }, { translateY: -105 }] }
+                                    ]}
+                                >
+                                    <View style={{ transform: [{ rotate: `-${rotate}deg` }] }}>
+                                        <MaterialCommunityIcons name={item.icon as any} size={36} color="white" />
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </Animated.View>
+                    <View style={styles.centerHub}>
+                        <View style={styles.centerInner} />
+                    </View>
+                </View>
             </View>
 
-            <TouchableOpacity
-                style={[styles.spinBtn, isSpinning && styles.disabledBtn]}
-                onPress={spin}
-                disabled={isSpinning}
-            >
-                <Text style={styles.spinText}>GIRAR (50 COINS)</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={styles.spinBtnWrapper}
+                    onPress={spin}
+                    disabled={isSpinning}
+                >
+                    <LinearGradient
+                        colors={isSpinning ? ['#94a3b8', '#64748b'] : ['#fbbf24', '#f59e0b']}
+                        style={styles.spinBtn}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                    >
+                        <MaterialCommunityIcons name="ticket" size={24} color="black" style={{ marginRight: 8 }} />
+                        <Text style={styles.spinText}>GIRAR (50 COINS)</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
@@ -131,21 +146,35 @@ const LuckyWheel = () => {
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
-        marginVertical: 20,
+        marginVertical: 32,
     },
-    pointer: {
-        zIndex: 10,
-        marginBottom: -10,
+    pointerContainer: {
+        zIndex: 20,
+        marginBottom: -22,
+        alignItems: 'center',
+    },
+    pointerIcon: {
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
+    },
+    wheelShadowBox: {
+        borderRadius: 150,
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.4,
+        shadowRadius: 15,
+        backgroundColor: 'black',
     },
     wheelContainer: {
-        width: 280,
-        height: 280,
-        borderRadius: 140,
+        width: 300,
+        height: 300,
+        borderRadius: 150,
         borderWidth: 8,
         borderColor: 'white',
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#1e293b',
     },
     wheel: {
         width: '100%',
@@ -166,10 +195,10 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: '50%',
         left: '50%',
-        width: 40,
-        height: 40,
-        marginLeft: -20,
-        marginTop: -20,
+        width: 60,
+        height: 60,
+        marginLeft: -30,
+        marginTop: -30,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -177,30 +206,53 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: '50%',
         left: '50%',
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: 'white',
-        marginLeft: -10,
-        marginTop: -10,
-        zIndex: 5,
+        marginLeft: -20,
+        marginTop: -20,
+        zIndex: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+    },
+    centerInner: {
+        width: 25,
+        height: 25,
+        borderRadius: 12.5,
+        borderWidth: 2,
+        borderColor: '#e2e8f0',
+    },
+    buttonContainer: {
+        marginTop: 40,
+    },
+    spinBtnWrapper: {
+        borderRadius: 40,
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: '#fbbf24',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     spinBtn: {
-        marginTop: 32,
-        backgroundColor: '#fbbf24',
+        flexDirection: 'row',
         paddingHorizontal: 40,
-        paddingVertical: 14,
-        borderRadius: 30,
-        elevation: 6,
-    },
-    disabledBtn: {
-        backgroundColor: '#d1d5db',
+        paddingVertical: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     spinText: {
         color: 'black',
         fontWeight: '900',
         fontSize: 16,
-    }
+        letterSpacing: 1,
+    },
 });
 
 export default LuckyWheel;

@@ -13,6 +13,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAstroStore } from '../../stores/astroStore';
+import WordConstruction from '../../components/games/WordConstruction';
+import SpelledRosco from '../../components/games/SpelledRosco';
+import RadarScan from '../../components/games/RadarScan';
 
 export default function SingleplayerScreen() {
     const { registerCompletedGame, user } = useAstroStore();
@@ -24,7 +27,7 @@ export default function SingleplayerScreen() {
         {
             id: 1,
             title: 'Decodificación Rápida',
-            key: 'decodificacion',
+            key: 'word',
             desc: 'Entrena tu velocidad de procesamiento visual.',
             icon: 'brain',
             difficulty: 'Fácil',
@@ -33,7 +36,7 @@ export default function SingleplayerScreen() {
         {
             id: 2,
             title: 'Escaneo Estelar',
-            key: 'escaneo',
+            key: 'radar',
             desc: 'Localiza patrones en campos de asteroides.',
             icon: 'radar',
             difficulty: 'Media',
@@ -42,9 +45,9 @@ export default function SingleplayerScreen() {
         {
             id: 3,
             title: 'Memoria Cuántica',
-            key: 'memoria',
+            key: 'rosco',
             desc: 'Memoriza secuencias de salto hiperespacial.',
-            icon: 'fountain-pen-tip',
+            icon: 'circle-slice-8',
             difficulty: 'Difícil',
             color: '#ef4444'
         }
@@ -162,25 +165,9 @@ export default function SingleplayerScreen() {
                     </View>
 
                     <View style={styles.gameBody}>
-                        <MaterialCommunityIcons
-                            name={selectedMission?.icon as any}
-                            size={100}
-                            color={selectedMission?.color}
-                        />
-                        <Text style={styles.gameInstruction}>Simulando entrenamiento...</Text>
-                        <Text style={styles.gameSubText}>En una versión final, aquí se cargaría el mini-juego interactivo.</Text>
-
-                        <TouchableOpacity
-                            style={[styles.finishBtn, { backgroundColor: selectedMission?.color }]}
-                            onPress={() => finishGame(Math.floor(Math.random() * 500) + 500)}
-                            disabled={reporting}
-                        >
-                            {reporting ? (
-                                <ActivityIndicator color="black" />
-                            ) : (
-                                <Text style={styles.finishBtnText}>COMPLETAR MISIÓN</Text>
-                            )}
-                        </TouchableOpacity>
+                        {selectedMission?.key === 'word' && <WordConstruction onGameOver={finishGame} />}
+                        {selectedMission?.key === 'radar' && <RadarScan onGameOver={finishGame} />}
+                        {selectedMission?.key === 'rosco' && <SpelledRosco onGameOver={finishGame} />}
                     </View>
                 </SafeAreaView>
             </Modal>
