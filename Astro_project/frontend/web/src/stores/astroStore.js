@@ -270,6 +270,8 @@ export const useAstroStore = defineStore('astro', {
         token: localStorage.getItem('astro_token') || null,
         lastActivity: localStorage.getItem('astro_last_activity') || null,
         lastGame: localStorage.getItem('astro_last_game') || null,
+        dailyMissions: [], // Misiones diarias
+        weeklyMissions: [], // Misiones semanales
         socket: null,
         isConnected: false,
         error: null

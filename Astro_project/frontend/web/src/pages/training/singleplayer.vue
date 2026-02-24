@@ -103,13 +103,6 @@ import RadarScan from '@/components/games/RadarScan.vue';
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
 
-// Variables restauradas para el diálogo
-const showLevelUpDialog = ref(false);
-const newLevelData = ref({
-    level: 0,
-    rank: '',
-    rankChanged: false
-});
 
 const levelSequence = [
     { name: 'Despegue', component: WordConstruction },
