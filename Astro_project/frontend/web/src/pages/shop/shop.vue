@@ -85,21 +85,6 @@
                                             <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
                                         </div>
                                     </div>
-                                    
-                                    <div class="text-right d-flex flex-column align-end">
-                                        <div class="text-caption d-flex align-center mb-1" :class="isStreakActiveToday ? 'text-orange-accent-2' : 'text-grey-darken-1'">
-                                            <v-icon size="x-small" class="mr-1" :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }">
-                                                {{ isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off' }}
-                                            </v-icon>
-                                            Racha: <strong>{{ userStreak }}</strong>
-                                        </div>
-                                        <div class="text-caption text-cyan-accent-2" style="font-size: 0.7rem !important;">
-                                            Partidas: <strong>{{ userGames }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-center text-md-left px-2">
-                                    <span class="text-caption text-grey-darken-2">Coste de giro: 50 <v-icon size="x-small">mdi-currency-usd</v-icon></span>
                                 </div>
                             </v-col>
                         </v-row>

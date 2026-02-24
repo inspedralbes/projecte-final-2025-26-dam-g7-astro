@@ -10,6 +10,8 @@ function registerShopRoutes(app, {
     getInventoryQuantity,
     enrichInventory
 }) {
+    
+    // 1. ENDPOINT: GIRAR LA RULETA
     app.post('/api/shop/spin', async (req, res) => {
         const { user } = req.body;
         try {
@@ -19,9 +21,18 @@ function registerShopRoutes(app, {
             if (!currentUser) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-            const SPIN_COST = 50;
+            const currentTickets = currentUser.tickets || 0; // Recuperem els tiquets
+            const SPIN_COST = 100; 
 
-            if (currentCoins < SPIN_COST) {
+            let finalCoins = currentCoins;
+            let finalTickets = currentTickets;
+
+            // Lògica de pagament (prioritat als tiquets)
+            if (currentTickets > 0) {
+                finalTickets -= 1;
+            } else if (currentCoins >= SPIN_COST) {
+                finalCoins -= SPIN_COST;
+            } else {
                 return res.status(402).json({ success: false, message: 'Saldo insuficiente' });
             }
 
@@ -38,10 +49,10 @@ function registerShopRoutes(app, {
                 random -= item.weight;
             }
 
-            let finalCoins = currentCoins - SPIN_COST;
             let prizeApplied = false;
             let rewardMessage = null;
 
+            // Guardem el teu sistema de recompenses d'inventari
             if (Number.isInteger(prize.coinsReward) && prize.coinsReward > 0) {
                 finalCoins += prize.coinsReward;
                 prizeApplied = true;
@@ -68,17 +79,20 @@ function registerShopRoutes(app, {
 
             normalizedInventory = serializeInventory(normalizedInventory);
 
+            // Actualitzem la BD amb les noves monedes I els nous tiquets
             await usersCol.updateOne(
                 { user },
                 {
                     $set: {
                         coins: finalCoins,
+                        tickets: finalTickets,
                         inventory: normalizedInventory,
                         streakFreezes: getInventoryQuantity(normalizedInventory, 2)
                     }
                 }
             );
 
+            // Retornem newTickets al frontend
             res.json({
                 success: true,
                 prize: {
@@ -90,6 +104,7 @@ function registerShopRoutes(app, {
                 prizeApplied,
                 rewardMessage,
                 newBalance: finalCoins,
+                newTickets: finalTickets,
                 inventory: enrichInventory(normalizedInventory)
             });
         } catch (error) {
@@ -98,6 +113,43 @@ function registerShopRoutes(app, {
         }
     });
 
+    // 2. NOU ENDPOINT: COMPRAR 10 TIQUETS (El que t'havies deixat)
+    app.post('/api/shop/buy-tickets', async (req, res) => {
+        const { user } = req.body;
+        try {
+            const { users: usersCol } = getCollections();
+            const currentUser = await usersCol.findOne({ user });
+
+            if (!currentUser) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+            const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
+            const currentTickets = currentUser.tickets || 0;
+            const BUNDLE_COST = 900;
+
+            if (currentCoins < BUNDLE_COST) {
+                return res.status(402).json({ success: false, message: 'Créditos insuficientes para 10 extracciones.' });
+            }
+
+            const finalCoins = currentCoins - BUNDLE_COST;
+            const finalTickets = currentTickets + 10;
+
+            await usersCol.updateOne(
+                { user }, 
+                { $set: { coins: finalCoins, tickets: finalTickets } }
+            );
+
+            res.json({
+                success: true,
+                newBalance: finalCoins,
+                newTickets: finalTickets
+            });
+        } catch (error) {
+            console.error('Error comprando tickets:', error);
+            res.status(500).json({ message: 'Error procesando la compra de tickets.' });
+        }
+    });
+
+    // 3. ENDPOINT: COMPRAR A LA BOTIGA GENERAL (Mantingut el teu codi intacte)
     app.post('/api/shop/buy', async (req, res) => {
         const { user, item } = req.body;
 
