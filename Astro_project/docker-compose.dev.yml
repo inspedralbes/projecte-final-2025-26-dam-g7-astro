@@ -27,7 +27,7 @@ services:
     dns:
       - 8.8.8.8
 
-  frontend:  # <--- ESTO ESTABA MAL ALINEADO ANTES
+  frontend:
     build:
       context: ./frontend/web
       dockerfile: Dockerfile.dev
