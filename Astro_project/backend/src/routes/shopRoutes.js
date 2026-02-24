@@ -10,7 +10,6 @@ function registerShopRoutes(app, {
     getInventoryQuantity,
     enrichInventory
 }) {
-    
     // 1. ENDPOINT: GIRAR LA RULETA
     app.post('/api/shop/spin', async (req, res) => {
         const { user } = req.body;
@@ -21,13 +20,12 @@ function registerShopRoutes(app, {
             if (!currentUser) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-            const currentTickets = currentUser.tickets || 0; // Recuperem els tiquets
-            const SPIN_COST = 100; 
+            const currentTickets = currentUser.tickets || 0; 
+            const SPIN_COST = 100; // COSTE FORZADO A 100
 
             let finalCoins = currentCoins;
             let finalTickets = currentTickets;
 
-            // Lògica de pagament (prioritat als tiquets)
             if (currentTickets > 0) {
                 finalTickets -= 1;
             } else if (currentCoins >= SPIN_COST) {
@@ -52,8 +50,12 @@ function registerShopRoutes(app, {
             let prizeApplied = false;
             let rewardMessage = null;
 
-            // Guardem el teu sistema de recompenses d'inventari
-            if (Number.isInteger(prize.coinsReward) && prize.coinsReward > 0) {
+            // LÓGICA EXIGIDA: Si toca la casilla de monedas, sumar 200
+            if (prize.id === 3 || prize.label === 'Monedas') {
+                finalCoins += 200;
+                prizeApplied = true;
+                rewardMessage = "¡Has ganado 200 monedas!";
+            } else if (Number.isInteger(prize.coinsReward) && prize.coinsReward > 0) {
                 finalCoins += prize.coinsReward;
                 prizeApplied = true;
             }
@@ -79,7 +81,6 @@ function registerShopRoutes(app, {
 
             normalizedInventory = serializeInventory(normalizedInventory);
 
-            // Actualitzem la BD amb les noves monedes I els nous tiquets
             await usersCol.updateOne(
                 { user },
                 {
@@ -92,7 +93,6 @@ function registerShopRoutes(app, {
                 }
             );
 
-            // Retornem newTickets al frontend
             res.json({
                 success: true,
                 prize: {
@@ -113,7 +113,7 @@ function registerShopRoutes(app, {
         }
     });
 
-    // 2. NOU ENDPOINT: COMPRAR 10 TIQUETS (El que t'havies deixat)
+    // 2. ENDPOINT: COMPRAR 10 TIQUETS
     app.post('/api/shop/buy-tickets', async (req, res) => {
         const { user } = req.body;
         try {
@@ -149,7 +149,7 @@ function registerShopRoutes(app, {
         }
     });
 
-    // 3. ENDPOINT: COMPRAR A LA BOTIGA GENERAL (Mantingut el teu codi intacte)
+    // 3. ENDPOINT: COMPRAR A LA BOTIGA GENERAL
     app.post('/api/shop/buy', async (req, res) => {
         const { user, item } = req.body;
 

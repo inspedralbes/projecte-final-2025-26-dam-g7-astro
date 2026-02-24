@@ -31,8 +31,7 @@ const props = defineProps({
   user: { type: String, required: true, default: "" }
 });
 
-// Afegim esdeveniments d'inici i final per bloquejar els botons al pare
-const emit = defineEmits(['win', 'update-balance', 'update-inventory', 'spin-start', 'spin-end']);
+const emit = defineEmits(['win', 'update-balance', 'update-inventory', 'update-tickets', 'spin-start', 'spin-end']);
 
 const isSpinning = ref(false);
 const currentRotation = ref(0);
@@ -97,6 +96,7 @@ async function spin() {
       });
       if (data.newBalance !== undefined) emit('update-balance', data.newBalance);
       if (Array.isArray(data.inventory)) emit('update-inventory', data.inventory);
+      if (data.newTickets !== undefined) emit('update-tickets', data.newTickets);
     }, 4000);
 
   } catch (e) {
