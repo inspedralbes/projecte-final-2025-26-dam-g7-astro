@@ -60,12 +60,41 @@
             </div>
         </transition>
 
+        <v-dialog v-model="showLevelUpDialog" max-width="400" persistent z-index="200">
+            <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #00e5ff;">
+                <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="80"
+                    class="mb-2 animate-bounce"></v-icon>
+                <h2 class="text-h3 font-weight-black text-white mb-2">¡NIVELL {{ newLevelData.level }}!</h2>
+
+                <div v-if="newLevelData.rankChanged" class="my-4 pa-3 rounded-lg"
+                    style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
+                    <div class="text-caption text-grey-lighten-1 text-uppercase">Nou Rang Assolit</div>
+                    <div class="text-h6 font-weight-bold text-amber-accent-3">{{ newLevelData.rank }}</div>
+                </div>
+
+                <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
+                    Has guanyat més experiència i ets un pas més a prop de dominar la galàxia.
+                </p>
+                <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large"
+                    class="font-weight-bold text-black" @click="showLevelUpDialog = false">
+                    CONTINUAR
+                </v-btn>
+            </v-card>
+        </v-dialog>
+
     </v-container>
 </template>
 
 <script setup>
-import { shallowRef } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
+import { ref, shallowRef } from 'vue';
+import { useAstroStore } from '@/stores/astroStore'; // Importamos el store
+
+const showLevelUpDialog = ref(false);
+const newLevelData = ref({
+    level: 1,
+    rank: '',
+    rankChanged: false
+});
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
@@ -74,6 +103,7 @@ import RadioSignal from '@/components/games/RadioSignal.vue';
 
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
+
 
 const levelSequence = [
     { name: 'Despegue', component: WordConstruction },
@@ -98,13 +128,40 @@ const handleLevelClick = (index) => {
     }
 };
 
+// Lógica restaurada de V1 con manejo de errores y respuesta del store
 const handleGameOver = async (finalScore) => {
     if (astroStore.user) {
-        await astroStore.registerCompletedGame(
-            activeGameComponent.value.__name,
-            finalScore
-        );
+        try {
+            // 1. Guardamos el rango anterior
+            const previousRank = astroStore.rank;
+
+            // 2. Llamada al Store
+            const result = await astroStore.registerCompletedGame(
+                activeGameComponent.value.__name || 'Minijuego', // Fallback name
+                finalScore
+            );
+
+            // 3. Manejo de errores explícito
+            if (!result.success) throw new Error(result.message);
+
+            // 4. Comprobamos si hubo subida de nivel (respuesta del backend)
+            if (result.data.leveledUp) {
+                newLevelData.value = {
+                    level: result.data.newLevel,
+                    rank: result.data.newRank,
+                    rankChanged: previousRank !== result.data.newRank
+                };
+                showLevelUpDialog.value = true;
+            }
+
+        } catch (error) {
+            console.error("❌ Error al registrar la partida:", error);
+        }
+    } else {
+        console.warn("⚠️ Mode convidat: No s'ha guardat la puntuació.");
     }
+
+    // Cerramos el juego para volver al mapa
     activeGameComponent.value = null;
 };
 </script>

@@ -24,6 +24,7 @@
                                     @win="handleWin" 
                                     @update-balance="updateCoins" 
                                     @update-inventory="updateInventory"
+                                    @update-tickets="updateTickets"
                                     @spin-start="isSpinning = true"
                                     @spin-end="isSpinning = false"
                                 />
@@ -40,32 +41,50 @@
                                 </p>
 
                                 <div class="d-flex flex-column gap-4 w-100 px-4 px-md-0">
-                                    <v-btn 
-                                        color="cyan-accent-3" 
-                                        size="x-large" 
-                                        rounded="xl" 
-                                        class="font-weight-black text-black w-100 mb-4"
-                                        elevation="8"
-                                        :loading="isSpinning" 
-                                        :disabled="isSpinning"
-                                        @click="triggerSingleSpin"
-                                    >
-                                        <v-icon start>mdi-ticket</v-icon>
-                                        EXTRAURE (50 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
-                                    </v-btn>
+                                    <template v-if="userTickets === 0">
+                                        <v-btn 
+                                            color="cyan-accent-3" 
+                                            size="x-large" 
+                                            rounded="xl" 
+                                            class="font-weight-black text-black w-100 mb-4"
+                                            elevation="8"
+                                            :loading="isSpinning" 
+                                            :disabled="isSpinning"
+                                            @click="triggerSingleSpin"
+                                        >
+                                            <v-icon start>mdi-ticket</v-icon>
+                                            EXTRAURE (100 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                        </v-btn>
 
-                                    <v-btn 
-                                        color="purple-accent-3" 
-                                        size="x-large" 
-                                        rounded="xl" 
-                                        class="font-weight-black text-white w-100"
-                                        elevation="8"
-                                        :disabled="isSpinning"
-                                        @click="triggerMultiSpin"
-                                    >
-                                        <v-icon start>mdi-ticket-percent</v-icon>
-                                        X10 EXTRACCIONS (450 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
-                                    </v-btn>
+                                        <v-btn 
+                                            color="purple-accent-3" 
+                                            size="x-large" 
+                                            rounded="xl" 
+                                            class="font-weight-black text-white w-100"
+                                            elevation="8"
+                                            :disabled="isSpinning || userCoins < 900"
+                                            @click="triggerMultiSpin"
+                                        >
+                                            <v-icon start>mdi-ticket-percent</v-icon>
+                                            COMPRAR 10 TIRADES (900 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                        </v-btn>
+                                    </template>
+
+                                    <template v-else>
+                                        <v-btn 
+                                            color="green-accent-4" 
+                                            size="x-large" 
+                                            rounded="xl" 
+                                            class="font-weight-black text-black w-100 py-2 shadow-glow animate-bounce-slow"
+                                            elevation="12"
+                                            :loading="isSpinning" 
+                                            :disabled="isSpinning"
+                                            @click="triggerSingleSpin"
+                                        >
+                                            <v-icon start size="large">mdi-ticket-confirmation</v-icon>
+                                            {{ userTickets }} TIRADES GRATIS
+                                        </v-btn>
+                                    </template>
                                 </div>
 
                                 <div class="mt-8 px-8 py-4 rounded-xl balance-pill d-flex align-center justify-space-between w-100 mx-auto mx-md-0">
@@ -76,21 +95,6 @@
                                             <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
                                         </div>
                                     </div>
-                                    
-                                    <div class="text-right d-flex flex-column align-end">
-                                        <div class="text-caption d-flex align-center mb-1" :class="isStreakActiveToday ? 'text-orange-accent-2' : 'text-grey-darken-1'">
-                                            <v-icon size="x-small" class="mr-1" :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }">
-                                                {{ isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off' }}
-                                            </v-icon>
-                                            Racha: <strong>{{ userStreak }}</strong>
-                                        </div>
-                                        <div class="text-caption text-cyan-accent-2" style="font-size: 0.7rem !important;">
-                                            Partidas: <strong>{{ userGames }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-center text-md-left px-2">
-                                    <span class="text-caption text-grey-darken-2">Coste de giro: 50 <v-icon size="x-small">mdi-currency-usd</v-icon></span>
                                 </div>
                             </v-col>
                         </v-row>
@@ -229,15 +233,48 @@ const lastPrize = ref(null);
 const luckyWheelRef = ref(null);
 const isSpinning = ref(false);
 
+const userTickets = ref(0); // Estat local per als tiquets de la botiga
+
+const updateStats = (data) => {
+    astroStore.coins = data.coins;
+    if (data.tickets !== undefined) {
+        userTickets.value = data.tickets;
+    }
+};
+
+const triggerMultiSpin = async () => {
+    if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
+    try {
+        const response = await fetch('http://localhost:3000/api/shop/buy-tickets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: astroStore.user })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message);
+
+        astroStore.coins = data.newBalance;
+        userTickets.value = data.newTickets;
+    } catch (error) {
+        alert(error.message);
+    }
+};
+
+async function fetchUserBalance() {
+    const result = await astroStore.fetchUserBalance();
+    if (result.success && result.balance) {
+        userTickets.value = result.balance.tickets || 0;
+    } else {
+        console.error("Error:", result.message);
+    }
+}
+
 const triggerSingleSpin = () => {
     if (luckyWheelRef.value) {
         luckyWheelRef.value.spin();
     }
 };
 
-const triggerMultiSpin = () => {
-    alert("Bloqueig d'Arquitectura: Necessites crear un endpoint al servidor (/api/shop/spin-multi) que calculi i retorni 10 premis de cop abans de poder fer servir això.");
-};
 
 const getItemQuantity = (itemId) => {
     const targetId = Number(itemId);
@@ -299,13 +336,6 @@ onMounted(async () => {
     }
 });
 
-async function fetchUserBalance() {
-    const result = await astroStore.fetchUserBalance();
-    if (!result.success) {
-        console.error("Error:", result.message);
-    }
-}
-
 const handleWin = (prize) => {
     lastPrize.value = prize;
     showWinDialog.value = true;
@@ -318,6 +348,10 @@ const updateCoins = (newBalance) => {
     astroStore.coins = newBalance;
 };
 
+const updateTickets = (newTicketsCount) => {
+    userTickets.value = newTicketsCount;
+};
+
 const updateInventory = (inventory) => {
     if (Array.isArray(inventory)) {
         astroStore.inventory = inventory;
@@ -326,6 +360,11 @@ const updateInventory = (inventory) => {
 </script>
 
 <style scoped>
+
+.animate-bounce-slow { animation: bounce 3s infinite ease-in-out; }
+
+.shadow-glow { box-shadow: 0 0 20px rgba(0, 230, 118, 0.4) !important; }
+
 .scroll-container {
     height: 100vh;
     width: 100%;
