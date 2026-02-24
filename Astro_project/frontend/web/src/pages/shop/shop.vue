@@ -18,14 +18,8 @@
                             
                             <v-col cols="12" md="6" class="d-flex justify-center position-relative py-8">
                                 <div class="nebula-bg"></div>
-                                <LuckyWheel 
-                                    ref="luckyWheelRef" 
-                                    :user="astroStore.user" 
-                                    @win="handleWin" 
-                                    @update-balance="updateCoins" 
-                                    @spin-start="isSpinning = true"
-                                    @spin-end="isSpinning = false"
-                                />
+                                <LuckyWheel ref="luckyWheelRef" :user="astroStore.user" @win="handleWin" @update-stats="updateStats" @spin-start="isSpinning = true" @spin-end="isSpinning = false" />
+
                             </v-col>
 
                             <v-col cols="12" md="6" class="d-flex flex-column justify-center pl-md-10 mt-6 mt-md-0">
@@ -39,8 +33,15 @@
                                 </p>
 
                                 <div class="d-flex flex-column gap-4 w-100 px-4 px-md-0">
+                                    <div v-if="userTickets > 0" class="text-center mb-2 animate-bounce">
+                                        <v-chip color="green-accent-4" variant="flat" size="large" class="font-weight-black text-black px-6 shadow-glow">
+                                            <v-icon start>mdi-ticket-confirmation</v-icon>
+                                            TENS {{ userTickets }} TIRADES DISPONIBLES!
+                                        </v-chip>
+                                    </div>
+
                                     <v-btn 
-                                        color="cyan-accent-3" 
+                                        :color="userTickets > 0 ? 'green-accent-4' : 'cyan-accent-3'" 
                                         size="x-large" 
                                         rounded="xl" 
                                         class="font-weight-black text-black w-100 mb-4"
@@ -50,7 +51,9 @@
                                         @click="triggerSingleSpin"
                                     >
                                         <v-icon start>mdi-ticket</v-icon>
-                                        EXTRAURE (50 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                        EXTRAURE 
+                                        <span v-if="userTickets > 0" class="ml-1">(1 TICKET)</span>
+                                        <span v-else class="ml-1">(100 <v-icon size="small">mdi-currency-usd</v-icon>)</span>
                                     </v-btn>
 
                                     <v-btn 
@@ -59,11 +62,11 @@
                                         rounded="xl" 
                                         class="font-weight-black text-white w-100"
                                         elevation="8"
-                                        :disabled="isSpinning"
+                                        :disabled="isSpinning || userCoins < 900"
                                         @click="triggerMultiSpin"
                                     >
                                         <v-icon start>mdi-ticket-percent</v-icon>
-                                        X10 EXTRACCIONS (450 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                        COMPRAR 10 TIRADES (900 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
                                     </v-btn>
                                 </div>
 
@@ -222,15 +225,48 @@ const lastPrize = ref(null);
 const luckyWheelRef = ref(null);
 const isSpinning = ref(false);
 
+const userTickets = ref(0); // Estat local per als tiquets de la botiga
+
+const updateStats = (data) => {
+    astroStore.coins = data.coins;
+    if (data.tickets !== undefined) {
+        userTickets.value = data.tickets;
+    }
+};
+
+const triggerMultiSpin = async () => {
+    if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
+    try {
+        const response = await fetch('http://localhost:3000/api/shop/buy-tickets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: astroStore.user })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message);
+
+        astroStore.coins = data.newBalance;
+        userTickets.value = data.newTickets;
+    } catch (error) {
+        alert(error.message);
+    }
+};
+
+async function fetchUserBalance() {
+    const result = await astroStore.fetchUserBalance();
+    if (result.success && result.balance) {
+        userTickets.value = result.balance.tickets || 0;
+    } else {
+        console.error("Error:", result.message);
+    }
+}
+
 const triggerSingleSpin = () => {
     if (luckyWheelRef.value) {
         luckyWheelRef.value.spin();
     }
 };
 
-const triggerMultiSpin = () => {
-    alert("Bloqueig d'Arquitectura: Necessites crear un endpoint al servidor (/api/shop/spin-multi) que calculi i retorni 10 premis de cop abans de poder fer servir això.");
-};
 
 const isOwned = (itemId) => {
     return astroStore.inventory?.some(i => i.id === itemId);
@@ -275,13 +311,6 @@ onMounted(async () => {
     if (astroStore.user) { await fetchUserBalance(); }
 });
 
-async function fetchUserBalance() {
-    const result = await astroStore.fetchUserBalance();
-    if (!result.success) {
-        console.error("Error:", result.message);
-    }
-}
-
 const handleWin = (prize) => {
     lastPrize.value = prize;
     showWinDialog.value = true;
@@ -293,6 +322,9 @@ const updateCoins = (newBalance) => {
 </script>
 
 <style scoped>
+
+.shadow-glow { box-shadow: 0 0 20px rgba(0, 230, 118, 0.4) !important; }
+
 .scroll-container {
     height: 100vh;
     width: 100%;
