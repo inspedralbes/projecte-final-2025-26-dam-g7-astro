@@ -265,13 +265,15 @@ export const useAstroStore = defineStore('astro', {
         inventory: [],
         selectedAchievements: normalizeSelectedAchievements(readStoredArray('astro_selected_achievements', [null, null, null])),
         unlockedAchievements: normalizeUnlockedAchievements(readStoredArray('astro_unlocked_achievements', [])),
-        avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
-        mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
+        avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg',
+        mascot: localStorage.getItem('astro_mascot') || null,
         token: localStorage.getItem('astro_token') || null,
         lastActivity: localStorage.getItem('astro_last_activity') || null,
         lastGame: localStorage.getItem('astro_last_game') || null,
-        dailyMissions: [], // Misiones diarias
-        weeklyMissions: [], // Misiones semanales
+        dailyMissions: [],
+        weeklyMissions: [],
+        friends: [],
+        explorers: [], // <--- AÑADIDO: Para la lista de amigos/usuarios
         socket: null,
         isConnected: false,
         error: null
@@ -388,32 +390,49 @@ export const useAstroStore = defineStore('astro', {
 
         async fetchUserStats() {
             this.error = null;
-            if (!this.user) {
-                return { success: false, message: "No hay una sesión activa." };
-            }
+            if (!this.user) return { success: false, message: "No hay una sesión activa." };
 
             try {
                 const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/stats`);
-                const text = await response.text();
-                const data = text ? JSON.parse(text) : {};
+                const data = await response.json();
 
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
-                // Actualizamos el estado con los datos recibidos directamente
-                this.coins = data.coins !== undefined ? data.coins : this.coins;
-                this.level = data.level !== undefined ? data.level : this.level;
-                this.xp = data.xp !== undefined ? data.xp : this.xp;
-                this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
-                this.streak = data.streak !== undefined ? data.streak : this.streak;
-                this.streakFreezes = data.streakFreezes !== undefined ? data.streakFreezes : this.streakFreezes;
-                this.lastActivity = data.lastActivity !== undefined ? data.lastActivity : this.lastActivity;
-                this.lastGame = data.lastGame !== undefined ? data.lastGame : this.lastGame;
+                // Actualizamos el estado con los datos recibidos
+                this.coins = data.coins ?? this.coins;
+                this.level = data.level ?? this.level;
+                this.xp = data.xp ?? this.xp;
+                this.partides = data.gamesPlayed ?? this.partides;
+                this.streak = data.streak ?? this.streak;
+                this.streakFreezes = data.streakFreezes ?? this.streakFreezes;
+                this.lastActivity = data.lastActivity ?? this.lastActivity;
+                this.lastGame = data.lastGame ?? this.lastGame;
+
+                // AÑADIDO: Carga de misiones para el Sidebar
+                this.dailyMissions = data.dailyMissions || [];
+                this.weeklyMissions = data.weeklyMissions || [];
+                this.friends = data.friends || [];
 
                 return { success: true, stats: data };
             } catch (error) {
                 console.error("❌ Error obteniendo estadísticas:", error);
                 this.error = error.message;
                 return { success: false, message: this.error };
+            }
+        },
+
+        // AÑADIDO: Acción para obtener todos los exploradores (Amigos)
+        async fetchAllUsers() {
+            try {
+                const response = await fetch('http://localhost:3000/api/users');
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+
+                this.explorers = data; // Guardamos la lista en el estado
+                return { success: true, data };
+            } catch (error) {
+                console.error("❌ Error obteniendo lista de exploradores:", error);
+                return { success: false, message: error.message };
             }
         },
 
@@ -629,6 +648,43 @@ export const useAstroStore = defineStore('astro', {
                 console.error("❌ Error sincronizando logros desbloqueados:", error);
                 this.error = "Error al guardar logros desbloqueados: " + error.message;
                 return { success: false, message: this.error };
+            }
+        },
+
+        async addFriendAction(friendName) {
+            if (!this.user) return;
+            try {
+                const response = await fetch('http://localhost:3000/api/friends/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, friendName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.friends = data.friends; // Actualizamos la lista local
+                    return { success: true };
+                }
+                return { success: false, message: data.message };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        },
+
+        async removeFriendAction(friendName) {
+            if (!this.user) return;
+            try {
+                const response = await fetch('http://localhost:3000/api/friends/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, friendName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.friends = data.friends; // Actualizamos la lista local
+                    return { success: true };
+                }
+            } catch (error) {
+                console.error(error);
             }
         },
 

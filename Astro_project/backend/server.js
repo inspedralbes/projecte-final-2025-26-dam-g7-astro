@@ -20,6 +20,8 @@ const { registerShopRoutes } = require('./src/routes/shopRoutes');
 const { registerAchievementRoutes } = require('./src/routes/achievementRoutes');
 const { registerPlanRoutes } = require('./src/routes/planRoutes');
 const { registerInventoryRoutes } = require('./src/routes/inventoryRoutes');
+const { registerMissionRoutes } = require('./src/routes/missionRoutes');
+const { registerFriendRoutes } = require('./src/routes/friendRoutes');
 const { registerWsHandlers } = require('./src/ws/registerWsHandlers');
 
 const app = express();
@@ -75,6 +77,9 @@ registerInventoryRoutes(app, {
     getInventoryCatalogItem: inventoryService.getInventoryCatalogItem
 });
 
+registerMissionRoutes(app, { getCollections });
+registerFriendRoutes(app, { getCollections });
+
 registerWsHandlers(wss);
 
 connectDB()
@@ -89,3 +94,25 @@ connectDB()
         console.error('Error arrancando servidor:', error);
         process.exit(1);
     });
+// --- NUEVA RUTA PARA AMIGOS (EXPLORADORES) ---
+app.get('/api/users', async (req, res) => {
+    try {
+        const { users } = getCollections();
+        // Traemos a todos los usuarios pero solo los campos necesarios para la lista
+        const allUsers = await users.find({}, { 
+            projection: { 
+                user: 1, 
+                level: 1, 
+                rank: 1, 
+                mascot: 1,
+                avatar: 1,
+                streak: 1 
+            } 
+        }).toArray();
+        
+        res.json(allUsers);
+    } catch (error) {
+        console.error("❌ Error al obtener exploradores:", error);
+        res.status(500).json({ message: "Error al obtener la lista de usuarios" });
+    }
+});

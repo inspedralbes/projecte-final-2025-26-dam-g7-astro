@@ -203,22 +203,33 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAstroStore } from '@/stores/astroStore'
+
 const astroStore = useAstroStore()
-const { dailyMissions, weeklyMissions, coins: userCoins, level: userLevel, xp: userXp } = storeToRefs(astroStore)
+
+// CORRECCIÓN: Extraemos correctamente las misiones, stats y el getter de racha
+const { 
+    dailyMissions, 
+    weeklyMissions, 
+    coins: userCoins, 
+    level: userLevel, 
+    xp: userXp,
+    streak: userStreak, // Mapeamos 'streak' del store a 'userStreak'
+    isStreakActiveToday // El getter reactivo
+} = storeToRefs(astroStore)
 
 watch(dailyMissions, (newVal) => {
     console.log("👀 [Sidebar] Cambio en misiones diarias:", newVal?.length);
 }, { deep: true })
 
 onMounted(async () => {
-    console.log("🚀 [Sidebar] Montado. Usuario:", astroStore.user);
     if (astroStore.user) {
+        // Al montar, pedimos las stats que ahora incluyen las misiones
         await astroStore.fetchUserStats()
-        console.log("📊 [Sidebar] Misiones cargadas:", dailyMissions.value.length);
         await astroStore.fetchUserBalance()
+        // También pedimos la lista de amigos si la necesitas aquí
+        await astroStore.fetchAllUsers()
     }
 })
-
 
 const xpRequired = computed(() => {
     return 100 + (userLevel.value - 1) * 50;
@@ -232,22 +243,18 @@ const refreshMissions = async () => {
     isRefreshing.value = true
     try {
         await astroStore.fetchUserStats()
-        await astroStore.fetchUserBalance()
-        console.log("♻️ [Sidebar] Sincronización manual completada");
+        console.log("♻️ [Sidebar] Sincronización completada");
     } finally {
         isRefreshing.value = false
     }
 }
 
-
 const claimReward = async (missionId, type = 'daily') => {
     const result = await astroStore.claimMissionReward(missionId, type)
     if (result.success) {
-        // Podríamos mostrar un mensaje de éxito si hubiera un snackbar global
         console.log("Recompensa reclamada:", result.message)
     }
 }
-
 </script>
 
 <style scoped>

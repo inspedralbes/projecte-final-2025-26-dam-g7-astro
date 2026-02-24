@@ -16,25 +16,32 @@
     </div>
 
     <v-row v-else-if="filteredFriends.length > 0">
-      <v-col v-for="friend in filteredFriends" :key="friend.name" cols="12" xl="4" lg="6" md="12">
+      <v-col v-for="friend in filteredFriends" :key="friend.user" cols="12" xl="4" lg="6" md="12">
         <v-card class="friend-card rounded-xl pa-4" elevation="0">
           <div class="d-flex align-center">
             <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
-              <v-icon icon="mdi-account" color="cyan-accent-2" size="large"></v-icon>
+              <v-img v-if="friend.avatar" :src="friend.avatar" alt="Avatar"></v-img>
+              <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase()
+                }}</span>
             </v-avatar>
+
             <div class="flex-grow-1">
-              <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.name }}</h2>
+              <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
+
               <div class="d-flex align-center flex-wrap gap-2">
                 <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                  Nivel {{ friend.level }}
+                  Nivel {{ friend.level || 1 }}
                 </v-chip>
-                <v-chip v-if="friend.pet" size="small" color="amber-accent-3" variant="tonal" class="font-weight-bold">
-                  <v-icon start :icon="friend.pet.icon" size="x-small"></v-icon>
-                  {{ friend.pet.name }}
+
+                <v-chip v-if="friend.mascot" size="small" color="amber-accent-3" variant="tonal"
+                  class="font-weight-bold">
+                  <v-icon start icon="mdi-paw" size="x-small"></v-icon>
+                  {{ formatMascotName(friend.mascot) }}
                 </v-chip>
-                <v-chip v-if="isFriend(friend.name)" size="small" color="success" variant="flat"
+
+                <v-chip v-if="isFriend(friend.user)" size="small" color="success" variant="flat"
                   class="font-weight-bold text-white">
-                  Amigo
+                  Tripulación
                 </v-chip>
               </div>
             </div>
@@ -43,27 +50,26 @@
           <v-divider class="my-4 border-opacity-25" color="white"></v-divider>
 
           <v-card-actions class="pa-0">
-            <template v-if="isFriend(friend.name)">
-              <v-btn icon color="error" variant="tonal" class="rounded-lg mr-2" @click="removeFriend(friend)">
+            <template v-if="isFriend(friend.user)">
+              <v-btn icon color="error" variant="tonal" class="rounded-lg mr-2" @click="removeFriend(friend.user)">
                 <v-icon icon="mdi-trash-can-outline"></v-icon>
-                <v-tooltip activator="parent" location="top">Eliminar amigo</v-tooltip>
               </v-btn>
               <v-spacer></v-spacer>
-              <v-btn color="cyan-accent-2" variant="outlined" class="rounded-lg px-4 mr-2"
-                @click="chatWithFriend(friend)">
+              <v-btn color="cyan-accent-2" variant="outlined" class="rounded-lg px-4 mr-2">
                 <v-icon start icon="mdi-message-outline"></v-icon>
                 Chatear
               </v-btn>
-              <v-btn color="primary" variant="elevated" class="rounded-lg px-4" @click="inviteToChallenge(friend)">
+              <v-btn color="primary" variant="elevated" class="rounded-lg px-4">
                 <v-icon start icon="mdi-sword-cross"></v-icon>
                 Desafiar
               </v-btn>
             </template>
+
             <template v-else>
               <v-spacer></v-spacer>
-              <v-btn color="success" variant="elevated" class="rounded-lg px-4" @click="addFriend(friend)">
+              <v-btn color="success" variant="elevated" class="rounded-lg px-4" @click="addFriend(friend.user)">
                 <v-icon start icon="mdi-account-plus"></v-icon>
-                Añadir Amigo
+                Reclutar
               </v-btn>
             </template>
           </v-card-actions>
@@ -73,11 +79,10 @@
 
     <div v-else class="text-center py-10">
       <v-icon icon="mdi-account-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-      <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">No se encontró ningún explorador con ese nombre.</h3>
-      <h3 v-else class="text-h6 text-grey-lighten-1">Aún no tienes amigos en tu lista de tripulación.</h3>
+      <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">No encontramos exploradores con ese nombre.</h3>
+      <h3 v-else class="text-h6 text-grey-lighten-1">Tu tripulación está vacía. ¡Busca nuevos reclutas!</h3>
     </div>
 
-    <!-- Simple feedback snackbar -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
       {{ snackbar.text }}
     </v-snackbar>
@@ -86,57 +91,83 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
 
 const astroStore = useAstroStore();
-const friends = ref([]);
+// Traemos explorers (todos los usuarios) y friends (mis amigos) del store
+const { explorers, friends } = storeToRefs(astroStore);
+
 const loading = ref(true);
 const searchQuery = ref('');
 
-// Lista "mock" de amigos para esta fase de desarrollo
-const myFriendNames = ref(['kim']);
-
-const filteredFriends = computed(() => {
-  // Filtrar al usuario actual para que no aparezca en su propia búsqueda
-  const allExceptMe = friends.value.filter(f => f.name.toLowerCase() !== (astroStore.user?.toLowerCase() || ''));
-
-  if (!searchQuery.value) {
-    // Si no hay búsqueda, mostramos solo a nuestros amigos (excluyéndome)
-    return allExceptMe.filter(f => myFriendNames.value.includes(f.name.toLowerCase()));
-  }
-  // Si hay búsqueda, buscamos en toda la base de datos (excluyéndome)
-  const query = searchQuery.value.toLowerCase();
-  return allExceptMe.filter(f => f.name.toLowerCase().includes(query));
-});
-
-const isFriend = (name) => {
-  return myFriendNames.value.includes(name.toLowerCase());
-};
-
+// --- DEFINICIÓN DEL SNACKBAR (Faltaba esto) ---
 const snackbar = ref({
   show: false,
   text: '',
   color: 'success'
 });
 
+// Función auxiliar para mostrar mensajes
 const showMessage = (text, color = 'success') => {
-  snackbar.value.text = text;
-  snackbar.value.color = color;
-  snackbar.value.show = true;
+  snackbar.value = {
+    show: true,
+    text: text,
+    color: color
+  };
 };
 
+// --- LÓGICA DE FILTRADO ---
+const filteredFriends = computed(() => {
+  const allUsers = Array.isArray(explorers.value) ? explorers.value : [];
+
+  // Excluirse a uno mismo de la lista
+  const allExceptMe = allUsers.filter(f => {
+    return f.user && f.user.toLowerCase() !== (astroStore.user?.toLowerCase() || '');
+  });
+
+  // Si hay texto en el buscador, filtramos por nombre
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    return allExceptMe.filter(f => f.user.toLowerCase().includes(query));
+  }
+
+  // Si NO hay búsqueda, mostramos primero a mis amigos y luego al resto (o solo amigos si prefieres)
+  // Aquí devolvemos TODOS para que puedas agregar gente nueva, ordenando amigos primero.
+  return allExceptMe.sort((a, b) => {
+    const aIsFriend = isFriend(a.user);
+    const bIsFriend = isFriend(b.user);
+    // Amigos primero
+    return (aIsFriend === bIsFriend) ? 0 : aIsFriend ? -1 : 1;
+  });
+});
+
+// Verifica si un usuario está en mi lista de amigos (usando el Store)
+const isFriend = (username) => {
+  if (!username) return false;
+  // friends.value es un array de strings (nombres de usuario)
+  return Array.isArray(friends.value) && friends.value.includes(username);
+};
+
+// Formatea el nombre de la mascota para evitar errores
+const formatMascotName = (mascotData) => {
+  if (typeof mascotData === 'object' && mascotData !== null) {
+    return mascotData.name || 'Mascota';
+  }
+  return mascotData || 'Mascota';
+};
+
+// --- CARGA DE DATOS ---
 const fetchFriends = async () => {
   loading.value = true;
   try {
-    const data = await astroStore.fetchAllUsers();
-    // Mostramos todos los usuarios como pidió el usuario
-    friends.value = data || [];
-    if (friends.value.length === 0) {
-      console.warn("No se encontraron usuarios en la base de datos.");
-    }
+    // Carga todos los usuarios
+    await astroStore.fetchAllUsers();
+    // Carga mis estadísticas (donde viene mi lista de amigos)
+    await astroStore.fetchUserStats();
   } catch (error) {
-    console.error("Error al cargar amigos:", error);
-    showMessage("No se pudieron cargar los usuarios", "error");
+    console.error("Error cargando tripulación:", error);
+    showMessage("Error de conexión con la flota", "error");
   } finally {
     loading.value = false;
   }
@@ -146,24 +177,30 @@ onMounted(() => {
   fetchFriends();
 });
 
-const removeFriend = (friend) => {
-  myFriendNames.value = myFriendNames.value.filter(name => name !== friend.name.toLowerCase());
-  showMessage(`${friend.name} ha sido eliminado de tu lista de amigos.`, 'error');
+// --- ACCIONES (Añadir / Eliminar) ---
+const removeFriend = async (friendName) => {
+  // Llamada al backend a través del Store
+  const result = await astroStore.removeFriendAction(friendName);
+  
+  // Como removeFriendAction en el store (paso anterior) no retornaba nada explícito en éxito
+  // asumimos éxito si no hay error, o ajustamos el store. 
+  // Pero para feedback visual rápido:
+  showMessage(`${friendName} ha abandonado la tripulación.`, 'warning');
+  
+  // Refrescamos stats para asegurar consistencia
+  await astroStore.fetchUserStats(); 
 };
 
-const addFriend = (friend) => {
-  if (!myFriendNames.value.includes(friend.name.toLowerCase())) {
-    myFriendNames.value.push(friend.name.toLowerCase());
-    showMessage(`${friend.name} se ha añadido a tu lista de amigos.`, 'success');
+const addFriend = async (friendName) => {
+  if (isFriend(friendName)) return;
+
+  const result = await astroStore.addFriendAction(friendName);
+  
+  if (result && result.success) {
+    showMessage(`¡${friendName} reclutado con éxito!`);
+  } else {
+    showMessage(result?.message || "Error al añadir recluta", "error");
   }
-};
-
-const chatWithFriend = (friend) => {
-  showMessage(`Abriendo chat con ${friend.name}...`);
-};
-
-const inviteToChallenge = (friend) => {
-  showMessage(`Invitación a desafío enviada a ${friend.name}!`);
 };
 </script>
 
