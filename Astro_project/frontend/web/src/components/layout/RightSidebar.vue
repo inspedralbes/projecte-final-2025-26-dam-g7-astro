@@ -10,8 +10,10 @@
                 </div>
                 <div class="d-flex justify-space-around">
                     <div class="text-center">
-                        <v-icon icon="mdi-fire" color="orange-accent-3" size="large" class="mb-0 glow-icon"></v-icon>
-                        <div class="text-h6 font-weight-bold text-white">12</div>
+                        <v-icon :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'"
+                            :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'" size="large"
+                            class="mb-0 glow-icon" :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }"></v-icon>
+                        <div class="text-h6 font-weight-bold text-white">{{ userStreak }}</div>
                         <div class="text-caption text-grey" style="font-size: 0.7rem !important;">Racha</div>
                     </div>
                     <div class="text-center">

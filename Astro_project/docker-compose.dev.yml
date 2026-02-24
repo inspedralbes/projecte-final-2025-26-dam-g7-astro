@@ -24,8 +24,10 @@ services:
     environment:
       - MONGO_URI=mongodb://mongodb:27017/astro_db
       - PORT=3000
+    dns:
+      - 8.8.8.8
 
-  frontend:  # <--- ESTO ESTABA MAL ALINEADO ANTES
+  frontend:
     build:
       context: ./frontend/web
       dockerfile: Dockerfile.dev

@@ -62,7 +62,7 @@
         <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
         <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
-          TORNAR AL MENÚ
+          OBTENIR RECOMPENSA
         </v-btn>
       </v-card>
     </v-overlay>

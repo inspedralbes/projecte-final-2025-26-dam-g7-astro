@@ -9,7 +9,6 @@
           <span class="text-caption text-grey-lighten-2">Puntuació: {{ score }}</span>
         </div>
         <div class="d-flex align-center gap-4">
-          <div class="text-h5 font-weight-bold text-white">{{ formatTime(timeLeft) }}</div>
           <v-btn icon="mdi-close" variant="text" color="grey" @click="emitExit"></v-btn>
         </div>
       </div>
@@ -142,7 +141,7 @@
       <p class="text-h5 text-white mb-6">Puntuació Final: {{ score }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
-        Tornar al Menú
+        Obtenir Recompensa
       </v-btn>
     </v-card>
 
@@ -154,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 
 const emit = defineEmits(['game-over']);
@@ -193,8 +192,6 @@ const allLettersData = [
 const roscoLetters = ref([]); 
 const currentIndex = ref(0);
 const rawInput = ref('');
-const timeLeft = ref(180); // 3 minuts
-let timerInterval = null;
 const gameFinished = ref(false);
 const score = ref(0);
 const isListening = ref(false);
@@ -230,30 +227,9 @@ onMounted(() => {
         status: 'pending' // pending, correct, incorrect, ignored?
     }));
 
-    startTimer();
     focusInput();
 });
 
-onUnmounted(() => {
-    clearInterval(timerInterval);
-});
-
-// Timer
-const startTimer = () => {
-    timerInterval = setInterval(() => {
-        if (timeLeft.value > 0) {
-            timeLeft.value--;
-        } else {
-            finishGame();
-        }
-    }, 1000);
-};
-
-const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
 
 // Input Handling
 const focusInput = () => {
@@ -351,15 +327,6 @@ const finishGame = async () => {
     if (gameFinished.value) return;
 
     gameFinished.value = true;
-    clearInterval(timerInterval);
-
-    if (!astroStore.user || gameSaved.value) return;
-    gameSaved.value = true;
-
-    const result = await astroStore.registerCompletedGame('SpelledRosco', score.value);
-    if (!result.success) {
-        console.error("No s'ha pogut registrar la partida:", result.message);
-    }
 };
 
 const emitExit = () => {

@@ -108,6 +108,11 @@ defineProps({
   border: 1px solid #ffa07a;
 }
 
+.platinum {
+  background: radial-gradient(circle at 30% 30%, #eef7ff, #8fa8c3 80%);
+  border: 1px solid #d7e9ff;
+}
+
 /* Ribbon */
 .ribbon {
   position: absolute;
@@ -134,6 +139,11 @@ defineProps({
 .ribbon.bronze {
   background: linear-gradient(to bottom, #388e3c, #1b5e20);
   border-top: 5px solid #a5d6a7;
+}
+
+.ribbon.platinum {
+  background: linear-gradient(to bottom, #455a64, #263238);
+  border-top: 5px solid #b0bec5;
 }
 
 /* Shine Effect */
