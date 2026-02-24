@@ -34,12 +34,67 @@ const JERARQUIA = [
 
 let indexesReady = false;
 
+const MISSION_TYPES = [
+    { id: 'play_5', text: 'Jugar 5 partidas', goal: 5, reward: 100 },
+    { id: 'xp_500', text: 'Conseguir 500 XP', goal: 500, reward: 150 },
+    { id: 'buy_2', text: 'Comprar 2 cosas en la tienda', goal: 2, reward: 80 },
+    { id: 'play_friend', text: 'Jugar con un amigo', goal: 1, reward: 50 }
+];
+
+const WEEKLY_MISSION_TYPES = [
+    { id: 'week_play_20', text: 'Jugar 20 partidas en la semana', goal: 20, reward: 500 },
+    { id: 'week_coins_1000', text: 'Gastar 1000 monedas', goal: 1000, reward: 400 },
+    { id: 'week_xp_2500', text: 'Conseguir 2500 XP', goal: 2500, reward: 600 }
+];
+
 function getCollections() {
     const db = getDB();
     return {
         users: db.collection('users'),
         partides: db.collection('partides')
     };
+}
+
+function getOrInitializeMissions(userDoc) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Calcular inicio de semana (Lunes)
+    const now = new Date();
+    const day = now.getDay(); // 0 (Dom) a 6 (Sab)
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
+
+    console.log(`🔍 [Misiones] Verificando para usuario. Hoy: ${today}, Lunes: ${monday}`);
+
+    let daily = userDoc.dailyMissions;
+    if (!daily || daily.lastUpdated !== today || !Array.isArray(daily.missions) || daily.missions.length === 0) {
+        console.log(`🔄 [Misiones] Inicializando Diarias para ${userDoc.user} (${today}).`);
+        daily = {
+            lastUpdated: today,
+            missions: MISSION_TYPES.map(m => ({
+                ...m,
+                progress: 0,
+                completed: false,
+                claimed: false
+            }))
+        };
+    }
+
+    let weekly = userDoc.weeklyMissions;
+    if (!weekly || weekly.lastUpdated !== monday || !Array.isArray(weekly.missions) || weekly.missions.length === 0) {
+        console.log(`🔄 [Misiones] Inicializando Semanales para ${userDoc.user} (${monday}).`);
+        weekly = {
+            lastUpdated: monday,
+            missions: WEEKLY_MISSION_TYPES.map(m => ({
+                ...m,
+                progress: 0,
+                completed: false,
+                claimed: false
+            }))
+        };
+    }
+
+    return { daily, weekly };
 }
 
 async function ensureIndexes() {
@@ -60,10 +115,23 @@ async function getUserStats(username) {
 
     const userDoc = await users.findOne(
         { user: username },
-        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1, level: 1, xp: 1 } }
+        { projection: { user: 1, coins: 1, inventory: 1, rank: 1, plan: 1, level: 1, xp: 1, dailyMissions: 1, weeklyMissions: 1 } }
     );
 
     if (!userDoc) return null;
+
+    const { daily, weekly } = getOrInitializeMissions(userDoc);
+
+    // Guardar si hubo cambios por inicialización o si las misiones estaban vacías en la DB
+    const missionsMissingInDB = !userDoc.dailyMissions || !userDoc.dailyMissions.missions || (userDoc.dailyMissions.missions?.length === 0) ||
+        !userDoc.weeklyMissions || !userDoc.weeklyMissions.missions || (userDoc.weeklyMissions.missions?.length === 0);
+
+    if (userDoc.dailyMissions?.lastUpdated !== daily.lastUpdated ||
+        userDoc.weeklyMissions?.lastUpdated !== weekly.lastUpdated ||
+        missionsMissingInDB) {
+        console.log(`💾 [Stats] Guardando misiones persistentes para ${username} en MongoDB.`);
+        await users.updateOne({ user: username }, { $set: { dailyMissions: daily, weeklyMissions: weekly } });
+    }
 
     const [gamesPlayed, gamesByTypeRaw] = await Promise.all([
         partides.countDocuments({ user: username }),
@@ -80,6 +148,9 @@ async function getUserStats(username) {
         gamesByType[item._id || 'UNKNOWN'] = item.total;
     }
 
+
+    console.log(`📊 [Stats] Enviando misiones: ${daily.missions?.length} diarias, ${weekly.missions?.length} semanales`);
+
     return {
         user: userDoc.user,
         plan: userDoc.plan || 'INDIVIDUAL_FREE',
@@ -89,7 +160,9 @@ async function getUserStats(username) {
         coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
         inventoryCount: Array.isArray(userDoc.inventory) ? userDoc.inventory.length : 0,
         gamesPlayed,
-        gamesByType
+        gamesByType,
+        dailyMissions: daily.missions || [],
+        weeklyMissions: weekly.missions || []
     };
 }
 
@@ -176,6 +249,69 @@ app.post('/api/games/complete', async (req, res) => {
         const rankIndex = Math.min(Math.floor((currentLevel - 1) / 2), JERARQUIA.length - 1);
         const currentRank = JERARQUIA[rankIndex];
 
+        // --- LÓGICA DE MISIONES ---
+        const { daily, weekly } = getOrInitializeMissions(currentUser);
+        let missionsChanged = false;
+
+        // Diarias
+        daily.missions = daily.missions.map(m => {
+            if (m.id === 'play_5' && !m.completed) {
+                m.progress++;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            if (m.id === 'xp_500' && !m.completed) {
+                m.progress += rewards;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            if (m.id === 'play_friend' && !m.completed && game.includes('multi')) {
+                m.progress = 1;
+                m.completed = true;
+                missionsChanged = true;
+            }
+            return m;
+        });
+
+        // Semanales
+        weekly.missions = weekly.missions.map(m => {
+            if (m.id === 'week_play_20' && !m.completed) {
+                m.progress++;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            if (m.id === 'week_xp_2500' && !m.completed) {
+                m.progress += rewards;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            return m;
+        });
+
+        const updateFields = {
+            coins: newBalance,
+            level: currentLevel,
+            xp: currentXp,
+            rank: currentRank
+        };
+
+        if (missionsChanged) {
+            updateFields.dailyMissions = daily;
+            updateFields.weeklyMissions = weekly;
+        }
+
         await Promise.all([
             partides.insertOne({
                 user,
@@ -188,12 +324,7 @@ app.post('/api/games/complete', async (req, res) => {
             users.updateOne(
                 { user },
                 {
-                    $set: {
-                        coins: newBalance,
-                        level: currentLevel,
-                        xp: currentXp,
-                        rank: currentRank
-                    }
+                    $set: updateFields
                 }
             )
         ]);
@@ -208,8 +339,11 @@ app.post('/api/games/complete', async (req, res) => {
             newBalance,
             newLevel: currentLevel,
             newXp: currentXp,
+            dailyMissions: daily.missions,
+            weeklyMissions: weekly.missions,
             newRank: currentRank,
             leveledUp,
+            gamesPlayed,
             gamesPlayed
         });
     } catch (error) {
@@ -285,6 +419,19 @@ app.post('/api/auth/login', async (req, res) => {
 
         if (foundUser) {
             console.log(`🚀 Sesión iniciada: ${foundUser.user}`);
+
+            const { daily, weekly } = getOrInitializeMissions(foundUser);
+
+            // Forzar guardado de misiones si acaban de ser inicializadas o renovadas
+            const missionsNeedSaving = !foundUser.dailyMissions || !foundUser.weeklyMissions ||
+                foundUser.dailyMissions.lastUpdated !== daily.lastUpdated ||
+                foundUser.weeklyMissions.lastUpdated !== weekly.lastUpdated;
+
+            if (missionsNeedSaving) {
+                console.log(`💾 [Login] Guardando misiones inicializadas para ${foundUser.user}`);
+                await db.collection('users').updateOne({ user: foundUser.user }, { $set: { dailyMissions: daily, weeklyMissions: weekly } });
+            }
+
             res.json({
                 status: "Sincronización completada",
                 token: "session_token_" + Math.random().toString(36).substr(2),
@@ -295,6 +442,8 @@ app.post('/api/auth/login', async (req, res) => {
                     coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
                     level: foundUser.level || 1,
                     xp: foundUser.xp || 0,
+                    dailyMissions: daily.missions,
+                    weeklyMissions: weekly.missions,
                     selectedAchievements: foundUser.selectedAchievements || [null, null, null]
                 }
             });
@@ -447,15 +596,50 @@ app.post('/api/shop/buy', async (req, res) => {
             purchasedAt: new Date()
         };
 
+        // --- LÓGICA DE MISIONES ---
+        const { daily, weekly } = getOrInitializeMissions(currentUser);
+        let missionsChanged = false;
+
+        daily.missions = daily.missions.map(m => {
+            if (m.id === 'buy_2' && !m.completed) {
+                m.progress++;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            return m;
+        });
+
+        weekly.missions = weekly.missions.map(m => {
+            if (m.id === 'week_coins_1000' && !m.completed) {
+                m.progress += item.price;
+                if (m.progress >= m.goal) {
+                    m.progress = m.goal;
+                    m.completed = true;
+                }
+                missionsChanged = true;
+            }
+            return m;
+        });
+
+        const updateObj = {
+            $set: { coins: newBalance },
+            $push: { inventory: itemToSave }
+        };
+
+        if (missionsChanged) {
+            updateObj.$set.dailyMissions = daily;
+            updateObj.$set.weeklyMissions = weekly;
+        }
+
         await users.updateOne(
             { user: user },
-            {
-                $set: { coins: newBalance },
-                $push: { inventory: itemToSave }
-            }
+            updateObj
         );
 
-        res.json({ success: true, newBalance, item: itemToSave });
+        res.json({ success: true, newBalance, item: itemToSave, dailyMissions: daily.missions, weeklyMissions: weekly.missions });
     } catch (error) {
         res.status(500).json({ message: "Error en la transacción estelar." });
     }
@@ -504,6 +688,56 @@ app.post('/api/inventory/toggle-equip', async (req, res) => {
     } catch (error) {
         console.error("Error toggle-equip:", error);
         res.status(500).json({ message: "Error al cambiar equipamiento." });
+    }
+});
+
+// --- SISTEMA DE MISIONES ---
+
+app.post('/api/missions/claim', async (req, res) => {
+    const { user, missionId, type = 'daily' } = req.body;
+    if (!user || !missionId) return res.status(400).json({ message: "Usuario y ID de misión requeridos." });
+
+    try {
+        const { users } = getCollections();
+        const currentUser = await users.findOne({ user: user });
+        if (!currentUser) return res.status(404).json({ message: "Usuario no encontrado." });
+
+        const { daily, weekly } = getOrInitializeMissions(currentUser);
+        const missionSource = type === 'weekly' ? weekly : daily;
+        const mission = missionSource.missions.find(m => m.id === missionId);
+
+        if (!mission) return res.status(404).json({ message: "Misión no encontrada." });
+        if (!mission.completed) return res.status(400).json({ message: "Misión no completada aún." });
+        if (mission.claimed) return res.status(400).json({ message: "Recompensa ya reclamada." });
+
+        mission.claimed = true;
+        const reward = mission.reward || 0;
+        const newBalance = (currentUser.coins || 0) + reward;
+
+        const updateData = {
+            coins: newBalance
+        };
+        if (type === 'weekly') {
+            updateData.weeklyMissions = weekly;
+        } else {
+            updateData.dailyMissions = daily;
+        }
+
+        await users.updateOne(
+            { user: user },
+            { $set: updateData }
+        );
+
+        res.json({
+            success: true,
+            message: `¡Has reclamado ${reward} monedas!`,
+            newBalance,
+            dailyMissions: daily.missions,
+            weeklyMissions: weekly.missions
+        });
+    } catch (error) {
+        console.error("Error al reclamar misión:", error);
+        res.status(500).json({ message: "Error interno al reclamar la recompensa." });
     }
 });
 

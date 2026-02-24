@@ -15,6 +15,8 @@ export const useAstroStore = defineStore('astro', {
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
+        dailyMissions: [], // Misiones diarias funcionales
+        weeklyMissions: [], // Misiones semanales funcionales
         socket: null,
         isConnected: false,
         error: null
@@ -71,6 +73,8 @@ export const useAstroStore = defineStore('astro', {
                 this.coins = data.profile.coins;
                 this.level = data.profile.level;
                 this.xp = data.profile.xp;
+                this.dailyMissions = data.profile.dailyMissions || [];
+                this.weeklyMissions = data.profile.weeklyMissions || [];
                 this.token = data.token;
 
                 // 2. Formatear logros (siempre 3 slots)
@@ -118,10 +122,13 @@ export const useAstroStore = defineStore('astro', {
 
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
+                // Actualizamos el estado con los datos recibidos directamente
                 this.coins = data.coins !== undefined ? data.coins : this.coins;
-                this.level = data.stats?.level !== undefined ? data.stats.level : this.level;
-                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;
+                this.level = data.level !== undefined ? data.level : this.level;
+                this.xp = data.xp !== undefined ? data.xp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
+                this.dailyMissions = data.dailyMissions || [];
+                this.weeklyMissions = data.weeklyMissions || [];
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -185,6 +192,8 @@ export const useAstroStore = defineStore('astro', {
                 this.level = data.newLevel !== undefined ? data.newLevel : this.level;
                 this.xp = data.newXp !== undefined ? data.newXp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
+                this.dailyMissions = data.dailyMissions || this.dailyMissions;
+                this.weeklyMissions = data.weeklyMissions || this.weeklyMissions;
 
                 if (data.newRank) {
                     this.rank = data.newRank;
@@ -211,11 +220,43 @@ export const useAstroStore = defineStore('astro', {
 
                 // ACTUALIZACIÓN DEL ESTADO GLOBAL
                 this.coins = data.newBalance;
-                this.inventory.push(data.item); // <--- Guardamos el inventario actualizado
+                this.inventory.push(data.item);
+                if (data.dailyMissions) this.dailyMissions = data.dailyMissions;
+                if (data.weeklyMissions) this.weeklyMissions = data.weeklyMissions;
 
                 return { success: true };
             } catch (error) {
                 return { success: false, message: error.message };
+            }
+        },
+
+        async claimMissionReward(missionId, type = 'daily') {
+            this.error = null;
+            if (!this.user) return { success: false, message: "No hay sesión activa." };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/missions/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        missionId,
+                        type
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "Error al reclamar recompensa.");
+
+                this.coins = data.newBalance;
+                this.dailyMissions = data.dailyMissions || this.dailyMissions;
+                this.weeklyMissions = data.weeklyMissions || this.weeklyMissions;
+
+                return { success: true, message: data.message };
+            } catch (error) {
+                console.error("❌ Error reclamando misión:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
             }
         },
 

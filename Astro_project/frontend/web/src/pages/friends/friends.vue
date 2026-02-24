@@ -5,18 +5,10 @@
         <v-icon icon="mdi-account-group" size="x-large" color="cyan-accent-2" class="mr-4"></v-icon>
         <h1 class="text-h4 font-weight-bold text-white tracking-wide">Amigos</h1>
       </div>
-      
-      <v-text-field
-        v-model="searchQuery"
-        label="Buscar exploradores..."
-        prepend-inner-icon="mdi-magnify"
-        variant="solo"
-        bg-color="rgba(255, 255, 255, 0.05)"
-        class="search-bar w-100"
-        hide-details
-        rounded="xl"
-        clearable
-      ></v-text-field>
+
+      <v-text-field v-model="searchQuery" label="Buscar exploradores..." prepend-inner-icon="mdi-magnify" variant="solo"
+        bg-color="rgba(255, 255, 255, 0.05)" class="search-bar w-100" hide-details rounded="xl"
+        clearable></v-text-field>
     </div>
 
     <div v-if="loading" class="d-flex justify-center align-center py-10">
@@ -40,7 +32,8 @@
                   <v-icon start :icon="friend.pet.icon" size="x-small"></v-icon>
                   {{ friend.pet.name }}
                 </v-chip>
-                <v-chip v-if="isFriend(friend.name)" size="small" color="success" variant="flat" class="font-weight-bold text-white">
+                <v-chip v-if="isFriend(friend.name)" size="small" color="success" variant="flat"
+                  class="font-weight-bold text-white">
                   Amigo
                 </v-chip>
               </div>
@@ -56,7 +49,8 @@
                 <v-tooltip activator="parent" location="top">Eliminar amigo</v-tooltip>
               </v-btn>
               <v-spacer></v-spacer>
-              <v-btn color="cyan-accent-2" variant="outlined" class="rounded-lg px-4 mr-2" @click="chatWithFriend(friend)">
+              <v-btn color="cyan-accent-2" variant="outlined" class="rounded-lg px-4 mr-2"
+                @click="chatWithFriend(friend)">
                 <v-icon start icon="mdi-message-outline"></v-icon>
                 Chatear
               </v-btn>
@@ -103,13 +97,16 @@ const searchQuery = ref('');
 const myFriendNames = ref(['kim']);
 
 const filteredFriends = computed(() => {
+  // Filtrar al usuario actual para que no aparezca en su propia búsqueda
+  const allExceptMe = friends.value.filter(f => f.name.toLowerCase() !== (astroStore.user?.toLowerCase() || ''));
+
   if (!searchQuery.value) {
-    // Si no hay búsqueda, mostramos solo a nuestros amigos
-    return friends.value.filter(f => myFriendNames.value.includes(f.name.toLowerCase()));
+    // Si no hay búsqueda, mostramos solo a nuestros amigos (excluyéndome)
+    return allExceptMe.filter(f => myFriendNames.value.includes(f.name.toLowerCase()));
   }
-  // Si hay búsqueda, buscamos en toda la base de datos
+  // Si hay búsqueda, buscamos en toda la base de datos (excluyéndome)
   const query = searchQuery.value.toLowerCase();
-  return friends.value.filter(f => f.name.toLowerCase().includes(query));
+  return allExceptMe.filter(f => f.name.toLowerCase().includes(query));
 });
 
 const isFriend = (name) => {
