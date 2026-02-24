@@ -39,7 +39,8 @@ function generateMissions(templates, count) {
 function createGetUserStats({
     getCollections,
     normalizeInventoryEntries,
-    getInventoryQuantity
+    getInventoryQuantity,
+    normalizeActiveBoosters
 }) {
     return async function getUserStats(username) {
         const { users, partides } = getCollections();
@@ -113,6 +114,7 @@ function createGetUserStats({
             level: userDoc.level || 1,
             xp: userDoc.xp || 0,
             coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
+            activeBoosters: normalizeActiveBoosters(userDoc.activeBoosters),
             inventoryCount: normalizedInventory.length,
             inventoryUnits,
             gamesPlayed,

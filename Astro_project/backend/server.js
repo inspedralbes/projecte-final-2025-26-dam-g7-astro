@@ -12,6 +12,7 @@ const inventoryService = require('./src/services/inventoryService');
 const { createGetUserStats } = require('./src/services/statsService');
 const { createUpdateStreak } = require('./src/services/streakService');
 const { normalizeAchievementIds } = require('./src/utils/achievements');
+const boosterUtils = require('./src/utils/boosters');
 
 const { registerStatsRoutes } = require('./src/routes/statsRoutes');
 const { registerGameRoutes } = require('./src/routes/gameRoutes');
@@ -37,7 +38,8 @@ const ensureIndexes = createEnsureIndexes(getDB);
 const getUserStats = createGetUserStats({
     getCollections,
     normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
-    getInventoryQuantity: inventoryService.getInventoryQuantity
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
 });
 
 const updateStreak = createUpdateStreak({
@@ -47,13 +49,22 @@ const updateStreak = createUpdateStreak({
 });
 
 registerStatsRoutes(app, { getUserStats });
-registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA });
+registerGameRoutes(app, {
+    getCollections,
+    updateStreak,
+    JERARQUIA,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
+    consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
+    getScoreMultiplier: boosterUtils.getScoreMultiplier,
+    getCoinsMultiplier: boosterUtils.getCoinsMultiplier
+});
 registerAuthRoutes(app, {
     getDB,
     updateStreak,
     normalizeAchievementIds,
     normalizeAndPersistInventory: inventoryService.normalizeAndPersistInventory,
-    getInventoryQuantity: inventoryService.getInventoryQuantity
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
 });
 registerShopRoutes(app, {
     getCollections,
@@ -74,7 +85,10 @@ registerInventoryRoutes(app, {
     serializeInventory: inventoryService.serializeInventory,
     enrichInventory: inventoryService.enrichInventory,
     toPositiveInteger: inventoryService.toPositiveInteger,
-    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem
+    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
+    getBoosterFieldByItemId: boosterUtils.getBoosterFieldByItemId,
+    addBoosterDuration: boosterUtils.addBoosterDuration
 });
 
 registerMissionRoutes(app, { getCollections });

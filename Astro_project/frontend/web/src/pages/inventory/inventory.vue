@@ -37,17 +37,26 @@
                                     x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
                                 </v-chip>
                                 <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
+                                <v-chip
+                                    v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
+                                    size="x-small"
+                                    color="green-accent-3"
+                                    variant="tonal"
+                                    class="mb-2"
+                                >
+                                    ACTIVO: {{ getBoosterGamesLeft(item) }} partidas
+                                </v-chip>
                                 <v-spacer></v-spacer>
                                 <v-btn
                                     block
-                                    :color="!isEquipable(item) ? 'grey-darken-2' : (item.equipped ? 'success' : 'cyan-accent-3')"
-                                    :variant="!isEquipable(item) ? 'outlined' : (item.equipped ? 'tonal' : 'flat')"
+                                    :color="getItemActionColor(item)"
+                                    :variant="getItemActionVariant(item)"
                                     rounded="pill"
                                     class="font-weight-bold text-black"
-                                    :disabled="!isEquipable(item)"
-                                    @click="toggleEquip(item)"
+                                    :disabled="isItemActionDisabled(item)"
+                                    @click="handleItemAction(item)"
                                 >
-                                    {{ !isEquipable(item) ? 'NO EQUIPABLE' : (item.equipped ? 'EQUIPADO' : 'EQUIPAR') }}
+                                    {{ getItemActionLabel(item) }}
                                 </v-btn>
                             </v-card>
                         </v-col>
@@ -73,6 +82,7 @@ import { useAstroStore } from '@/stores/astroStore';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
+const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
 
 const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
@@ -123,6 +133,52 @@ async function toggleEquip(item) {
 
 function isEquipable(item) {
     return item?.cat !== 'items';
+}
+
+function isUsableBooster(item) {
+    return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id));
+}
+
+function getBoosterGamesLeft(item) {
+    const itemId = Number(item?.id);
+    if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0;
+    if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0;
+    return 0;
+}
+
+function getItemActionLabel(item) {
+    if (isUsableBooster(item)) return 'UTILIZAR';
+    if (!isEquipable(item)) return 'NO EQUIPABLE';
+    return item.equipped ? 'EQUIPADO' : 'EQUIPAR';
+}
+
+function getItemActionColor(item) {
+    if (isUsableBooster(item)) return 'amber-accent-3';
+    if (!isEquipable(item)) return 'grey-darken-2';
+    return item.equipped ? 'success' : 'cyan-accent-3';
+}
+
+function getItemActionVariant(item) {
+    if (isUsableBooster(item)) return 'flat';
+    if (!isEquipable(item)) return 'outlined';
+    return item.equipped ? 'tonal' : 'flat';
+}
+
+function isItemActionDisabled(item) {
+    if (isUsableBooster(item)) return Number(item?.quantity) <= 0;
+    return !isEquipable(item);
+}
+
+async function handleItemAction(item) {
+    if (isUsableBooster(item)) {
+        const result = await astroStore.useInventoryItem(item.id);
+        if (!result.success) {
+            alert(result.message || 'No se pudo usar el objeto.');
+        }
+        return;
+    }
+
+    await toggleEquip(item);
 }
 </script>
 

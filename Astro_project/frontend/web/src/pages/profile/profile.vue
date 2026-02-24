@@ -228,9 +228,9 @@ const selectionDialog = ref(false)
 const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const currentSlotIndex = ref(null)
-const { user, rank, plan, selectedAchievements, avatar, mascot, level, coins, xp } = storeToRefs(astroStore)
+const { user, rank, plan, selectedAchievements, unlockedAchievements, avatar, mascot, level, coins, xp, partides } = storeToRefs(astroStore)
 
- const xpRequired = computed(() => {
+const xpRequired = computed(() => {
     return 100 + ((level.value || 1) - 1) * 50;
 })
 
@@ -251,14 +251,31 @@ const mascotOptions = [
     { label: 'Pop', file: 'Pop_alien.jpg' }
 ]
 
-// Extraemos los datos del usuario de forma reactiva
+const playerMetrics = computed(() => ({
+    coins: Number(coins.value) || 0,
+    games: Number(partides.value) || 0,
+    inventory: Number(astroStore.inventoryUnits) || 0,
+    level: Number(level.value) || 1,
+    xp: Number(xp.value) || 0
+}))
 
-// Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
 const allAchievements = computed(() => {
+    const unlockedFromDb = new Set(unlockedAchievements.value || [])
+
     return ACHIEVEMENTS.map(a => ({
         ...a,
-        unlocked: [1, 3].includes(a.id)
+        unlocked: (playerMetrics.value[a.metric] || 0) >= (a.goal || 0) || unlockedFromDb.has(a.id)
     }))
+})
+
+onMounted(async () => {
+    if (!astroStore.user) return
+
+    await Promise.all([
+        astroStore.fetchUserStats(),
+        astroStore.fetchUserInventory(),
+        astroStore.fetchUserAchievements()
+    ])
 })
 
 function isSelected(id) {

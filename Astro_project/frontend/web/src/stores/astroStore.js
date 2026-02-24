@@ -14,6 +14,21 @@ function readStoredArray(key, fallback = []) {
     }
 }
 
+function readStoredObject(key, fallback = {}) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) return fallback;
+
+    try {
+        const parsedValue = JSON.parse(rawValue);
+        return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)
+            ? parsedValue
+            : fallback;
+    } catch (error) {
+        console.warn(`⚠️ Valor inválido en localStorage para ${key}. Se usa valor por defecto.`);
+        return fallback;
+    }
+}
+
 function normalizeSelectedAchievements(values = []) {
     return [
         values[0] ?? null,
@@ -28,6 +43,23 @@ function normalizeUnlockedAchievements(values = []) {
             .map((value) => Number(value))
             .filter((value) => Number.isInteger(value) && value > 0)
     )].sort((a, b) => a - b);
+}
+
+function toNonNegativeInteger(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function normalizeActiveBoosters(values = {}) {
+    const source =
+        values && typeof values === 'object' && !Array.isArray(values)
+            ? values
+            : {};
+
+    return {
+        doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
+    };
 }
 
 const DEFAULT_INVENTORY_MAX = 99;
@@ -261,6 +293,7 @@ export const useAstroStore = defineStore('astro', {
         xp: Number(localStorage.getItem('astro_xp')) || 0,
         streak: Number(localStorage.getItem('astro_streak')) || 0,
         streakFreezes: Number(localStorage.getItem('astro_streak_freezes')) || 0,
+        activeBoosters: normalizeActiveBoosters(readStoredObject('astro_active_boosters', {})),
         needsFreeze: false,
         inventory: [],
         selectedAchievements: normalizeSelectedAchievements(readStoredArray('astro_selected_achievements', [null, null, null])),
@@ -349,6 +382,7 @@ export const useAstroStore = defineStore('astro', {
                 this.xp = data.profile.xp;
                 this.streak = data.profile.streak || 0;
                 this.streakFreezes = data.profile.streakFreezes || 0;
+                this.activeBoosters = normalizeActiveBoosters(data.profile.activeBoosters || {});
                 this.needsFreeze = !!data.profile.needsFreeze;
                 this.lastActivity = data.profile.lastActivity || null;
                 this.lastGame = data.profile.lastGame || null;
@@ -371,6 +405,7 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_xp', this.xp);
                 localStorage.setItem('astro_streak', this.streak);
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
@@ -405,6 +440,7 @@ export const useAstroStore = defineStore('astro', {
                 this.partides = data.gamesPlayed ?? this.partides;
                 this.streak = data.streak ?? this.streak;
                 this.streakFreezes = data.streakFreezes ?? this.streakFreezes;
+                this.activeBoosters = normalizeActiveBoosters(data.activeBoosters ?? this.activeBoosters);
                 this.lastActivity = data.lastActivity ?? this.lastActivity;
                 this.lastGame = data.lastGame ?? this.lastGame;
 
@@ -412,6 +448,7 @@ export const useAstroStore = defineStore('astro', {
                 this.dailyMissions = data.dailyMissions || [];
                 this.weeklyMissions = data.weeklyMissions || [];
                 this.friends = data.friends || [];
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -491,11 +528,15 @@ export const useAstroStore = defineStore('astro', {
                 this.xp = data.newXp !== undefined ? data.newXp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
                 this.streak = data.streak !== undefined ? data.streak : this.streak;
+                this.activeBoosters = normalizeActiveBoosters(data.activeBoosters ?? this.activeBoosters);
+                this.dailyMissions = data.dailyMissions || this.dailyMissions;
+                this.weeklyMissions = data.weeklyMissions || this.weeklyMissions;
                 this.needsFreeze = !!data.needsFreeze;
                 this.lastActivity = new Date().toISOString();
                 this.lastGame = new Date().toISOString();
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
 
                 if (data.newRank) {
                     this.rank = data.newRank;
@@ -540,6 +581,39 @@ export const useAstroStore = defineStore('astro', {
             }
         },
 
+        async useInventoryItem(itemId) {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay sesión activa." };
+            }
+
+            const parsedItemId = toPositiveInteger(itemId);
+            if (!parsedItemId) {
+                return { success: false, message: "Objeto inválido." };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/inventory/use-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, itemId: parsedItemId })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "No se pudo usar el objeto.");
+
+                this.inventory = normalizeInventoryItems(data.inventory || []);
+                this.activeBoosters = normalizeActiveBoosters(data.activeBoosters ?? this.activeBoosters);
+                this.dailyMissions = data.dailyMissions || this.dailyMissions;
+                this.weeklyMissions = data.weeklyMissions || this.weeklyMissions;
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
+
+                return { success: true, data };
+            } catch (error) {
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
         async claimMissionReward(missionId, type = 'daily') {
             this.error = null;
             if (!this.user) return { success: false, message: "No hay sesión activa." };
@@ -577,6 +651,10 @@ export const useAstroStore = defineStore('astro', {
                 const data = await response.json();
 
                 this.inventory = normalizeInventoryItems(data.inventory || []);
+                if (data.activeBoosters !== undefined) {
+                    this.activeBoosters = normalizeActiveBoosters(data.activeBoosters);
+                    localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
+                }
                 return this.inventory;
             } catch (error) {
                 console.error("Error al traer inventario:", error);
@@ -744,6 +822,7 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_plan');
             localStorage.removeItem('astro_level'); // Opcional, pero buena práctica
             localStorage.removeItem('astro_xp');    // Opcional, pero buena práctica
+            localStorage.removeItem('astro_active_boosters');
             localStorage.removeItem('astro_selected_achievements');
             localStorage.removeItem('astro_unlocked_achievements');
             localStorage.removeItem('astro_avatar');
@@ -862,6 +941,10 @@ export const useAstroStore = defineStore('astro', {
                 this.needsFreeze = false;
                 if (Array.isArray(data.inventory)) {
                     this.inventory = normalizeInventoryItems(data.inventory);
+                }
+                if (data.activeBoosters !== undefined) {
+                    this.activeBoosters = normalizeActiveBoosters(data.activeBoosters);
+                    localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
                 }
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
 

@@ -5,8 +5,29 @@ function registerInventoryRoutes(app, {
     serializeInventory,
     enrichInventory,
     toPositiveInteger,
-    getInventoryCatalogItem
+    getInventoryCatalogItem,
+    normalizeActiveBoosters,
+    getBoosterFieldByItemId,
+    addBoosterDuration
 }) {
+    const updateMissionProgress = (missions, type, amount) => {
+        if (!Array.isArray(missions)) return [];
+
+        return missions.map((mission) => {
+            if (mission.completed || mission.claimed) return mission;
+
+            if (mission.type === type) {
+                const nextProgress = Math.min(mission.goal || 0, (mission.progress || 0) + amount);
+                mission.progress = nextProgress;
+                if (nextProgress >= (mission.goal || 0)) {
+                    mission.completed = true;
+                }
+            }
+
+            return mission;
+        });
+    };
+
     app.post('/api/user/use-freeze', async (req, res) => {
         const { user } = req.body;
         if (!user) return res.status(400).json({ success: false, message: 'Usuario requerido' });
@@ -51,7 +72,8 @@ function registerInventoryRoutes(app, {
                 success: true,
                 streak: currentUser.streak,
                 streakFreezes: updatedFreezeUnits,
-                inventory: enrichInventory(normalizedInventory)
+                inventory: enrichInventory(normalizedInventory),
+                activeBoosters: normalizeActiveBoosters(currentUser.activeBoosters)
             });
         } catch (error) {
             console.error('Error al usar congelador:', error);
@@ -63,16 +85,94 @@ function registerInventoryRoutes(app, {
         const username = req.params.username;
         try {
             const { users } = getCollections();
-            const userDoc = await users.findOne({ user: username }, { projection: { inventory: 1, streakFreezes: 1 } });
+            const userDoc = await users.findOne(
+                { user: username },
+                { projection: { inventory: 1, streakFreezes: 1, activeBoosters: 1 } }
+            );
 
             if (!userDoc) return res.status(404).json({ message: 'Usuario no encontrado' });
 
             const normalizedInventory = await normalizeAndPersistInventory(userDoc, users);
 
-            res.json({ inventory: enrichInventory(normalizedInventory) });
+            res.json({
+                inventory: enrichInventory(normalizedInventory),
+                activeBoosters: normalizeActiveBoosters(userDoc.activeBoosters)
+            });
         } catch (error) {
             console.error('Error al obtener inventario:', error);
             res.status(500).json({ message: 'Error al obtener el inventario.' });
+        }
+    });
+
+    app.post('/api/inventory/use-item', async (req, res) => {
+        const { user, itemId } = req.body;
+        const parsedItemId = toPositiveInteger(itemId);
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Usuario requerido.' });
+        }
+        if (!parsedItemId) {
+            return res.status(400).json({ success: false, message: 'Item inválido.' });
+        }
+
+        const boosterField = getBoosterFieldByItemId(parsedItemId);
+        if (!boosterField) {
+            return res.status(400).json({ success: false, message: 'Este objeto no se puede usar desde inventario.' });
+        }
+
+        try {
+            const { users } = getCollections();
+            const currentUser = await users.findOne({ user });
+            if (!currentUser) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+            }
+
+            let normalizedInventory = await normalizeAndPersistInventory(currentUser, users);
+            const itemIndex = normalizedInventory.findIndex((entry) => entry.id === parsedItemId);
+
+            if (itemIndex === -1 || normalizedInventory[itemIndex].quantity <= 0) {
+                return res.status(400).json({ success: false, message: 'No tienes unidades disponibles.' });
+            }
+
+            if (normalizedInventory[itemIndex].quantity > 1) {
+                normalizedInventory[itemIndex].quantity -= 1;
+            } else {
+                normalizedInventory.splice(itemIndex, 1);
+            }
+
+            normalizedInventory = serializeInventory(normalizedInventory);
+            const nextActiveBoosters = addBoosterDuration(
+                normalizeActiveBoosters(currentUser.activeBoosters),
+                boosterField,
+                3
+            );
+
+            const dailyMissions = updateMissionProgress(currentUser.dailyMissions || [], 'item', 1);
+            const weeklyMissions = updateMissionProgress(currentUser.weeklyMissions || [], 'item', 1);
+
+            await users.updateOne(
+                { user },
+                {
+                    $set: {
+                        inventory: normalizedInventory,
+                        activeBoosters: nextActiveBoosters,
+                        streakFreezes: getInventoryQuantity(normalizedInventory, 2),
+                        dailyMissions,
+                        weeklyMissions,
+                        lastActivity: new Date()
+                    }
+                }
+            );
+
+            res.json({
+                success: true,
+                inventory: enrichInventory(normalizedInventory),
+                activeBoosters: nextActiveBoosters,
+                dailyMissions,
+                weeklyMissions
+            });
+        } catch (error) {
+            console.error('Error usando item del inventario:', error);
+            res.status(500).json({ success: false, message: 'Error al usar el objeto.' });
         }
     });
 

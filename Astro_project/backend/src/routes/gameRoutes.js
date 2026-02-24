@@ -23,7 +23,15 @@ const updateMissionProgress = (missions, type, amount) => {
     });
 };
 
-function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
+function registerGameRoutes(app, {
+    getCollections,
+    updateStreak,
+    JERARQUIA,
+    normalizeActiveBoosters,
+    consumeBoostersForCompletedGame,
+    getScoreMultiplier,
+    getCoinsMultiplier
+}) {
     app.post('/api/games/complete', async (req, res) => {
         const { user, game, score = 0 } = req.body;
 
@@ -39,17 +47,21 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
             // 1. CÁLCULOS DE PUNTUACIÓN Y RECOMPENSAS
             const parsedScore = Number.parseInt(score, 10);
             const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-            
-            // Tus recompensas actuales (Score / 10)
-            const rewards = Math.floor(normalizedScore / 10); 
 
+            const currentBoosters = normalizeActiveBoosters(currentUser.activeBoosters);
+            const scoreMultiplier = getScoreMultiplier(currentBoosters);
+            const coinsMultiplier = getCoinsMultiplier(currentBoosters);
+            const boostedScore = normalizedScore * scoreMultiplier;
+
+            const xpEarned = Math.floor(boostedScore / 10);
+            const coinsEarned = xpEarned * coinsMultiplier;
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-            const newBalance = currentCoins + rewards;
+            const newBalance = currentCoins + coinsEarned;
 
             // 2. CÁLCULO DE NIVEL Y XP
             let currentLevel = currentUser.level || 1;
             let currentXp = currentUser.xp || 0;
-            currentXp += rewards;
+            currentXp += xpEarned;
 
             let xpNeeded = 100 + (currentLevel - 1) * 50;
             let leveledUp = false;
@@ -74,25 +86,29 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
             dailyMissions = updateMissionProgress(dailyMissions, 'games', 1);
             weeklyMissions = updateMissionProgress(weeklyMissions, 'games', 1);
 
-            // B) Actualizar por Monedas ganadas (+rewards en tipo 'coins')
-            dailyMissions = updateMissionProgress(dailyMissions, 'coins', rewards);
-            weeklyMissions = updateMissionProgress(weeklyMissions, 'coins', rewards);
+            // B) Actualizar por Monedas ganadas
+            dailyMissions = updateMissionProgress(dailyMissions, 'coins', coinsEarned);
+            weeklyMissions = updateMissionProgress(weeklyMissions, 'coins', coinsEarned);
 
-            // C) Actualizar por XP ganada (+rewards en tipo 'xp')
-            dailyMissions = updateMissionProgress(dailyMissions, 'xp', rewards);
-            weeklyMissions = updateMissionProgress(weeklyMissions, 'xp', rewards);
+            // C) Actualizar por XP ganada
+            dailyMissions = updateMissionProgress(dailyMissions, 'xp', xpEarned);
+            weeklyMissions = updateMissionProgress(weeklyMissions, 'xp', xpEarned);
 
 
             // 5. GESTIÓN DE RACHA Y GUARDADO
             const streakResult = await updateStreak(user, true);
+            const nextBoosters = consumeBoostersForCompletedGame(currentBoosters);
 
             await Promise.all([
                 partides.insertOne({
                     user,
                     game,
-                    score: normalizedScore,
-                    coinsEarned: rewards,
-                    xpEarned: rewards,
+                    score: boostedScore,
+                    rawScore: normalizedScore,
+                    scoreMultiplier,
+                    coinsMultiplier,
+                    coinsEarned,
+                    xpEarned,
                     createdAt: new Date()
                 }),
                 users.updateOne(
@@ -104,6 +120,7 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
                             xp: currentXp,
                             rank: currentRank,
                             streak: streakResult.streak,
+                            activeBoosters: nextBoosters,
                             lastActivity: new Date(),
                             // GUARDAMOS LAS MISIONES ACTUALIZADAS
                             dailyMissions: dailyMissions,
@@ -118,8 +135,13 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
             res.json({
                 success: true,
                 message: 'Partida registrada correctamente.',
-                coinsEarned: rewards,
-                xpEarned: rewards,
+                scoreMultiplier,
+                coinsMultiplier,
+                rawScore: normalizedScore,
+                boostedScore,
+                coinsEarned,
+                xpEarned,
+                activeBoosters: nextBoosters,
                 newBalance,
                 newLevel: currentLevel,
                 newXp: currentXp,
