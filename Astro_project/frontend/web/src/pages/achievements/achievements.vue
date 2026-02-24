@@ -196,7 +196,7 @@ const syncingUnlocked = ref(false)
 const playerMetrics = computed(() => ({
     coins: Number(astroStore.coins) || 0,
     games: Number(astroStore.partides) || 0,
-    inventory: astroStore.inventory?.length || 0,
+    inventory: Number(astroStore.inventoryUnits) || 0,
     level: Number(astroStore.level) || 1,
     xp: Number(astroStore.xp) || 0
 }))

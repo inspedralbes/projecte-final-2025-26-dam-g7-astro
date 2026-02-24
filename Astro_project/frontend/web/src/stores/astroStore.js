@@ -30,6 +30,226 @@ function normalizeUnlockedAchievements(values = []) {
     )].sort((a, b) => a - b);
 }
 
+const DEFAULT_INVENTORY_MAX = 99;
+
+const INVENTORY_CATALOG = Object.freeze({
+    1: {
+        id: 1,
+        name: 'Pack de Vidas',
+        desc: 'Recupera 5 vidas inmediatamente.',
+        icon: 'mdi-heart-multiple',
+        color: 'red-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    2: {
+        id: 2,
+        name: 'Congelar Racha',
+        desc: 'Protege tu racha un día.',
+        icon: 'mdi-snowflake',
+        color: 'cyan-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    3: {
+        id: 3,
+        name: 'Doble de Monedas',
+        desc: 'Multiplica x2 las monedas ganadas.',
+        icon: 'mdi-piggy-bank',
+        color: 'yellow-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    4: {
+        id: 4,
+        name: 'Doble Puntuación',
+        desc: 'Multiplica x2 los puntos obtenidos.',
+        icon: 'mdi-star-shooting',
+        color: 'orange-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    101: {
+        id: 101,
+        name: 'Pin Comandante',
+        desc: 'Insignia dorada.',
+        icon: 'mdi-medal',
+        color: 'amber-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    102: {
+        id: 102,
+        name: 'Skin Cyberpunk',
+        desc: 'Aspecto robótico.',
+        icon: 'mdi-robot',
+        color: 'purple-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    103: {
+        id: 103,
+        name: 'Mascota Dron',
+        desc: 'Un compañero fiel.',
+        icon: 'mdi-quadcopter',
+        color: 'green-accent-3',
+        cat: 'pets',
+        maxQuantity: 1
+    },
+    104: {
+        id: 104,
+        name: 'Rastro de Neón',
+        desc: 'Efectos visuales.',
+        icon: 'mdi-creation',
+        color: 'pink-accent-3',
+        cat: 'trails',
+        maxQuantity: 1
+    },
+    201: {
+        id: 201,
+        name: 'Pin Raro',
+        desc: 'Insignia rara obtenida en la ruleta.',
+        icon: 'mdi-decagram',
+        color: 'purple-accent-2',
+        cat: 'collectible',
+        maxQuantity: 99
+    },
+    202: {
+        id: 202,
+        name: 'Avatar Ninja',
+        desc: 'Aspecto ninja obtenido en la ruleta.',
+        icon: 'mdi-ninja',
+        color: 'blue-accent-2',
+        cat: 'skin',
+        maxQuantity: 1
+    }
+});
+
+const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
+    'Vida Extra': 1,
+    'Pack de Vidas': 1,
+    'Congelar Racha': 2,
+    'Doble de Monedas': 3,
+    'Doble Puntuación': 4,
+    'Pin Comandante': 101,
+    'Skin Cyberpunk': 102,
+    'Mascota Dron': 103,
+    'Rastro de Neón': 104,
+    'Pin Raro': 201,
+    'Avatar Ninja': 202
+});
+
+const LEGACY_WHEEL_REWARD_TO_ITEM = Object.freeze({
+    0: 1,
+    1: 201,
+    2: 202
+});
+
+function toInteger(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+}
+
+function toPositiveInteger(value) {
+    const parsed = toInteger(value);
+    return parsed !== null && parsed > 0 ? parsed : null;
+}
+
+function resolveInventoryItemId(rawItem) {
+    const candidate =
+        rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+            ? rawItem.itemId ?? rawItem.id ?? rawItem.name ?? rawItem.label
+            : rawItem;
+
+    if (typeof candidate === 'number' && Number.isInteger(candidate)) {
+        return candidate;
+    }
+
+    if (typeof candidate !== 'string') return null;
+
+    const trimmed = candidate.trim();
+    if (!trimmed) return null;
+
+    if (Object.prototype.hasOwnProperty.call(LEGACY_ITEM_NAME_TO_ID, trimmed)) {
+        return LEGACY_ITEM_NAME_TO_ID[trimmed];
+    }
+
+    const legacyPrizeMatch = trimmed.match(/^prize_\d+_(\d+)$/);
+    if (legacyPrizeMatch) {
+        const legacyWheelId = toInteger(legacyPrizeMatch[1]);
+        if (
+            legacyWheelId !== null &&
+            Object.prototype.hasOwnProperty.call(LEGACY_WHEEL_REWARD_TO_ITEM, legacyWheelId)
+        ) {
+            return LEGACY_WHEEL_REWARD_TO_ITEM[legacyWheelId];
+        }
+    }
+
+    return toInteger(trimmed);
+}
+
+function normalizeInventoryItems(values = []) {
+    const source = Array.isArray(values) ? values : [];
+    const mergedById = new Map();
+
+    for (const rawItem of source) {
+        const itemId = resolveInventoryItemId(rawItem);
+        const catalogItem = INVENTORY_CATALOG[itemId];
+        if (!catalogItem) continue;
+
+        const rawMax =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? toPositiveInteger(rawItem.maxQuantity)
+                : null;
+        const maxQuantity = rawMax || catalogItem.maxQuantity || DEFAULT_INVENTORY_MAX;
+
+        const rawQuantity =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? rawItem.quantity ?? rawItem.qty ?? rawItem.units
+                : 1;
+        const parsedQuantity = toPositiveInteger(rawQuantity) || 1;
+        const safeQuantity = Math.min(maxQuantity, parsedQuantity);
+
+        const previous = mergedById.get(itemId);
+        const nextQuantity = Math.min(maxQuantity, (previous?.quantity || 0) + safeQuantity);
+        const itemCat =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? rawItem.cat || catalogItem.cat
+                : catalogItem.cat;
+        const isEquipable = itemCat !== 'items';
+        const equippedCandidate =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? !!rawItem.equipped
+                : false;
+
+        mergedById.set(itemId, {
+            id: itemId,
+            quantity: nextQuantity,
+            maxQuantity,
+            equipped: isEquipable ? !!(previous?.equipped || equippedCandidate) : false,
+            name:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.name || catalogItem.name
+                    : catalogItem.name,
+            desc:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.desc || catalogItem.desc
+                    : catalogItem.desc,
+            icon:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.icon || catalogItem.icon
+                    : catalogItem.icon,
+            color:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.color || catalogItem.color
+                    : catalogItem.color,
+            cat: itemCat
+        });
+    }
+
+    return [...mergedById.values()].sort((a, b) => a.id - b.id);
+}
+
 export const useAstroStore = defineStore('astro', {
     state: () => ({
         user: localStorage.getItem('astro_user') || null,
@@ -63,6 +283,12 @@ export const useAstroStore = defineStore('astro', {
             return last.getFullYear() === now.getFullYear() &&
                 last.getMonth() === now.getMonth() &&
                 last.getDate() === now.getDate();
+        },
+        inventoryUnits: (state) => {
+            return (state.inventory || []).reduce((sum, item) => {
+                const quantity = Number(item?.quantity);
+                return sum + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+            }, 0);
         }
     },
 
@@ -172,13 +398,13 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
                 this.coins = data.coins !== undefined ? data.coins : this.coins;
-                this.level = data.stats?.level !== undefined ? data.stats.level : this.level;
-                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;
+                this.level = data.level !== undefined ? data.level : this.level;
+                this.xp = data.xp !== undefined ? data.xp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
-                this.streak = data.stats?.streak !== undefined ? data.stats.streak : this.streak;
-                this.streakFreezes = data.stats?.streakFreezes !== undefined ? data.stats.streakFreezes : this.streakFreezes;
-                this.lastActivity = data.stats?.lastActivity !== undefined ? data.stats.lastActivity : this.lastActivity;
-                this.lastGame = data.stats?.lastGame !== undefined ? data.stats.lastGame : this.lastGame;
+                this.streak = data.streak !== undefined ? data.streak : this.streak;
+                this.streakFreezes = data.streakFreezes !== undefined ? data.streakFreezes : this.streakFreezes;
+                this.lastActivity = data.lastActivity !== undefined ? data.lastActivity : this.lastActivity;
+                this.lastGame = data.lastGame !== undefined ? data.lastGame : this.lastGame;
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -274,14 +500,19 @@ export const useAstroStore = defineStore('astro', {
 
                 // ACTUALIZACIÓN DEL ESTADO GLOBAL
                 this.coins = data.newBalance;
-                this.inventory.push(data.item); // <--- Guardamos el inventario actualizado
+                this.inventory = normalizeInventoryItems(data.inventory || []);
 
-                if (item.id === 2) {
+                if (data.streakFreezes !== undefined) {
+                    this.streakFreezes = data.streakFreezes;
+                    localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                }
+
+                if (Number(item?.id) === 2 && data.streakFreezes === undefined) {
                     this.streakFreezes++;
                     localStorage.setItem('astro_streak_freezes', this.streakFreezes);
                 }
 
-                return { success: true };
+                return { success: true, data };
             } catch (error) {
                 return { success: false, message: error.message };
             }
@@ -293,7 +524,7 @@ export const useAstroStore = defineStore('astro', {
                 const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/inventory`);
                 const data = await response.json();
 
-                this.inventory = data.inventory || []; // <--- Actualizamos el state
+                this.inventory = normalizeInventoryItems(data.inventory || []);
                 return this.inventory;
             } catch (error) {
                 console.error("Error al traer inventario:", error);
@@ -540,6 +771,9 @@ export const useAstroStore = defineStore('astro', {
 
                 this.streakFreezes = data.streakFreezes;
                 this.needsFreeze = false;
+                if (Array.isArray(data.inventory)) {
+                    this.inventory = normalizeInventoryItems(data.inventory);
+                }
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
 
                 return { success: true };
