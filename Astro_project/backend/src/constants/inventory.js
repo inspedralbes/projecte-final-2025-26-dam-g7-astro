@@ -136,10 +136,16 @@ const WHEEL_ITEMS = [
     { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 }
 ];
 
+const BOOSTER_ITEMS = Object.freeze({
+    3: { key: 'doubleCoinsGames', durationGames: 3 },
+    4: { key: 'doubleScoreGames', durationGames: 3 }
+});
+
 module.exports = {
     MAX_INVENTORY_UNITS,
     INVENTORY_ITEMS,
     LEGACY_ITEM_NAME_TO_ID,
     LEGACY_WHEEL_REWARD_ID_TO_ITEM_ID,
-    WHEEL_ITEMS
+    WHEEL_ITEMS,
+    BOOSTER_ITEMS
 };

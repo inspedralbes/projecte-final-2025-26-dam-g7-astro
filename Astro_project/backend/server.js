@@ -6,12 +6,17 @@ const cors = require('cors');
 const { connectDB, getDB } = require('./db');
 
 const { JERARQUIA } = require('./src/constants/progression');
+const { BOOSTER_ITEMS } = require('./src/constants/inventory');
 const { createGetCollections } = require('./src/services/collections');
 const { createEnsureIndexes } = require('./src/services/indexes');
 const inventoryService = require('./src/services/inventoryService');
 const { createGetUserStats } = require('./src/services/statsService');
 const { createUpdateStreak } = require('./src/services/streakService');
 const { normalizeAchievementIds } = require('./src/utils/achievements');
+const {
+    DEFAULT_ACTIVE_BOOSTERS,
+    normalizeActiveBoosters
+} = require('./src/utils/boosters');
 
 const { registerStatsRoutes } = require('./src/routes/statsRoutes');
 const { registerGameRoutes } = require('./src/routes/gameRoutes');
@@ -35,7 +40,8 @@ const ensureIndexes = createEnsureIndexes(getDB);
 const getUserStats = createGetUserStats({
     getCollections,
     normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
-    getInventoryQuantity: inventoryService.getInventoryQuantity
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    normalizeActiveBoosters
 });
 
 const updateStreak = createUpdateStreak({
@@ -45,13 +51,15 @@ const updateStreak = createUpdateStreak({
 });
 
 registerStatsRoutes(app, { getUserStats });
-registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA });
+registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA, normalizeActiveBoosters });
 registerAuthRoutes(app, {
     getDB,
     updateStreak,
     normalizeAchievementIds,
     normalizeAndPersistInventory: inventoryService.normalizeAndPersistInventory,
-    getInventoryQuantity: inventoryService.getInventoryQuantity
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    DEFAULT_ACTIVE_BOOSTERS,
+    normalizeActiveBoosters
 });
 registerShopRoutes(app, {
     getCollections,
@@ -72,7 +80,9 @@ registerInventoryRoutes(app, {
     serializeInventory: inventoryService.serializeInventory,
     enrichInventory: inventoryService.enrichInventory,
     toPositiveInteger: inventoryService.toPositiveInteger,
-    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem
+    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem,
+    BOOSTER_ITEMS,
+    normalizeActiveBoosters
 });
 
 registerWsHandlers(wss);

@@ -3,7 +3,9 @@ function registerAuthRoutes(app, {
     updateStreak,
     normalizeAchievementIds,
     normalizeAndPersistInventory,
-    getInventoryQuantity
+    getInventoryQuantity,
+    DEFAULT_ACTIVE_BOOSTERS,
+    normalizeActiveBoosters
 }) {
     app.post('/api/auth/register', async (req, res) => {
         const { username, password, rank } = req.body;
@@ -31,6 +33,7 @@ function registerAuthRoutes(app, {
                 unlockedAchievements: [],
                 streak: 0,
                 streakFreezes: 0,
+                activeBoosters: { ...DEFAULT_ACTIVE_BOOSTERS },
                 lastActivity: new Date(),
                 createdAt: new Date()
             };
@@ -59,6 +62,14 @@ function registerAuthRoutes(app, {
             const normalizedInventory = await normalizeAndPersistInventory(foundUser, usersCollection);
             const freezeUnits = getInventoryQuantity(normalizedInventory, 2);
             const streakResult = await updateStreak(foundUser.user, false);
+            const activeBoosters = normalizeActiveBoosters(foundUser.activeBoosters);
+
+            if (JSON.stringify(activeBoosters) !== JSON.stringify(foundUser.activeBoosters || {})) {
+                await usersCollection.updateOne(
+                    { _id: foundUser._id },
+                    { $set: { activeBoosters } }
+                );
+            }
 
             res.json({
                 status: 'Sincronización completada',
@@ -74,6 +85,7 @@ function registerAuthRoutes(app, {
                     unlockedAchievements: normalizeAchievementIds(foundUser.unlockedAchievements || []),
                     streak: streakResult.streak,
                     streakFreezes: Math.max(foundUser.streakFreezes || 0, freezeUnits),
+                    activeBoosters,
                     needsFreeze: streakResult.needsFreeze,
                     lastActivity: foundUser.lastActivity,
                     lastGame: streakResult.lastGame

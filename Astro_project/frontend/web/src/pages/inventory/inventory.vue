@@ -37,17 +37,49 @@
                                     x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
                                 </v-chip>
                                 <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
+                                <v-chip
+                                    v-if="getBoosterRemainingGames(item) > 0"
+                                    size="x-small"
+                                    color="orange-accent-2"
+                                    variant="tonal"
+                                    class="mb-3"
+                                >
+                                    Activo: {{ getBoosterRemainingGames(item) }} partidas
+                                </v-chip>
                                 <v-spacer></v-spacer>
                                 <v-btn
+                                    v-if="isUsable(item)"
                                     block
-                                    :color="!isEquipable(item) ? 'grey-darken-2' : (item.equipped ? 'success' : 'cyan-accent-3')"
-                                    :variant="!isEquipable(item) ? 'outlined' : (item.equipped ? 'tonal' : 'flat')"
+                                    color="amber-accent-2"
+                                    variant="flat"
                                     rounded="pill"
                                     class="font-weight-bold text-black"
-                                    :disabled="!isEquipable(item)"
+                                    :disabled="item.quantity <= 0"
+                                    @click="useItem(item)"
+                                >
+                                    UTILIZAR
+                                </v-btn>
+                                <v-btn
+                                    v-else-if="isEquipable(item)"
+                                    block
+                                    :color="item.equipped ? 'success' : 'cyan-accent-3'"
+                                    :variant="item.equipped ? 'tonal' : 'flat'"
+                                    rounded="pill"
+                                    class="font-weight-bold text-black"
                                     @click="toggleEquip(item)"
                                 >
-                                    {{ !isEquipable(item) ? 'NO EQUIPABLE' : (item.equipped ? 'EQUIPADO' : 'EQUIPAR') }}
+                                    {{ item.equipped ? 'EQUIPADO' : 'EQUIPAR' }}
+                                </v-btn>
+                                <v-btn
+                                    v-else
+                                    block
+                                    color="grey-darken-2"
+                                    variant="outlined"
+                                    rounded="pill"
+                                    class="font-weight-bold"
+                                    disabled
+                                >
+                                    NO EQUIPABLE
                                 </v-btn>
                             </v-card>
                         </v-col>
@@ -94,7 +126,10 @@ const filteredItems = computed(() => {
 // Solo un onMounted para traer los datos al cargar la vista
 onMounted(async () => {
     if (astroStore.user) {
-        await astroStore.fetchUserInventory();
+        await Promise.all([
+            astroStore.fetchUserInventory(),
+            astroStore.fetchUserStats()
+        ]);
     }
 });
 
@@ -121,8 +156,31 @@ async function toggleEquip(item) {
     }
 }
 
+async function useItem(item) {
+    if (!isUsable(item)) return;
+
+    const result = await astroStore.useInventoryItem(Number(item.id));
+    if (!result.success) {
+        console.error("Error al utilizar objeto:", result.message);
+    }
+}
+
 function isEquipable(item) {
     return item?.cat !== 'items';
+}
+
+function isUsable(item) {
+    const itemId = Number(item?.id);
+    return item?.cat === 'items' && (itemId === 3 || itemId === 4);
+}
+
+function getBoosterRemainingGames(item) {
+    const itemId = Number(item?.id);
+    const activeBoosters = astroStore.activeBoosters || {};
+
+    if (itemId === 3) return Number(activeBoosters.doubleCoinsGames) || 0;
+    if (itemId === 4) return Number(activeBoosters.doubleScoreGames) || 0;
+    return 0;
 }
 </script>
 

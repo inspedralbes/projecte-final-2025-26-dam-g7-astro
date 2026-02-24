@@ -1,7 +1,8 @@
 function createGetUserStats({
     getCollections,
     normalizeInventoryEntries,
-    getInventoryQuantity
+    getInventoryQuantity,
+    normalizeActiveBoosters
 }) {
     return async function getUserStats(username) {
         const { users, partides } = getCollections();
@@ -20,7 +21,8 @@ function createGetUserStats({
                     streak: 1,
                     lastActivity: 1,
                     streakFreezes: 1,
-                    lastGame: 1
+                    lastGame: 1,
+                    activeBoosters: 1
                 }
             }
         );
@@ -30,6 +32,7 @@ function createGetUserStats({
         const normalizedInventory = normalizeInventoryEntries(userDoc.inventory || []);
         const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const freezeUnits = getInventoryQuantity(normalizedInventory, 2);
+        const activeBoosters = normalizeActiveBoosters(userDoc.activeBoosters);
 
         const [gamesPlayed, gamesByTypeRaw] = await Promise.all([
             partides.countDocuments({ user: username }),
@@ -59,6 +62,7 @@ function createGetUserStats({
             gamesByType,
             streak: userDoc.streak || 0,
             streakFreezes: Math.max(userDoc.streakFreezes || 0, freezeUnits),
+            activeBoosters,
             lastActivity: userDoc.lastActivity,
             lastGame: userDoc.lastGame
         };

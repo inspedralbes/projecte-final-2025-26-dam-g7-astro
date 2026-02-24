@@ -5,7 +5,9 @@ function registerInventoryRoutes(app, {
     serializeInventory,
     enrichInventory,
     toPositiveInteger,
-    getInventoryCatalogItem
+    getInventoryCatalogItem,
+    BOOSTER_ITEMS,
+    normalizeActiveBoosters
 }) {
     app.post('/api/user/use-freeze', async (req, res) => {
         const { user } = req.body;
@@ -63,16 +65,97 @@ function registerInventoryRoutes(app, {
         const username = req.params.username;
         try {
             const { users } = getCollections();
-            const userDoc = await users.findOne({ user: username }, { projection: { inventory: 1, streakFreezes: 1 } });
+            const userDoc = await users.findOne(
+                { user: username },
+                { projection: { inventory: 1, streakFreezes: 1, activeBoosters: 1 } }
+            );
 
             if (!userDoc) return res.status(404).json({ message: 'Usuario no encontrado' });
 
             const normalizedInventory = await normalizeAndPersistInventory(userDoc, users);
+            const activeBoosters = normalizeActiveBoosters(userDoc.activeBoosters);
 
-            res.json({ inventory: enrichInventory(normalizedInventory) });
+            res.json({
+                inventory: enrichInventory(normalizedInventory),
+                activeBoosters
+            });
         } catch (error) {
             console.error('Error al obtener inventario:', error);
             res.status(500).json({ message: 'Error al obtener el inventario.' });
+        }
+    });
+
+    app.post('/api/inventory/use-item', async (req, res) => {
+        const { user, itemId } = req.body;
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Usuario requerido.' });
+        }
+
+        const parsedItemId = toPositiveInteger(itemId);
+        if (!parsedItemId) {
+            return res.status(400).json({ success: false, message: 'Item inválido.' });
+        }
+
+        const boosterConfig = BOOSTER_ITEMS[parsedItemId];
+        if (!boosterConfig) {
+            return res.status(400).json({ success: false, message: 'Este objeto no se puede utilizar.' });
+        }
+
+        try {
+            const { users } = getCollections();
+            const userDoc = await users.findOne({ user });
+
+            if (!userDoc) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+            }
+
+            const normalizedInventory = await normalizeAndPersistInventory(userDoc, users);
+            const itemIndex = normalizedInventory.findIndex((entry) => entry.id === parsedItemId);
+
+            if (itemIndex === -1 || normalizedInventory[itemIndex].quantity <= 0) {
+                return res.status(400).json({ success: false, message: 'No tienes unidades disponibles de este objeto.' });
+            }
+
+            const updatedInventory = [...normalizedInventory];
+            if (updatedInventory[itemIndex].quantity > 1) {
+                updatedInventory[itemIndex] = {
+                    ...updatedInventory[itemIndex],
+                    quantity: updatedInventory[itemIndex].quantity - 1
+                };
+            } else {
+                updatedInventory.splice(itemIndex, 1);
+            }
+
+            const activeBoosters = normalizeActiveBoosters(userDoc.activeBoosters);
+            const currentValue = activeBoosters[boosterConfig.key] || 0;
+            const nextValue = Math.min(99, currentValue + boosterConfig.durationGames);
+            const updatedBoosters = {
+                ...activeBoosters,
+                [boosterConfig.key]: nextValue
+            };
+
+            const serializedInventory = serializeInventory(updatedInventory);
+
+            await users.updateOne(
+                { _id: userDoc._id },
+                {
+                    $set: {
+                        inventory: serializedInventory,
+                        activeBoosters: updatedBoosters,
+                        lastActivity: new Date()
+                    }
+                }
+            );
+
+            return res.json({
+                success: true,
+                inventory: enrichInventory(serializedInventory),
+                activeBoosters: updatedBoosters
+            });
+        } catch (error) {
+            console.error('Error al usar objeto de inventario:', error);
+            return res.status(500).json({ success: false, message: 'Error al utilizar el objeto.' });
         }
     });
 

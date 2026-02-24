@@ -1,4 +1,9 @@
-function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
+function registerGameRoutes(app, {
+    getCollections,
+    updateStreak,
+    JERARQUIA,
+    normalizeActiveBoosters
+}) {
     app.post('/api/games/complete', async (req, res) => {
         const { user, game, score = 0 } = req.body;
 
@@ -13,14 +18,21 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
 
             const parsedScore = Number.parseInt(score, 10);
             const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
-            const rewards = Math.floor(normalizedScore / 10);
+            const currentBoosters = normalizeActiveBoosters(currentUser.activeBoosters);
+
+            const scoreMultiplier = currentBoosters.doubleScoreGames > 0 ? 2 : 1;
+            const coinsMultiplier = currentBoosters.doubleCoinsGames > 0 ? 2 : 1;
+            const effectiveScore = normalizedScore * scoreMultiplier;
+            const baseRewards = Math.floor(effectiveScore / 10);
+            const xpEarned = baseRewards;
+            const coinsEarned = baseRewards * coinsMultiplier;
 
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-            const newBalance = currentCoins + rewards;
+            const newBalance = currentCoins + coinsEarned;
 
             let currentLevel = currentUser.level || 1;
             let currentXp = currentUser.xp || 0;
-            currentXp += rewards;
+            currentXp += xpEarned;
 
             let xpNeeded = 100 + (currentLevel - 1) * 50;
             let leveledUp = false;
@@ -36,14 +48,21 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
             const currentRank = JERARQUIA[rankIndex];
 
             const streakResult = await updateStreak(user, true);
+            const updatedActiveBoosters = {
+                doubleCoinsGames: Math.max(0, currentBoosters.doubleCoinsGames - (currentBoosters.doubleCoinsGames > 0 ? 1 : 0)),
+                doubleScoreGames: Math.max(0, currentBoosters.doubleScoreGames - (currentBoosters.doubleScoreGames > 0 ? 1 : 0))
+            };
 
             await Promise.all([
                 partides.insertOne({
                     user,
                     game,
                     score: normalizedScore,
-                    coinsEarned: rewards,
-                    xpEarned: rewards,
+                    effectiveScore,
+                    scoreMultiplier,
+                    coinsMultiplier,
+                    coinsEarned,
+                    xpEarned,
                     createdAt: new Date()
                 }),
                 users.updateOne(
@@ -55,6 +74,7 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
                             xp: currentXp,
                             rank: currentRank,
                             streak: streakResult.streak,
+                            activeBoosters: updatedActiveBoosters,
                             lastActivity: new Date()
                         }
                     }
@@ -66,8 +86,11 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
             res.json({
                 success: true,
                 message: 'Partida registrada correctamente.',
-                coinsEarned: rewards,
-                xpEarned: rewards,
+                scoreMultiplier,
+                coinsMultiplier,
+                effectiveScore,
+                coinsEarned,
+                xpEarned,
                 newBalance,
                 newLevel: currentLevel,
                 newXp: currentXp,
@@ -75,6 +98,7 @@ function registerGameRoutes(app, { getCollections, updateStreak, JERARQUIA }) {
                 leveledUp,
                 gamesPlayed,
                 streak: streakResult.streak,
+                activeBoosters: updatedActiveBoosters,
                 needsFreeze: streakResult.needsFreeze,
                 lastGame: streakResult.lastGame
             });

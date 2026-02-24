@@ -228,7 +228,7 @@ const selectionDialog = ref(false)
 const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const currentSlotIndex = ref(null)
-const { user, rank, plan, selectedAchievements, avatar, mascot, level, coins, xp } = storeToRefs(astroStore)
+const { user, rank, plan, selectedAchievements, unlockedAchievements, avatar, mascot, level, coins, xp } = storeToRefs(astroStore)
 
  const xpRequired = computed(() => {
     return 100 + ((level.value || 1) - 1) * 50;
@@ -253,12 +253,18 @@ const mascotOptions = [
 
 // Extraemos los datos del usuario de forma reactiva
 
-// Mostramos todos los logros pero marcamos los bloqueados (Demo: 1 y 3 desbloqueados)
 const allAchievements = computed(() => {
+    const unlockedSet = new Set((unlockedAchievements.value || []).map((id) => Number(id)))
+
     return ACHIEVEMENTS.map(a => ({
         ...a,
-        unlocked: [1, 3].includes(a.id)
+        unlocked: unlockedSet.has(Number(a.id))
     }))
+})
+
+onMounted(async () => {
+    if (!user.value) return
+    await astroStore.fetchUserAchievements()
 })
 
 function isSelected(id) {

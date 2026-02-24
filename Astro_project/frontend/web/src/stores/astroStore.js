@@ -14,6 +14,21 @@ function readStoredArray(key, fallback = []) {
     }
 }
 
+function readStoredObject(key, fallback = {}) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) return fallback;
+
+    try {
+        const parsedValue = JSON.parse(rawValue);
+        return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)
+            ? parsedValue
+            : fallback;
+    } catch (error) {
+        console.warn(`⚠️ Valor inválido en localStorage para ${key}. Se usa valor por defecto.`);
+        return fallback;
+    }
+}
+
 function normalizeSelectedAchievements(values = []) {
     return [
         values[0] ?? null,
@@ -28,6 +43,28 @@ function normalizeUnlockedAchievements(values = []) {
             .map((value) => Number(value))
             .filter((value) => Number.isInteger(value) && value > 0)
     )].sort((a, b) => a - b);
+}
+
+const DEFAULT_ACTIVE_BOOSTERS = Object.freeze({
+    doubleCoinsGames: 0,
+    doubleScoreGames: 0
+});
+
+function clampBoosterGames(value) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) return 0;
+    return Math.min(parsed, 99);
+}
+
+function normalizeActiveBoosters(values = {}) {
+    const source = values && typeof values === 'object' && !Array.isArray(values)
+        ? values
+        : {};
+
+    return {
+        doubleCoinsGames: clampBoosterGames(source.doubleCoinsGames),
+        doubleScoreGames: clampBoosterGames(source.doubleScoreGames)
+    };
 }
 
 const DEFAULT_INVENTORY_MAX = 99;
@@ -262,6 +299,7 @@ export const useAstroStore = defineStore('astro', {
         streak: Number(localStorage.getItem('astro_streak')) || 0,
         streakFreezes: Number(localStorage.getItem('astro_streak_freezes')) || 0,
         needsFreeze: false,
+        activeBoosters: normalizeActiveBoosters(readStoredObject('astro_active_boosters', DEFAULT_ACTIVE_BOOSTERS)),
         inventory: [],
         selectedAchievements: normalizeSelectedAchievements(readStoredArray('astro_selected_achievements', [null, null, null])),
         unlockedAchievements: normalizeUnlockedAchievements(readStoredArray('astro_unlocked_achievements', [])),
@@ -348,6 +386,7 @@ export const useAstroStore = defineStore('astro', {
                 this.streak = data.profile.streak || 0;
                 this.streakFreezes = data.profile.streakFreezes || 0;
                 this.needsFreeze = !!data.profile.needsFreeze;
+                this.activeBoosters = normalizeActiveBoosters(data.profile.activeBoosters || {});
                 this.lastActivity = data.profile.lastActivity || null;
                 this.lastGame = data.profile.lastGame || null;
                 this.token = data.token;
@@ -369,6 +408,7 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_xp', this.xp);
                 localStorage.setItem('astro_streak', this.streak);
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
@@ -406,8 +446,13 @@ export const useAstroStore = defineStore('astro', {
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
                 this.streak = data.streak !== undefined ? data.streak : this.streak;
                 this.streakFreezes = data.streakFreezes !== undefined ? data.streakFreezes : this.streakFreezes;
+                this.activeBoosters = data.activeBoosters !== undefined
+                    ? normalizeActiveBoosters(data.activeBoosters)
+                    : this.activeBoosters;
                 this.lastActivity = data.lastActivity !== undefined ? data.lastActivity : this.lastActivity;
                 this.lastGame = data.lastGame !== undefined ? data.lastGame : this.lastGame;
+
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -473,8 +518,14 @@ export const useAstroStore = defineStore('astro', {
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1);
                 this.streak = data.streak !== undefined ? data.streak : this.streak;
                 this.needsFreeze = !!data.needsFreeze;
+                this.activeBoosters = data.activeBoosters !== undefined
+                    ? normalizeActiveBoosters(data.activeBoosters)
+                    : this.activeBoosters;
                 this.lastActivity = new Date().toISOString();
                 this.lastGame = new Date().toISOString();
+                localStorage.setItem('astro_level', this.level);
+                localStorage.setItem('astro_xp', this.xp);
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
 
@@ -558,6 +609,10 @@ export const useAstroStore = defineStore('astro', {
                 const data = await response.json();
 
                 this.inventory = normalizeInventoryItems(data.inventory || []);
+                if (data.activeBoosters !== undefined) {
+                    this.activeBoosters = normalizeActiveBoosters(data.activeBoosters);
+                    localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
+                }
                 return this.inventory;
             } catch (error) {
                 console.error("Error al traer inventario:", error);
@@ -688,6 +743,7 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_plan');
             localStorage.removeItem('astro_level'); // Opcional, pero buena práctica
             localStorage.removeItem('astro_xp');    // Opcional, pero buena práctica
+            localStorage.removeItem('astro_active_boosters');
             localStorage.removeItem('astro_selected_achievements');
             localStorage.removeItem('astro_unlocked_achievements');
             localStorage.removeItem('astro_avatar');
@@ -788,6 +844,39 @@ export const useAstroStore = defineStore('astro', {
                 console.error("❌ Error sincronizando plan:", error);
                 this.error = "Error al conectar con el servidor: " + error.message;
                 return { success: false, message: this.error };
+            }
+        },
+
+        async useInventoryItem(itemId) {
+            if (!this.user) return { success: false, message: "No hay sesión activa." };
+            const parsedItemId = Number(itemId);
+
+            if (!Number.isInteger(parsedItemId) || parsedItemId <= 0) {
+                return { success: false, message: "Objeto inválido." };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/inventory/use-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        itemId: parsedItemId
+                    })
+                });
+
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+                if (!response.ok) throw new Error(data.message || "No se pudo usar el objeto.");
+
+                this.inventory = normalizeInventoryItems(data.inventory || []);
+                this.activeBoosters = normalizeActiveBoosters(data.activeBoosters || {});
+                localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
+
+                return { success: true, data };
+            } catch (error) {
+                console.error("❌ Error usando objeto de inventario:", error);
+                return { success: false, message: error.message };
             }
         },
 
