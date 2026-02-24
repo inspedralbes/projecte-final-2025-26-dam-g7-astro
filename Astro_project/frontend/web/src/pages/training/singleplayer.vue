@@ -1,49 +1,72 @@
 <template>
-    <v-container fluid class="fill-height bg-deep-purple-darken-4 py-10">
-        <div v-if="!activeGameComponent" class="w-100 text-center mb-10">
-            <h1 class="text-h2 font-weight-black tracking-wide text-white">MAPA ESTEL·LAR</h1>
-            <p class="text-grey-lighten-1">Supera missions per desbloquejar nous sectors</p>
-        </div>
+    <v-container fluid class="space-map pa-0">
 
-        <div v-if="!activeGameComponent" class="levels-container">
-            <div v-for="(game, index) in levelSequence" :key="index" class="level-wrapper">
-                
-                <div 
-                    class="level-node"
-                    :class="{ 
-                        'locked': index + 1 > astroStore.level, 
-                        'current': index + 1 === astroStore.level,
-                        'completed': index + 1 < astroStore.level,
-                        'zig': index % 2 === 0,
-                        'zag': index % 2 !== 0
-                    }"
-                    @click="startSpecificLevel(index)"
-                >
-                    <v-icon v-if="index + 1 < astroStore.level" icon="mdi-check-bold" color="white"></v-icon>
-                    <v-icon v-else-if="index + 1 > astroStore.level" icon="mdi-lock" color="grey-darken-1"></v-icon>
-                    <span v-else class="text-h5 font-weight-bold">{{ index + 1 }}</span>
-                    
-                    <div class="level-label">{{ game.name }}</div>
+        <div v-if="!activeGameComponent" class="map-scroll-container">
+
+            <div class="start-spacer"></div>
+
+            <div class="path-container">
+                <div v-for="(level, index) in levelSequence" :key="index" class="path-row">
+                    <div class="node-wrapper" :class="{
+                        'pos-left': index % 2 === 0,
+                        'pos-right': index % 2 !== 0
+                    }">
+
+                        <div v-if="index < levelSequence.length - 1" class="path-connector"
+                            :class="{ 'connector-flip': index % 2 !== 0 }">
+                            <svg viewBox="0 0 140 140">
+                                <path d="M 0 0 Q 20 70 140 140" class="connector-line"
+                                    :class="{ 'line-active': index + 1 < astroStore.level }" />
+                            </svg>
+                        </div>
+
+                        <div v-if="index + 1 <= astroStore.level" class="floating-label" :class="getLevelState(index)">
+                            {{ level.name }}
+                        </div>
+
+                        <button class="node-btn" :class="[
+                            `state-${getLevelState(index)}`,
+                            { 'is-interactive': index + 1 <= astroStore.level }
+                        ]" @click="handleLevelClick(index)" v-ripple>
+                            <div class="icon-layer">
+                                <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
+                                    class="icon-completed" />
+
+                                <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
+                                    size="34" class="icon-current" />
+
+                                <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
+                            </div>
+
+                            <div class="shine-effect"></div>
+
+                            <div v-if="getLevelState(index) === 'current'" class="stars-particles">
+                                <span>✦</span><span>✦</span>
+                            </div>
+                        </button>
+
+                    </div>
                 </div>
-
-                <div v-if="index < levelSequence.length - 1" class="path-connector" :class="index % 2 === 0 ? 'to-left' : 'to-right'"></div>
             </div>
-            
-            <v-btn to="/" color="white" variant="text" class="mt-10">Tornar a la Base</v-btn>
+
+            <div class="end-spacer"></div>
         </div>
 
-        <div v-else class="w-100 h-100 d-flex justify-center align-center">
-            <component :is="activeGameComponent" @game-over="handleGameOver" />
-        </div>
+        <transition name="fade-zoom">
+            <div v-if="activeGameComponent" class="game-overlay">
+                <v-btn icon="mdi-close" variant="tonal" color="white" class="close-game-btn"
+                    @click="activeGameComponent = null" />
+                <component :is="activeGameComponent" @game-over="handleGameOver" />
+            </div>
+        </transition>
 
-        </v-container>
+    </v-container>
 </template>
 
 <script setup>
-import { shallowRef, computed } from 'vue';
+import { shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 
-// Importación de juegos
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
@@ -51,32 +74,33 @@ import RadarScan from '@/components/games/RadarScan.vue';
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
 
-// Definición de la ruta: Cada índice es un nivel
 const levelSequence = [
-    { name: 'Construcció', component: WordConstruction }, // Nivel 1
-    { name: 'Radar', component: RadarScan },             // Nivel 2
-    { name: 'Rosco', component: SpelledRosco },           // Nivel 3
-    { name: 'Missió 4', component: WordConstruction },    // Nivel 4
-    { name: 'Missió Final', component: RadarScan },       // Nivel 5
+    { name: 'Despegue', component: WordConstruction },
+    { name: 'Navegación', component: RadarScan },
+    { name: 'Comunicaciones', component: SpelledRosco },
+    { name: 'Sistemas', component: WordConstruction },
+    { name: 'Agujero Negro', component: RadarScan },
+    { name: 'Exoplaneta', component: SpelledRosco },
 ];
 
-const startSpecificLevel = (index) => {
+const getLevelState = (index) => {
     const levelNum = index + 1;
-    
-    // Solo permitimos jugar si es su nivel actual o uno ya superado
-    if (levelNum <= astroStore.level) {
+    if (levelNum === astroStore.level) return 'current';
+    if (levelNum < astroStore.level) return 'completed';
+    return 'locked';
+};
+
+const handleLevelClick = (index) => {
+    const state = getLevelState(index);
+    if (state !== 'locked') {
         activeGameComponent.value = levelSequence[index].component;
-    } else {
-        alert("🔒 Aquest sector encara està bloquejat!");
     }
 };
 
 const handleGameOver = async (finalScore) => {
     if (astroStore.user) {
-        // Usamos tu acción existente del Store
-        // El servidor ya debería encargarse de subir el nivel si la puntuación es suficiente
         await astroStore.registerCompletedGame(
-            activeGameComponent.value.__name, 
+            activeGameComponent.value.__name,
             finalScore
         );
     }
@@ -85,161 +109,264 @@ const handleGameOver = async (finalScore) => {
 </script>
 
 <style scoped>
-/* Fondo espacial más profundo y estático para evitar distracciones */
-.bg-deep-purple-darken-4 {
-    background: radial-gradient(circle at 50% 30%, #1a1f3c 0%, #0a0c1a 100%) !important;
+/* 1. FONDO (Igual) */
+.space-map {
+    height: 100%;
+    width: 100%;
+    background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%);
+    position: relative;
+    overflow: hidden;
+    color: white;
+    font-family: 'Nunito', sans-serif;
 }
 
-.levels-container {
+.map-scroll-container {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    padding-top: 20px;
+}
+
+.start-spacer {
+    height: 80px;
+}
+
+.end-spacer {
+    height: 150px;
+}
+
+/* 2. GRID Y POSICIONAMIENTO (Ajustado) */
+.path-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 450px;
+    max-width: 400px;
+    /* Reducido un poco para centrar mejor en móviles */
     margin: 0 auto;
-    padding: 60px 0;
-    gap: 25px; 
 }
 
-.level-wrapper {
-    position: relative;
+.path-row {
     display: flex;
     justify-content: center;
     width: 100%;
-    height: 120px;
-    z-index: 10;
+    height: 140px;
+    /* Altura fija entre niveles */
+    position: relative;
+    /* Borde para depuración (quitar en prod) */
+    /* border: 1px dashed rgba(255,255,255,0.1); */
 }
 
-/* --- PLATAFORMAS HEXAGONALES (Más orgánicas y sólidas) --- */
-.level-node {
+.node-wrapper {
     position: relative;
-    width: 90px;
+    width: 80px;
+    /* Igual al ancho del botón */
     height: 80px;
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
     z-index: 10;
-    /* Efecto 3D simplificado: una sola sombra sólida para dar volumen */
-    filter: drop-shadow(0 8px 0 rgba(0,0,0,0.2));
-    transition: transform 0.2s ease;
 }
 
-/* Zig-Zag con distancias más amigables para el rastreo visual */
-.level-node.zig { transform: translateX(-60px); }
-.level-node.zag { transform: translateX(60px); }
+/* ZIG-ZAG:
+   La distancia horizontal debe coincidir con el ancho del SVG 
+   para que la línea conecte bien.
+   70px izquierda + 70px derecha = 140px de separación total.
+*/
+.pos-left {
+    transform: translateX(-70px);
+}
 
-/* Forma hexagonal con bordes ligeramente más definidos */
-.level-node::before {
-    content: '';
+.pos-right {
+    transform: translateX(70px);
+}
+
+/* 3. CONECTORES (REPARADO) */
+.path-connector {
     position: absolute;
-    inset: 0;
-    background: #e0e0e0;
-    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    /* Nace del centro absoluto del botón */
+    top: 50%;
+    left: 50%;
+
+    /* Dimensiones: 
+       Ancho = Distancia horizontal al siguiente nodo (140px)
+       Alto = Altura de la fila (140px)
+    */
+    width: 140px;
+    height: 140px;
+
     z-index: -1;
-    border: 2px solid rgba(255,255,255,0.1);
+    pointer-events: none;
+    transform-origin: top left;
+    /* Importante para el flip */
 }
 
-/* Tipografía: Aumentamos el tracking y grosor para legibilidad */
-.level-node .v-icon, .level-node span {
-    z-index: 5;
-    color: #2c3e50;
-    font-size: 28px !important;
-    font-weight: 700;
-    font-family: 'Segoe UI', Roboto, sans-serif; /* Fuentes claras */
+/* Si estamos a la derecha (impar), el siguiente está a la izquierda.
+   Volteamos el SVG horizontalmente para que la curva vaya hacia el otro lado.
+*/
+.connector-flip {
+    transform: scaleX(-1);
 }
 
-/* Etiquetas de texto (Sin reflejos y con fondo sutil para leer mejor) */
-.level-label {
+svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    /* Permite que el trazo grueso no se corte */
+}
+
+.connector-line {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 8;
+    /* Un poco más fino para elegancia */
+    stroke-dasharray: 12 10;
+    stroke-linecap: round;
+}
+
+.line-active {
+    stroke: #FFD54F;
+    opacity: 0.6;
+    animation: dash-flow 30s linear infinite;
+}
+
+/* 4. BOTONES (Estabilizados) */
+.node-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    position: relative;
+    outline: none;
+    cursor: default;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Efecto rebote suave */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.node-btn.is-interactive {
+    cursor: pointer;
+}
+
+.node-btn:active {
+    transform: scale(0.92);
+}
+
+/* ESTADOS */
+.state-locked {
+    background-color: #2b3040;
+    box-shadow: 0 6px 0 #181b24, 0 10px 10px rgba(0, 0, 0, 0.3);
+}
+
+.state-completed {
+    background-color: #FFD54F;
+    box-shadow: 0 6px 0 #C49000, 0 10px 15px rgba(255, 213, 79, 0.3);
+}
+
+.state-completed:active {
+    box-shadow: 0 2px 0 #C49000;
+    transform: translateY(4px);
+}
+
+.state-current {
+    background-color: #00E5FF;
+    box-shadow: 0 8px 0 #0097A7, 0 0 30px rgba(0, 229, 255, 0.4);
+    animation: floating 3s ease-in-out infinite;
+}
+
+/* 5. OTROS DETALLES */
+.floating-label {
     position: absolute;
-    bottom: -35px;
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-    text-align: center;
-    letter-spacing: 0.5px;
-    /* Eliminamos el efecto espejo y añadimos sombra suave de texto */
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    top: -45px;
+    /* Un poco más arriba para que no tape el botón */
+    left: 50%;
+    transform: translateX(-50%);
+    /* Centrado perfecto respecto al botón */
+    background: rgba(11, 15, 25, 0.8);
+    backdrop-filter: blur(4px);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 20;
+}
+
+.state-current.floating-label {
+    color: #00E5FF;
+    border-color: rgba(0, 229, 255, 0.5);
+}
+
+.state-completed.floating-label {
+    color: #FFD54F;
+}
+
+.shine-effect {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    width: 25px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    transform: rotate(-35deg);
     pointer-events: none;
 }
 
-/* --- ESTADOS --- */
-
-/* 1. Completado (Azul sólido, no neón) */
-.level-node.completed::before { 
-    background: #3498db; 
-    border-bottom: 6px solid #2980b9; /* Simula profundidad */
-}
-.level-node.completed .v-icon { color: white !important; }
-
-/* 2. Actual (Resaltado con un borde, no con brillo excesivo) */
-.level-node.current {
-    filter: drop-shadow(0 0 12px rgba(132, 255, 255, 0.3));
-}
-.level-node.current::before { 
-    background: #84ffff;
-    border: 3px solid #00b0ff;
-}
-.level-node.current .v-icon, .level-node.current span { 
-    color: #006064 !important; 
+@keyframes dash-flow {
+    to {
+        stroke-dashoffset: -500;
+    }
 }
 
-/* Animación muy lenta (4s) para evitar mareos */
-.level-node.current.zig { animation: float-slow-zig 4s ease-in-out infinite; }
-.level-node.current.zag { animation: float-slow-zag 4s ease-in-out infinite; }
+@keyframes floating {
 
-/* 3. Bloqueado */
-.level-node.locked {
-    opacity: 0.8;
-}
-.level-node.locked::before { 
-    background: #455a64; 
-    border-bottom: 4px solid #263238;
-}
-.level-node.locked .v-icon { color: #90a4ae !important; }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
 
-/* --- CONECTORES (Caminos más gruesos y claros) --- */
-.path-connector {
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.game-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0f19;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-game-btn {
     position: absolute;
-    width: 18px; /* Más ancho para que sea fácil de seguir */
-    height: 100px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    z-index: 1;
-    top: 40px;
+    top: 20px;
+    right: 20px;
+    z-index: 101;
 }
 
-/* Inclinaciones para los caminos */
-.to-left { 
-    left: calc(50% - 35px);
-    transform: rotate(-35deg);
-}
-.to-right { 
-    left: calc(50% + 35px);
-    transform: rotate(35deg);
+.fade-zoom-enter-active,
+.fade-zoom-leave-active {
+    transition: all 0.3s ease;
 }
 
-/* Camino bloqueado: guiones más grandes para evitar confusión visual */
-.level-wrapper:has(.level-node.locked) .path-connector {
-    background: transparent;
-    border-left: 6px dashed rgba(255, 255, 255, 0.2);
-    width: 0;
-}
-
-/* --- ANIMACIONES SUAVES --- */
-@keyframes float-slow-zig {
-    0%, 100% { transform: translate(-60px, 0px); }
-    50% { transform: translate(-60px, -6px); }
-}
-@keyframes float-slow-zag {
-    0%, 100% { transform: translate(60px, 0px); }
-    50% { transform: translate(60px, -6px); }
-}
-
-/* Títulos con mejor espaciado entre letras */
-.tracking-wide {
-    letter-spacing: 2px; /* Reducido de 4px para que no se "rompa" la palabra */
-    font-weight: 800;
-    text-transform: uppercase;
+.fade-zoom-enter-from,
+.fade-zoom-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
 }
 </style>
