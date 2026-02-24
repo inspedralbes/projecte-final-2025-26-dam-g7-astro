@@ -1,6 +1,255 @@
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
 
+function readStoredArray(key, fallback = []) {
+    const rawValue = localStorage.getItem(key);
+    if (!rawValue) return fallback;
+
+    try {
+        const parsedValue = JSON.parse(rawValue);
+        return Array.isArray(parsedValue) ? parsedValue : fallback;
+    } catch (error) {
+        console.warn(`⚠️ Valor inválido en localStorage para ${key}. Se usa valor por defecto.`);
+        return fallback;
+    }
+}
+
+function normalizeSelectedAchievements(values = []) {
+    return [
+        values[0] ?? null,
+        values[1] ?? null,
+        values[2] ?? null
+    ];
+}
+
+function normalizeUnlockedAchievements(values = []) {
+    return [...new Set(
+        values
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value > 0)
+    )].sort((a, b) => a - b);
+}
+
+const DEFAULT_INVENTORY_MAX = 99;
+
+const INVENTORY_CATALOG = Object.freeze({
+    1: {
+        id: 1,
+        name: 'Pack de Vidas',
+        desc: 'Recupera 5 vidas inmediatamente.',
+        icon: 'mdi-heart-multiple',
+        color: 'red-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    2: {
+        id: 2,
+        name: 'Congelar Racha',
+        desc: 'Protege tu racha un día.',
+        icon: 'mdi-snowflake',
+        color: 'cyan-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    3: {
+        id: 3,
+        name: 'Doble de Monedas',
+        desc: 'Multiplica x2 las monedas ganadas.',
+        icon: 'mdi-piggy-bank',
+        color: 'yellow-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    4: {
+        id: 4,
+        name: 'Doble Puntuación',
+        desc: 'Multiplica x2 los puntos obtenidos.',
+        icon: 'mdi-star-shooting',
+        color: 'orange-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    101: {
+        id: 101,
+        name: 'Pin Comandante',
+        desc: 'Insignia dorada.',
+        icon: 'mdi-medal',
+        color: 'amber-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    102: {
+        id: 102,
+        name: 'Skin Cyberpunk',
+        desc: 'Aspecto robótico.',
+        icon: 'mdi-robot',
+        color: 'purple-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    103: {
+        id: 103,
+        name: 'Mascota Dron',
+        desc: 'Un compañero fiel.',
+        icon: 'mdi-quadcopter',
+        color: 'green-accent-3',
+        cat: 'pets',
+        maxQuantity: 1
+    },
+    104: {
+        id: 104,
+        name: 'Rastro de Neón',
+        desc: 'Efectos visuales.',
+        icon: 'mdi-creation',
+        color: 'pink-accent-3',
+        cat: 'trails',
+        maxQuantity: 1
+    },
+    201: {
+        id: 201,
+        name: 'Pin Raro',
+        desc: 'Insignia rara obtenida en la ruleta.',
+        icon: 'mdi-decagram',
+        color: 'purple-accent-2',
+        cat: 'collectible',
+        maxQuantity: 99
+    },
+    202: {
+        id: 202,
+        name: 'Avatar Ninja',
+        desc: 'Aspecto ninja obtenido en la ruleta.',
+        icon: 'mdi-ninja',
+        color: 'blue-accent-2',
+        cat: 'skin',
+        maxQuantity: 1
+    }
+});
+
+const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
+    'Vida Extra': 1,
+    'Pack de Vidas': 1,
+    'Congelar Racha': 2,
+    'Doble de Monedas': 3,
+    'Doble Puntuación': 4,
+    'Pin Comandante': 101,
+    'Skin Cyberpunk': 102,
+    'Mascota Dron': 103,
+    'Rastro de Neón': 104,
+    'Pin Raro': 201,
+    'Avatar Ninja': 202
+});
+
+const LEGACY_WHEEL_REWARD_TO_ITEM = Object.freeze({
+    0: 1,
+    1: 201,
+    2: 202
+});
+
+function toInteger(value) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+}
+
+function toPositiveInteger(value) {
+    const parsed = toInteger(value);
+    return parsed !== null && parsed > 0 ? parsed : null;
+}
+
+function resolveInventoryItemId(rawItem) {
+    const candidate =
+        rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+            ? rawItem.itemId ?? rawItem.id ?? rawItem.name ?? rawItem.label
+            : rawItem;
+
+    if (typeof candidate === 'number' && Number.isInteger(candidate)) {
+        return candidate;
+    }
+
+    if (typeof candidate !== 'string') return null;
+
+    const trimmed = candidate.trim();
+    if (!trimmed) return null;
+
+    if (Object.prototype.hasOwnProperty.call(LEGACY_ITEM_NAME_TO_ID, trimmed)) {
+        return LEGACY_ITEM_NAME_TO_ID[trimmed];
+    }
+
+    const legacyPrizeMatch = trimmed.match(/^prize_\d+_(\d+)$/);
+    if (legacyPrizeMatch) {
+        const legacyWheelId = toInteger(legacyPrizeMatch[1]);
+        if (
+            legacyWheelId !== null &&
+            Object.prototype.hasOwnProperty.call(LEGACY_WHEEL_REWARD_TO_ITEM, legacyWheelId)
+        ) {
+            return LEGACY_WHEEL_REWARD_TO_ITEM[legacyWheelId];
+        }
+    }
+
+    return toInteger(trimmed);
+}
+
+function normalizeInventoryItems(values = []) {
+    const source = Array.isArray(values) ? values : [];
+    const mergedById = new Map();
+
+    for (const rawItem of source) {
+        const itemId = resolveInventoryItemId(rawItem);
+        const catalogItem = INVENTORY_CATALOG[itemId];
+        if (!catalogItem) continue;
+
+        const rawMax =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? toPositiveInteger(rawItem.maxQuantity)
+                : null;
+        const maxQuantity = rawMax || catalogItem.maxQuantity || DEFAULT_INVENTORY_MAX;
+
+        const rawQuantity =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? rawItem.quantity ?? rawItem.qty ?? rawItem.units
+                : 1;
+        const parsedQuantity = toPositiveInteger(rawQuantity) || 1;
+        const safeQuantity = Math.min(maxQuantity, parsedQuantity);
+
+        const previous = mergedById.get(itemId);
+        const nextQuantity = Math.min(maxQuantity, (previous?.quantity || 0) + safeQuantity);
+        const itemCat =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? rawItem.cat || catalogItem.cat
+                : catalogItem.cat;
+        const isEquipable = itemCat !== 'items';
+        const equippedCandidate =
+            rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                ? !!rawItem.equipped
+                : false;
+
+        mergedById.set(itemId, {
+            id: itemId,
+            quantity: nextQuantity,
+            maxQuantity,
+            equipped: isEquipable ? !!(previous?.equipped || equippedCandidate) : false,
+            name:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.name || catalogItem.name
+                    : catalogItem.name,
+            desc:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.desc || catalogItem.desc
+                    : catalogItem.desc,
+            icon:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.icon || catalogItem.icon
+                    : catalogItem.icon,
+            color:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                    ? rawItem.color || catalogItem.color
+                    : catalogItem.color,
+            cat: itemCat
+        });
+    }
+
+    return [...mergedById.values()].sort((a, b) => a.id - b.id);
+}
+
 export const useAstroStore = defineStore('astro', {
     state: () => ({
         user: localStorage.getItem('astro_user') || null,
@@ -14,7 +263,8 @@ export const useAstroStore = defineStore('astro', {
         streakFreezes: Number(localStorage.getItem('astro_streak_freezes')) || 0,
         needsFreeze: false,
         inventory: [],
-        selectedAchievements: JSON.parse(localStorage.getItem('astro_selected_achievements')) || [null, null, null],
+        selectedAchievements: normalizeSelectedAchievements(readStoredArray('astro_selected_achievements', [null, null, null])),
+        unlockedAchievements: normalizeUnlockedAchievements(readStoredArray('astro_unlocked_achievements', [])),
         avatar: localStorage.getItem('astro_avatar') || 'Astronauta_blanc.jpg', // Avatar por defecto
         mascot: localStorage.getItem('astro_mascot') || null, // Mascota por defecto
         token: localStorage.getItem('astro_token') || null,
@@ -33,6 +283,12 @@ export const useAstroStore = defineStore('astro', {
             return last.getFullYear() === now.getFullYear() &&
                 last.getMonth() === now.getMonth() &&
                 last.getDate() === now.getDate();
+        },
+        inventoryUnits: (state) => {
+            return (state.inventory || []).reduce((sum, item) => {
+                const quantity = Number(item?.quantity);
+                return sum + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+            }, 0);
         }
     },
 
@@ -96,11 +352,8 @@ export const useAstroStore = defineStore('astro', {
 
                 // 2. Formatear logros (siempre 3 slots)
                 const saved = data.profile.selectedAchievements || [];
-                this.selectedAchievements = [
-                    saved[0] || null,
-                    saved[1] || null,
-                    saved[2] || null
-                ];
+                this.selectedAchievements = normalizeSelectedAchievements(saved);
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.profile.unlockedAchievements || []);
 
                 // 3. CARGA CRÍTICA: Traer el inventario de MongoDB antes de finalizar
                 await this.fetchUserInventory();
@@ -117,6 +370,7 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_last_activity', this.lastActivity);
                 localStorage.setItem('astro_last_game', this.lastGame);
                 localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
                 this.connectWebSocket();
@@ -144,13 +398,13 @@ export const useAstroStore = defineStore('astro', {
                 if (!response.ok) throw new Error(data.message || "No se pudieron obtener las estadísticas.");
 
                 this.coins = data.coins !== undefined ? data.coins : this.coins;
-                this.level = data.stats?.level !== undefined ? data.stats.level : this.level;
-                this.xp = data.stats?.xp !== undefined ? data.stats.xp : this.xp;
+                this.level = data.level !== undefined ? data.level : this.level;
+                this.xp = data.xp !== undefined ? data.xp : this.xp;
                 this.partides = data.gamesPlayed !== undefined ? data.gamesPlayed : this.partides;
-                this.streak = data.stats?.streak !== undefined ? data.stats.streak : this.streak;
-                this.streakFreezes = data.stats?.streakFreezes !== undefined ? data.stats.streakFreezes : this.streakFreezes;
-                this.lastActivity = data.stats?.lastActivity !== undefined ? data.stats.lastActivity : this.lastActivity;
-                this.lastGame = data.stats?.lastGame !== undefined ? data.stats.lastGame : this.lastGame;
+                this.streak = data.streak !== undefined ? data.streak : this.streak;
+                this.streakFreezes = data.streakFreezes !== undefined ? data.streakFreezes : this.streakFreezes;
+                this.lastActivity = data.lastActivity !== undefined ? data.lastActivity : this.lastActivity;
+                this.lastGame = data.lastGame !== undefined ? data.lastGame : this.lastGame;
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -246,14 +500,19 @@ export const useAstroStore = defineStore('astro', {
 
                 // ACTUALIZACIÓN DEL ESTADO GLOBAL
                 this.coins = data.newBalance;
-                this.inventory.push(data.item); // <--- Guardamos el inventario actualizado
+                this.inventory = normalizeInventoryItems(data.inventory || []);
 
-                if (item.id === 2) {
+                if (data.streakFreezes !== undefined) {
+                    this.streakFreezes = data.streakFreezes;
+                    localStorage.setItem('astro_streak_freezes', this.streakFreezes);
+                }
+
+                if (Number(item?.id) === 2 && data.streakFreezes === undefined) {
                     this.streakFreezes++;
                     localStorage.setItem('astro_streak_freezes', this.streakFreezes);
                 }
 
-                return { success: true };
+                return { success: true, data };
             } catch (error) {
                 return { success: false, message: error.message };
             }
@@ -265,11 +524,78 @@ export const useAstroStore = defineStore('astro', {
                 const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/inventory`);
                 const data = await response.json();
 
-                this.inventory = data.inventory || []; // <--- Actualizamos el state
+                this.inventory = normalizeInventoryItems(data.inventory || []);
                 return this.inventory;
             } catch (error) {
                 console.error("Error al traer inventario:", error);
                 return [];
+            }
+        },
+
+        async fetchUserAchievements() {
+            this.error = null;
+            if (!this.user) {
+                return { success: false, message: "No hay una sesión activa." };
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/users/${encodeURIComponent(this.user)}/achievements`);
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : {};
+
+                if (!response.ok) throw new Error(data.message || "No se pudieron obtener los logros.");
+
+                this.selectedAchievements = normalizeSelectedAchievements(data.selectedAchievements || []);
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.unlockedAchievements || []);
+
+                localStorage.setItem('astro_selected_achievements', JSON.stringify(this.selectedAchievements));
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
+
+                return { success: true, achievements: data };
+            } catch (error) {
+                console.error("❌ Error obteniendo logros:", error);
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async syncUnlockedAchievements(unlockedAchievements) {
+            this.error = null;
+            const normalizedUnlocked = normalizeUnlockedAchievements(unlockedAchievements);
+
+            this.unlockedAchievements = normalizedUnlocked;
+            localStorage.setItem('astro_unlocked_achievements', JSON.stringify(normalizedUnlocked));
+
+            if (!this.user) {
+                this.user = localStorage.getItem('astro_user');
+            }
+
+            if (!this.user) {
+                this.error = "Usuario no identificado. Los logros se guardaron solo en local.";
+                return { success: false, message: this.error };
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/user/achievements/unlocked', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        unlockedAchievements: normalizedUnlocked
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "Error al guardar logros desbloqueados.");
+
+                this.unlockedAchievements = normalizeUnlockedAchievements(data.unlockedAchievements || normalizedUnlocked);
+                localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
+
+                return { success: true, unlockedAchievements: this.unlockedAchievements };
+            } catch (error) {
+                console.error("❌ Error sincronizando logros desbloqueados:", error);
+                this.error = "Error al guardar logros desbloqueados: " + error.message;
+                return { success: false, message: this.error };
             }
         },
 
@@ -330,6 +656,7 @@ export const useAstroStore = defineStore('astro', {
             localStorage.removeItem('astro_level'); // Opcional, pero buena práctica
             localStorage.removeItem('astro_xp');    // Opcional, pero buena práctica
             localStorage.removeItem('astro_selected_achievements');
+            localStorage.removeItem('astro_unlocked_achievements');
             localStorage.removeItem('astro_avatar');
             localStorage.removeItem('astro_mascot');
             console.log("🛰️ Sesión cerrada. Regresando a la base.");
@@ -444,6 +771,9 @@ export const useAstroStore = defineStore('astro', {
 
                 this.streakFreezes = data.streakFreezes;
                 this.needsFreeze = false;
+                if (Array.isArray(data.inventory)) {
+                    this.inventory = normalizeInventoryItems(data.inventory);
+                }
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
 
                 return { success: true };

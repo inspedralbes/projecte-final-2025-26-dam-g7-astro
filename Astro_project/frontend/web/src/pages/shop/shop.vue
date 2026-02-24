@@ -18,8 +18,15 @@
                             
                             <v-col cols="12" md="6" class="d-flex justify-center position-relative py-8">
                                 <div class="nebula-bg"></div>
-                                <LuckyWheel ref="luckyWheelRef" :user="astroStore.user" @win="handleWin" @update-stats="updateStats" @spin-start="isSpinning = true" @spin-end="isSpinning = false" />
-
+                                <LuckyWheel 
+                                    ref="luckyWheelRef" 
+                                    :user="astroStore.user" 
+                                    @win="handleWin" 
+                                    @update-balance="updateCoins" 
+                                    @update-inventory="updateInventory"
+                                    @spin-start="isSpinning = true"
+                                    @spin-end="isSpinning = false"
+                                />
                             </v-col>
 
                             <v-col cols="12" md="6" class="d-flex flex-column justify-center pl-md-10 mt-6 mt-md-0">
@@ -126,18 +133,21 @@
                                             style="font-size: 0.65rem !important;">
                                             {{ item.limitacio }}
                                         </div>
+                                        <div class="text-caption text-grey mt-1">
+                                            Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong> / 99
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div style="min-width: 120px;">
                                     <v-btn block height="44"
-                                        :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
-                                        :variant="isOwned(item.id) ? 'tonal' : 'flat'"
+                                        :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
+                                        :variant="hasReachedMax(item.id) ? 'outlined' : 'flat'"
                                         class="font-weight-bold rounded-lg text-black"
-                                        :disabled="userCoins < item.price && !isOwned(item.id)"
+                                        :disabled="userCoins < item.price || hasReachedMax(item.id)"
                                         @click="buyProduct(item)">
-                                        <template v-if="isOwned(item.id)">
-                                            <v-icon>mdi-check</v-icon>
+                                        <template v-if="hasReachedMax(item.id)">
+                                            MAX 99
                                         </template>
                                         <template v-else>
                                             {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
@@ -169,12 +179,15 @@
                                 <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0">
                                     {{ item.name }}
                                 </v-card-title>
+                                <div class="text-center text-caption text-grey mb-2">
+                                    Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong>
+                                </div>
                                 <v-card-actions class="justify-center px-4 pb-2">
                                     <v-btn block height="40"
                                         :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
                                         :variant="isOwned(item.id) ? 'tonal' : (userCoins >= item.price ? 'flat' : 'outlined')"
                                         class="font-weight-bold rounded-lg text-black"
-                                        :disabled="userCoins < item.price && !isOwned(item.id)"
+                                        :disabled="(userCoins < item.price && !isOwned(item.id)) || isOwned(item.id)"
                                         @click="buyProduct(item)">
                                         <template v-if="isOwned(item.id)">
                                             ADQUIRIDO <v-icon end>mdi-check</v-icon>
@@ -268,14 +281,29 @@ const triggerSingleSpin = () => {
 };
 
 
+const getItemQuantity = (itemId) => {
+    const targetId = Number(itemId);
+    const found = astroStore.inventory?.find((item) => Number(item.id) === targetId);
+    return Number(found?.quantity) || 0;
+};
+
 const isOwned = (itemId) => {
-    return astroStore.inventory?.some(i => i.id === itemId);
+    return getItemQuantity(itemId) > 0;
+};
+
+const hasReachedMax = (itemId) => {
+    return getItemQuantity(itemId) >= 99;
 };
 
 const buyProduct = async (item) => {
-    const alreadyOwned = astroStore.inventory?.some(i => i.id === item.id);
-    if (alreadyOwned && item.cat !== 'items') {
+    const quantity = getItemQuantity(item.id);
+    if (item.cat !== 'items' && quantity > 0) {
         alert(`¡Ya tienes ${item.name} en tu inventario!`);
+        return;
+    }
+
+    if (item.cat === 'items' && quantity >= 99) {
+        alert(`Has alcanzado el máximo de 99 unidades para ${item.name}.`);
         return;
     }
 
@@ -308,16 +336,27 @@ const premiumItems = ref([
 ]);
 
 onMounted(async () => {
-    if (astroStore.user) { await fetchUserBalance(); }
+    if (astroStore.user) {
+        await Promise.all([fetchUserBalance(), astroStore.fetchUserInventory()]);
+    }
 });
 
 const handleWin = (prize) => {
     lastPrize.value = prize;
     showWinDialog.value = true;
+    if (prize?.rewardMessage) {
+        alert(prize.rewardMessage);
+    }
 };
 
 const updateCoins = (newBalance) => {
     astroStore.coins = newBalance;
+};
+
+const updateInventory = (inventory) => {
+    if (Array.isArray(inventory)) {
+        astroStore.inventory = inventory;
+    }
 };
 </script>
 

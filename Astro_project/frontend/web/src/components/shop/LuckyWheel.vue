@@ -32,7 +32,7 @@ const props = defineProps({
 });
 
 // Afegim esdeveniments d'inici i final per bloquejar els botons al pare
-const emit = defineEmits(['win', 'update-stats', 'spin-start', 'spin-end']);
+const emit = defineEmits(['win', 'update-balance', 'update-inventory', 'spin-start', 'spin-end']);
 
 const isSpinning = ref(false);
 const currentRotation = ref(0);
@@ -89,11 +89,14 @@ async function spin() {
     setTimeout(() => {
       isSpinning.value = false;
       emit('spin-end');
-      emit('win', { ...data.prize, color: items[winnerIndex].color }); 
-      
-      if (data.newBalance !== undefined) {
-          emit('update-stats', { coins: data.newBalance, tickets: data.newTickets });
-      }
+      emit('win', {
+        ...data.prize,
+        color: items[winnerIndex].color,
+        rewardMessage: data.rewardMessage || null,
+        prizeApplied: !!data.prizeApplied
+      });
+      if (data.newBalance !== undefined) emit('update-balance', data.newBalance);
+      if (Array.isArray(data.inventory)) emit('update-inventory', data.inventory);
     }, 4000);
 
   } catch (e) {

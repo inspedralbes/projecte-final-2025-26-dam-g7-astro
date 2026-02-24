@@ -33,12 +33,21 @@
                                     <v-icon size="45" :color="item.color">{{ item.icon }}</v-icon>
                                 </v-avatar>
                                 <h3 class="text-h6 font-weight-bold text-white mb-1">{{ item.name }}</h3>
+                                <v-chip size="small" color="cyan-accent-3" variant="tonal" class="mb-2">
+                                    x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
+                                </v-chip>
                                 <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
                                 <v-spacer></v-spacer>
-                                <v-btn block :color="item.equipped ? 'success' : 'cyan-accent-3'"
-                                    :variant="item.equipped ? 'tonal' : 'flat'" rounded="pill"
-                                    class="font-weight-bold text-black" @click="toggleEquip(item)">
-                                    {{ item.equipped ? 'EQUIPADO' : 'EQUIPAR' }}
+                                <v-btn
+                                    block
+                                    :color="!isEquipable(item) ? 'grey-darken-2' : (item.equipped ? 'success' : 'cyan-accent-3')"
+                                    :variant="!isEquipable(item) ? 'outlined' : (item.equipped ? 'tonal' : 'flat')"
+                                    rounded="pill"
+                                    class="font-weight-bold text-black"
+                                    :disabled="!isEquipable(item)"
+                                    @click="toggleEquip(item)"
+                                >
+                                    {{ !isEquipable(item) ? 'NO EQUIPABLE' : (item.equipped ? 'EQUIPADO' : 'EQUIPAR') }}
                                 </v-btn>
                             </v-card>
                         </v-col>
@@ -70,6 +79,7 @@ const categories = [
     { id: 'skin', name: 'Skins', icon: 'mdi-palette' },
     { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
     { id: 'collectible', name: 'Coleccionables', icon: 'mdi-trophy' },
+    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
     { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
 ];
 
@@ -89,24 +99,30 @@ onMounted(async () => {
 });
 
 async function toggleEquip(item) {
+    if (!isEquipable(item)) return;
+
     try {
         const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 user: astroStore.user,
-                itemId: item.id
+                itemId: Number(item.id)
             })
         });
 
         const data = await response.json();
         if (data.success) {
             // Actualizamos el estado global con el inventario devuelto por el servidor
-            astroStore.inventory = data.inventory;
+            astroStore.inventory = data.inventory || [];
         }
     } catch (error) {
         console.error("Error al equipar item:", error);
     }
+}
+
+function isEquipable(item) {
+    return item?.cat !== 'items';
 }
 </script>
 
