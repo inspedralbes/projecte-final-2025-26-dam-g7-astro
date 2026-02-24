@@ -99,6 +99,7 @@ const newLevelData = ref({
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
+import RadioSignal from '@/components/games/RadioSignal.vue';
 
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
@@ -107,10 +108,10 @@ const activeGameComponent = shallowRef(null);
 const levelSequence = [
     { name: 'Despegue', component: WordConstruction },
     { name: 'Navegación', component: RadarScan },
-    { name: 'Comunicaciones', component: SpelledRosco },
+    { name: 'Comunicaciones', component: RadioSignal },
     { name: 'Sistemas', component: WordConstruction },
     { name: 'Agujero Negro', component: RadarScan },
-    { name: 'Exoplaneta', component: SpelledRosco },
+    { name: 'Exoplaneta', component: RadioSignal },
 ];
 
 const getLevelState = (index) => {

@@ -16,6 +16,7 @@ declare module 'vue' {
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
+    RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
