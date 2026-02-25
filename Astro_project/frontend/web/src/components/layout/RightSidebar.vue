@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer permanent location="right" width="240" class="sidebar right-sidebar" elevation="0"
+    <v-navigation-drawer app permanent location="right" width="240" class="sidebar right-sidebar" elevation="0"
         mobile-breakpoint="lg">
         <div class="d-flex flex-column h-100 pa-3">
             <!-- Stats Card -->

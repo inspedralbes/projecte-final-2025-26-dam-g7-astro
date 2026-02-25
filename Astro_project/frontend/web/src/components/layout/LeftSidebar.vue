@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer permanent width="260" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
+    <v-navigation-drawer app permanent width="260" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
         <div class="menu-header d-flex justify-center align-center py-10">
             <h1 class="text-h3 font-weight-bold text-white tracking-wide">ASTRO</h1>
         </div>
