@@ -124,7 +124,8 @@ app.get('/api/users', async (req, res) => {
                 rank: 1,
                 mascot: 1,
                 avatar: 1,
-                streak: 1
+                streak: 1,
+                selectedAchievements: 1
             }
         }).toArray();
 

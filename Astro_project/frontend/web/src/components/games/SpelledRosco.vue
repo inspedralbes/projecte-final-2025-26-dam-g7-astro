@@ -28,12 +28,20 @@
       <v-col cols="12" md="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-md-0">
         <div class="star-wrapper">
           <svg class="star-svg" viewBox="0 0 400 400">
+            <!-- Polígons d'il·luminació interior (Puntes) -->
+            <polygon v-for="(points, i) in tipPolygons" :key="'tip-'+i"
+              :points="points"
+              class="star-tip-fill" :class="{ 'tip-glowing': isTipGlowing(i) }"
+            />
+
+            <!-- Línies del contorn -->
             <line v-for="(seg, i) in starSegments" :key="'line-'+i"
               :x1="seg.x1" :y1="seg.y1" :x2="seg.x2" :y2="seg.y2"
-              class="star-line" :class="{ 'line-visited': isSegmentVisited(i) }"
+              class="star-line" :class="{ 'line-glowing': isSegmentGlowing(i) }"
             />
+
             <g v-if="rocketAnimating" class="rocket-trail-group">
-              <circle :cx="rocketPos.x" :cy="rocketPos.y" r="8" fill="url(#rocketGlow)" />
+              <circle :cx="rocketPos.x" :cy="rocketPos.y" r="6" fill="url(#rocketGlow)" />
               <circle v-for="(p, i) in trailParticles" :key="'trail-'+i"
                 :cx="p.x" :cy="p.y" :r="p.r"
                 :fill="p.color" :opacity="p.opacity"
@@ -41,9 +49,13 @@
             </g>
             <defs>
               <radialGradient id="rocketGlow">
-                <stop offset="0%" stop-color="#FFD54F" stop-opacity="1" />
-                <stop offset="50%" stop-color="#FF6D00" stop-opacity="0.6" />
-                <stop offset="100%" stop-color="#FF3D00" stop-opacity="0" />
+                <stop offset="0%" stop-color="#00e5ff" stop-opacity="1" />
+                <stop offset="50%" stop-color="#00b8d4" stop-opacity="0.6" />
+                <stop offset="100%" stop-color="#0097a7" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="tipGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.6" />
+                <stop offset="100%" stop-color="#00e5ff" stop-opacity="0" />
               </radialGradient>
             </defs>
           </svg>
@@ -246,25 +258,42 @@ const allLettersData = [
   { char: 'M', question: "Art de combinar sons de forma agradable.", answer: "MUSICA" },
 ];
 
-// --- STAR GEOMETRY ---
+// --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
 const STAR_CENTER = 200;
 const STAR_RADIUS = 150;
+const INNER_RADIUS = 60; 
 
-const starPoints = Array.from({ length: 5 }, (_, i) => {
-  const angle = (i * 72 - 90) * (Math.PI / 180);
+const starPoints = Array.from({ length: 10 }, (_, i) => {
+  const angle = (i * 36 - 90) * (Math.PI / 180);
+  const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS;
   return {
-    x: STAR_CENTER + Math.cos(angle) * STAR_RADIUS,
-    y: STAR_CENTER + Math.sin(angle) * STAR_RADIUS,
+    x: STAR_CENTER + Math.cos(angle) * r,
+    y: STAR_CENTER + Math.sin(angle) * r,
   };
 });
 
-const starOrder = [0, 2, 4, 1, 3];
-const starSegments = starOrder.map((from, i) => {
-  const to = starOrder[(i + 1) % 5];
-  return {
-    x1: starPoints[from].x, y1: starPoints[from].y,
-    x2: starPoints[to].x, y2: starPoints[to].y,
-  };
+const letterPositions = [0, 2, 4, 6, 8];
+
+const starSegments = computed(() => {
+  return starPoints.map((point, i) => {
+    const nextIdx = (i + 1) % 10;
+    return {
+      x1: point.x, y1: point.y,
+      x2: starPoints[nextIdx].x, y2: starPoints[nextIdx].y,
+    };
+  });
+});
+
+const tipPolygons = computed(() => {
+  // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
+  return letterPositions.map(pos => {
+    const pPrev = starPoints[(pos - 1 + 10) % 10];
+    const pCurr = starPoints[pos];
+    const pNext = starPoints[(pos + 1) % 10];
+    const pCenter = { x: STAR_CENTER, y: STAR_CENTER };
+    // Formem un rombe o triangle des del centre per omplir la punta
+    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`;
+  });
 });
 
 // Estat del joc
@@ -317,52 +346,84 @@ onUnmounted(() => {
 
 const clearInput = () => { rawInput.value = ''; };
 
-// Rocket Animation
+// Rocket Animation - Following the outline
 const animateRocket = (fromIdx, toIdx) => {
   return new Promise((resolve) => {
-    const from = starPoints[fromIdx];
-    const to = starPoints[toIdx];
+    // fromIdx i toIdx són índexs de lletres (0..4)
+    // Els convertim a índexs de starPoints (multiplicant per 2)
+    const startPointIdx = letterPositions[fromIdx];
+    const endPointIdx = letterPositions[toIdx];
+    
+    // Determinem el camí més curt pel contorn
+    const path = [];
+    let curr = startPointIdx;
+    while(curr !== endPointIdx) {
+      curr = (curr + 1) % 10;
+      path.push(starPoints[curr]);
+    }
+    
     rocketAnimating.value = true;
     trailParticles.value = [];
     
-    const duration = 600;
-    const startTime = Date.now();
-    const trailColors = ['#FFD54F', '#FF9800', '#FF5722', '#FF3D00'];
-    
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      
-      rocketPos.x = from.x + (to.x - from.x) * eased;
-      rocketPos.y = from.y + (to.y - from.y) * eased;
-      
-      if (progress < 1) {
-        trailParticles.value.push({
-          x: rocketPos.x + (Math.random() - 0.5) * 10,
-          y: rocketPos.y + (Math.random() - 0.5) * 10,
-          r: Math.random() * 4 + 2,
-          color: trailColors[Math.floor(Math.random() * trailColors.length)],
-          opacity: 1 - progress,
-        });
-        if (trailParticles.value.length > 20) {
-          trailParticles.value = trailParticles.value.slice(-20);
-        }
-        requestAnimationFrame(animate);
-      } else {
+    const durationPerStep = 200;
+    const animateStep = (stepIdx) => {
+      if (stepIdx >= path.length) {
         setTimeout(() => {
           rocketAnimating.value = false;
           trailParticles.value = [];
           resolve();
-        }, 100);
+        }, 50);
+        return;
       }
+      
+      const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1];
+      const to = path[stepIdx];
+      const startTime = Date.now();
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / durationPerStep, 1);
+        const eased = progress; // Linear per a camins llargs
+        
+        rocketPos.x = from.x + (to.x - from.x) * eased;
+        rocketPos.y = from.y + (to.y - from.y) * eased;
+        
+        if (progress < 1) {
+          trailParticles.value.push({
+            x: rocketPos.x + (Math.random() - 0.5) * 8,
+            y: rocketPos.y + (Math.random() - 0.5) * 8,
+            r: Math.random() * 3 + 1,
+            color: '#00e5ff',
+            opacity: 1,
+          });
+          if (trailParticles.value.length > 20) trailParticles.value.shift();
+          requestAnimationFrame(animate);
+        } else {
+          animateStep(stepIdx + 1);
+        }
+      };
+      requestAnimationFrame(animate);
     };
     
-    requestAnimationFrame(animate);
+    animateStep(0);
   });
 };
 
-const isSegmentVisited = (segIdx) => visitedSegments.value.has(segIdx);
+const isTipGlowing = (tipIdx) => {
+  return roscoLetters.value[tipIdx]?.status === 'correct';
+};
+
+const isSegmentGlowing = (segIdx) => {
+  // Cada lletra i (0..4) està associada als segments (i*2-1) i (i*2)
+  return roscoLetters.value.some((l, i) => {
+    if (l.status !== 'correct') return false;
+    const seg1 = i * 2;
+    const seg0 = (i * 2 - 1 + 10) % 10;
+    return segIdx === seg1 || segIdx === seg0;
+  });
+};
+
+const isSegmentVisited = (segIdx) => false; // Ja no usem visitedSegments per a les línies
 
 // Game Logic
 const checkAnswer = async () => {
@@ -457,7 +518,8 @@ const getBubbleClass = (letter, index) => {
 };
 
 const getStarNodeStyle = (index) => {
-    const point = starPoints[index];
+    const pointIdx = letterPositions[index];
+    const point = starPoints[pointIdx];
     return {
         left: `${(point.x / 400) * 100}%`,
         top: `${(point.y / 400) * 100}%`,
@@ -494,17 +556,29 @@ const getChipColor = (letter) => {
 }
 
 .star-line {
-    stroke: rgba(100, 180, 255, 0.15);
-    stroke-width: 3;
+    stroke: rgba(0, 229, 255, 0.4);
+    stroke-width: 2.5;
     stroke-linecap: round;
     transition: all 0.5s ease;
 }
 
-.star-line.line-visited {
-    stroke: #FFD54F;
-    stroke-width: 4;
-    filter: drop-shadow(0 0 6px rgba(255, 213, 79, 0.6));
-    animation: line-glow 2s ease-in-out infinite alternate;
+.star-line.line-glowing {
+    stroke: #00e5ff;
+    stroke-width: 6;
+    filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.9));
+    opacity: 1;
+}
+
+.star-tip-fill {
+    fill: #00e5ff;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+}
+
+.star-tip-fill.tip-glowing {
+    opacity: 0.6;
+    filter: blur(2px) drop-shadow(0 0 15px rgba(0, 229, 255, 0.8));
 }
 
 @keyframes line-glow {
@@ -584,15 +658,15 @@ const getChipColor = (letter) => {
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 90px; height: 90px;
+    width: 100px; height: 100px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.15) 0%, rgba(10, 10, 30, 0.95) 80%);
-    border: 2px solid rgba(0, 229, 255, 0.3);
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, rgba(5, 5, 20, 1) 90%);
+    border: 3px solid rgba(0, 229, 255, 0.5);
     border-radius: 50%;
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
     z-index: 5;
 }
 
