@@ -106,10 +106,10 @@ const activeGameComponent = shallowRef(null);
 
 
 const levelSequence = [
-    { name: 'Despegue', component: SpelledRosco },
+    { name: 'Despegue', component: WordConstruction },
     { name: 'Navegación', component: RadarScan },
     { name: 'Comunicaciones', component: RadioSignal },
-    { name: 'Sistemas', component: WordConstruction },
+    { name: 'Sistemas', component: SpelledRosco },
     { name: 'Agujero Negro', component: RadarScan },
     { name: 'Exoplaneta', component: RadioSignal },
 ];
