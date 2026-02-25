@@ -3,7 +3,7 @@
 // Función auxiliar para actualizar el progreso (se define fuera del endpoint para limpieza)
 const updateMissionProgress = (missions, type, amount) => {
     if (!missions || !Array.isArray(missions)) return [];
-    
+
     return missions.map(mission => {
         // Si la misión ya está completa o reclamada, no la tocamos
         if (mission.completed || mission.claimed) return mission;
@@ -11,7 +11,7 @@ const updateMissionProgress = (missions, type, amount) => {
         // Si el tipo de misión coincide (ej: 'games', 'coins', 'xp')
         if (mission.type === type) {
             let newProgress = (mission.progress || 0) + amount;
-            
+
             // Aseguramos no pasarnos del objetivo
             if (newProgress >= mission.goal) {
                 newProgress = mission.goal;
@@ -94,9 +94,20 @@ function registerGameRoutes(app, {
             dailyMissions = updateMissionProgress(dailyMissions, 'xp', xpEarned);
             weeklyMissions = updateMissionProgress(weeklyMissions, 'xp', xpEarned);
 
-
-            // 5. GESTIÓN DE RACHA Y GUARDADO
+            // D) Actualizar por Racha (¡NUEVO!)
             const streakResult = await updateStreak(user, true);
+            if (streakResult.streak > 0) {
+                // Diaria: simplemente por tener racha hoy se marca el objetivo de 1
+                dailyMissions = updateMissionProgress(dailyMissions, 'streak', 1);
+                // Semanal: el progreso es el valor actual de la racha (ej: racha de 5 días)
+                weeklyMissions = weeklyMissions.map(m => {
+                    if (m.type === 'streak' && !m.completed && !m.claimed) {
+                        m.progress = Math.min(m.goal, streakResult.streak);
+                        if (m.progress >= m.goal) m.completed = true;
+                    }
+                    return m;
+                });
+            }
             const nextBoosters = consumeBoostersForCompletedGame(currentBoosters);
 
             await Promise.all([
@@ -152,7 +163,7 @@ function registerGameRoutes(app, {
                 needsFreeze: streakResult.needsFreeze,
                 lastGame: streakResult.lastGame,
                 // DEVOLVEMOS LAS MISIONES PARA QUE EL FRONTEND SE ACTUALICE
-                dailyMissions, 
+                dailyMissions,
                 weeklyMissions
             });
         } catch (error) {

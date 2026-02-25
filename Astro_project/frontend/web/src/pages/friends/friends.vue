@@ -1,87 +1,207 @@
 <template>
   <v-container fluid class="friends-container py-8 px-6">
-    <div class="mb-10">
+    <div class="mb-8">
       <div class="d-flex align-center justify-center mb-6">
         <v-icon icon="mdi-account-group" size="x-large" color="cyan-accent-2" class="mr-4"></v-icon>
-        <h1 class="text-h4 font-weight-bold text-white tracking-wide">Amigos</h1>
+        <h1 class="text-h4 font-weight-bold text-white tracking-wide">Tripulación</h1>
       </div>
 
-      <v-text-field v-model="searchQuery" label="Buscar exploradores..." prepend-inner-icon="mdi-magnify" variant="solo"
-        bg-color="rgba(255, 255, 255, 0.05)" class="search-bar w-100" hide-details rounded="xl"
-        clearable></v-text-field>
+      <v-tabs v-model="tab" align-tabs="center" color="cyan-accent-2" bg-color="transparent" class="mb-6">
+        <v-tab value="friends">Mis Amigos</v-tab>
+        <v-tab value="search">Buscar Amigos</v-tab>
+      </v-tabs>
     </div>
 
-    <div v-if="loading" class="d-flex justify-center align-center py-10">
-      <v-progress-circular indeterminate color="cyan-accent-2" size="64"></v-progress-circular>
-    </div>
+    <v-window v-model="tab" class="bg-transparent" :touch="false">
+      <!-- PESTAÑA: MIS AMIGOS -->
+      <v-window-item value="friends">
+        <v-text-field v-model="searchQuery" label="Buscar en mi tripulación..." prepend-inner-icon="mdi-magnify" variant="solo"
+          bg-color="rgba(255, 255, 255, 0.05)" class="search-bar w-100 mb-6" hide-details rounded="xl"
+          clearable></v-text-field>
 
-    <v-row v-else-if="filteredFriends.length > 0">
-      <v-col v-for="friend in filteredFriends" :key="friend.user" cols="12" xl="4" lg="6" md="12">
-        <v-card class="friend-card rounded-xl pa-4" elevation="0">
-          <div class="d-flex align-center">
-            <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
-              <v-img v-if="friend.avatar" :src="friend.avatar" alt="Avatar"></v-img>
-              <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase()
-                }}</span>
-            </v-avatar>
+        <div v-if="loading" class="d-flex justify-center align-center py-10">
+          <v-progress-circular indeterminate color="cyan-accent-2" size="64"></v-progress-circular>
+        </div>
 
-            <div class="flex-grow-1">
-              <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
+        <v-row v-else-if="myFriendsList.length > 0">
+          <v-col v-for="friend in myFriendsList" :key="friend.user" cols="12" xl="4" lg="4" md="6" sm="12">
+            <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
+              <div class="d-flex align-center mb-4">
+                <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
+                  <v-img v-if="friend.avatar" :src="'/' + friend.avatar" alt="Avatar" cover></v-img>
+                  <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
+                </v-avatar>
 
-              <div class="d-flex align-center flex-wrap gap-2">
-                <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                  Nivel {{ friend.level || 1 }}
-                </v-chip>
-
-                <v-chip v-if="friend.mascot" size="small" color="amber-accent-3" variant="tonal"
-                  class="font-weight-bold">
-                  <v-icon start icon="mdi-paw" size="x-small"></v-icon>
-                  {{ formatMascotName(friend.mascot) }}
-                </v-chip>
-
-                <v-chip v-if="isFriend(friend.user)" size="small" color="success" variant="flat"
-                  class="font-weight-bold text-white">
-                  Tripulación
-                </v-chip>
+                <div class="flex-grow-1">
+                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
+                  <div class="d-flex align-center flex-wrap gap-2">
+                    <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
+                      Nivel {{ friend.level || 1 }}
+                    </v-chip>
+                    <v-chip v-if="friend.mascot" size="small" color="amber-accent-3" variant="tonal" class="font-weight-bold">
+                      <v-icon start icon="mdi-paw" size="x-small"></v-icon>
+                      {{ formatMascotName(friend.mascot) }}
+                    </v-chip>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              <!-- Medallas del amigo -->
+              <div class="achievements-mini-grid mb-4 mt-auto">
+                <div v-for="i in 3" :key="i" class="achievement-slot">
+                  <Medal v-if="getAchievement(friend.selectedAchievements?.[i - 1])"
+                    :type="getAchievement(friend.selectedAchievements[i - 1]).type"
+                    :icon="getAchievement(friend.selectedAchievements[i - 1]).icon" 
+                    :scale="0.3"
+                    :icon-size="48" />
+                  <div v-else class="empty-slot-indicator"></div>
+                </div>
+              </div>
+
+              <v-divider class="my-3 border-opacity-25" color="white"></v-divider>
+
+              <v-card-actions class="pa-0 mt-auto">
+                <v-btn icon color="error" variant="tonal" class="rounded-lg mr-2" @click="removeFriend(friend.user)">
+                  <v-icon icon="mdi-trash-can-outline"></v-icon>
+                </v-btn>
+                <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(friend)">
+                  <v-icon start icon="mdi-account-eye"></v-icon>
+                  Ver Perfil
+                </v-btn>
+                <v-btn color="primary" variant="elevated" class="rounded-lg px-2 flex-grow-1 text-caption font-weight-bold">
+                  <v-icon start icon="mdi-sword-cross"></v-icon>
+                  Desafiar
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <div v-else class="text-center py-10">
+          <v-icon icon="mdi-account-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+          <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">No tienes amigos que coincidan con la búsqueda.</h3>
+          <h3 v-else class="text-h6 text-grey-lighten-1">Tu tripulación está vacía. ¡Busca nuevos reclutas!</h3>
+        </div>
+      </v-window-item>
+
+      <!-- PESTAÑA: BUSCAR AMIGOS -->
+      <v-window-item value="search">
+        <div class="d-flex justify-space-between align-center mb-6 px-2">
+          <v-text-field v-model="searchExploreQuery" label="Buscar exploradores en la galaxia..." prepend-inner-icon="mdi-magnify" variant="solo"
+            bg-color="rgba(255, 255, 255, 0.05)" class="search-bar flex-grow-1 mr-4" hide-details rounded="xl"
+            clearable density="comfortable" @update:model-value="reloadRandomExplorers"></v-text-field>
+
+          <v-btn color="cyan-accent-2" variant="elevated" prepend-icon="mdi-refresh" class="rounded-pill font-weight-bold" @click="reloadRandomExplorers" :loading="reloading">
+            Buscar Otros
+          </v-btn>
+        </div>
+
+        <div v-if="loading || reloading" class="d-flex justify-center align-center py-10">
+          <v-progress-circular indeterminate color="cyan-accent-2" size="64"></v-progress-circular>
+        </div>
+
+        <v-row v-else-if="randomExplorers.length > 0">
+          <v-col v-for="explorer in randomExplorers" :key="explorer.user" cols="12" xl="4" lg="4" md="6" sm="12">
+            <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
+              <div class="d-flex align-center mb-4">
+                <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
+                  <v-img v-if="explorer.avatar" :src="'/' + explorer.avatar" alt="Avatar" cover></v-img>
+                  <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
+                </v-avatar>
+
+                <div class="flex-grow-1">
+                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ explorer.user }}</h2>
+                  <div class="d-flex align-center flex-wrap gap-2">
+                    <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
+                      Nivel {{ explorer.level || 1 }}
+                    </v-chip>
+                    <v-chip v-if="explorer.mascot" size="small" color="amber-accent-3" variant="tonal" class="font-weight-bold">
+                      <v-icon start icon="mdi-paw" size="x-small"></v-icon>
+                      {{ formatMascotName(explorer.mascot) }}
+                    </v-chip>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Medallas del explorador -->
+              <div class="achievements-mini-grid mb-4 mt-auto">
+                <div v-for="i in 3" :key="i" class="achievement-slot">
+                  <Medal v-if="getAchievement(explorer.selectedAchievements?.[i - 1])"
+                    :type="getAchievement(explorer.selectedAchievements[i - 1]).type"
+                    :icon="getAchievement(explorer.selectedAchievements[i - 1]).icon" 
+                    :scale="0.32"
+                    :icon-size="48" />
+                  <div v-else class="empty-slot-indicator"></div>
+                </div>
+              </div>
+
+              <v-divider class="my-3 border-opacity-25" color="white"></v-divider>
+
+              <v-card-actions class="pa-0 mt-auto">
+                <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-4 mr-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(explorer)">
+                  <v-icon start icon="mdi-account-eye"></v-icon>
+                  Ver Perfil
+                </v-btn>
+                <v-btn color="success" variant="elevated" class="rounded-lg px-4 flex-grow-1 text-caption font-weight-bold" @click="addFriend(explorer.user)">
+                  <v-icon start icon="mdi-account-plus"></v-icon>
+                  Reclutar
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <div v-else-if="!loading && !reloading" class="text-center py-10">
+          <v-icon icon="mdi-telescope" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+          <h3 class="text-h6 text-grey-lighten-1">No hay más exploradores por la galaxia ahora mismo.</h3>
+        </div>
+      </v-window-item>
+    </v-window>
+
+    <!-- PROFILE DIALOG -->
+    <v-dialog v-model="profileDialog.show" max-width="450">
+      <v-card class="glass-popup pa-6 text-center rounded-xl border-cyan">
+        <div class="d-flex justify-end w-100">
+          <v-btn icon="mdi-close" variant="text" color="grey" @click="profileDialog.show = false"></v-btn>
+        </div>
+        
+        <div class="position-relative mb-6 d-flex justify-center">
+          <div style="position: relative;">
+            <v-avatar size="120" class="profile-dialog-avatar bg-black">
+              <v-img v-if="profileDialog.user?.avatar" :src="'/' + profileDialog.user.avatar" cover></v-img>
+              <span v-else class="text-h2 text-cyan-accent-2 font-weight-bold">{{ profileDialog.user?.user?.charAt(0).toUpperCase() }}</span>
+            </v-avatar>
+            <v-avatar v-if="profileDialog.user?.mascot" size="50" class="profile-dialog-mascot shadow-lg">
+              <v-img :src="'/' + profileDialog.user.mascot" cover></v-img>
+            </v-avatar>
           </div>
+        </div>
 
-          <v-divider class="my-4 border-opacity-25" color="white"></v-divider>
+        <h2 class="text-h4 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
+        <div class="text-cyan-accent-2 font-weight-bold text-subtitle-1 mb-4">Nivel {{ profileDialog.user?.level || 1 }} - {{ profileDialog.user?.rank || 'Explorador' }}</div>
+        
+        <v-divider class="my-4 border-opacity-25" color="white"></v-divider>
+        
+        <h3 class="text-overline font-weight-black text-grey-lighten-1 mb-4">LOGROS ACTIVOS</h3>
+        <div class="d-flex justify-center gap-4 mb-6">
+           <div v-for="i in 3" :key="i" class="achievement-display-box">
+             <Medal v-if="getAchievement(profileDialog.user?.selectedAchievements?.[i - 1])"
+              :type="getAchievement(profileDialog.user.selectedAchievements[i - 1]).type"
+              :icon="getAchievement(profileDialog.user.selectedAchievements[i - 1]).icon" 
+              :scale="0.5"
+              :icon-size="48" />
+             <v-icon v-else icon="mdi-plus" color="grey-darken-3" size="24"></v-icon>
+           </div>
+        </div>
 
-          <v-card-actions class="pa-0">
-            <template v-if="isFriend(friend.user)">
-              <v-btn icon color="error" variant="tonal" class="rounded-lg mr-2" @click="removeFriend(friend.user)">
-                <v-icon icon="mdi-trash-can-outline"></v-icon>
-              </v-btn>
-              <v-spacer></v-spacer>
-              <v-btn color="cyan-accent-2" variant="outlined" class="rounded-lg px-4 mr-2">
-                <v-icon start icon="mdi-message-outline"></v-icon>
-                Chatear
-              </v-btn>
-              <v-btn color="primary" variant="elevated" class="rounded-lg px-4">
-                <v-icon start icon="mdi-sword-cross"></v-icon>
-                Desafiar
-              </v-btn>
-            </template>
-
-            <template v-else>
-              <v-spacer></v-spacer>
-              <v-btn color="success" variant="elevated" class="rounded-lg px-4" @click="addFriend(friend.user)">
-                <v-icon start icon="mdi-account-plus"></v-icon>
-                Reclutar
-              </v-btn>
-            </template>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <div v-else class="text-center py-10">
-      <v-icon icon="mdi-account-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-      <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">No encontramos exploradores con ese nombre.</h3>
-      <h3 v-else class="text-h6 text-grey-lighten-1">Tu tripulación está vacía. ¡Busca nuevos reclutas!</h3>
-    </div>
+        <v-btn v-if="!isFriend(profileDialog.user?.user) && profileDialog.user?.user !== astroStore.user" 
+          color="success" block size="large" class="rounded-lg font-weight-bold" 
+          @click="addFriend(profileDialog.user.user); profileDialog.show = false;">
+          <v-icon start icon="mdi-account-plus"></v-icon>
+          Reclutar a {{ profileDialog.user?.user }}
+        </v-btn>
+      </v-card>
+    </v-dialog>
 
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
       {{ snackbar.text }}
@@ -93,22 +213,35 @@
 import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
+import { ACHIEVEMENTS } from '@/constants/achievements';
+import Medal from '@/components/achievements/Medal.vue';
 
 const astroStore = useAstroStore();
-// Traemos explorers (todos los usuarios) y friends (mis amigos) del store
 const { explorers, friends } = storeToRefs(astroStore);
 
 const loading = ref(true);
+const reloading = ref(false);
 const searchQuery = ref('');
+const searchExploreQuery = ref('');
+const tab = ref('friends');
+const randomExplorers = ref([]);
 
-// --- DEFINICIÓN DEL SNACKBAR (Faltaba esto) ---
+const profileDialog = ref({
+  show: false,
+  user: null
+});
+
+const openProfile = (userObj) => {
+  profileDialog.value.user = userObj;
+  profileDialog.value.show = true;
+};
+
 const snackbar = ref({
   show: false,
   text: '',
   color: 'success'
 });
 
-// Función auxiliar para mostrar mensajes
 const showMessage = (text, color = 'success') => {
   snackbar.value = {
     show: true,
@@ -117,54 +250,70 @@ const showMessage = (text, color = 'success') => {
   };
 };
 
-// --- LÓGICA DE FILTRADO ---
-const filteredFriends = computed(() => {
-  const allUsers = Array.isArray(explorers.value) ? explorers.value : [];
-
-  // Excluirse a uno mismo de la lista
-  const allExceptMe = allUsers.filter(f => {
-    return f.user && f.user.toLowerCase() !== (astroStore.user?.toLowerCase() || '');
-  });
-
-  // Si hay texto en el buscador, filtramos por nombre
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    return allExceptMe.filter(f => f.user.toLowerCase().includes(query));
-  }
-
-  // Si NO hay búsqueda, mostramos primero a mis amigos y luego al resto (o solo amigos si prefieres)
-  // Aquí devolvemos TODOS para que puedas agregar gente nueva, ordenando amigos primero.
-  return allExceptMe.sort((a, b) => {
-    const aIsFriend = isFriend(a.user);
-    const bIsFriend = isFriend(b.user);
-    // Amigos primero
-    return (aIsFriend === bIsFriend) ? 0 : aIsFriend ? -1 : 1;
-  });
-});
-
-// Verifica si un usuario está en mi lista de amigos (usando el Store)
-const isFriend = (username) => {
-  if (!username) return false;
-  // friends.value es un array de strings (nombres de usuario)
-  return Array.isArray(friends.value) && friends.value.includes(username);
+const getAchievement = (id) => {
+  if (id === null || id === undefined) return null;
+  return ACHIEVEMENTS.find(a => a.id === Number(id));
 };
 
-// Formatea el nombre de la mascota para evitar errores
 const formatMascotName = (mascotData) => {
   if (typeof mascotData === 'object' && mascotData !== null) {
     return mascotData.name || 'Mascota';
   }
-  return mascotData || 'Mascota';
+  let baseName = mascotData || 'Mascota';
+  return baseName.replace(/\.[^/.]+$/, "");
 };
 
-// --- CARGA DE DATOS ---
+const isFriend = (username) => {
+  if (!username) return false;
+  return Array.isArray(friends.value) && friends.value.includes(username);
+};
+
+// Mis amigos (filtrados y ordenados)
+const myFriendsList = computed(() => {
+  const allUsers = Array.isArray(explorers.value) ? explorers.value : [];
+  
+  let myFriends = allUsers.filter(f => isFriend(f.user) && f.user !== astroStore.user);
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    myFriends = myFriends.filter(f => f.user.toLowerCase().includes(query));
+  }
+
+  return myFriends;
+});
+
+// Función para cargar exploradores aleatorios
+const reloadRandomExplorers = () => {
+  reloading.value = true;
+  
+  setTimeout(() => { // Pequeño timeout visual
+    const allUsers = Array.isArray(explorers.value) ? explorers.value : [];
+    
+    // Filtrar: ni yo, ni mis amigos actuales
+    let eligibleExplorers = allUsers.filter(f => {
+      return f.user !== astroStore.user && !isFriend(f.user);
+    });
+
+    if (searchExploreQuery.value) {
+      const q = searchExploreQuery.value.toLowerCase();
+      eligibleExplorers = eligibleExplorers.filter(f => f.user.toLowerCase().includes(q));
+    }
+
+    // Shuffle simple (Fisher-Yates o similar)
+    const shuffled = [...eligibleExplorers].sort(() => 0.5 - Math.random());
+    
+    // Tomar 10
+    randomExplorers.value = shuffled.slice(0, 10);
+    reloading.value = false;
+  }, 400);
+};
+
 const fetchFriends = async () => {
   loading.value = true;
   try {
-    // Carga todos los usuarios
     await astroStore.fetchAllUsers();
-    // Carga mis estadísticas (donde viene mi lista de amigos)
     await astroStore.fetchUserStats();
+    reloadRandomExplorers(); // Llenar la pestaña de búsqueda al iniciar
   } catch (error) {
     console.error("Error cargando tripulación:", error);
     showMessage("Error de conexión con la flota", "error");
@@ -177,18 +326,12 @@ onMounted(() => {
   fetchFriends();
 });
 
-// --- ACCIONES (Añadir / Eliminar) ---
 const removeFriend = async (friendName) => {
-  // Llamada al backend a través del Store
-  const result = await astroStore.removeFriendAction(friendName);
-  
-  // Como removeFriendAction en el store (paso anterior) no retornaba nada explícito en éxito
-  // asumimos éxito si no hay error, o ajustamos el store. 
-  // Pero para feedback visual rápido:
+  await astroStore.removeFriendAction(friendName);
   showMessage(`${friendName} ha abandonado la tripulación.`, 'warning');
-  
-  // Refrescamos stats para asegurar consistencia
   await astroStore.fetchUserStats(); 
+  // Recargar aleatorios por si queremos que ese amigo vuelva a aparecer en "buscar"
+  if (tab.value === 'search') reloadRandomExplorers();
 };
 
 const addFriend = async (friendName) => {
@@ -198,6 +341,8 @@ const addFriend = async (friendName) => {
   
   if (result && result.success) {
     showMessage(`¡${friendName} reclutado con éxito!`);
+    // Quitarlo inmediatamente de la vista general
+    randomExplorers.value = randomExplorers.value.filter(e => e.user !== friendName);
   } else {
     showMessage(result?.message || "Error al añadir recluta", "error");
   }
@@ -206,15 +351,11 @@ const addFriend = async (friendName) => {
 
 <style scoped>
 .friends-container {
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 .tracking-wide {
   letter-spacing: 0.1em;
-}
-
-.max-width-300 {
-  max-width: 300px;
 }
 
 .friend-card {
@@ -233,5 +374,96 @@ const addFriend = async (friendName) => {
 
 .border-avatar {
   border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.bg-transparent {
+  background-color: transparent !important;
+}
+
+.achievements-mini-grid {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  height: 60px; /* Para mantener consistencia si no hay medallas */
+  margin-top: 10px;
+}
+
+.achievement-slot {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible; /* Prevents ribbons from getting chopped */
+  position: relative;
+}
+
+/* Ajuste específico para centrar la medalla cuando está reducida con CSS scale */
+.achievement-slot :deep(.medal-container) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.35) !important;
+  margin: 0 !important;
+  z-index: 2;
+}
+
+.empty-slot-indicator {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.glass-popup {
+  background: rgba(15, 17, 23, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.border-cyan {
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+}
+
+.profile-dialog-avatar {
+  border: 4px solid rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+}
+
+.profile-dialog-mascot {
+  position: absolute;
+  bottom: -5px;
+  right: -10px;
+  border: 3px solid #1a1d26;
+  background: white;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.achievement-display-box {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  background: #242835;
+  position: relative;
+  overflow: visible;
+}
+
+.achievement-display-box :deep(.medal-container) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5) !important;
+  margin: 0 !important;
+  z-index: 2;
 }
 </style>
