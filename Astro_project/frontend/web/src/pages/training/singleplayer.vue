@@ -16,17 +16,24 @@
                             :class="{ 'connector-flip': index % 2 !== 0 }">
                             <svg viewBox="0 0 140 140">
                                 <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                    :class="{ 'line-active': index + 1 < astroStore.level }" />
+                                    :class="{ 'line-active': index + 1 < progressStore.level }" />
                             </svg>
                         </div>
 
-                        <div v-if="index + 1 <= astroStore.level" class="floating-label" :class="getLevelState(index)">
+                        <div v-if="index + 1 <= progressStore.level" class="floating-label" :class="getLevelState(index)">
                             {{ level.name }}
+                        </div>
+
+                        <div v-if="getLevelState(index) === 'current'" class="target-score-label"
+                            style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); 
+                                   background: rgba(0,0,0,0.6); color: #00E5FF; padding: 2px 6px; 
+                                   border-radius: 4px; font-size: 10px; white-space: nowrap;">
+                            Meta: {{ level.minScore }} pts
                         </div>
 
                         <button class="node-btn" :class="[
                             `state-${getLevelState(index)}`,
-                            { 'is-interactive': index + 1 <= astroStore.level }
+                            { 'is-interactive': index + 1 <= progressStore.level }
                         ]" @click="handleLevelClick(index)" v-ripple>
                             <div class="icon-layer">
                                 <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
@@ -82,74 +89,140 @@
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
+            <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #ff5252;">
+                <v-icon icon="mdi-close-circle-outline" color="red-accent-2" size="80" class="mb-4"></v-icon>
+                
+                <h2 class="text-h4 font-weight-black text-white mb-2">¡Casi lo logras!</h2>
+                
+                <div class="py-4">
+                    <p class="text-body-1 text-grey-lighten-1">Has obtenido:</p>
+                    <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} pts</div>
+                    
+                    <v-divider class="mb-4"></v-divider>
+                    
+                    <p class="text-body-2 text-grey-lighten-1">
+                        Necesitas <span class="text-red-accent-2 font-weight-bold">{{ requiredScore }} puntos</span><br>
+                        para desbloquear la siguiente misión.
+                    </p>
+                </div>
+
+                <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="large"
+                    class="font-weight-bold text-black mt-4" @click="showFailDialog = false">
+                    INTENTAR DE NUEVO
+                </v-btn>
+            </v-card>
+        </v-dialog>
+
     </v-container>
 </template>
 
 <script setup>
 import { ref, shallowRef } from 'vue';
-import { useAstroStore } from '@/stores/astroStore'; // Importamos el store
-
-const showLevelUpDialog = ref(false);
-const newLevelData = ref({
-    level: 1,
-    rank: '',
-    rankChanged: false
-});
+// Importamos el store correcto según el archivo progressStore.js que me pasaste
+import { useProgressStore } from '@/stores/progressStore'; 
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
 import RadioSignal from '@/components/games/RadioSignal.vue';
 
-const astroStore = useAstroStore();
+const progressStore = useProgressStore();
 const activeGameComponent = shallowRef(null);
 
+// Estados de los diálogos
+const showLevelUpDialog = ref(false);
+const showFailDialog = ref(false);
 
+// Datos temporales para la lógica de puntuación
+const lastScore = ref(0);
+const requiredScore = ref(0);
+
+const newLevelData = ref({
+    level: 1,
+    rank: '',
+    rankChanged: false
+});
+
+// DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
+// Ajusta 'minScore' a la dificultad real de tus juegos
 const levelSequence = [
-    { name: 'Despegue', component: WordConstruction },
-    { name: 'Navegación', component: RadarScan },
-    { name: 'Comunicaciones', component: RadioSignal },
-    { name: 'Sistemas', component: SpelledRosco },
-    { name: 'Agujero Negro', component: RadarScan },
-    { name: 'Exoplaneta', component: RadioSignal },
+    { name: 'Despegue', component: WordConstruction, minScore: 100 },
+    { name: 'Navegación', component: RadarScan, minScore: 300 },
+    { name: 'Comunicaciones', component: RadioSignal, minScore: 500 },
+    { name: 'Sistemas', component: SpelledRosco, minScore: 800 },
+    { name: 'Agujero Negro', component: RadarScan, minScore: 1000 },
+    { name: 'Exoplaneta', component: RadioSignal, minScore: 1500 },
 ];
 
+// Determina el estado visual del nodo (bloqueado, actual, completado)
 const getLevelState = (index) => {
     const levelNum = index + 1;
-    if (levelNum === astroStore.level) return 'current';
-    if (levelNum < astroStore.level) return 'completed';
+    if (levelNum === progressStore.level) return 'current';
+    if (levelNum < progressStore.level) return 'completed';
     return 'locked';
 };
 
+// Maneja el click en el mapa
 const handleLevelClick = (index) => {
     const state = getLevelState(index);
     if (state !== 'locked') {
+        // Asignamos el componente del juego para que se abra
         activeGameComponent.value = levelSequence[index].component;
     }
 };
 
-// Lógica restaurada de V1 con manejo de errores y respuesta del store
+// LÓGICA PRINCIPAL AL TERMINAR UN MINIJUEGO
 const handleGameOver = async (finalScore) => {
-    if (astroStore.user) {
-        try {
-            // 1. Guardamos el rango anterior
-            const previousRank = astroStore.rank;
+    // 1. Cerramos visualmente el juego
+    activeGameComponent.value = null; 
+    lastScore.value = finalScore;
 
-            // 2. Llamada al Store
-            const result = await astroStore.registerCompletedGame(
-                activeGameComponent.value.__name || 'Minijuego', // Fallback name
+    // 2. Verificamos si hay usuario activo
+    const user = progressStore.resolveUser();
+
+    if (user) {
+        try {
+            // -- LÓGICA DE VALIDACIÓN DE PUNTOS --
+            
+            // Calculamos qué nivel acaba de jugar el usuario.
+            // Si el usuario está en nivel 1, el índice es 0.
+            // NOTA: Si permites re-jugar niveles anteriores, aquí deberías saber
+            // exactamente cuál de los botones pulsó. 
+            // Asumimos que juega el nivel actual (progressStore.level).
+            const currentLevelIndex = progressStore.level - 1; 
+            
+            // Obtenemos la configuración de ese nivel
+            const levelConfig = levelSequence[currentLevelIndex];
+
+            // Si existe configuración y NO supera la puntuación mínima:
+            if (levelConfig && finalScore < levelConfig.minScore) {
+                requiredScore.value = levelConfig.minScore;
+                showFailDialog.value = true;
+                
+                console.log(`❌ Puntos insuficientes: ${finalScore} / ${levelConfig.minScore}`);
+                return; // IMPORTANTE: Detenemos aquí. No llamamos al servidor.
+            }
+
+            // -- SI SUPERA LA PUNTUACIÓN, GUARDAMOS PROGRESO --
+
+            const previousLevel = progressStore.level; 
+
+            // Llamada al store (que llama al backend)
+            const result = await progressStore.registerCompletedGame(
+                activeGameComponent.value?.__name || 'Minijuego', // Nombre del componente como fallback
                 finalScore
             );
 
-            // 3. Manejo de errores explícito
+            // Manejo de errores del servidor
             if (!result.success) throw new Error(result.message);
 
-            // 4. Comprobamos si hubo subida de nivel (respuesta del backend)
-            if (result.data.leveledUp) {
+            // Verificamos si el servidor nos ha subido de nivel
+            if (result.data.newLevel > previousLevel) {
                 newLevelData.value = {
                     level: result.data.newLevel,
-                    rank: result.data.newRank,
-                    rankChanged: previousRank !== result.data.newRank
+                    rank: result.data.newRank || 'Explorador', // Fallback si no viene rango
+                    rankChanged: false // Aquí podrías comparar con el rango anterior si lo tuvieras
                 };
                 showLevelUpDialog.value = true;
             }
@@ -158,11 +231,9 @@ const handleGameOver = async (finalScore) => {
             console.error("❌ Error al registrar la partida:", error);
         }
     } else {
-        console.warn("⚠️ Mode convidat: No s'ha guardat la puntuació.");
+        console.warn("⚠️ Modo invitado: No se ha guardado la puntuación.");
+        // Opcional: Mostrar diálogo de registro para guardar progreso
     }
-
-    // Cerramos el juego para volver al mapa
-    activeGameComponent.value = null;
 };
 </script>
 
