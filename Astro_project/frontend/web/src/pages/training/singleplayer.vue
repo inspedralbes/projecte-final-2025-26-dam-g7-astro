@@ -100,6 +100,7 @@ import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
 import RadioSignal from '@/components/games/RadioSignal.vue';
+import RhymeSquad from '@/components/games/RhymeSquad.vue';
 
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
@@ -112,6 +113,7 @@ const levelSequence = [
     { name: 'Sistemas', component: SpelledRosco },
     { name: 'Agujero Negro', component: RadarScan },
     { name: 'Exoplaneta', component: RadioSignal },
+    { name: 'Escuadrón', component: RhymeSquad }
 ];
 
 const getLevelState = (index) => {
