@@ -144,7 +144,7 @@ const newLevelData = ref({
     rank: '',
     rankChanged: false
 });
-ç
+
 
 // DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
 // Ajusta 'minScore' a la dificultad real de tus juegos
