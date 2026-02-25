@@ -33,6 +33,7 @@ function registerAuthRoutes(app, {
                 streak: 0,
                 streakFreezes: 0,
                 activeBoosters: normalizeActiveBoosters(),
+                avatar: 'Astronauta_blanc.jpg',
                 lastActivity: new Date(),
                 createdAt: new Date()
             };
@@ -78,6 +79,7 @@ function registerAuthRoutes(app, {
                     streak: streakResult.streak,
                     streakFreezes: Math.max(foundUser.streakFreezes || 0, freezeUnits),
                     activeBoosters,
+                    avatar: foundUser.avatar || 'Astronauta_blanc.jpg',
                     needsFreeze: streakResult.needsFreeze,
                     lastActivity: foundUser.lastActivity,
                     lastGame: streakResult.lastGame

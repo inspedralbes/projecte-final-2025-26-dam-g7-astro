@@ -155,9 +155,29 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
-        updateAvatar(seed) {
+        async updateAvatar(seed) {
             this.setAvatar(seed);
             console.log('👤 Avatar actualizado localmente:', seed);
+
+            if (!this.user) return;
+
+            try {
+                const { response, data } = await requestJson('/api/user/avatar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        avatar: seed
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error al guardar avatar en servidor');
+                }
+                console.log('✅ Avatar sincronizado en servidor');
+            } catch (error) {
+                console.error('❌ Error sincronizando avatar:', error);
+            }
         },
 
         updateMascot(mascotFile) {
