@@ -23,7 +23,9 @@ const { registerPlanRoutes } = require('./src/routes/planRoutes');
 const { registerInventoryRoutes } = require('./src/routes/inventoryRoutes');
 const { registerMissionRoutes } = require('./src/routes/missionRoutes');
 const { registerFriendRoutes } = require('./src/routes/friendRoutes');
+const { registerMultiplayerRoutes } = require('./src/routes/multiplayerRoutes');
 const { registerWsHandlers } = require('./src/ws/registerWsHandlers');
+const roomManager = require('./src/ws/RoomManager');
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -33,6 +35,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const getCollections = createGetCollections(getDB);
+roomManager.init(getCollections, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
 
 const getUserStats = createGetUserStats({
@@ -93,6 +96,7 @@ registerInventoryRoutes(app, {
 
 registerMissionRoutes(app, { getCollections });
 registerFriendRoutes(app, { getCollections });
+registerMultiplayerRoutes(app, { getCollections });
 
 registerWsHandlers(wss);
 
@@ -113,17 +117,17 @@ app.get('/api/users', async (req, res) => {
     try {
         const { users } = getCollections();
         // Traemos a todos los usuarios pero solo los campos necesarios para la lista
-        const allUsers = await users.find({}, { 
-            projection: { 
-                user: 1, 
-                level: 1, 
-                rank: 1, 
+        const allUsers = await users.find({}, {
+            projection: {
+                user: 1,
+                level: 1,
+                rank: 1,
                 mascot: 1,
                 avatar: 1,
-                streak: 1 
-            } 
+                streak: 1
+            }
         }).toArray();
-        
+
         res.json(allUsers);
     } catch (error) {
         console.error("❌ Error al obtener exploradores:", error);

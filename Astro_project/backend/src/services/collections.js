@@ -3,7 +3,8 @@ function createGetCollections(getDB) {
         const db = getDB();
         return {
             users: db.collection('users'),
-            partides: db.collection('partides')
+            partides: db.collection('partides'),
+            rooms: db.collection('rooms')
         };
     };
 }
