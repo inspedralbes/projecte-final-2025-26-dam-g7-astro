@@ -6,7 +6,11 @@
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">Nivell {{ level }}</h2>
-          <span class="text-caption text-grey-lighten-2">Puntuació: {{ score }}</span>
+          <div class="text-caption text-grey-lighten-2">
+            <span>Puntuació: {{ score }}</span>
+            <span class="mx-2">|</span>
+            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+          </div>
         </div>
         <!-- Barra de progrés "Construcció" -->
         <div class="d-flex flex-column align-end">
@@ -88,7 +92,9 @@
     <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-trophy" color="yellow-accent-4" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">¡Construcció Completada!</h2>
-      <p class="text-h5 text-cyan-accent-2 mb-6">Punts Totals: {{ score }}</p>
+      <p class="text-h5 text-cyan-accent-2 mb-2">Punts Totals: {{ score }}</p>
+      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps Restant: {{ timeLeft }}s</p>
+      <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
         Obtenir Recompensa
@@ -99,13 +105,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import draggable from 'vuedraggable';
-import { useAstroStore } from '@/stores/astroStore';
 
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
-const astroStore = useAstroStore();
 
 // Luego lo podemos conectar a la base de datos
 const words = Object.freeze([
@@ -214,10 +218,14 @@ const gameFinished = ref(false);
 const letterId = ref(0);
 const gameSaved = ref(false);
 const isRoundLocked = ref(false);
+const totalTime = 90;
+const timeLeft = ref(totalTime);
+let timerInterval = null;
 
 // Gamificació: Progrés de construcció
 const currentStep = ref(0);
 const totalSteps = ref(5); // Paraules per guanyar
+const finalReward = computed(() => score.value + timeLeft.value);
 
 // --- LÒGICA ---
 const orderedGuess = computed(() => scrambledLetters.value.map((tile) => tile.letter).join(''));
@@ -295,15 +303,40 @@ const finishGame = async () => {
   if (gameFinished.value) return;
 
   gameFinished.value = true;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
 };
 
 const emitExit = () => {
-  emit('game-over', score.value);
+  emit('game-over', finalReward.value);
+};
+
+const startTimer = () => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+
+  timerInterval = setInterval(() => {
+    if (gameFinished.value) return;
+    timeLeft.value = Math.max(0, timeLeft.value - 1);
+    if (timeLeft.value === 0) {
+      finishGame();
+    }
+  }, 1000);
 };
 
 // --- INICI ---
 onMounted(() => {
   loadNextWord();
+  startTimer();
+});
+
+onUnmounted(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
 });
 
 </script>

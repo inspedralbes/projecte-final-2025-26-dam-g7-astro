@@ -6,7 +6,11 @@
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar</h2>
-          <span class="text-caption text-grey-lighten-2">Puntuació: {{ score }}</span>
+          <div class="text-caption text-grey-lighten-2">
+            <span>Puntuació: {{ score }}</span>
+            <span class="mx-2">|</span>
+            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+          </div>
         </div>
         <div class="d-flex align-center gap-4">
           <v-chip v-for="(l, i) in roscoLetters" :key="i" :color="getChipColor(l)" size="small" label class="mx-1 font-weight-bold">
@@ -139,7 +143,9 @@
             <div class="text-caption">Errors</div>
         </div>
       </div>
-      <p class="text-h5 text-white mb-6">Puntuació Final: {{ score }}</p>
+      <p class="text-h5 text-white mb-2">Puntuació Final: {{ score }}</p>
+      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps Restant: {{ timeLeft }}s</p>
+      <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
         Obtenir Recompensa
@@ -154,11 +160,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
 
 const emit = defineEmits(['game-over']);
-const astroStore = useAstroStore();
 
 // --- DADES DEL JOC (temes variats) ---
 const allLettersData = [
@@ -273,6 +277,9 @@ const showFeedback = ref(false);
 const feedbackMessage = ref('');
 const feedbackColor = ref('info');
 const isChecking = ref(false);
+const totalTime = 90;
+const timeLeft = ref(totalTime);
+let timerInterval = null;
 
 // Rocket animation state
 const rocketAnimating = ref(false);
@@ -288,6 +295,7 @@ const currentLetter = computed(() => {
 
 const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length);
 const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
+const finalReward = computed(() => score.value + timeLeft.value);
 
 // Helper: normalize string (remove accents, uppercase, trim spaces)
 const normalize = (str) => {
@@ -298,6 +306,13 @@ const normalize = (str) => {
 onMounted(() => {
     const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
     roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
+    startTimer();
+});
+
+onUnmounted(() => {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
 });
 
 const clearInput = () => { rawInput.value = ''; };
@@ -407,8 +422,31 @@ const advanceTurn = async () => {
     }
 };
 
-const finishGame = () => { gameFinished.value = true; };
-const emitExit = () => { emit('game-over', score.value); };
+const finishGame = () => {
+    if (gameFinished.value) return;
+    gameFinished.value = true;
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+};
+
+const startTimer = () => {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    timerInterval = setInterval(() => {
+        if (gameFinished.value) return;
+        timeLeft.value = Math.max(0, timeLeft.value - 1);
+        if (timeLeft.value === 0) {
+            finishGame();
+        }
+    }, 1000);
+};
+
+const emitExit = () => { emit('game-over', finalReward.value); };
 
 // Visual Helpers
 const getBubbleClass = (letter, index) => {
