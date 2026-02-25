@@ -124,7 +124,7 @@ async function toggleEquip(item) {
         const data = await response.json();
         if (data.success) {
             // Actualizamos el estado global con el inventario devuelto por el servidor
-            astroStore.inventory = data.inventory || [];
+            astroStore.setInventory(data.inventory || []);
         }
     } catch (error) {
         console.error("Error al equipar item:", error);

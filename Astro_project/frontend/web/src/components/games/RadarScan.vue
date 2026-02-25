@@ -1,9 +1,10 @@
 <template>
   <div class="game-container" @mousemove="updateFlashlight" ref="gameArea">
-    <div class="hud d-flex justify-space-between align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
-      <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
-      <div class="text-h6 text-white bg-slate-800 px-4 py-1 rounded-pill border-cyan">Objectiu: Troba la '{{ targetChar }}'</div>
-      <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
+    <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
+      <div class="hud-pill d-flex align-center ga-8">
+        <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
+        <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
+      </div>
     </div>
 
     <div 
@@ -81,7 +82,6 @@ const gameArea = ref(null);
 const board = ref([]);
 const currentLevel = ref(1);
 const targetIndex = ref(-1);
-const targetChar = ref('');
 
 // --- CONFIGURACIÓ DE NIVELLS ---
 const levels = [
@@ -111,7 +111,6 @@ const updateFlashlight = (e) => {
 const generateBoard = () => {
   const config = currentConfig.value;
   const totalCells = config.grid * config.grid;
-  targetChar.value = config.target;
   
   let newBoard = Array(totalCells).fill(config.distractor);
   targetIndex.value = Math.floor(Math.random() * totalCells);
@@ -122,7 +121,7 @@ const generateBoard = () => {
 
 const nextRound = () => {
   score.value += (currentLevel.value * 10);
-  timeLeft.value = Math.min(60, timeLeft.value + 3);
+  timeLeft.value = Math.min(60, timeLeft.value + 1);
   currentLevel.value++;
   generateBoard();
 };
@@ -246,4 +245,12 @@ onBeforeUnmount(() => {
 .bg-slate-800 { background-color: #1e293b; }
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 1px solid #00e5ff; }
+
+.hud-pill {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 999px;
+  padding: 10px 22px;
+  backdrop-filter: blur(4px);
+}
 </style>

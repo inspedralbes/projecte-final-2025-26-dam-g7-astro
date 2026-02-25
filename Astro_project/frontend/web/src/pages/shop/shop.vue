@@ -236,7 +236,7 @@ const isSpinning = ref(false);
 const userTickets = ref(0); // Estat local per als tiquets de la botiga
 
 const updateStats = (data) => {
-    astroStore.coins = data.coins;
+    astroStore.setCoins(data.coins);
     if (data.tickets !== undefined) {
         userTickets.value = data.tickets;
     }
@@ -253,7 +253,7 @@ const triggerMultiSpin = async () => {
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message);
 
-        astroStore.coins = data.newBalance;
+        astroStore.setCoins(data.newBalance);
         userTickets.value = data.newTickets;
     } catch (error) {
         alert(error.message);
@@ -345,7 +345,7 @@ const handleWin = (prize) => {
 };
 
 const updateCoins = (newBalance) => {
-    astroStore.coins = newBalance;
+    astroStore.setCoins(newBalance);
 };
 
 const updateTickets = (newTicketsCount) => {
@@ -354,7 +354,7 @@ const updateTickets = (newTicketsCount) => {
 
 const updateInventory = (inventory) => {
     if (Array.isArray(inventory)) {
-        astroStore.inventory = inventory;
+        astroStore.setInventory(inventory);
     }
 };
 </script>

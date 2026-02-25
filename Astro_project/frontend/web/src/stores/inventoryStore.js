@@ -1,0 +1,115 @@
+import { defineStore } from 'pinia';
+import { useSessionStore } from './sessionStore';
+import {
+    normalizeInventoryItems,
+    requestJson,
+    toPositiveInteger
+} from './astroShared';
+
+export const useInventoryStore = defineStore('inventory', {
+    state: () => ({
+        inventory: [],
+        error: null
+    }),
+
+    getters: {
+        inventoryUnits: (state) => {
+            return (state.inventory || []).reduce((sum, item) => {
+                const quantity = Number(item?.quantity);
+                return sum + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+            }, 0);
+        }
+    },
+
+    actions: {
+        resolveUser() {
+            const sessionStore = useSessionStore();
+            return sessionStore.user || null;
+        },
+
+        setInventory(items = []) {
+            this.inventory = normalizeInventoryItems(items || []);
+        },
+
+        async fetchUserInventory() {
+            this.error = null;
+            const user = this.resolveUser();
+            if (!user) return { success: false, message: 'No hay sesión activa.', inventory: [] };
+
+            try {
+                const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/inventory`);
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudo obtener el inventario.');
+                }
+
+                this.setInventory(data.inventory || []);
+                return { success: true, inventory: this.inventory, data };
+            } catch (error) {
+                console.error('Error al traer inventario:', error);
+                this.error = error.message;
+                return { success: false, message: this.error, inventory: [] };
+            }
+        },
+
+        async buyItem(item) {
+            this.error = null;
+            const user = this.resolveUser();
+            if (!user) return { success: false, message: 'No hay sesión activa.' };
+
+            try {
+                const { response, data } = await requestJson('/api/shop/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, item })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudo comprar el objeto.');
+                }
+
+                this.setInventory(data.inventory || []);
+                return { success: true, data };
+            } catch (error) {
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        async useInventoryItem(itemId) {
+            this.error = null;
+            const user = this.resolveUser();
+            if (!user) {
+                return { success: false, message: 'No hay sesión activa.' };
+            }
+
+            const parsedItemId = toPositiveInteger(itemId);
+            if (!parsedItemId) {
+                return { success: false, message: 'Objeto inválido.' };
+            }
+
+            try {
+                const { response, data } = await requestJson('/api/inventory/use-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, itemId: parsedItemId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudo usar el objeto.');
+                }
+
+                this.setInventory(data.inventory || []);
+                return { success: true, data };
+            } catch (error) {
+                this.error = error.message;
+                return { success: false, message: this.error };
+            }
+        },
+
+        clearInventory() {
+            this.inventory = [];
+            this.error = null;
+        }
+    }
+});

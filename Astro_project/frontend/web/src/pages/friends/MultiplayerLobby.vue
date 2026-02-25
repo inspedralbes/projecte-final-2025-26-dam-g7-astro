@@ -37,22 +37,28 @@
               <v-col v-for="player in multiplayerStore.room.players" :key="player" cols="12" sm="6" md="4">
                 <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
                   <v-badge
-                    :icon="player === multiplayerStore.room.host ? 'mdi-crown' : ''"
+                    v-if="player === multiplayerStore.room.host"
+                    icon="mdi-crown"
                     color="amber-accent-2"
                     location="top right"
                     overlap
-                    :content="player === multiplayerStore.room.host ? '' : null"
+                    offset-x="10"
+                    offset-y="10"
                   >
                     <v-avatar size="80" class="mb-3 player-glow-avatar">
-                      <v-img src="https://api.dicebear.com/7.x/bottts/svg?seed=pau" alt="Avatar"></v-img>
+                      <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
                     </v-avatar>
                   </v-badge>
+                  <v-avatar v-else size="80" class="mb-3 player-glow-avatar">
+                    <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
+                  </v-avatar>
+
                   <div class="text-h6 font-weight-bold text-white mb-1">{{ player }}</div>
                   <v-chip v-if="player === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
                     COMANDANTE
                   </v-chip>
                   <v-chip v-else color="cyan-accent-1" size="x-small" variant="tonal" class="font-weight-bold px-3">
-                    EXPLORADOR
+                    TRIPULANTE
                   </v-chip>
                 </v-card>
               </v-col>
@@ -87,40 +93,47 @@
 
         <!-- VISTA: SIN SALA (CREAR O UNIRSE) -->
         <div v-else>
-          <v-card class="setup-panel pa-8 rounded-xl" elevation="6">
-            <v-row>
-              <v-col cols="12" md="6" class="border-right-light">
-                <div class="text-center pa-4">
-                  <v-icon icon="mdi-rocket-launch-outline" size="64" color="cyan-accent-2" class="mb-4"></v-icon>
-                  <h3 class="text-h5 font-weight-black text-white mb-2">Crear Nueva Misión</h3>
-                  <p class="text-body-2 text-grey-lighten-1 mb-6">Inicia tu propia expedición y recluta a tu equipo.</p>
-                  
-                  <div class="d-flex align-center justify-center mb-6">
+          <v-card class="setup-panel pa-6 rounded-xl" elevation="4">
+            <div class="text-center mb-6">
+              <v-icon icon="mdi-orbit" size="48" color="cyan-accent-2" class="mb-2"></v-icon>
+              <h3 class="text-h5 font-weight-black text-white">Preparar Expedición</h3>
+            </div>
+
+            <v-row justify="center">
+              <v-col cols="12" sm="10">
+                <!-- Sección Crear -->
+                <div class="setup-section mb-8 pa-4 rounded-xl border-light">
+                  <div class="d-flex align-center justify-space-between mb-4">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-plus-circle-outline" color="cyan-accent-2" class="mr-2"></v-icon>
+                      <span class="text-subtitle-1 font-weight-bold text-white">Nueva Misión</span>
+                    </div>
                     <v-switch
                       v-model="isPublic"
                       color="cyan-accent-2"
-                      :label="isPublic ? 'Misión Pública (Todos pueden verla)' : 'Misión Privada (Solo con código)'"
+                      :label="isPublic ? 'Pública' : 'Privada'"
                       hide-details
+                      density="compact"
                       inset
+                      class="privacy-switch"
                     ></v-switch>
                   </div>
-
-                  <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn" @click="createRoom">
-                    <v-icon icon="mdi-plus" start></v-icon>
-                    Iniciar Sala
+                  <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan" @click="createRoom">
+                    INICIAR SALA
                   </v-btn>
                 </div>
-              </v-col>
 
-              <v-col cols="12" md="6">
-                <div class="text-center pa-4">
-                  <v-icon icon="mdi-key-variant" size="64" color="amber-accent-2" class="mb-4"></v-icon>
-                  <h3 class="text-h5 font-weight-black text-white mb-2">Unirse por Código</h3>
-                  <p class="text-body-2 text-grey-lighten-1 mb-6">Ingresa el código de 6 dígitos que te enviaron para unirte.</p>
-                  
+                <v-divider class="mb-8" color="rgba(255,255,255,0.1)"></v-divider>
+
+                <!-- Sección Unirse -->
+                <div class="setup-section pa-4 rounded-xl border-light">
+                  <div class="d-flex align-center mb-4">
+                    <v-icon icon="mdi-key-variant" color="amber-accent-2" class="mr-2"></v-icon>
+                    <span class="text-subtitle-1 font-weight-bold text-white">Unirse por Código</span>
+                  </div>
                   <v-text-field
                     v-model="roomCode"
-                    placeholder="INTRODUCE EL CÓDIGO (EJ: AB12YZ)"
+                    placeholder="CÓDIGO (EJ: AB12YZ)"
                     variant="solo-filled"
                     bg-color="rgba(255,255,255,0.05)"
                     class="room-code-input mb-4"
@@ -128,10 +141,8 @@
                     maxlength="6"
                     hide-details
                   ></v-text-field>
-
-                  <v-btn block color="amber-accent-2" size="large" class="rounded-pill font-weight-bold text-black h-custom-btn" :disabled="!roomCode || roomCode.length < 6" @click="joinByCode">
-                    <v-icon icon="mdi-login-variant" start></v-icon>
-                    Acoplarse a Sala
+                  <v-btn block color="amber-accent-2" size="large" class="rounded-pill font-weight-bold text-black h-custom-btn shadow-amber" :disabled="!roomCode || roomCode.length < 6" @click="joinByCode">
+                    ACOPLARSE
                   </v-btn>
                 </div>
               </v-col>
@@ -186,9 +197,9 @@
                     </div>
 
                     <div class="d-flex align-center mb-4">
-                      <v-avatar size="32" class="mr-3 border-thin">
-                        <v-img :src="`https://api.dicebear.com/7.x/bottts/svg?seed=${room.host}`"></v-img>
-                      </v-avatar>
+                    <v-avatar size="32" class="mr-3 border-thin">
+                      <v-img :src="getPlayerAvatar(room.host)" cover></v-img>
+                    </v-avatar>
                       <div>
                         <div class="text-caption text-grey-lighten-1 line-height-1">COMANDANTE</div>
                         <div class="text-body-2 font-weight-bold text-white">{{ room.host }}</div>
@@ -217,26 +228,68 @@
         </v-card>
 
         <!-- Reclutamiento (Si está en una sala) -->
-        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-4" elevation="0">
-          <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
-            <v-icon icon="mdi-account-group" color="cyan-accent-2" class="mr-2"></v-icon>
-            Reclutar Tripulación
-          </h3>
-          <v-list v-if="friends.length > 0" bg-color="transparent" class="pa-0">
-            <v-list-item v-for="friend in friends" :key="friend" class="px-2 py-2 mb-1 recruit-item rounded-lg">
-              <template v-slot:prepend>
-                <v-avatar size="32" class="mr-3">
-                   <v-img :src="`https://api.dicebear.com/7.x/bottts/svg?seed=${friend}`"></v-img>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ friend }}</v-list-item-title>
-              <template v-slot:append>
-                <v-btn color="cyan-accent-2" variant="text" size="small" icon="mdi-bullhorn" @click="multiplayerStore.inviteFriend(friend)"></v-btn>
-              </template>
-            </v-list-item>
+        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4">
+          <div class="pa-4 border-bottom-light">
+            <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
+              <v-icon icon="mdi-account-group" color="cyan-accent-2" class="mr-2"></v-icon>
+              Reclutar Tripulación
+            </h3>
+          </div>
+          <v-list bg-color="transparent" class="pa-0 recruit-list" max-height="450px">
+            <!-- SECCIÓN AMIGOS -->
+            <template v-if="friendsList.length > 0">
+              <v-list-subheader class="text-cyan-accent-2 font-weight-bold text-overline pb-0">AMIGOS</v-list-subheader>
+              <v-list-item v-for="explorer in friendsList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
+                <template v-slot:prepend>
+                  <v-avatar size="40" class="mr-3 border-light">
+                     <v-img :src="getAvatarUrl(explorer.avatar, explorer.user)" cover></v-img>
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                </v-list-item-subtitle>
+                <template v-slot:append>
+                  <v-btn 
+                    color="cyan-accent-2" 
+                    variant="text" 
+                    icon="mdi-bullhorn-outline" 
+                    size="small"
+                    :disabled="multiplayerStore.room?.players.includes(explorer.user)"
+                    @click="multiplayerStore.inviteFriend(explorer.user)"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </template>
+
+            <!-- SECCIÓN OTROS -->
+            <template v-if="otherExplorersList.length > 0">
+              <v-list-subheader class="text-grey-lighten-1 font-weight-bold text-overline pb-0 mt-2">POSIBLES TRIPULANTES</v-list-subheader>
+              <v-list-item v-for="explorer in otherExplorersList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
+                <template v-slot:prepend>
+                  <v-avatar size="40" class="mr-3 border-light">
+                     <v-img :src="getAvatarUrl(explorer.avatar, explorer.user)" cover></v-img>
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                </v-list-item-subtitle>
+                <template v-slot:append>
+                  <v-btn 
+                    color="cyan-accent-2" 
+                    variant="text" 
+                    icon="mdi-bullhorn-outline" 
+                    size="small"
+                    :disabled="multiplayerStore.room?.players.includes(explorer.user)"
+                    @click="multiplayerStore.inviteFriend(explorer.user)"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </template>
           </v-list>
-          <div v-else class="text-center py-4 text-grey-darken-1">
-            <p class="text-caption">Sin exploradores disponibles.</p>
+          <div v-if="friendsList.length === 0 && otherExplorersList.length === 0" class="text-center py-6 text-grey-darken-1">
+            <p class="text-caption">Sin tripulantes en el sector.</p>
           </div>
         </v-card>
       </v-col>
@@ -265,6 +318,44 @@ const roomCode = ref('');
 const isHost = computed(() => {
   return multiplayerStore.room?.host === astroStore.user;
 });
+
+// AÑADIDO: Lógica de reclutamiento (Amigos y Otros separados)
+const friendsList = computed(() => {
+  if (!astroStore.explorers) return [];
+  return astroStore.explorers.filter(e => 
+    e.user !== astroStore.user && 
+    astroStore.friends.includes(e.user)
+  );
+});
+
+const otherExplorersList = computed(() => {
+  if (!astroStore.explorers) return [];
+  return astroStore.explorers.filter(e => 
+    e.user !== astroStore.user && 
+    !astroStore.friends.includes(e.user)
+  );
+});
+
+// Helpers para Avatares
+const getAvatarUrl = (avatar, user) => {
+  // Si el avatar es un archivo local válido (los JPG de astronautas)
+  if (avatar && (avatar.includes('.jpg') || avatar.includes('.png'))) {
+    return `/${avatar}`;
+  }
+  // Si no hay avatar o es un seed de texto, usamos DiceBear (o podrías usar Astronauta_blanc.jpg si prefieres)
+  if (user) {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`;
+  }
+  return '/Astronauta_blanc.jpg'; // Último recurso
+};
+
+const getPlayerAvatar = (username) => {
+  if (username === astroStore.user) {
+    return getAvatarUrl(astroStore.avatar, username);
+  }
+  const explorer = astroStore.explorers.find(e => e.user === username);
+  return getAvatarUrl(explorer?.avatar, username);
+};
 
 const showMessage = (text, color = 'success') => {
   snackbar.value = { show: true, text, color };
@@ -296,6 +387,7 @@ onMounted(() => {
     multiplayerStore.connect();
   }
   astroStore.fetchUserStats();
+  astroStore.fetchAllUsers(); // Cargar todos los exploradores para reclutar
   multiplayerStore.fetchAvailableRooms();
 });
 </script>
@@ -374,7 +466,6 @@ onMounted(() => {
 }
 
 .mission-card-v3:hover {
-  background: rgba(0, 229, 255, 0.08) !important;
   border-color: rgba(0, 229, 255, 0.3) !important;
   transform: translateX(4px);
 }
@@ -409,8 +500,19 @@ onMounted(() => {
 
 /* Setup Panel */
 .setup-panel {
-  background: rgba(15, 32, 50, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(15, 32, 50, 0.85) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.setup-section {
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
+}
+
+.setup-section:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .room-code-input :deep(input) {
@@ -424,19 +526,35 @@ onMounted(() => {
 }
 
 .h-custom-btn {
-  height: 60px !important;
+  height: 56px !important;
   letter-spacing: 2px;
 }
 
+.shadow-cyan {
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2) !important;
+}
+.shadow-amber {
+  box-shadow: 0 4px 15px rgba(255, 202, 40, 0.2) !important;
+}
+
+.recruit-list {
+  background: rgba(0,0,0,0.1);
+}
+
 .recruit-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.2s ease;
 }
 
 .recruit-item:hover {
-  background: rgba(0, 229, 255, 0.05);
-  border-color: rgba(0, 229, 255, 0.2);
+  background: rgba(0, 229, 255, 0.05) !important;
+}
+
+.border-light {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.border-bottom-light {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tracking-widest {
@@ -445,5 +563,32 @@ onMounted(() => {
 
 .line-height-1 {
   line-height: 1;
+}
+
+.privacy-switch :deep(.v-label) {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #00e5ff;
+  letter-spacing: 1px;
+}
+/* Avatar Global Styling (Matching profile.vue zoom) */
+:deep(.v-avatar .v-img__img) {
+  border-radius: 50%;
+  transform: scale(1.4);
+  transform-origin: center center;
+  object-position: center center;
+}
+
+.player-glow-avatar {
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+  padding: 0; /* Quitamos padding para que el zoom funcione bien */
+  background: white; /* Fondo blanco para que el avatar resalte si es transparente */
+  overflow: hidden;
+}
+
+.recruit-item :deep(.v-avatar) {
+  background: white;
 }
 </style>

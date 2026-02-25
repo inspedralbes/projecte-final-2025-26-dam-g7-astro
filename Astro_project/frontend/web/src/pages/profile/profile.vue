@@ -80,7 +80,7 @@
                     </div>
                     <div class="stat-card text-center">
                         <span class="label">MISIÓN</span>
-                        <span class="value">EXPLORACIÓN</span>
+                        <span class="value text-amber-accent-3">{{ currentMissionName }}</span>
                     </div>
                     <div class="stat-card text-right">
                         <span class="label">SISTEMA</span>
@@ -233,6 +233,23 @@ const { user, rank, plan, selectedAchievements, unlockedAchievements, avatar, ma
 const xpRequired = computed(() => {
     return 100 + ((level.value || 1) - 1) * 50;
 })
+
+const missionNames = [
+    'Despegue',
+    'Navegación',
+    'Comunicaciones',
+    'Sistemas',
+    'Agujero Negro',
+    'Exoplaneta'
+];
+
+const currentMissionName = computed(() => {
+    const currentLvl = level.value || 1;
+    if (currentLvl <= missionNames.length) {
+        return missionNames[currentLvl - 1].toUpperCase();
+    }
+    return `ESPACIO PROFUNDO (LVL ${currentLvl})`;
+});
 
 const avatarOptions = [
     { label: 'Blanc', file: 'Astronauta_blanc.jpg' },

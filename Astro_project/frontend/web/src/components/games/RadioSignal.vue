@@ -12,6 +12,11 @@
             <div class="brand-subtitle">COMMS RECEIVER</div>
         </div>
 
+        <div class="session-hud">
+            <div class="hud-pill">Punts: {{ score }}</div>
+            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+        </div>
+
         <!-- Pantalla del Osciloscopio -->
         <div class="screen-housing">
             <div class="screen-bezel">
@@ -117,6 +122,10 @@ const tuningThreshold = 2.0;
 const userGuess = ref('');
 const isTuned = ref(false);
 const showError = ref(false);
+const score = ref(0);
+const timeLeft = ref(60);
+const gameFinished = ref(false);
+let roundTimer = null;
 
 const phrases = [
     'EL VAIXELL DAURAT BRILLA DE DIA',
@@ -150,11 +159,19 @@ let isDragging = false;
 let startAngle = 0;
 let currentKnobRotation = 0;
 
+const removeDragListeners = () => {
+    window.removeEventListener('mousemove', onRotating);
+    window.removeEventListener('mouseup', stopRotating);
+    window.removeEventListener('touchmove', onRotating);
+    window.removeEventListener('touchend', stopRotating);
+};
+
 // Sincronizar knob con frecuencia inicial
 knobRotation.value = (currentFrequency.value / 100) * 360;
 currentKnobRotation = knobRotation.value;
 
 const startRotating = (e) => {
+    if (gameFinished.value) return;
     isDragging = true;
     const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
@@ -170,7 +187,7 @@ const startRotating = (e) => {
 };
 
 const onRotating = (e) => {
-    if (!isDragging) return;
+    if (!isDragging || gameFinished.value) return;
     const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
     const knob = document.querySelector('.knob-container').getBoundingClientRect();
@@ -188,11 +205,9 @@ const onRotating = (e) => {
 };
 
 const stopRotating = () => {
+    if (gameFinished.value) return;
     isDragging = false;
-    window.removeEventListener('mousemove', onRotating);
-    window.removeEventListener('mouseup', stopRotating);
-    window.removeEventListener('touchmove', onRotating);
-    window.removeEventListener('touchend', stopRotating);
+    removeDragListeners();
     const distance = Math.abs(currentFrequency.value - targetFrequency.value);
     if (distance < tuningThreshold) {
         isTuned.value = true;
@@ -311,20 +326,65 @@ const speakPhrase = (volume = 1.0) => {
 };
 
 const checkPhrase = () => {
+    if (gameFinished.value) return;
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        stopSpeechLoop(); stopAudio(); emit('game-over', 50);
+        score.value += 50;
+        finishGame();
     } else { showError.value = true; userGuess.value = ''; }
+};
+
+const startTimer = () => {
+    if (roundTimer) {
+        clearInterval(roundTimer);
+    }
+
+    roundTimer = setInterval(() => {
+        if (gameFinished.value) return;
+        timeLeft.value = Math.max(0, timeLeft.value - 1);
+        if (timeLeft.value === 0) {
+            finishGame();
+        }
+    }, 1000);
+};
+
+const finishGame = () => {
+    if (gameFinished.value) return;
+    gameFinished.value = true;
+    isDragging = false;
+    removeDragListeners();
+    if (roundTimer) {
+        clearInterval(roundTimer);
+        roundTimer = null;
+    }
+    const reward = score.value + timeLeft.value;
+    stopSpeechLoop();
+    stopAudio();
+    emit('game-over', reward);
 };
 
 const stopAudio = () => {
     stopSpeechLoop();
     if (noiseNode) try { noiseNode.stop(); } catch(e) {}
     if (audioCtx) audioCtx.close();
+    noiseNode = null;
+    filterNode = null;
+    gainNode = null;
+    audioCtx = null;
 };
 
-onMounted(() => { drawWaves(); });
-onUnmounted(() => { stopSpeechLoop(); stopAudio(); if (animationFrame) cancelAnimationFrame(animationFrame); });
+onMounted(() => {
+    drawWaves();
+    startTimer();
+});
+onUnmounted(() => {
+    isDragging = false;
+    removeDragListeners();
+    if (roundTimer) clearInterval(roundTimer);
+    stopSpeechLoop();
+    stopAudio();
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+});
 </script>
 
 <style scoped>
@@ -372,6 +432,30 @@ onUnmounted(() => { stopSpeechLoop(); stopAudio(); if (animationFrame) cancelAni
 }
 .brand-model { color: #00E5FF; font-size: 12px; letter-spacing: 2px; }
 .brand-subtitle { font-size: 8px; color: #555; letter-spacing: 4px; margin-top: 2px; }
+
+.session-hud {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.hud-pill {
+    background: #15171c;
+    border: 1px solid #2a2e36;
+    border-radius: 999px;
+    color: #d3d7e0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+}
+
+.hud-pill-alert {
+    color: #ff6e6e;
+    border-color: #8b2d2d;
+}
 
 /* PANTALLA */
 .screen-housing {
