@@ -2,18 +2,18 @@
 
 // --- 1. CONFIGURACIÓN DE LAS MISIONES ---
 const DAILY_TEMPLATES = [
-    { text: "Juega 3 partidas", goal: 3, reward: 50, type: "games" },
-    { text: "Gana 100 monedas", goal: 100, reward: 30, type: "coins" },
-    { text: "Consigue 500 XP", goal: 500, reward: 40, type: "xp" },
-    { text: "Usa 1 Power-Up", goal: 1, reward: 20, type: "item" },
-    { text: "Mantén la racha", goal: 1, reward: 25, type: "streak" }
+    { text: "Juega 3 partidas", goal: 3, reward: 100, type: "games" },
+    { text: "Gana 200 monedas", goal: 200, reward: 80, type: "coins" },
+    { text: "Consigue 500 XP", goal: 500, reward: 100, type: "xp" },
+    { text: "Usa 2 Potenciadores", goal: 2, reward: 120, type: "item" },
+    { text: "Actividad Diaria", goal: 1, reward: 150, type: "streak" }
 ];
 
 const WEEKLY_TEMPLATES = [
-    { text: "Juega 20 partidas", goal: 20, reward: 200, type: "games" },
-    { text: "Gana 1000 monedas", goal: 1000, reward: 150, type: "coins" },
-    { text: "Sube 2 niveles", goal: 2, reward: 300, type: "level" },
-    { text: "Consigue una racha de 5 días", goal: 5, reward: 250, type: "streak" }
+    { text: "Maestro de Juegos (20 partidas)", goal: 20, reward: 500, type: "games" },
+    { text: "Buscador de Oro (1000 monedas)", goal: 1000, reward: 400, type: "coins" },
+    { text: "Ascensión Lunar (Sube 2 niveles)", goal: 2, reward: 600, type: "level" },
+    { text: "Superviviente Espacial (Racha 5 días)", goal: 5, reward: 1000, type: "streak" }
 ];
 
 // Función auxiliar para generar IDs únicos simples
@@ -50,7 +50,7 @@ function createGetUserStats({
 
         // --- LÓGICA DE GENERACIÓN DE MISIONES ---
         const today = new Date().toDateString(); // Ej: "Tue Feb 24 2026"
-        
+
         // Calculamos el número de semana actual para las semanales
         const currentDate = new Date();
         const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
@@ -123,7 +123,7 @@ function createGetUserStats({
             streakFreezes: Math.max(userDoc.streakFreezes || 0, freezeUnits),
             lastActivity: userDoc.lastActivity,
             lastGame: userDoc.lastGame,
-            
+
             // Aquí devolvemos las misiones (recién generadas o existentes)
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
