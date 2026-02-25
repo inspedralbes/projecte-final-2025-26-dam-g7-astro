@@ -134,3 +134,20 @@ app.get('/api/users', async (req, res) => {
         res.status(500).json({ message: "Error al obtener la lista de usuarios" });
     }
 });
+
+app.put('/api/user/avatar', async (req, res) => {
+    const { user, avatar } = req.body;
+    if (!user || !avatar) {
+        return res.status(400).json({ message: 'Usuario y avatar requeridos.' });
+    }
+
+    try {
+        const { users } = getCollections();
+        await users.updateOne({ user }, { $set: { avatar } });
+        console.log(`👤 Avatar actualizado en DB para ${user}: ${avatar}`);
+        res.json({ success: true, avatar });
+    } catch (error) {
+        console.error("❌ Error al actualizar avatar en DB:", error);
+        res.status(500).json({ message: "Error interno al actualizar avatar" });
+    }
+});

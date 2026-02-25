@@ -148,21 +148,24 @@ class RoomManager {
         room.players.delete(user);
 
         if (room.players.size === 0) {
+            console.log(`🧹 Sala ${roomId} vacía. Eliminando...`);
             this.rooms.delete(roomId);
             if (this.getCollections) {
                 try {
                     const { rooms } = this.getCollections();
                     await rooms.deleteOne({ id: roomId });
-                    console.log(`🗑️ Sala ${roomId} eliminada de DB (vacía)`);
+                    console.log(`✅ Sala ${roomId} eliminada de DB`);
                     await this.syncGlobalRooms();
                 } catch (error) {
-                    console.error("❌ Error eliminando sala en DB:", error);
+                    console.error("❌ Error eliminando sala de DB:", error);
                 }
             }
         } else {
             // Si el host se va, el siguiente jugador es el nuevo host
             if (room.host === user) {
-                room.host = Array.from(room.players)[0];
+                const newHost = Array.from(room.players)[0];
+                room.host = newHost;
+                console.log(`👑 Host migrado en sala ${roomId}: ${user} -> ${newHost}`);
             }
 
             if (this.getCollections) {
@@ -177,10 +180,11 @@ class RoomManager {
                     );
                     await this.syncGlobalRooms();
                 } catch (error) {
-                    console.error("❌ Error actualizando salida en DB:", error);
+                    console.error("❌ Error actualizando sala en DB al salir:", error);
                 }
             }
 
+            // Notificar a los que quedan en la sala del cambio
             this.broadcastToRoom(roomId, {
                 type: 'ROOM_UPDATE',
                 room: {
