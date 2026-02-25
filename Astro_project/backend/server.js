@@ -113,17 +113,18 @@ app.get('/api/users', async (req, res) => {
     try {
         const { users } = getCollections();
         // Traemos a todos los usuarios pero solo los campos necesarios para la lista
-        const allUsers = await users.find({}, { 
-            projection: { 
-                user: 1, 
-                level: 1, 
-                rank: 1, 
+        const allUsers = await users.find({}, {
+            projection: {
+                user: 1,
+                level: 1,
+                rank: 1,
                 mascot: 1,
                 avatar: 1,
-                streak: 1 
-            } 
+                streak: 1,
+                selectedAchievements: 1
+            }
         }).toArray();
-        
+
         res.json(allUsers);
     } catch (error) {
         console.error("❌ Error al obtener exploradores:", error);
