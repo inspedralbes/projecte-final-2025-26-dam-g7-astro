@@ -1,43 +1,52 @@
 import { defineStore } from 'pinia';
-import { useAstroStore } from './astroStore';
+import { useSessionStore } from './sessionStore';
+import { API_BASE_URL, requestJson } from './astroShared';
+
+function buildWsUrl() {
+    return API_BASE_URL.replace(/^http/i, 'ws');
+}
 
 export const useMultiplayerStore = defineStore('multiplayer', {
     state: () => ({
         socket: null,
         isConnected: false,
-        room: null, // { id, host, players, status }
+        room: null,
         availableRooms: [],
-        invitations: [], // { from, roomId }
+        invitations: [],
         error: null
     }),
 
     actions: {
+        getSession() {
+            return useSessionStore();
+        },
+
         async fetchAvailableRooms() {
             try {
-                const response = await fetch('http://localhost:3000/api/multiplayer/rooms');
-                const data = await response.json();
+                const { response, data } = await requestJson('/api/multiplayer/rooms');
                 if (response.ok) {
                     this.availableRooms = data;
                 }
             } catch (error) {
-                console.error("❌ Error cargando salas:", error);
+                console.error('❌ Error cargando salas:', error);
             }
         },
+
         connect() {
-            const astroStore = useAstroStore();
+            const sessionStore = this.getSession();
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
 
-            const ws = new WebSocket('ws://localhost:3000');
+            const ws = new WebSocket(buildWsUrl());
 
             ws.onopen = () => {
                 this.isConnected = true;
                 this.socket = ws;
-                console.log("🚀 Conexión Multijugador establecida");
+                console.log('🚀 Conexión Multijugador establecida');
 
                 ws.send(JSON.stringify({
                     type: 'IDENTIFY',
-                    user: astroStore.user,
-                    token: astroStore.token
+                    user: sessionStore.user,
+                    token: sessionStore.token
                 }));
             };
 
@@ -47,16 +56,30 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     console.log(`📩 Mensaje WS recibido: ${data.type}`, data);
                     this.handleMessage(data);
                 } catch (e) {
-                    console.error("Error procesando mensaje:", e);
+                    console.error('Error procesando mensaje:', e);
                 }
             };
 
             ws.onclose = () => {
                 this.isConnected = false;
                 this.socket = null;
-                console.warn("⚠️ Conexión Multijugador cerrada");
-                // Intento de reconexión opcional aquí
+                this.room = null;
+                console.warn('⚠️ Conexión Multijugador cerrada');
             };
+
+            ws.onerror = () => {
+                this.error = 'No se pudo establecer conexión multijugador.';
+            };
+        },
+
+        disconnect() {
+            if (this.socket) {
+                this.socket.close();
+            }
+            this.socket = null;
+            this.isConnected = false;
+            this.room = null;
+            this.invitations = [];
         },
 
         handleMessage(data) {
@@ -65,12 +88,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.invitations.push({ from: data.from, roomId: data.roomId });
                     break;
                 case 'GLOBAL_ROOMS_UPDATE':
-                    console.log("🛰️ [WS] Salas públicas actualizadas:", data.rooms);
+                    console.log('🛰️ [WS] Salas públicas actualizadas:', data.rooms);
                     this.availableRooms = data.rooms;
                     break;
-
                 case 'ROOM_CREATED':
-                    // Al crear sala, nos unimos automáticamente (el backend ya nos puso como host)
                     this.joinRoom(data.roomId);
                     break;
                 case 'JOIN_SUCCESS':
@@ -81,6 +102,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     break;
                 case 'ERROR':
                     this.error = data.message;
+                    break;
+                default:
                     break;
             }
         },
@@ -96,33 +119,33 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         },
 
         joinRoom(roomId) {
-            const astroStore = useAstroStore();
-            if (!this.isConnected) return;
+            const sessionStore = this.getSession();
+            if (!this.isConnected || !this.socket) return;
             this.socket.send(JSON.stringify({
                 type: 'JOIN_ROOM',
                 roomId,
-                user: astroStore.user
+                user: sessionStore.user
             }));
         },
 
         inviteFriend(friendName) {
-            const astroStore = useAstroStore();
-            if (!this.isConnected || !this.room) return;
+            const sessionStore = this.getSession();
+            if (!this.isConnected || !this.room || !this.socket) return;
             this.socket.send(JSON.stringify({
                 type: 'INVITE',
-                from: astroStore.user,
+                from: sessionStore.user,
                 to: friendName,
                 roomId: this.room.id
             }));
         },
 
         leaveRoom() {
-            const astroStore = useAstroStore();
-            if (!this.isConnected || !this.room) return;
+            const sessionStore = this.getSession();
+            if (!this.isConnected || !this.room || !this.socket) return;
             this.socket.send(JSON.stringify({
                 type: 'LEAVE_ROOM',
                 roomId: this.room.id,
-                user: astroStore.user
+                user: sessionStore.user
             }));
             this.room = null;
         }
