@@ -1,43 +1,31 @@
 <template>
   <div class="game-container" @mousemove="updateFlashlight" ref="gameArea">
-    <!-- HUD -->
     <div class="hud d-flex justify-space-between align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
       <div class="text-h6 text-white bg-slate-800 px-4 py-1 rounded-pill border-cyan">Objectiu: Troba la '{{ targetChar }}'</div>
       <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
     </div>
 
-    <!-- TAULER -->
     <div 
       class="board d-flex flex-wrap justify-center align-center" 
       :style="{ width: boardSize + 'px' }"
-      :class="{ 
-        'board-hidden': isChangingLevel 
-      }"
+      :class="{ 'board-transitioning': isTransitioning && !correctClicked }"
     >
-      <!-- FIX: Usem :data-char per evitar Ctrl+F -->
       <div 
         v-for="(letter, index) in board" 
         :key="index"
-        class="letter-cell d-flex justify-center align-center font-weight-black cursor-pointer"
-        :data-char="letter"
-        :style="{ 
-          width: cellSize + 'px', 
-          height: cellSize + 'px',
-          fontSize: (cellSize * 0.6) + 'px' 
-        }"
+        class="letter-cell d-flex justify-center align-center text-h4 font-weight-bold cursor-pointer"
+        :style="{ width: cellSize + 'px', height: cellSize + 'px' }"
         :class="{ 'letter-correct': correctClicked && index === targetIndex }"
         @click="checkLetter(index)"
-      ></div>
+      >
+        {{ letter }}
+      </div>
     </div>
 
-    <!-- LLANTERNA (Capa fosca) -->
     <div 
       class="flashlight-overlay" 
-      :class="{ 
-        'flashlight-off': isTransitioning, 
-        'flashlight-full-dark': isChangingLevel 
-      }"
+      :class="{ 'flashlight-hidden': isTransitioning }"
       :style="{ 
         '--mouseX': mouseX + 'px', 
         '--mouseY': mouseY + 'px',
@@ -45,13 +33,14 @@
       }"
     ></div>
 
-    <!-- OVERLAYS (Inici / Final) -->
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
         <h2 class="text-h4 font-weight-bold text-white mb-4">Escàner de Ràdar</h2>
-        <p class="text-body-1 text-grey-lighten-1 mb-6">Troba la lletra diferent. La teva llanterna és l'única guia.</p>
+        <p class="text-body-1 text-grey-lighten-1 mb-6">
+          Troba la lletra diferent abans que s'esgoti el temps. Vigila, el teu camp de visió és limitat i fer clics a l'atzar et restarà temps!
+        </p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black block" @click="startGame">
-          COMENÇAR
+          COMENÇAR (60s)
         </v-btn>
       </v-card>
     </v-overlay>
@@ -62,7 +51,7 @@
         <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
         <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
-          OBTENIR RECOMPENSA
+          TORNAR AL MENÚ
         </v-btn>
       </v-card>
     </v-overlay>
@@ -74,37 +63,44 @@ import { ref, computed, onBeforeUnmount } from 'vue';
 
 const emit = defineEmits(['game-over']);
 
+// --- VARIABLES D'ESTAT ---
 const showStartOverlay = ref(true);
 const showGameOverOverlay = ref(false);
 const isTransitioning = ref(false);
-const isChangingLevel = ref(false);
 const correctClicked = ref(false);
 const score = ref(0);
 const timeLeft = ref(60);
 let timerInterval = null;
 
+// --- SISTEMA DE VISIÓ ---
 const mouseX = ref(0);
 const mouseY = ref(0);
 const gameArea = ref(null);
 
+// --- LÒGICA DEL TAULER ---
 const board = ref([]);
 const currentLevel = ref(1);
 const targetIndex = ref(-1);
 const targetChar = ref('');
 
+// --- CONFIGURACIÓ DE NIVELLS ---
 const levels = [
-  { distractor: 'p', target: 'q', grid: 6, tunnel: 180 },
-  { distractor: 'b', target: 'd', grid: 8, tunnel: 160 },
-  { distractor: 'm', target: 'n', grid: 10, tunnel: 140 },
+  { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
+  { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
+  { distractor: 'm', target: 'n', grid: 9, tunnel: 150 },
   { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },
   { distractor: 'E', target: 'F', grid: 15, tunnel: 100 }
 ];
 
-const currentConfig = computed(() => levels[Math.min(currentLevel.value - 1, levels.length - 1)]);
+// --- COMPUTADES ---
+const currentConfig = computed(() => {
+  return levels[Math.min(currentLevel.value - 1, levels.length - 1)];
+});
 const currentTunnelSize = computed(() => currentConfig.value.tunnel);
-const cellSize = computed(() => Math.max(30, 580 / currentConfig.value.grid));
+const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid));
 const boardSize = computed(() => currentConfig.value.grid * cellSize.value);
 
+// --- FUNCIONS CORE ---
 const updateFlashlight = (e) => {
   if (!gameArea.value) return;
   const rect = gameArea.value.getBoundingClientRect();
@@ -116,14 +112,23 @@ const generateBoard = () => {
   const config = currentConfig.value;
   const totalCells = config.grid * config.grid;
   targetChar.value = config.target;
+  
   let newBoard = Array(totalCells).fill(config.distractor);
   targetIndex.value = Math.floor(Math.random() * totalCells);
   newBoard[targetIndex.value] = config.target;
+  
   board.value = newBoard;
 };
 
+const nextRound = () => {
+  score.value += (currentLevel.value * 10);
+  timeLeft.value = Math.min(60, timeLeft.value + 3);
+  currentLevel.value++;
+  generateBoard();
+};
+
 const checkLetter = (index) => {
-  if (showStartOverlay.value || showGameOverOverlay.value || isTransitioning.value || isChangingLevel.value) return;
+  if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
 
   if (index === targetIndex.value) {
     isTransitioning.value = true;
@@ -131,20 +136,13 @@ const checkLetter = (index) => {
     
     setTimeout(() => {
       correctClicked.value = false;
-      isChangingLevel.value = true;
+      nextRound(); 
       
       setTimeout(() => {
-        score.value += (currentLevel.value * 10);
-        timeLeft.value = Math.min(60, timeLeft.value + 3);
-        currentLevel.value++;
-        generateBoard();
-
-        setTimeout(() => {
-          isTransitioning.value = false;
-          isChangingLevel.value = false;
-        }, 200);
-      }, 300);
-    }, 700);
+        isTransitioning.value = false;
+      }, 200);
+      
+    }, 800);
 
   } else {
     timeLeft.value = Math.max(0, timeLeft.value - 3);
@@ -157,15 +155,14 @@ const startGame = () => {
   showStartOverlay.value = false;
   showGameOverOverlay.value = false;
   isTransitioning.value = false;
-  isChangingLevel.value = false;
+  correctClicked.value = false;
   score.value = 0;
   timeLeft.value = 60;
   currentLevel.value = 1;
   generateBoard();
   
-  if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    if (!isTransitioning.value && !isChangingLevel.value && timeLeft.value > 0) {
+    if (!isTransitioning.value && timeLeft.value > 0) {
       timeLeft.value--;
       if (timeLeft.value <= 0) endGame();
     }
@@ -177,9 +174,13 @@ const endGame = () => {
   showGameOverOverlay.value = true; 
 };
 
-const returnToMenu = () => emit('game-over', score.value);
+const returnToMenu = () => {
+  emit('game-over', score.value); 
+};
 
-onBeforeUnmount(() => clearInterval(timerInterval));
+onBeforeUnmount(() => {
+  if (timerInterval) clearInterval(timerInterval);
+});
 </script>
 
 <style scoped>
@@ -188,7 +189,7 @@ onBeforeUnmount(() => clearInterval(timerInterval));
   width: 100%;
   height: 100%;
   min-height: 600px;
-  background-color: #020617; /* Fons extremadament fosc */
+  background-color: #0f172a;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -197,36 +198,30 @@ onBeforeUnmount(() => clearInterval(timerInterval));
 }
 
 .board {
-  max-width: 95%;
-  max-height: 95%;
+  max-width: 90%;
+  max-height: 90%;
   z-index: 2;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
-.board-hidden {
-  opacity: 0 !important;
+.board-transitioning {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
-/* LLETRES */
 .letter-cell {
-  color: #f8fafc; /* Color de la lletra (ara molt clar per veure-la bé) */
-  position: relative;
-}
-
-/* ANTI CTRL+F: La lletra no existeix al DOM com a text */
-.letter-cell::before {
-  content: attr(data-char);
+  color: #334155;
+  transition: color 0.2s;
 }
 
 .letter-correct {
   color: #00e5ff !important;
-  text-shadow: 0 0 20px rgba(0, 229, 255, 1);
-  transform: scale(1.5);
-  z-index: 10;
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+  transform: scale(1.3);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
 }
 
-/* LLANTERNA */
 .flashlight-overlay {
   position: absolute;
   top: 0;
@@ -235,24 +230,17 @@ onBeforeUnmount(() => clearInterval(timerInterval));
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  transition: opacity 0.3s ease;
-  /* Llanterna més forta: transparent al centre, negre opac ràpidament */
+  transition: opacity 0.4s ease-in-out; 
   background: radial-gradient(
     circle var(--tunnelSize) at var(--mouseX) var(--mouseY), 
     transparent 0%, 
-    transparent 40%, 
-    rgba(2, 6, 23, 0.95) 75%, 
-    rgba(2, 6, 23, 1) 100%
+    rgba(11, 17, 32, 0.98) 80%, 
+    rgba(11, 17, 32, 1) 100%
   );
 }
 
-.flashlight-off {
-  opacity: 0;
-}
-
-.flashlight-full-dark {
-  opacity: 1 !important;
-  background: #020617 !important;
+.flashlight-hidden {
+  opacity: 0 !important;
 }
 
 .bg-slate-800 { background-color: #1e293b; }
