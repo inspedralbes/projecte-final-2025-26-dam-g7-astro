@@ -139,7 +139,7 @@ const phrases = [
     'INCOMPRENSIBLE PREDICCIO METEOROLOGICA',
     'LA NAU ESPACIAL DESPEGA A L\'ALBA',
     'BASE LUNAR REPORTA BON ESTAT',
-    'COORDENADES DEL PLANETA REBUDES',
+    // 'COORDENADES DEL PLANETA REBUDES',
 ];
 const currentPhrase = ref(phrases[Math.floor(Math.random() * phrases.length)]);
 let speechRepeatTimer = null;

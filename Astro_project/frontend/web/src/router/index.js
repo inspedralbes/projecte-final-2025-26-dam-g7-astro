@@ -66,6 +66,12 @@ const router = createRouter({
       component: () => import('@/pages/friends/friends.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/multiplayer',
+      name: 'Multiplayer',
+      component: () => import('@/pages/friends/MultiplayerLobby.vue'),
+      meta: { requiresAuth: true }
+    },
   ],
 })
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
+import { useMultiplayerStore } from './multiplayerStore';
 
 function readStoredArray(key, fallback = []) {
     const rawValue = localStorage.getItem(key);
@@ -412,7 +413,8 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_unlocked_achievements', JSON.stringify(this.unlockedAchievements));
 
                 // 5. Iniciar comunicaciones en tiempo real
-                this.connectWebSocket();
+                const multiplayerStore = useMultiplayerStore();
+                multiplayerStore.connect();
 
                 return { success: true };
 
@@ -767,48 +769,8 @@ export const useAstroStore = defineStore('astro', {
         },
 
         connectWebSocket() {
-            // CORRECCIÓN: Puerto 3000 y evitar duplicados
-            if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) return;
-
-            const ws = new WebSocket('ws://localhost:3000');
-
-            ws.onopen = () => {
-                this.isConnected = true;
-                console.log("🚀 Sincronización completada: WebSocket activo en puerto 3000");
-
-                ws.send(JSON.stringify({
-                    type: 'IDENTIFY',
-                    user: this.user,
-                    plan: this.plan,
-                    token: this.token
-                }));
-            };
-
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log("📡 Mensaje de la flota:", data);
-                } catch (e) {
-                    console.error("Error procesando mensaje:", e);
-                }
-            };
-
-            ws.onclose = (event) => {
-                this.isConnected = false;
-                this.socket = null;
-                console.warn("⚠️ Trayectoria perdida: Conexión cerrada");
-
-                // Reconexión automática si hay sesión activa
-                if (this.token) {
-                    setTimeout(() => this.connectWebSocket(), 5000);
-                }
-            };
-
-            ws.onerror = (err) => {
-                console.error("❌ Error en el motor de comunicación (WS)");
-            };
-
-            this.socket = markRaw(ws);
+            const multiplayerStore = useMultiplayerStore();
+            multiplayerStore.connect();
         },
 
         logout() {

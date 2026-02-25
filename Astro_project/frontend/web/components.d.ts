@@ -22,7 +22,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
-    WheelOfFortune: typeof import('./src/components/games/WheelOfFortune.vue')['default']
     WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']
   }
 }

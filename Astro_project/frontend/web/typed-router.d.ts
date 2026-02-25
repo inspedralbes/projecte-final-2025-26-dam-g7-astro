@@ -22,6 +22,7 @@ declare module 'vue-router/auto-routes' {
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/register': RouteRecordInfo<'/auth/register', '/auth/register', Record<never, never>, Record<never, never>>,
     '/friends/friends': RouteRecordInfo<'/friends/friends', '/friends/friends', Record<never, never>, Record<never, never>>,
+    '/friends/MultiplayerLobby': RouteRecordInfo<'/friends/MultiplayerLobby', '/friends/MultiplayerLobby', Record<never, never>, Record<never, never>>,
     '/home/': RouteRecordInfo<'/home/', '/home', Record<never, never>, Record<never, never>>,
     '/inventory/inventory': RouteRecordInfo<'/inventory/inventory', '/inventory/inventory', Record<never, never>, Record<never, never>>,
     '/plans/multiplayer': RouteRecordInfo<'/plans/multiplayer', '/plans/multiplayer', Record<never, never>, Record<never, never>>,
@@ -56,6 +57,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/friends/friends.vue': {
       routes: '/friends/friends'
+      views: never
+    }
+    'src/pages/friends/MultiplayerLobby.vue': {
+      routes: '/friends/MultiplayerLobby'
       views: never
     }
     'src/pages/home/index.vue': {
