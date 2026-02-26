@@ -57,10 +57,12 @@ function registerGameRoutes(app, {
             const coinsEarned = xpEarned * coinsMultiplier;
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
             const newBalance = currentCoins + coinsEarned;
+            const previousLevel = currentUser.level || 1;
+            const previousXp = currentUser.xp || 0;
 
             // 2. CÁLCULO DE NIVEL Y XP
-            let currentLevel = currentUser.level || 1;
-            let currentXp = currentUser.xp || 0;
+            let currentLevel = previousLevel;
+            let currentXp = previousXp;
             currentXp += xpEarned;
 
             let xpNeeded = 100 + (currentLevel - 1) * 50;
@@ -120,6 +122,13 @@ function registerGameRoutes(app, {
                     coinsMultiplier,
                     coinsEarned,
                     xpEarned,
+                    coinsBefore: currentCoins,
+                    coinsAfter: newBalance,
+                    xpBefore: previousXp,
+                    xpAfter: currentXp,
+                    levelBefore: previousLevel,
+                    levelAfter: currentLevel,
+                    rankAfter: currentRank,
                     createdAt: new Date()
                 }),
                 users.updateOne(
