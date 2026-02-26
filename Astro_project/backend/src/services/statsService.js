@@ -127,7 +127,8 @@ function createGetUserStats({
             // Aquí devolvemos las misiones (recién generadas o existentes)
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
-            friends: userDoc.friends || [] // Y tus amigos, que arreglamos antes
+            friends: userDoc.friends || [],
+            friendRequests: userDoc.friendRequests || []
         };
     };
 }
