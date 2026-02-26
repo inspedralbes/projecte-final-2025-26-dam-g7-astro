@@ -105,6 +105,7 @@ const isPenaltyActive = ref(false);
 const roundHintText = ref('');
 const roundHintVisible = ref(false);
 const roundHintToken = ref(0);
+const successfulLocks = ref(0);
 
 const currentChallenge = ref(null);
 const targets = ref([]);
@@ -119,6 +120,11 @@ const EDGE_PADDING = 18;
 const BASE_DECOYS = 4;
 const MAX_DECOYS = 10;
 const BASE_ENTITY_SIZE = 110;
+const RANDOM_COLORS_FROM_ROUND = 15;
+const CLASSIC_TARGET_RING = '#00e5ff';
+const CLASSIC_TARGET_FILL = 'rgba(0, 229, 255, 0.14)';
+const CLASSIC_DECOY_RING = 'rgba(255, 255, 255, 0.25)';
+const CLASSIC_DECOY_FILL = 'rgba(255, 255, 255, 0.06)';
 const PROGRESS_DECAY_OUTSIDE = 950;
 const PROGRESS_DECAY_ON_DECOY = 700;
 const CIRCLE_COLORS = [
@@ -168,6 +174,20 @@ function hexToRgba(hex, alpha) {
 
 function randomCircleColor() {
   return CIRCLE_COLORS[Math.floor(Math.random() * CIRCLE_COLORS.length)];
+}
+
+function resolveEntityColors({ isTarget, useRandomColors }) {
+  if (!useRandomColors) {
+    return isTarget
+      ? { ringColor: CLASSIC_TARGET_RING, fillColor: CLASSIC_TARGET_FILL }
+      : { ringColor: CLASSIC_DECOY_RING, fillColor: CLASSIC_DECOY_FILL };
+  }
+
+  const ringColor = randomCircleColor();
+  return {
+    ringColor,
+    fillColor: hexToRgba(ringColor, isTarget ? 0.2 : 0.14)
+  };
 }
 
 function getHorizontalMenuOverlap() {
@@ -230,7 +250,7 @@ function triggerRoundHint(text) {
   roundHintTimeout = setTimeout(() => {
     roundHintVisible.value = false;
     roundHintTimeout = null;
-  }, 1500); //Aqui el temps per la lletra + ctrl + f "animation: hint-fade-out"
+  }, 1000);
 }
 
 function generateTargets() {
@@ -248,6 +268,7 @@ function generateTargets() {
   const baseSpeed = 80;
   const currentSpeed = baseSpeed + (round.value - 1) * 18;
   const bounds = getPlayBounds(entitySize);
+  const useRandomColors = round.value >= RANDOM_COLORS_FROM_ROUND;
 
   const newTargets = [];
   for (let i = 0; i < totalEntities; i++) {
@@ -256,7 +277,7 @@ function generateTargets() {
       ? challenge.target
       : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
     const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
-    const ringColor = randomCircleColor();
+    const { ringColor, fillColor } = resolveEntityColors({ isTarget, useRandomColors });
 
     newTargets.push({
       text,
@@ -268,7 +289,7 @@ function generateTargets() {
       vy: velocity.vy,
       bounds,
       ringColor,
-      fillColor: hexToRgba(ringColor, 0.14)
+      fillColor
     });
   }
 
@@ -327,7 +348,9 @@ function update(dt) {
 }
 
 function lockTarget() {
-  score.value += 100 + round.value * 20;
+  const pointsEarned = 100 + (round.value * 22) + (successfulLocks.value * 18);
+  score.value += pointsEarned;
+  successfulLocks.value += 1;
   timeLeft.value = Math.min(99, timeLeft.value + 3);
   round.value++;
   generateTargets();
@@ -405,6 +428,7 @@ function startGame() {
   score.value = 0;
   timeLeft.value = 60;
   round.value = 1;
+  successfulLocks.value = 0;
   isFiring.value = false;
   isPenaltyActive.value = false;
   holdProgressMs.value = 0;
@@ -499,7 +523,7 @@ canvas {
   font-weight: 900;
   letter-spacing: 0.06em;
   text-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
-  animation: hint-fade-out 1.5s ease-out forwards;
+  animation: hint-fade-out 1s ease-out forwards;
 }
 
 @keyframes hint-fade-out {
