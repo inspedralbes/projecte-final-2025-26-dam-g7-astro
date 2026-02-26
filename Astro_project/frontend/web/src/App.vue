@@ -34,8 +34,10 @@ const showLayoutElements = computed(() => {
 .app-container {
   background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%) !important;
   color: white !important;
-  height: 100vh;
-  overflow: hidden; /* Cambia auto por hidden para que el scroll sea interno */
+  min-height: 100vh;
+  /* Make sure the main layout can scroll vertically */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .main-content {
