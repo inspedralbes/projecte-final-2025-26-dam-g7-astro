@@ -154,9 +154,7 @@ function registerGameRoutes(app, {
                     rawScore: normalizedScore,
                     scoreMultiplier,
                     coinsMultiplier,
-<<<<<<< HEAD
-                    timeSeconds: Number(req.body.timeSeconds) || 0
-=======
+                    timeSeconds: Number(req.body.timeSeconds) || 0,
                     coinsEarned,
                     xpEarned,
                     coinsBefore: currentCoins,
@@ -167,7 +165,6 @@ function registerGameRoutes(app, {
                     levelAfter: currentLevel,
                     rankAfter: currentRank,
                     createdAt: new Date()
->>>>>>> 430a8b92799a050d2cbfe8633aa15f7d2358cf64
                 }),
                 users.updateOne(
                     { user },
