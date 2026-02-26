@@ -179,13 +179,13 @@ const levelSequence = [
     },
     { name: '¡Despegue!', component: RadarScan, minScore: 200 },
     { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 550 },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500 },
     { 
         name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, 
         phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', 
         phaseAlign: 'right',  
     },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 100 },
     { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
     { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
