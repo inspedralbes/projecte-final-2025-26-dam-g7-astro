@@ -145,27 +145,6 @@ const newLevelData = ref({
     rankChanged: false
 });
 
-import WordConstruction from '@/components/games/WordConstruction.vue';
-import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import RadarScan from '@/components/games/RadarScan.vue';
-import RadioSignal from '@/components/games/RadioSignal.vue';
-
-const progressStore = useProgressStore();
-const activeGameComponent = shallowRef(null);
-
-// Estados de los diálogos
-const showLevelUpDialog = ref(false);
-const showFailDialog = ref(false);
-
-// Datos temporales para la lógica de puntuación
-const lastScore = ref(0);
-const requiredScore = ref(0);
-
-const newLevelData = ref({
-    level: 1,
-    rank: '',
-    rankChanged: false
-});
 
 // DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
 // Ajusta 'minScore' a la dificultad real de tus juegos
