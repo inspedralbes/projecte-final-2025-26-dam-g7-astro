@@ -50,7 +50,7 @@ function createGetUserStats({
 
         // --- LÓGICA DE GENERACIÓN DE MISIONES ---
         const today = new Date().toDateString(); // Ej: "Tue Feb 24 2026"
-        
+
         // Calculamos el número de semana actual para las semanales
         const currentDate = new Date();
         const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
@@ -123,11 +123,12 @@ function createGetUserStats({
             streakFreezes: Math.max(userDoc.streakFreezes || 0, freezeUnits),
             lastActivity: userDoc.lastActivity,
             lastGame: userDoc.lastGame,
-            
+
             // Aquí devolvemos las misiones (recién generadas o existentes)
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
-            friends: userDoc.friends || [] // Y tus amigos, que arreglamos antes
+            friends: userDoc.friends || [],
+            friendRequests: userDoc.friendRequests || []
         };
     };
 }

@@ -306,6 +306,7 @@ export const useAstroStore = defineStore('astro', {
         dailyMissions: [],
         weeklyMissions: [],
         friends: [],
+        friendRequests: [],
         explorers: [], // <--- AÑADIDO: Para la lista de amigos/usuarios
         socket: null,
         isConnected: false,
@@ -448,6 +449,7 @@ export const useAstroStore = defineStore('astro', {
                 this.dailyMissions = data.dailyMissions || [];
                 this.weeklyMissions = data.weeklyMissions || [];
                 this.friends = data.friends || [];
+                this.friendRequests = data.friendRequests || [];
                 localStorage.setItem('astro_active_boosters', JSON.stringify(this.activeBoosters));
 
                 return { success: true, stats: data };
@@ -763,6 +765,60 @@ export const useAstroStore = defineStore('astro', {
                 }
             } catch (error) {
                 console.error(error);
+            }
+        },
+
+        async sendFriendRequest(friendName) {
+            if (!this.user) return { success: false, message: "No estás logueado" };
+            try {
+                const response = await fetch('http://localhost:3000/api/friends/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, friendName })
+                });
+                const data = await response.json();
+                return { success: response.ok, message: data.message };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        },
+
+        async acceptFriendRequest(friendName) {
+            if (!this.user) return { success: false, message: "No estás logueado" };
+            try {
+                const response = await fetch('http://localhost:3000/api/friends/accept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, friendName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.friends = data.friends || [];
+                    this.friendRequests = data.friendRequests || [];
+                    return { success: true };
+                }
+                return { success: false, message: data.message };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        },
+
+        async rejectFriendRequest(friendName) {
+            if (!this.user) return { success: false, message: "No estás logueado" };
+            try {
+                const response = await fetch('http://localhost:3000/api/friends/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user, friendName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.friendRequests = data.friendRequests || [];
+                    return { success: true };
+                }
+                return { success: false, message: data.message };
+            } catch (error) {
+                return { success: false, message: error.message };
             }
         },
 
