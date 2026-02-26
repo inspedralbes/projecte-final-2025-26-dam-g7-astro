@@ -41,11 +41,11 @@
                                 :class="{ 'connector-flip': index % 2 !== 0 }">
                                 <svg viewBox="0 0 140 140">
                                     <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                        :class="{ 'line-active': index + 1 < progressStore.level }" />
+                                        :class="{ 'line-active': index + 1 < astroStore.mapLevel }" />
                                 </svg>
                             </div>
 
-                            <div v-if="index + 1 <= progressStore.level" class="floating-label"
+                            <div v-if="index + 1 <= astroStore.mapLevel" class="floating-label"
                                 :class="getLevelState(index)">
                                 {{ level.name }}
                             </div>
@@ -56,7 +56,7 @@
 
                             <button class="node-btn" :class="[
                                 `state-${getLevelState(index)}`,
-                                { 'is-interactive': index + 1 <= progressStore.level }
+                                { 'is-interactive': index + 1 <= astroStore.mapLevel }
                             ]" @click="handleLevelClick(index)" v-ripple>
                                 <div class="icon-layer">
                                     <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
@@ -104,7 +104,7 @@
                 </div>
 
                 <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
-                    Has acumulat un total de <span class="text-cyan-accent-3 font-weight-bold">{{ progressStore.xp }} XP</span>
+                    Has acumulat un total de <span class="text-cyan-accent-3 font-weight-bold">{{ astroStore.xp }} XP</span>
                     i ets un pas més a prop de dominar la galàxia.
                 </p>
                 
@@ -145,7 +145,7 @@
 
 <script setup>
 import { ref, shallowRef } from 'vue';
-import { useProgressStore } from '@/stores/progressStore';
+import { useAstroStore } from '@/stores/astroStore'; 
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
@@ -154,7 +154,7 @@ import RadioSignal from '@/components/games/RadioSignal.vue';
 import RhymeSquad from '@/components/games/RhymeSquad.vue';
 import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
-const progressStore = useProgressStore();
+const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
 const currentPlayingIndex = ref(null); 
 
@@ -170,30 +170,22 @@ const newLevelData = ref({
     rankChanged: false
 });
 
-// MATRIZ ACTUALIZADA CON phaseAlign Y phaseIcon PARA EL DISEÑO LATERAL
 const levelSequence = [
-    { 
-        name: 'Preparativos', component: WordConstruction, minScore: 100, 
-        phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', 
-        phaseAlign: 'left',
-    },
+    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth' },
     { name: '¡Despegue!', component: RadarScan, minScore: 200 },
     { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
     { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500 },
-    { 
-        name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, 
-        phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', 
-        phaseAlign: 'right',  
-    },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 100 },
+    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system' },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
     { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
     { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
 const getLevelState = (index) => {
     const levelNum = index + 1;
-    if (levelNum === progressStore.level) return 'current';
-    if (levelNum < progressStore.level) return 'completed';
+    const currentMap = astroStore.mapLevel || 1; 
+    if (levelNum === currentMap) return 'current';
+    if (levelNum < currentMap) return 'completed';
     return 'locked';
 };
 
@@ -212,8 +204,7 @@ const handleGameOver = async (finalScore) => {
     activeGameComponent.value = null;
     lastScore.value = finalScore;
 
-    const user = progressStore.resolveUser();
-    if (user && levelIndex !== null) {
+    if (astroStore.user && levelIndex !== null) {
         try {
             const levelConfig = levelSequence[levelIndex];
 
@@ -223,14 +214,18 @@ const handleGameOver = async (finalScore) => {
                 return;
             }
 
-            const previousLevel = progressStore.level;
-            const result = await progressStore.registerCompletedGame(gameName, finalScore);
+            const previousAccountLevel = astroStore.level;
+            const currentMap = astroStore.mapLevel || 1;
+            
+            const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null;
+
+            const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete);
 
             if (!result.success) throw new Error(result.message);
 
-            if (progressStore.level > previousLevel) {
+            if (astroStore.level > previousAccountLevel) {
                 newLevelData.value = {
-                    level: progressStore.level,
+                    level: astroStore.level,
                     rank: result.data.newRank || 'Explorador',
                     rankChanged: !!result.data.newRank
                 };
@@ -270,7 +265,6 @@ const handleGameOver = async (finalScore) => {
 .start-spacer { height: 80px; }
 .end-spacer { height: 150px; }
 
-/* NUEVOS ESTILOS PARA LAS CABECERAS LATERALES */
 .phase-divider-wrapper {
     position: relative;
     z-index: 10;
@@ -310,13 +304,12 @@ const handleGameOver = async (finalScore) => {
 .glow-text { text-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
 .border-cyan { border-color: #00e5ff !important; border-width: 1px; border-style: solid; }
 
-/* CONTENEDOR AMPLIADO PARA USAR LOS BORDES DE LA PANTALLA */
 .path-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 900px; /* Ampliado desde los 400px originales */
+    max-width: 900px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -468,10 +461,8 @@ svg {
 
 .game-overlay {
     position: fixed;
-    top: var(--v-layout-top, 0px);
-    left: var(--v-layout-left, 0px);
-    right: var(--v-layout-right, 0px);
-    bottom: var(--v-layout-bottom, 0px);
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: #0b0f19;
     z-index: 100;
     display: flex;
