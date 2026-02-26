@@ -27,6 +27,9 @@ function registerAuthRoutes(app, {
                 coins: 1000,
                 level: 1,
                 xp: 0,
+                // --- AÑADIDO: Inicialización del mapa ---
+                mapLevel: 1, 
+                // ----------------------------------------
                 inventory: [],
                 selectedAchievements: [null, null, null],
                 unlockedAchievements: [],
@@ -74,6 +77,9 @@ function registerAuthRoutes(app, {
                     coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
                     level: foundUser.level || 1,
                     xp: foundUser.xp || 0,
+                    // --- CORRECCIÓN: Sincronización del nivel del mapa ---
+                    mapLevel: foundUser.mapLevel || 1, 
+                    // ----------------------------------------------------
                     selectedAchievements: foundUser.selectedAchievements || [null, null, null],
                     unlockedAchievements: normalizeAchievementIds(foundUser.unlockedAchievements || []),
                     streak: streakResult.streak,
@@ -82,7 +88,12 @@ function registerAuthRoutes(app, {
                     avatar: foundUser.avatar || 'Astronauta_blanc.jpg',
                     needsFreeze: streakResult.needsFreeze,
                     lastActivity: foundUser.lastActivity,
-                    lastGame: streakResult.lastGame
+                    lastGame: streakResult.lastGame,
+                    // Opcional: Añade estos para que las estadísticas no aparezcan vacías al loguear
+                    gameHistory: foundUser.gameHistory || [],
+                    maxScores: foundUser.maxScores || {},
+                    totalGamesPlayed: foundUser.totalGamesPlayed || 0,
+                    totalPoints: foundUser.totalPoints || 0
                 }
             });
         } catch (error) {
