@@ -327,6 +327,12 @@ export const useAstroStore = defineStore('astro', () => {
         inventoryStore.setInventory(items);
     }
 
+    const gameHistory = computed(() => progressStore.gameHistory);
+    const topGames = computed(() => progressStore.topGames);
+    const maxScores = computed(() => progressStore.maxScores);
+    const totalGamesPlayed = computed(() => progressStore.totalGamesPlayed);
+    const totalPoints = computed(() => progressStore.totalPoints);
+
     return {
         user,
         plan,
@@ -353,6 +359,12 @@ export const useAstroStore = defineStore('astro', () => {
         explorers,
         socket,
         isConnected,
+        // NUEVOS EXPORTS
+        gameHistory,
+        topGames,
+        maxScores,
+        totalGamesPlayed,
+        totalPoints,
         error,
 
         isStreakActiveToday,

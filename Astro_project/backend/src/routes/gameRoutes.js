@@ -108,19 +108,51 @@ function registerGameRoutes(app, {
                     return m;
                 });
             }
+            // 5. HISTORIAL Y ESTADÍSTICAS (¡NUEVO!)
+            const gameEntry = {
+                game,
+                score: boostedScore,
+                xpEarned,
+                coinsEarned,
+                createdAt: new Date()
+            };
+
+            // Máxima puntuación por juego
+            const maxScores = currentUser.maxScores || {};
+            if (!maxScores[game] || boostedScore > maxScores[game]) {
+                maxScores[game] = boostedScore;
+            }
+
+            const totalGamesPlayed = (currentUser.totalGamesPlayed || 0) + 1;
+            const totalPoints = (currentUser.totalPoints || 0) + boostedScore;
+
+            // Historial limitado a las últimas 20 partidas
+            const gameHistory = [gameEntry, ...(currentUser.gameHistory || [])].slice(0, 20);
+
+            // 5 MEJORES PARTIDAS (Top 5)
+            let topGames = [...(currentUser.topGames || [])];
+            topGames.push({
+                ...gameEntry,
+                timeSeconds: Number(req.body.timeSeconds) || 0 // Incluir tiempo si viene en el body
+            });
+            // Ordenar por puntuación (descendente) y luego por tiempo (ascendente si puntuación igual)
+            topGames.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return (a.timeSeconds || Infinity) - (b.timeSeconds || Infinity);
+            });
+            // Mantener solo las 5 mejores
+            topGames = topGames.slice(0, 5);
+
             const nextBoosters = consumeBoostersForCompletedGame(currentBoosters);
 
             await Promise.all([
                 partides.insertOne({
+                    ...gameEntry,
                     user,
-                    game,
-                    score: boostedScore,
                     rawScore: normalizedScore,
                     scoreMultiplier,
                     coinsMultiplier,
-                    coinsEarned,
-                    xpEarned,
-                    createdAt: new Date()
+                    timeSeconds: Number(req.body.timeSeconds) || 0
                 }),
                 users.updateOne(
                     { user },
@@ -133,9 +165,14 @@ function registerGameRoutes(app, {
                             streak: streakResult.streak,
                             activeBoosters: nextBoosters,
                             lastActivity: new Date(),
-                            // GUARDAMOS LAS MISIONES ACTUALIZADAS
-                            dailyMissions: dailyMissions,
-                            weeklyMissions: weeklyMissions
+                            dailyMissions,
+                            weeklyMissions,
+                            // NUEVOS CAMPOS
+                            gameHistory,
+                            topGames, // Añadido el topGames
+                            maxScores,
+                            totalGamesPlayed,
+                            totalPoints
                         }
                     }
                 )

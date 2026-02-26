@@ -92,20 +92,29 @@ function createGetUserStats({
         const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
         const freezeUnits = getInventoryQuantity(normalizedInventory, 2);
 
-        const [gamesPlayed, gamesByTypeRaw] = await Promise.all([
+        const [gamesPlayed, gamesByTypeRaw, recentGames, top5Games] = await Promise.all([
             partides.countDocuments({ user: username }),
             partides
                 .aggregate([
                     { $match: { user: username } },
                     { $group: { _id: '$game', total: { $sum: 1 } } }
                 ])
-                .toArray()
+                .toArray(),
+            partides.find({ user: username }).sort({ createdAt: -1 }).limit(20).toArray(),
+            partides.find({ user: username }).sort({ score: -1, timeSeconds: 1 }).limit(5).toArray()
         ]);
 
         const gamesByType = {};
         for (const item of gamesByTypeRaw) {
             gamesByType[item._id || 'UNKNOWN'] = item.total;
         }
+
+        // Calcular puntos totales de todas las partidas
+        const totalPointsResult = await partides.aggregate([
+            { $match: { user: username } },
+            { $group: { _id: null, total: { $sum: "$score" } } }
+        ]).toArray();
+        const totalPoints = totalPointsResult[0]?.total || 0;
 
         return {
             user: userDoc.user,
@@ -127,7 +136,13 @@ function createGetUserStats({
             // Aquí devolvemos las misiones (recién generadas o existentes)
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
-            friends: userDoc.friends || [] // Y tus amigos, que arreglamos antes
+            friends: userDoc.friends || [],
+            // NUEVOS CAMPOS PARA EL HISTORIAL
+            gameHistory: recentGames,
+            topGames: top5Games,
+            maxScores: userDoc.maxScores || {},
+            totalGamesPlayed: gamesPlayed,
+            totalPoints: totalPoints
         };
     };
 }

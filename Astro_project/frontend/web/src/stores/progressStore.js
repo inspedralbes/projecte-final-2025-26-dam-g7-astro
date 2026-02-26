@@ -33,6 +33,12 @@ export const useProgressStore = defineStore('progress', {
         lastGame: storageGetItem(STORAGE_KEYS.lastGame) || null,
         dailyMissions: [],
         weeklyMissions: [],
+        // NUEVOS CAMPOS DE HISTORIAL Y ESTADÍSTICAS
+        gameHistory: [],
+        topGames: [],
+        maxScores: {},
+        totalGamesPlayed: 0,
+        totalPoints: 0,
         error: null
     }),
 
@@ -127,6 +133,13 @@ export const useProgressStore = defineStore('progress', {
             if (Array.isArray(profile.weeklyMissions)) {
                 this.setWeeklyMissions(profile.weeklyMissions);
             }
+
+            // Aplicar historial y récords
+            this.gameHistory = profile.gameHistory || [];
+            this.topGames = profile.topGames || [];
+            this.maxScores = profile.maxScores || {};
+            this.totalGamesPlayed = profile.totalGamesPlayed || 0;
+            this.totalPoints = profile.totalPoints || 0;
         },
 
         async fetchUserStats() {
@@ -151,6 +164,13 @@ export const useProgressStore = defineStore('progress', {
                 this.setLastGame(data.lastGame ?? this.lastGame);
                 this.setDailyMissions(data.dailyMissions || []);
                 this.setWeeklyMissions(data.weeklyMissions || []);
+
+                // Actualizar historial y récords desde stats
+                this.gameHistory = data.gameHistory || [];
+                this.topGames = data.topGames || [];
+                this.maxScores = data.maxScores || {};
+                this.totalGamesPlayed = data.totalGamesPlayed || 0;
+                this.totalPoints = data.totalPoints || 0;
 
                 return { success: true, stats: data };
             } catch (error) {
@@ -225,6 +245,12 @@ export const useProgressStore = defineStore('progress', {
                 this.setDailyMissions(data.dailyMissions || this.dailyMissions);
                 this.setWeeklyMissions(data.weeklyMissions || this.weeklyMissions);
                 this.setNeedsFreeze(data.needsFreeze);
+
+                // Actualizar desde respuesta de completar partida
+                if (data.gameHistory) this.gameHistory = data.gameHistory;
+                if (data.maxScores) this.maxScores = data.maxScores;
+                if (data.totalGamesPlayed !== undefined) this.totalGamesPlayed = data.totalGamesPlayed;
+                if (data.totalPoints !== undefined) this.totalPoints = data.totalPoints;
 
                 const now = new Date().toISOString();
                 this.setLastActivity(now);
