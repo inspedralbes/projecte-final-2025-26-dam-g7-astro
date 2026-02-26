@@ -148,12 +148,12 @@ const newLevelData = ref({
 
 const levelSequence = [
     { name: 'Preparativos de Vuelo', component: WordConstruction, minScore: 100 },
-    { name: 'Cuenta Regresiva: ¡Despegue!', component: RadarScan, minScore: 300 },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 500 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 800 },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 1000 },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1500 },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1500 },
+    { name: 'Cuenta Regresiva: ¡Despegue!', component: RadarScan, minScore: 200 },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 550 },
+    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750 },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
     { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
