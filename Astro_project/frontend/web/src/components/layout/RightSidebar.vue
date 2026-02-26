@@ -203,8 +203,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAstroStore } from '@/stores/astroStore'
+import { useProgressStore } from '@/stores/progressStore' // <-- Asegúrate que sea este
 
 const astroStore = useAstroStore()
+const progressStore = useProgressStore()
 
 // CORRECCIÓN: Extraemos correctamente las misiones, stats y el getter de racha
 const { 
@@ -214,8 +216,8 @@ const {
     level: userLevel, 
     xp: userXp,
     streak: userStreak, // Mapeamos 'streak' del store a 'userStreak'
-    isStreakActiveToday // El getter reactivo
-} = storeToRefs(astroStore)
+    isStreakActiveToday
+} = storeToRefs(progressStore) // Usar el mismo store que el mapa
 
 watch(dailyMissions, (newVal) => {
     console.log("👀 [Sidebar] Cambio en misiones diarias:", newVal?.length);
