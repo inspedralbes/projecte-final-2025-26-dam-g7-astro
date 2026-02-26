@@ -468,8 +468,10 @@ svg {
 
 .game-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    top: var(--v-layout-top, 0px);
+    left: var(--v-layout-left, 0px);
+    right: var(--v-layout-right, 0px);
+    bottom: var(--v-layout-bottom, 0px);
     background: #0b0f19;
     z-index: 100;
     display: flex;

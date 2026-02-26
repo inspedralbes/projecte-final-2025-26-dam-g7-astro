@@ -1,5 +1,13 @@
 <template>
-  <div ref="container" class="game-wrapper" :class="{ 'hide-cursor': isPlaying }">
+  <div
+    ref="gameArea"
+    class="game-container"
+    :class="{ 'hide-cursor': isPlaying }"
+    @mousemove="handlePointerMove"
+    @mousedown.left.prevent="beginFiring"
+    @mouseup.left="stopFiring"
+    @mouseleave="stopFiring"
+  >
     <!-- HUD -->
     <div class="hud pa-4 w-100 position-absolute" style="top: 0; z-index: 12;">
       <div class="d-flex justify-center align-center">
@@ -29,13 +37,7 @@
     </div>
 
     <!-- Canvas -->
-    <canvas 
-      ref="gameCanvas"
-      @mousemove="handlePointerMove"
-      @mousedown.left.prevent="beginFiring"
-      @mouseup.left="stopFiring"
-      @mouseleave="stopFiring"
-    ></canvas>
+    <canvas ref="gameCanvas"></canvas>
 
     <!-- Overlays -->
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
@@ -81,7 +83,7 @@ const confusionSets = [
 const wordSets = confusionSets.filter(s => s.target.length > 1);
 const letterSets = confusionSets.filter(s => s.target.length === 1);
 
-const container = ref(null);
+const gameArea = ref(null);
 const gameCanvas = ref(null);
 let ctx = null;
 
@@ -104,9 +106,12 @@ const holdRequiredMs = ref(1000);
 
 const HUD_SAFE_TOP = 170;
 const EDGE_PADDING = 18;
+const ENTITY_GAP = 14;
+const LANE_PADDING = 26;
 const BASE_DECOYS = 4;
 const MAX_DECOYS = 10;
 const BASE_ENTITY_SIZE = 110;
+const TARGET_ZONE_RATIO = 0.38;
 
 let animationFrame = null;
 let lastFrameTs = 0;
@@ -120,9 +125,152 @@ function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function randomVelocity(speed) {
+  const angle = Math.random() * Math.PI * 2;
+  return {
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed
+  };
+}
+
+function getHorizontalMenuOverlap() {
+  if (!gameArea.value) return { left: 0, right: 0 };
+
+  const areaRect = gameArea.value.getBoundingClientRect();
+  const leftMenu = document.querySelector('.left-sidebar');
+  const rightMenu = document.querySelector('.right-sidebar');
+
+  const overlapWith = (menuEl) => {
+    if (!menuEl) return 0;
+    const menuRect = menuEl.getBoundingClientRect();
+    const overlap = Math.min(areaRect.right, menuRect.right) - Math.max(areaRect.left, menuRect.left);
+    return Math.max(0, overlap);
+  };
+
+  return {
+    left: overlapWith(leftMenu),
+    right: overlapWith(rightMenu)
+  };
+}
+
+function getLaneBounds(size) {
+  const menuOverlap = getHorizontalMenuOverlap();
+  const rawMinX = size / 2 + EDGE_PADDING + menuOverlap.left;
+  const rawMaxX = gameCanvas.value.width - size / 2 - EDGE_PADDING - menuOverlap.right;
+  const minX = Math.min(rawMinX, rawMaxX);
+  const maxX = Math.max(rawMinX, rawMaxX);
+  const minY = Math.max(HUD_SAFE_TOP, size / 2 + EDGE_PADDING);
+  const maxY = gameCanvas.value.height - size / 2 - EDGE_PADDING;
+  const spanY = Math.max(1, maxY - minY);
+  const splitY = minY + spanY * TARGET_ZONE_RATIO;
+
+  let targetMaxY = splitY - LANE_PADDING;
+  let decoyMinY = splitY + LANE_PADDING;
+
+  const minGapBetweenLanes = size + ENTITY_GAP;
+  if ((decoyMinY - targetMaxY) < minGapBetweenLanes) {
+    const middle = (minY + maxY) / 2;
+    targetMaxY = middle - (minGapBetweenLanes / 2);
+    decoyMinY = middle + (minGapBetweenLanes / 2);
+  }
+
+  targetMaxY = clamp(targetMaxY, minY, maxY);
+  decoyMinY = clamp(decoyMinY, minY, maxY);
+
+  return {
+    target: { minX, maxX, minY, maxY: targetMaxY },
+    decoy: { minX, maxX, minY: decoyMinY, maxY }
+  };
+}
+
+function overlapAt(x, y, size, others) {
+  for (const other of others) {
+    const minDist = (size + other.size) / 2 + ENTITY_GAP;
+    const dist = Math.hypot(x - other.x, y - other.y);
+    if (dist < minDist) return true;
+  }
+  return false;
+}
+
+function pickSpawn(bounds, size, others = [], requiredMinY = null) {
+  const requestedMinY = requiredMinY !== null ? Math.max(bounds.minY, requiredMinY) : bounds.minY;
+  const minY = Math.min(requestedMinY, bounds.maxY);
+  const maxY = Math.max(minY, bounds.maxY);
+
+  for (let attempt = 0; attempt < 180; attempt++) {
+    const x = randomBetween(bounds.minX, bounds.maxX);
+    const y = randomBetween(minY, maxY);
+    if (!overlapAt(x, y, size, others)) return { x, y };
+  }
+
+  return {
+    x: randomBetween(bounds.minX, bounds.maxX),
+    y: clamp((minY + maxY) / 2, minY, maxY)
+  };
+}
+
+function clampEntityInsideBounds(entity) {
+  entity.x = clamp(entity.x, entity.bounds.minX, entity.bounds.maxX);
+  entity.y = clamp(entity.y, entity.bounds.minY, entity.bounds.maxY);
+}
+
+function resolveEntityOverlaps() {
+  for (let i = 0; i < targets.value.length; i++) {
+    for (let j = i + 1; j < targets.value.length; j++) {
+      const a = targets.value[i];
+      const b = targets.value[j];
+
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy) || 0.0001;
+      const minDist = (a.size + b.size) / 2 + ENTITY_GAP;
+
+      if (dist < minDist) {
+        const overlap = (minDist - dist) / 2;
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        a.x -= nx * overlap;
+        a.y -= ny * overlap;
+        b.x += nx * overlap;
+        b.y += ny * overlap;
+
+        clampEntityInsideBounds(a);
+        clampEntityInsideBounds(b);
+
+        const swapVx = a.vx;
+        const swapVy = a.vy;
+        a.vx = b.vx;
+        a.vy = b.vy;
+        b.vx = swapVx;
+        b.vy = swapVy;
+      }
+    }
+  }
+}
+
+function enforceDecoysUnderTarget() {
+  const target = targets.value.find((t) => t.isTarget);
+  if (!target) return;
+
+  for (const entity of targets.value) {
+    if (entity.isTarget) continue;
+    const minCenterY = target.y + (target.size / 2) + (entity.size / 2) + ENTITY_GAP;
+    if (entity.y < minCenterY) {
+      entity.y = Math.min(entity.bounds.maxY, minCenterY);
+      entity.vy = Math.abs(entity.vy);
+      clampEntityInsideBounds(entity);
+    }
+  }
+}
+
 function resizeCanvas() {
-  if (gameCanvas.value && container.value) {
-    const rect = container.value.getBoundingClientRect();
+  if (gameCanvas.value && gameArea.value) {
+    const rect = gameArea.value.getBoundingClientRect();
     gameCanvas.value.width = rect.width;
     gameCanvas.value.height = rect.height;
   }
@@ -141,28 +289,45 @@ function generateTargets() {
   const entitySize = BASE_ENTITY_SIZE;
   const baseSpeed = 80;
   const currentSpeed = baseSpeed + (round.value - 1) * 18;
-
-  const minX = entitySize / 2 + EDGE_PADDING;
-  const maxX = gameCanvas.value.width - entitySize / 2 - EDGE_PADDING;
-  const minY = Math.max(HUD_SAFE_TOP, entitySize / 2 + EDGE_PADDING);
-  const maxY = gameCanvas.value.height - entitySize / 2 - EDGE_PADDING;
+  const lanes = getLaneBounds(entitySize);
 
   const newTargets = [];
-  for (let i = 0; i < totalEntities; i++) {
-    const isTarget = i === 0;
-    const text = isTarget ? challenge.target : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
+  const mainVelocity = randomVelocity(currentSpeed);
+  const mainSpawn = pickSpawn(lanes.target, entitySize, []);
+  const mainTarget = {
+    text: challenge.target,
+    isTarget: true,
+    size: entitySize,
+    x: mainSpawn.x,
+    y: mainSpawn.y,
+    vx: mainVelocity.vx,
+    vy: mainVelocity.vy,
+    bounds: lanes.target
+  };
+  newTargets.push(mainTarget);
+
+  const requiredDecoyMinY = mainTarget.y + (mainTarget.size / 2) + (entitySize / 2) + ENTITY_GAP;
+
+  for (let i = 0; i < totalEntities - 1; i++) {
+    const text = challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
+    const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
+    const spawn = pickSpawn(lanes.decoy, entitySize, newTargets, requiredDecoyMinY);
 
     newTargets.push({
       text,
-      isTarget,
+      isTarget: false,
       size: entitySize,
-      x: randomBetween(minX, maxX),
-      y: randomBetween(minY, maxY),
-      vx: (Math.random() - 0.5) * currentSpeed * 2,
-      vy: (Math.random() - 0.5) * currentSpeed * 2
+      x: spawn.x,
+      y: spawn.y,
+      vx: velocity.vx,
+      vy: velocity.vy,
+      bounds: lanes.decoy
     });
   }
+
   targets.value = newTargets;
+  resolveEntityOverlaps();
+  enforceDecoysUnderTarget();
   holdProgressMs.value = 0;
 }
 
@@ -183,26 +348,28 @@ function update(dt) {
   isPenaltyActive.value = timePenalty > 1;
   timeLeft.value -= dt * timePenalty;
 
-  if (timeLeft.value <= 0) endGame();
+  if (timeLeft.value <= 0) {
+    endGame();
+    return;
+  }
 
   targets.value.forEach(t => {
-    const minX = t.size / 2 + EDGE_PADDING;
-    const maxX = gameCanvas.value.width - t.size / 2 - EDGE_PADDING;
-    const minY = Math.max(HUD_SAFE_TOP, t.size / 2 + EDGE_PADDING);
-    const maxY = gameCanvas.value.height - t.size / 2 - EDGE_PADDING;
-
     t.x += t.vx * dt;
     t.y += t.vy * dt;
 
-    if (t.x < minX || t.x > maxX) {
+    if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
       t.vx *= -1;
-      t.x = Math.min(maxX, Math.max(minX, t.x));
+      t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX);
     }
-    if (t.y < minY || t.y > maxY) {
+    if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
       t.vy *= -1;
-      t.y = Math.min(maxY, Math.max(minY, t.y));
+      t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY);
     }
   });
+
+  enforceDecoysUnderTarget();
+  resolveEntityOverlaps();
+  enforceDecoysUnderTarget();
 
   if (isFiring.value && hoveredTarget && hoveredTarget.isTarget) {
     holdProgressMs.value = Math.min(holdRequiredMs.value, holdProgressMs.value + dt * 1000);
@@ -211,15 +378,12 @@ function update(dt) {
       lockTarget();
       return;
     }
-  } else {
-    // Bloqueig estricte: si surts de l'objectiu correcte, el progrés torna a 0.
-    holdProgressMs.value = 0;
   }
 }
 
 function lockTarget() {
   score.value += 100 + round.value * 20;
-  timeLeft.value = Math.min(99, timeLeft.value + 5);
+  timeLeft.value = Math.min(99, timeLeft.value + 3);
   round.value++;
   generateTargets();
 }
@@ -280,7 +444,8 @@ function gameLoop(ts) {
 }
 
 function handlePointerMove(e) {
-  const rect = gameCanvas.value.getBoundingClientRect();
+  if (!gameArea.value) return;
+  const rect = gameArea.value.getBoundingClientRect();
   mouseX.value = e.clientX - rect.left;
   mouseY.value = e.clientY - rect.top;
 }
@@ -299,6 +464,8 @@ function startGame() {
   holdProgressMs.value = 0;
   isPlaying.value = true;
   resizeCanvas();
+  mouseX.value = gameCanvas.value.width / 2;
+  mouseY.value = gameCanvas.value.height * 0.75;
   generateTargets();
   lastFrameTs = performance.now();
   animationFrame = requestAnimationFrame(gameLoop);
@@ -328,15 +495,22 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.game-wrapper {
+.game-container {
   position: relative;
   width: 100%;
-  height: 100%; /* Important: agafar l'altat del pare */
-  background: #060b17;
+  height: 100%;
+  min-height: 600px;
+  background-color: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
+  user-select: none;
 }
 
 canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
