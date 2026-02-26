@@ -39,6 +39,14 @@
     <!-- Canvas -->
     <canvas ref="gameCanvas"></canvas>
 
+    <div
+      v-if="roundHintVisible"
+      :key="roundHintToken"
+      class="round-target-hint"
+    >
+      {{ roundHintText }}
+    </div>
+
     <!-- Overlays -->
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
@@ -79,9 +87,8 @@ const confusionSets = [
   { target: 'ORBITA', decoys: ['ORBETA', 'ORBE', 'ORBITS', 'ORDITA'] }
 ];
 
-// Separar per tipus
-const wordSets = confusionSets.filter(s => s.target.length > 1);
-const letterSets = confusionSets.filter(s => s.target.length === 1);
+const wordSets = confusionSets.filter((s) => s.target.length > 1);
+const letterSets = confusionSets.filter((s) => s.target.length === 1);
 
 const gameArea = ref(null);
 const gameCanvas = ref(null);
@@ -92,9 +99,12 @@ const showGameOverOverlay = ref(false);
 const isPlaying = ref(false);
 
 const score = ref(0);
-const timeLeft = ref(75);
+const timeLeft = ref(60);
 const round = ref(1);
 const isPenaltyActive = ref(false);
+const roundHintText = ref('');
+const roundHintVisible = ref(false);
+const roundHintToken = ref(0);
 
 const currentChallenge = ref(null);
 const targets = ref([]);
@@ -106,15 +116,25 @@ const holdRequiredMs = ref(1000);
 
 const HUD_SAFE_TOP = 170;
 const EDGE_PADDING = 18;
-const ENTITY_GAP = 14;
-const LANE_PADDING = 26;
 const BASE_DECOYS = 4;
 const MAX_DECOYS = 10;
 const BASE_ENTITY_SIZE = 110;
-const TARGET_ZONE_RATIO = 0.38;
+const PROGRESS_DECAY_OUTSIDE = 950;
+const PROGRESS_DECAY_ON_DECOY = 700;
+const CIRCLE_COLORS = [
+  '#00e5ff',
+  '#ffd54f',
+  '#69f0ae',
+  '#82b1ff',
+  '#b388ff',
+  '#ff80ab',
+  '#ffab91',
+  '#c6ff00'
+];
 
 let animationFrame = null;
 let lastFrameTs = 0;
+let roundHintTimeout = null;
 
 const holdProgressPct = computed(() =>
   Math.min(100, (holdProgressMs.value / holdRequiredMs.value) * 100)
@@ -137,6 +157,19 @@ function randomVelocity(speed) {
   };
 }
 
+function hexToRgba(hex, alpha) {
+  const sanitized = hex.replace('#', '');
+  if (sanitized.length !== 6) return `rgba(0, 229, 255, ${alpha})`;
+  const r = Number.parseInt(sanitized.slice(0, 2), 16);
+  const g = Number.parseInt(sanitized.slice(2, 4), 16);
+  const b = Number.parseInt(sanitized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function randomCircleColor() {
+  return CIRCLE_COLORS[Math.floor(Math.random() * CIRCLE_COLORS.length)];
+}
+
 function getHorizontalMenuOverlap() {
   if (!gameArea.value) return { left: 0, right: 0 };
 
@@ -157,115 +190,19 @@ function getHorizontalMenuOverlap() {
   };
 }
 
-function getLaneBounds(size) {
+function getPlayBounds(size) {
   const menuOverlap = getHorizontalMenuOverlap();
   const rawMinX = size / 2 + EDGE_PADDING + menuOverlap.left;
   const rawMaxX = gameCanvas.value.width - size / 2 - EDGE_PADDING - menuOverlap.right;
   const minX = Math.min(rawMinX, rawMaxX);
   const maxX = Math.max(rawMinX, rawMaxX);
-  const minY = Math.max(HUD_SAFE_TOP, size / 2 + EDGE_PADDING);
-  const maxY = gameCanvas.value.height - size / 2 - EDGE_PADDING;
-  const spanY = Math.max(1, maxY - minY);
-  const splitY = minY + spanY * TARGET_ZONE_RATIO;
 
-  let targetMaxY = splitY - LANE_PADDING;
-  let decoyMinY = splitY + LANE_PADDING;
+  const rawMinY = Math.max(HUD_SAFE_TOP, size / 2 + EDGE_PADDING);
+  const rawMaxY = gameCanvas.value.height - size / 2 - EDGE_PADDING;
+  const minY = Math.min(rawMinY, rawMaxY);
+  const maxY = Math.max(rawMinY, rawMaxY);
 
-  const minGapBetweenLanes = size + ENTITY_GAP;
-  if ((decoyMinY - targetMaxY) < minGapBetweenLanes) {
-    const middle = (minY + maxY) / 2;
-    targetMaxY = middle - (minGapBetweenLanes / 2);
-    decoyMinY = middle + (minGapBetweenLanes / 2);
-  }
-
-  targetMaxY = clamp(targetMaxY, minY, maxY);
-  decoyMinY = clamp(decoyMinY, minY, maxY);
-
-  return {
-    target: { minX, maxX, minY, maxY: targetMaxY },
-    decoy: { minX, maxX, minY: decoyMinY, maxY }
-  };
-}
-
-function overlapAt(x, y, size, others) {
-  for (const other of others) {
-    const minDist = (size + other.size) / 2 + ENTITY_GAP;
-    const dist = Math.hypot(x - other.x, y - other.y);
-    if (dist < minDist) return true;
-  }
-  return false;
-}
-
-function pickSpawn(bounds, size, others = [], requiredMinY = null) {
-  const requestedMinY = requiredMinY !== null ? Math.max(bounds.minY, requiredMinY) : bounds.minY;
-  const minY = Math.min(requestedMinY, bounds.maxY);
-  const maxY = Math.max(minY, bounds.maxY);
-
-  for (let attempt = 0; attempt < 180; attempt++) {
-    const x = randomBetween(bounds.minX, bounds.maxX);
-    const y = randomBetween(minY, maxY);
-    if (!overlapAt(x, y, size, others)) return { x, y };
-  }
-
-  return {
-    x: randomBetween(bounds.minX, bounds.maxX),
-    y: clamp((minY + maxY) / 2, minY, maxY)
-  };
-}
-
-function clampEntityInsideBounds(entity) {
-  entity.x = clamp(entity.x, entity.bounds.minX, entity.bounds.maxX);
-  entity.y = clamp(entity.y, entity.bounds.minY, entity.bounds.maxY);
-}
-
-function resolveEntityOverlaps() {
-  for (let i = 0; i < targets.value.length; i++) {
-    for (let j = i + 1; j < targets.value.length; j++) {
-      const a = targets.value[i];
-      const b = targets.value[j];
-
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const dist = Math.hypot(dx, dy) || 0.0001;
-      const minDist = (a.size + b.size) / 2 + ENTITY_GAP;
-
-      if (dist < minDist) {
-        const overlap = (minDist - dist) / 2;
-        const nx = dx / dist;
-        const ny = dy / dist;
-
-        a.x -= nx * overlap;
-        a.y -= ny * overlap;
-        b.x += nx * overlap;
-        b.y += ny * overlap;
-
-        clampEntityInsideBounds(a);
-        clampEntityInsideBounds(b);
-
-        const swapVx = a.vx;
-        const swapVy = a.vy;
-        a.vx = b.vx;
-        a.vy = b.vy;
-        b.vx = swapVx;
-        b.vy = swapVy;
-      }
-    }
-  }
-}
-
-function enforceDecoysUnderTarget() {
-  const target = targets.value.find((t) => t.isTarget);
-  if (!target) return;
-
-  for (const entity of targets.value) {
-    if (entity.isTarget) continue;
-    const minCenterY = target.y + (target.size / 2) + (entity.size / 2) + ENTITY_GAP;
-    if (entity.y < minCenterY) {
-      entity.y = Math.min(entity.bounds.maxY, minCenterY);
-      entity.vy = Math.abs(entity.vy);
-      clampEntityInsideBounds(entity);
-    }
-  }
+  return { minX, maxX, minY, maxY };
 }
 
 function resizeCanvas() {
@@ -276,12 +213,33 @@ function resizeCanvas() {
   }
 }
 
+function triggerRoundHint(text) {
+  roundHintText.value = String(text || '');
+  roundHintVisible.value = false;
+  roundHintToken.value += 1;
+
+  if (roundHintTimeout) {
+    clearTimeout(roundHintTimeout);
+    roundHintTimeout = null;
+  }
+
+  requestAnimationFrame(() => {
+    roundHintVisible.value = true;
+  });
+
+  roundHintTimeout = setTimeout(() => {
+    roundHintVisible.value = false;
+    roundHintTimeout = null;
+  }, 1500); //Aqui el temps per la lletra + ctrl + f "animation: hint-fade-out"
+}
+
 function generateTargets() {
   if (!gameCanvas.value) return;
 
   const sourceSet = round.value <= 6 ? wordSets : letterSets;
   const challenge = sourceSet[Math.floor(Math.random() * sourceSet.length)];
   currentChallenge.value = challenge;
+  triggerRoundHint(challenge.target);
 
   const decoyCount = Math.min(MAX_DECOYS, BASE_DECOYS + Math.floor((round.value - 1) / 2));
   const totalEntities = 1 + decoyCount;
@@ -289,45 +247,32 @@ function generateTargets() {
   const entitySize = BASE_ENTITY_SIZE;
   const baseSpeed = 80;
   const currentSpeed = baseSpeed + (round.value - 1) * 18;
-  const lanes = getLaneBounds(entitySize);
+  const bounds = getPlayBounds(entitySize);
 
   const newTargets = [];
-  const mainVelocity = randomVelocity(currentSpeed);
-  const mainSpawn = pickSpawn(lanes.target, entitySize, []);
-  const mainTarget = {
-    text: challenge.target,
-    isTarget: true,
-    size: entitySize,
-    x: mainSpawn.x,
-    y: mainSpawn.y,
-    vx: mainVelocity.vx,
-    vy: mainVelocity.vy,
-    bounds: lanes.target
-  };
-  newTargets.push(mainTarget);
-
-  const requiredDecoyMinY = mainTarget.y + (mainTarget.size / 2) + (entitySize / 2) + ENTITY_GAP;
-
-  for (let i = 0; i < totalEntities - 1; i++) {
-    const text = challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
+  for (let i = 0; i < totalEntities; i++) {
+    const isTarget = i === 0;
+    const text = isTarget
+      ? challenge.target
+      : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
     const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
-    const spawn = pickSpawn(lanes.decoy, entitySize, newTargets, requiredDecoyMinY);
+    const ringColor = randomCircleColor();
 
     newTargets.push({
       text,
-      isTarget: false,
+      isTarget,
       size: entitySize,
-      x: spawn.x,
-      y: spawn.y,
+      x: randomBetween(bounds.minX, bounds.maxX),
+      y: randomBetween(bounds.minY, bounds.maxY),
       vx: velocity.vx,
       vy: velocity.vy,
-      bounds: lanes.decoy
+      bounds,
+      ringColor,
+      fillColor: hexToRgba(ringColor, 0.14)
     });
   }
 
   targets.value = newTargets;
-  resolveEntityOverlaps();
-  enforceDecoysUnderTarget();
   holdProgressMs.value = 0;
 }
 
@@ -353,7 +298,7 @@ function update(dt) {
     return;
   }
 
-  targets.value.forEach(t => {
+  targets.value.forEach((t) => {
     t.x += t.vx * dt;
     t.y += t.vy * dt;
 
@@ -367,10 +312,6 @@ function update(dt) {
     }
   });
 
-  enforceDecoysUnderTarget();
-  resolveEntityOverlaps();
-  enforceDecoysUnderTarget();
-
   if (isFiring.value && hoveredTarget && hoveredTarget.isTarget) {
     holdProgressMs.value = Math.min(holdRequiredMs.value, holdProgressMs.value + dt * 1000);
     if (holdProgressMs.value >= holdRequiredMs.value) {
@@ -378,6 +319,10 @@ function update(dt) {
       lockTarget();
       return;
     }
+  } else if (isFiring.value && !hoveredTarget) {
+    holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_OUTSIDE));
+  } else if (isFiring.value && hoveredTarget && !hoveredTarget.isTarget) {
+    holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_ON_DECOY));
   }
 }
 
@@ -392,7 +337,6 @@ function draw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height);
 
-  // Laser
   if (isFiring.value) {
     ctx.beginPath();
     ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height);
@@ -405,17 +349,16 @@ function draw() {
     ctx.shadowBlur = 0;
   }
 
-  // Objectius
-  targets.value.forEach(t => {
+  const drawEntity = (t) => {
     ctx.save();
     ctx.translate(t.x, t.y);
 
     ctx.beginPath();
     ctx.arc(0, 0, t.size / 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(10, 20, 40, 0.85)';
+    ctx.fillStyle = t.fillColor || 'rgba(10, 20, 40, 0.85)';
     ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = t.isTarget ? 'rgba(0, 229, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = t.isTarget ? 3 : 2;
+    ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)');
     ctx.stroke();
 
     ctx.fillStyle = '#fff';
@@ -424,9 +367,12 @@ function draw() {
     ctx.textBaseline = 'middle';
     ctx.fillText(t.text, 0, 0);
     ctx.restore();
-  });
+  };
 
-  // Mira
+  targets.value.filter((t) => !t.isTarget).forEach(drawEntity);
+  const mainTarget = targets.value.find((t) => t.isTarget);
+  if (mainTarget) drawEntity(mainTarget);
+
   ctx.beginPath();
   ctx.arc(mouseX.value, mouseY.value, 18, 0, Math.PI * 2);
   ctx.strokeStyle = isFiring.value ? '#00e5ff' : '#ffffff';
@@ -457,7 +403,7 @@ function startGame() {
   showStartOverlay.value = false;
   showGameOverOverlay.value = false;
   score.value = 0;
-  timeLeft.value = 75;
+  timeLeft.value = 60;
   round.value = 1;
   isFiring.value = false;
   isPenaltyActive.value = false;
@@ -474,6 +420,7 @@ function startGame() {
 function endGame() {
   isPlaying.value = false;
   isFiring.value = false;
+  roundHintVisible.value = false;
   showGameOverOverlay.value = true;
   cancelAnimationFrame(animationFrame);
 }
@@ -491,6 +438,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCanvas);
   cancelAnimationFrame(animationFrame);
+  if (roundHintTimeout) {
+    clearTimeout(roundHintTimeout);
+    roundHintTimeout = null;
+  }
 });
 </script>
 
@@ -534,6 +485,32 @@ canvas {
   width: 320px;
   z-index: 10;
   text-align: center;
+}
+
+.round-target-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: clamp(80px, 18vw, 180px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
+  animation: hint-fade-out 1.5s ease-out forwards;
+}
+
+@keyframes hint-fade-out {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
 }
 
 .bg-slate-900 { background-color: #0f172a; }
