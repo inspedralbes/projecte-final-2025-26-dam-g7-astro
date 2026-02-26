@@ -80,8 +80,10 @@
                 </div>
 
                 <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
-                    Has guanyat més experiència i ets un pas més a prop de dominar la galàxia.
+                    Has acumulat un total de <span class="text-cyan-accent-3 font-weight-bold">{{ progressStore.xp }} XP</span>
+                    i ets un pas més a prop de dominar la galàxia.
                 </p>
+                
                 <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large"
                     class="font-weight-bold text-black" @click="showLevelUpDialog = false">
                     CONTINUAR
@@ -119,7 +121,6 @@
 
 <script setup>
 import { ref, shallowRef } from 'vue';
-// Importamos el store correcto según el archivo progressStore.js que me pasaste
 import { useProgressStore } from '@/stores/progressStore';
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
@@ -131,12 +132,11 @@ import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
 const progressStore = useProgressStore();
 const activeGameComponent = shallowRef(null);
+const currentPlayingIndex = ref(null); // Índice del nivel en juego
 
-// Estados de los diálogos
 const showLevelUpDialog = ref(false);
 const showFailDialog = ref(false);
 
-// Datos temporales para la lógica de puntuación
 const lastScore = ref(0);
 const requiredScore = ref(0);
 
@@ -146,9 +146,6 @@ const newLevelData = ref({
     rankChanged: false
 });
 
-
-// DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
-// Ajusta 'minScore' a la dificultad real de tus juegos
 const levelSequence = [
     { name: 'Preparativos de Vuelo', component: WordConstruction, minScore: 100 },
     { name: 'Cuenta Regresiva: ¡Despegue!', component: RadarScan, minScore: 300 },
@@ -160,7 +157,6 @@ const levelSequence = [
     { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
-// Determina el estado visual del nodo (bloqueado, actual, completado)
 const getLevelState = (index) => {
     const levelNum = index + 1;
     if (levelNum === progressStore.level) return 'current';
@@ -168,76 +164,51 @@ const getLevelState = (index) => {
     return 'locked';
 };
 
-// Maneja el click en el mapa
 const handleLevelClick = (index) => {
     const state = getLevelState(index);
     if (state !== 'locked') {
-        // Asignamos el componente del juego para que se abra
+        currentPlayingIndex.value = index;
         activeGameComponent.value = levelSequence[index].component;
     }
 };
 
-// LÓGICA PRINCIPAL AL TERMINAR UN MINIJUEGO
 const handleGameOver = async (finalScore) => {
-    // 1. Cerramos visualmente el juego
+    const levelIndex = currentPlayingIndex.value;
+    const gameName = levelSequence[levelIndex]?.name || 'Minijuego';
+
     activeGameComponent.value = null;
     lastScore.value = finalScore;
 
-    // 2. Verificamos si hay usuario activo
     const user = progressStore.resolveUser();
-
-    if (user) {
+    if (user && levelIndex !== null) {
         try {
-            // -- LÓGICA DE VALIDACIÓN DE PUNTOS --
+            const levelConfig = levelSequence[levelIndex];
 
-            // Calculamos qué nivel acaba de jugar el usuario.
-            // Si el usuario está en nivel 1, el índice es 0.
-            // NOTA: Si permites re-jugar niveles anteriores, aquí deberías saber
-            // exactamente cuál de los botones pulsó. 
-            // Asumimos que juega el nivel actual (progressStore.level).
-            const currentLevelIndex = progressStore.level - 1;
-
-            // Obtenemos la configuración de ese nivel
-            const levelConfig = levelSequence[currentLevelIndex];
-
-            // Si existe configuración y NO supera la puntuación mínima:
             if (levelConfig && finalScore < levelConfig.minScore) {
                 requiredScore.value = levelConfig.minScore;
                 showFailDialog.value = true;
-
-                console.log(`❌ Puntos insuficientes: ${finalScore} / ${levelConfig.minScore}`);
-                return; // IMPORTANTE: Detenemos aquí. No llamamos al servidor.
+                return;
             }
 
-            // -- SI SUPERA LA PUNTUACIÓN, GUARDAMOS PROGRESO --
-
             const previousLevel = progressStore.level;
+            const result = await progressStore.registerCompletedGame(gameName, finalScore);
 
-            // Llamada al store (que llama al backend)
-            const result = await progressStore.registerCompletedGame(
-                activeGameComponent.value?.__name || 'Minijuego', // Nombre del componente como fallback
-                finalScore
-            );
-
-            // Manejo de errores del servidor
             if (!result.success) throw new Error(result.message);
 
-            // Verificamos si el servidor nos ha subido de nivel
-            if (result.data.newLevel > previousLevel) {
+            if (progressStore.level > previousLevel) {
                 newLevelData.value = {
-                    level: result.data.newLevel,
-                    rank: result.data.newRank || 'Explorador', // Fallback si no viene rango
-                    rankChanged: false // Aquí podrías comparar con el rango anterior si lo tuvieras
+                    level: progressStore.level,
+                    rank: result.data.newRank || 'Explorador',
+                    rankChanged: !!result.data.newRank
                 };
                 showLevelUpDialog.value = true;
             }
 
         } catch (error) {
             console.error("❌ Error al registrar la partida:", error);
+        } finally {
+            currentPlayingIndex.value = null;
         }
-    } else {
-        console.warn("⚠️ Modo invitado: No se ha guardado la puntuación.");
-        // Opcional: Mostrar diálogo de registro para guardar progreso
     }
 };
 </script>
@@ -245,11 +216,13 @@ const handleGameOver = async (finalScore) => {
 <style scoped>
 /* 1. FONDO (Igual) */
 .space-map {
-    height: 100%;
+    height: 100vh;
+    /* Forzamos a que mida el alto de la ventana */
     width: 100%;
     background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%);
     position: relative;
     overflow: hidden;
+    /* Esto evita que el scroll aparezca en el sitio equivocado */
     color: white;
     font-family: 'Nunito', sans-serif;
 }
