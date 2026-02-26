@@ -6,54 +6,78 @@
             <div class="start-spacer"></div>
 
             <div class="path-container">
-                <div v-for="(level, index) in levelSequence" :key="index" class="path-row">
-                    <div class="node-wrapper" :class="{
-                        'pos-left': index % 2 === 0,
-                        'pos-right': index % 2 !== 0
-                    }">
-
-                        <div v-if="index < levelSequence.length - 1" class="path-connector"
-                            :class="{ 'connector-flip': index % 2 !== 0 }">
-                            <svg viewBox="0 0 140 140">
-                                <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                    :class="{ 'line-active': index + 1 < progressStore.level }" />
-                            </svg>
-                        </div>
-
-                        <div v-if="index + 1 <= progressStore.level" class="floating-label"
-                            :class="getLevelState(index)">
-                            {{ level.name }}
-                        </div>
-
-                        <div v-if="getLevelState(index) === 'current'" class="target-score-label" style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); 
-                                   background: rgba(0,0,0,0.6); color: #00E5FF; padding: 2px 6px; 
-                                   border-radius: 4px; font-size: 10px; white-space: nowrap;">
-                            Meta: {{ level.minScore }} pts
-                        </div>
-
-                        <button class="node-btn" :class="[
-                            `state-${getLevelState(index)}`,
-                            { 'is-interactive': index + 1 <= progressStore.level }
-                        ]" @click="handleLevelClick(index)" v-ripple>
-                            <div class="icon-layer">
-                                <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
-                                    class="icon-completed" />
-
-                                <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
-                                    size="34" class="icon-current" />
-
-                                <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
+                <template v-for="(level, index) in levelSequence" :key="index">
+                    
+                    <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
+                        <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
+                            
+                            <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
+                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
+                                    {{ level.phaseTitle }}
+                                </h2>
                             </div>
 
-                            <div class="shine-effect"></div>
-
-                            <div v-if="getLevelState(index) === 'current'" class="stars-particles">
-                                <span>✦</span><span>✦</span>
+                            <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
+                                <v-divider class="border-cyan opacity-40"></v-divider>
+                                <div class="phase-center-node mx-2"></div>
+                                <v-divider class="border-cyan opacity-40"></v-divider>
                             </div>
-                        </button>
 
+                            <div class="phase-icon-box text-center">
+                                <v-icon :icon="level.phaseIcon" size="90" class="phase-watermark"></v-icon>
+                            </div>
+
+                        </div>
                     </div>
-                </div>
+
+                    <div class="path-row">
+                        <div class="node-wrapper" :class="{
+                            'pos-left': index % 2 === 0,
+                            'pos-right': index % 2 !== 0
+                        }">
+
+                            <div v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle" class="path-connector"
+                                :class="{ 'connector-flip': index % 2 !== 0 }">
+                                <svg viewBox="0 0 140 140">
+                                    <path d="M 0 0 Q 20 70 140 140" class="connector-line"
+                                        :class="{ 'line-active': index + 1 < progressStore.level }" />
+                                </svg>
+                            </div>
+
+                            <div v-if="index + 1 <= progressStore.level" class="floating-label"
+                                :class="getLevelState(index)">
+                                {{ level.name }}
+                            </div>
+
+                            <div v-if="getLevelState(index) === 'current'" class="target-score-label">
+                                Meta: {{ level.minScore }} pts
+                            </div>
+
+                            <button class="node-btn" :class="[
+                                `state-${getLevelState(index)}`,
+                                { 'is-interactive': index + 1 <= progressStore.level }
+                            ]" @click="handleLevelClick(index)" v-ripple>
+                                <div class="icon-layer">
+                                    <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
+                                        class="icon-completed" />
+
+                                    <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
+                                        size="34" class="icon-current" />
+
+                                    <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
+                                </div>
+
+                                <div class="shine-effect"></div>
+
+                                <div v-if="getLevelState(index) === 'current'" class="stars-particles">
+                                    <span>✦</span><span>✦</span>
+                                </div>
+                            </button>
+
+                        </div>
+                    </div>
+                </template>
             </div>
 
             <div class="end-spacer"></div>
@@ -132,7 +156,7 @@ import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
 const progressStore = useProgressStore();
 const activeGameComponent = shallowRef(null);
-const currentPlayingIndex = ref(null); // Índice del nivel en juego
+const currentPlayingIndex = ref(null); 
 
 const showLevelUpDialog = ref(false);
 const showFailDialog = ref(false);
@@ -146,14 +170,23 @@ const newLevelData = ref({
     rankChanged: false
 });
 
+// MATRIZ ACTUALIZADA CON phaseAlign Y phaseIcon PARA EL DISEÑO LATERAL
 const levelSequence = [
-    { name: 'Preparativos de Vuelo', component: WordConstruction, minScore: 100 },
-    { name: 'Cuenta Regresiva: ¡Despegue!', component: RadarScan, minScore: 300 },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 500 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 800 },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 1000 },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1500 },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1500 },
+    { 
+        name: 'Preparativos', component: WordConstruction, minScore: 100, 
+        phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', 
+        phaseAlign: 'left',
+    },
+    { name: '¡Despegue!', component: RadarScan, minScore: 200 },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 550 },
+    { 
+        name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, 
+        phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', 
+        phaseAlign: 'right',  
+    },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
     { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
@@ -214,15 +247,12 @@ const handleGameOver = async (finalScore) => {
 </script>
 
 <style scoped>
-/* 1. FONDO (Igual) */
 .space-map {
     height: 100vh;
-    /* Forzamos a que mida el alto de la ventana */
     width: 100%;
     background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%);
     position: relative;
     overflow: hidden;
-    /* Esto evita que el scroll aparezca en el sitio equivocado */
     color: white;
     font-family: 'Nunito', sans-serif;
 }
@@ -237,23 +267,58 @@ const handleGameOver = async (finalScore) => {
     padding-top: 20px;
 }
 
-.start-spacer {
-    height: 80px;
+.start-spacer { height: 80px; }
+.end-spacer { height: 150px; }
+
+/* NUEVOS ESTILOS PARA LAS CABECERAS LATERALES */
+.phase-divider-wrapper {
+    position: relative;
+    z-index: 10;
 }
 
-.end-spacer {
-    height: 150px;
+.phase-text-box {
+    min-width: 280px;
+    max-width: 350px;
 }
 
-/* 2. GRID Y POSICIONAMIENTO (Ajustado) */
+.phase-icon-box {
+    width: 120px;
+}
+
+.phase-watermark {
+    color: #455a64;
+    opacity: 0.3;
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.1));
+    transition: all 0.5s ease;
+}
+
+.phase-divider-wrapper:hover .phase-watermark {
+    opacity: 0.6;
+    color: #00e5ff;
+    transform: scale(1.1);
+}
+
+.phase-center-node {
+    width: 12px;
+    height: 12px;
+    background: #00e5ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff;
+}
+
+.tracking-widest { letter-spacing: 3px; }
+.glow-text { text-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
+.border-cyan { border-color: #00e5ff !important; border-width: 1px; border-style: solid; }
+
+/* CONTENEDOR AMPLIADO PARA USAR LOS BORDES DE LA PANTALLA */
 .path-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 400px;
-    /* Reducido un poco para centrar mejor en móviles */
+    max-width: 900px; /* Ampliado desde los 400px originales */
     margin: 0 auto;
+    padding: 0 20px;
 }
 
 .path-row {
@@ -261,16 +326,12 @@ const handleGameOver = async (finalScore) => {
     justify-content: center;
     width: 100%;
     height: 140px;
-    /* Altura fija entre niveles */
     position: relative;
-    /* Borde para depuración (quitar en prod) */
-    /* border: 1px dashed rgba(255,255,255,0.1); */
 }
 
 .node-wrapper {
     position: relative;
     width: 80px;
-    /* Igual al ancho del botón */
     height: 80px;
     display: flex;
     justify-content: center;
@@ -278,58 +339,32 @@ const handleGameOver = async (finalScore) => {
     z-index: 10;
 }
 
-/* ZIG-ZAG:
-   La distancia horizontal debe coincidir con el ancho del SVG 
-   para que la línea conecte bien.
-   70px izquierda + 70px derecha = 140px de separación total.
-*/
-.pos-left {
-    transform: translateX(-70px);
-}
+.pos-left { transform: translateX(-70px); }
+.pos-right { transform: translateX(70px); }
 
-.pos-right {
-    transform: translateX(70px);
-}
-
-/* 3. CONECTORES (REPARADO) */
 .path-connector {
     position: absolute;
-    /* Nace del centro absoluto del botón */
     top: 50%;
     left: 50%;
-
-    /* Dimensiones: 
-       Ancho = Distancia horizontal al siguiente nodo (140px)
-       Alto = Altura de la fila (140px)
-    */
     width: 140px;
     height: 140px;
-
     z-index: -1;
     pointer-events: none;
     transform-origin: top left;
-    /* Importante para el flip */
 }
 
-/* Si estamos a la derecha (impar), el siguiente está a la izquierda.
-   Volteamos el SVG horizontalmente para que la curva vaya hacia el otro lado.
-*/
-.connector-flip {
-    transform: scaleX(-1);
-}
+.connector-flip { transform: scaleX(-1); }
 
 svg {
     width: 100%;
     height: 100%;
     overflow: visible;
-    /* Permite que el trazo grueso no se corte */
 }
 
 .connector-line {
     fill: none;
     stroke: rgba(255, 255, 255, 0.15);
     stroke-width: 8;
-    /* Un poco más fino para elegancia */
     stroke-dasharray: 12 10;
     stroke-linecap: round;
 }
@@ -340,7 +375,6 @@ svg {
     animation: dash-flow 30s linear infinite;
 }
 
-/* 4. BOTONES (Estabilizados) */
 .node-btn {
     width: 80px;
     height: 80px;
@@ -353,19 +387,12 @@ svg {
     justify-content: center;
     align-items: center;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* Efecto rebote suave */
     -webkit-tap-highlight-color: transparent;
 }
 
-.node-btn.is-interactive {
-    cursor: pointer;
-}
+.node-btn.is-interactive { cursor: pointer; }
+.node-btn:active { transform: scale(0.92); }
 
-.node-btn:active {
-    transform: scale(0.92);
-}
-
-/* ESTADOS */
 .state-locked {
     background-color: #2b3040;
     box-shadow: 0 6px 0 #181b24, 0 10px 10px rgba(0, 0, 0, 0.3);
@@ -387,14 +414,24 @@ svg {
     animation: floating 3s ease-in-out infinite;
 }
 
-/* 5. OTROS DETALLES */
+.target-score-label {
+    position: absolute; 
+    bottom: -25px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: rgba(0,0,0,0.6); 
+    color: #00E5FF; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-size: 10px; 
+    white-space: nowrap;
+}
+
 .floating-label {
     position: absolute;
     top: -45px;
-    /* Un poco más arriba para que no tape el botón */
     left: 50%;
     transform: translateX(-50%);
-    /* Centrado perfecto respecto al botón */
     background: rgba(11, 15, 25, 0.8);
     backdrop-filter: blur(4px);
     padding: 4px 12px;
@@ -407,14 +444,8 @@ svg {
     z-index: 20;
 }
 
-.state-current.floating-label {
-    color: #00E5FF;
-    border-color: rgba(0, 229, 255, 0.5);
-}
-
-.state-completed.floating-label {
-    color: #FFD54F;
-}
+.state-current.floating-label { color: #00E5FF; border-color: rgba(0, 229, 255, 0.5); }
+.state-completed.floating-label { color: #FFD54F; }
 
 .shine-effect {
     position: absolute;
@@ -428,30 +459,17 @@ svg {
     pointer-events: none;
 }
 
-@keyframes dash-flow {
-    to {
-        stroke-dashoffset: -500;
-    }
-}
+@keyframes dash-flow { to { stroke-dashoffset: -500; } }
 
 @keyframes floating {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
 }
 
 .game-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: #0b0f19;
     z-index: 100;
     display: flex;
@@ -466,14 +484,6 @@ svg {
     z-index: 101;
 }
 
-.fade-zoom-enter-active,
-.fade-zoom-leave-active {
-    transition: all 0.3s ease;
-}
-
-.fade-zoom-enter-from,
-.fade-zoom-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
-}
+.fade-zoom-enter-active, .fade-zoom-leave-active { transition: all 0.3s ease; }
+.fade-zoom-enter-from, .fade-zoom-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
