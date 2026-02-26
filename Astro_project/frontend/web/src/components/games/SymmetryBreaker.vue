@@ -230,7 +230,7 @@ function triggerRoundHint(text) {
   roundHintTimeout = setTimeout(() => {
     roundHintVisible.value = false;
     roundHintTimeout = null;
-  }, 1000);
+  }, 1500); //Aqui el temps per la lletra + ctrl + f "animation: hint-fade-out"
 }
 
 function generateTargets() {
@@ -499,7 +499,7 @@ canvas {
   font-weight: 900;
   letter-spacing: 0.06em;
   text-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
-  animation: hint-fade-out 1s ease-out forwards;
+  animation: hint-fade-out 1.5s ease-out forwards;
 }
 
 @keyframes hint-fade-out {
