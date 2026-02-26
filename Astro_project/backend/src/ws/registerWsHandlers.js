@@ -29,8 +29,8 @@ function registerWsHandlers(wss) {
                         break;
 
                     case 'CREATE_ROOM':
-                        // { type: 'CREATE_ROOM', user: 'UserA', isPublic: true/false }
-                        const roomId = await roomManager.createRoom(msg.user, msg.isPublic);
+                        // { type: 'CREATE_ROOM', user: 'UserA', isPublic: true/false, maxPlayers: 8 }
+                        const roomId = await roomManager.createRoom(msg.user, msg.isPublic, msg.maxPlayers);
                         ws.send(JSON.stringify({
                             type: 'ROOM_CREATED',
                             roomId

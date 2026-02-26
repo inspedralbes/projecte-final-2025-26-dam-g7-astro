@@ -12,7 +12,7 @@
       <!-- Pantalla Principal de Misión -->
       <v-col cols="12" md="8">
         <!-- VISTA: EN UNA SALA ACTIVA -->
-        <v-card v-if="multiplayerStore.room" class="mission-control-panel rounded-xl overflow-hidden" elevation="12">
+        <v-card v-if="multiplayerStore.room" class="mission-control-panel rounded-xl overflow-hidden d-flex flex-column" elevation="12" style="max-height: 80vh;">
           <div class="mission-header pa-6 d-flex align-center justify-space-between">
             <div class="d-flex align-center">
               <v-icon icon="mdi-shield-star" color="cyan-accent-2" size="36" class="mr-4"></v-icon>
@@ -27,14 +27,14 @@
             </v-btn>
           </div>
 
-          <div class="pa-8">
+          <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
             <div class="d-flex align-center mb-8">
-              <h3 class="text-h6 text-white font-weight-bold mr-4">Tripulación Actual</h3>
+              <h3 class="text-h6 text-white font-weight-bold mr-4">Tripulación Actual (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
               <v-divider class="flex-grow-1 border-opacity-25" color="cyan-lighten-4"></v-divider>
             </div>
 
-            <v-row>
-              <v-col v-for="player in multiplayerStore.room.players" :key="player" cols="12" sm="6" md="4">
+            <v-row class="mb-4">
+              <v-col v-for="player in multiplayerStore.room.players" :key="player" cols="12" sm="6" md="4" lg="3">
                 <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
                   <v-badge
                     v-if="player === multiplayerStore.room.host"
@@ -64,8 +64,8 @@
               </v-col>
 
               <!-- Huecos Vacíos -->
-              <v-col v-for="n in (4 - (multiplayerStore.room.players?.length || 0))" :key="'empty-' + n" cols="12" sm="6" md="4">
-                <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center" variant="dashed">
+              <v-col v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room.players?.length || 0))" :key="'empty-' + n" cols="12" sm="6" md="4" lg="3">
+                <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100" variant="dashed" min-height="180">
                   <v-icon icon="mdi-account-plus-outline" color="grey-darken-1" size="32" class="mb-2"></v-icon>
                   <div class="text-body-2 text-grey-darken-1">Esperando...</div>
                 </v-card>
@@ -118,6 +118,26 @@
                       class="privacy-switch"
                     ></v-switch>
                   </div>
+                  
+                  <div class="mb-6">
+                     <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO DE LA NAVE MÁX.</div>
+                     <v-select
+                        v-model="maxPlayers"
+                        :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
+                        variant="solo-filled"
+                        bg-color="rgba(255,255,255,0.05)"
+                        class="player-limit-select"
+                        rounded="pill"
+                        hide-details
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account-group"
+                     >
+                        <template v-slot:selection="{ item }">
+                           <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
+                        </template>
+                     </v-select>
+                  </div>
+
                   <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan" @click="createRoom">
                     INICIAR SALA
                   </v-btn>
@@ -192,7 +212,7 @@
                         <div class="text-body-2 font-weight-black text-white">SECTOR {{ room.id }}</div>
                       </div>
                       <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
-                        {{ room.players.length }}/4 SLOT
+                        {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
                       </v-chip>
                     </div>
 
@@ -255,7 +275,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players.includes(explorer.user)"
+                    :disabled="multiplayerStore.room?.players.includes(explorer.user) || (multiplayerStore.room?.players.length >= multiplayerStore.room?.maxPlayers)"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -281,7 +301,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players.includes(explorer.user)"
+                    :disabled="multiplayerStore.room?.players.includes(explorer.user) || (multiplayerStore.room?.players.length >= multiplayerStore.room?.maxPlayers)"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -302,7 +322,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { storeToRefs } from 'pinia';
@@ -313,7 +333,15 @@ const { friends } = storeToRefs(astroStore);
 
 const snackbar = ref({ show: false, text: '', color: 'success' });
 const isPublic = ref(true);
+const maxPlayers = ref(4);
 const roomCode = ref('');
+
+watch(() => multiplayerStore.error, (newError) => {
+  if (newError) {
+    showMessage(newError, 'error');
+    multiplayerStore.error = null; // Limpiarlo después de mostrarlo
+  }
+});
 
 const isHost = computed(() => {
   return multiplayerStore.room?.host === astroStore.user;
@@ -362,7 +390,7 @@ const showMessage = (text, color = 'success') => {
 };
 
 const createRoom = () => {
-  multiplayerStore.createRoom(astroStore.user, isPublic.value);
+  multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value);
 };
 
 const joinByCode = () => {
@@ -590,5 +618,28 @@ onMounted(() => {
 
 .recruit-item :deep(.v-avatar) {
   background: white;
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 10px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.6);
+}
+
+.player-limit-select :deep(.v-field) {
+  box-shadow: none !important;
+}
+.player-limit-select :deep(.v-select__selection-text) {
+  color: #fff !important;
 }
 </style>

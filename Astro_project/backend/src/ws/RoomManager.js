@@ -81,12 +81,13 @@ class RoomManager {
         }
     }
 
-    async createRoom(host, isPublic = true) {
+    async createRoom(host, isPublic = true, maxPlayers = 4) {
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
         const roomData = {
             id: roomId,
             host,
             players: [host],
+            maxPlayers,
             status: 'LOBBY',
             isPublic,
             createdAt: new Date()
@@ -95,6 +96,7 @@ class RoomManager {
         this.rooms.set(roomId, {
             host,
             players: new Set([host]),
+            maxPlayers,
             status: 'LOBBY',
             isPublic
         });
@@ -117,6 +119,11 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room) return { error: 'Sala no encontrada' };
 
+        // Comprobar si la sala está llena o si el usuario ya está
+        if (room.players.size >= room.maxPlayers && !room.players.has(user)) {
+            return { error: 'La nave ya ha alcanzado su capacidad máxima' };
+        }
+
         room.players.add(user);
 
         if (this.getCollections) {
@@ -135,6 +142,7 @@ class RoomManager {
                 id: roomId,
                 host: room.host,
                 players: Array.from(room.players),
+                maxPlayers: room.maxPlayers,
                 status: room.status
             }
         });
@@ -191,6 +199,7 @@ class RoomManager {
                     id: roomId,
                     host: room.host,
                     players: Array.from(room.players),
+                    maxPlayers: room.maxPlayers,
                     status: room.status
                 }
             });
@@ -204,6 +213,7 @@ class RoomManager {
             id: roomId,
             host: room.host,
             players: Array.from(room.players),
+            maxPlayers: room.maxPlayers,
             status: room.status
         };
     }

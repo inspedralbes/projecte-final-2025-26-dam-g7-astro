@@ -108,12 +108,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             }
         },
 
-        createRoom(userAccount, isPublic = true) {
+        createRoom(userAccount, isPublic = true, maxPlayers = 4) {
             if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                 this.socket.send(JSON.stringify({
                     type: 'CREATE_ROOM',
                     user: userAccount,
-                    isPublic
+                    isPublic,
+                    maxPlayers
                 }));
             }
         },
