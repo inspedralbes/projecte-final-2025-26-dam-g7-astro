@@ -20,12 +20,12 @@
                             </svg>
                         </div>
 
-                        <div v-if="index + 1 <= progressStore.level" class="floating-label" :class="getLevelState(index)">
+                        <div v-if="index + 1 <= progressStore.level" class="floating-label"
+                            :class="getLevelState(index)">
                             {{ level.name }}
                         </div>
 
-                        <div v-if="getLevelState(index) === 'current'" class="target-score-label"
-                            style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); 
+                        <div v-if="getLevelState(index) === 'current'" class="target-score-label" style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); 
                                    background: rgba(0,0,0,0.6); color: #00E5FF; padding: 2px 6px; 
                                    border-radius: 4px; font-size: 10px; white-space: nowrap;">
                             Meta: {{ level.minScore }} pts
@@ -92,15 +92,15 @@
         <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
             <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #ff5252;">
                 <v-icon icon="mdi-close-circle-outline" color="red-accent-2" size="80" class="mb-4"></v-icon>
-                
+
                 <h2 class="text-h4 font-weight-black text-white mb-2">¡Casi lo logras!</h2>
-                
+
                 <div class="py-4">
                     <p class="text-body-1 text-grey-lighten-1">Has obtenido:</p>
                     <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} pts</div>
-                    
+
                     <v-divider class="mb-4"></v-divider>
-                    
+
                     <p class="text-body-2 text-grey-lighten-1">
                         Necesitas <span class="text-red-accent-2 font-weight-bold">{{ requiredScore }} puntos</span><br>
                         para desbloquear la siguiente misión.
@@ -120,7 +120,7 @@
 <script setup>
 import { ref, shallowRef } from 'vue';
 // Importamos el store correcto según el archivo progressStore.js que me pasaste
-import { useProgressStore } from '@/stores/progressStore'; 
+import { useProgressStore } from '@/stores/progressStore';
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
@@ -198,7 +198,7 @@ const handleLevelClick = (index) => {
 // LÓGICA PRINCIPAL AL TERMINAR UN MINIJUEGO
 const handleGameOver = async (finalScore) => {
     // 1. Cerramos visualmente el juego
-    activeGameComponent.value = null; 
+    activeGameComponent.value = null;
     lastScore.value = finalScore;
 
     // 2. Verificamos si hay usuario activo
@@ -207,14 +207,14 @@ const handleGameOver = async (finalScore) => {
     if (user) {
         try {
             // -- LÓGICA DE VALIDACIÓN DE PUNTOS --
-            
+
             // Calculamos qué nivel acaba de jugar el usuario.
             // Si el usuario está en nivel 1, el índice es 0.
             // NOTA: Si permites re-jugar niveles anteriores, aquí deberías saber
             // exactamente cuál de los botones pulsó. 
             // Asumimos que juega el nivel actual (progressStore.level).
-            const currentLevelIndex = progressStore.level - 1; 
-            
+            const currentLevelIndex = progressStore.level - 1;
+
             // Obtenemos la configuración de ese nivel
             const levelConfig = levelSequence[currentLevelIndex];
 
@@ -222,14 +222,14 @@ const handleGameOver = async (finalScore) => {
             if (levelConfig && finalScore < levelConfig.minScore) {
                 requiredScore.value = levelConfig.minScore;
                 showFailDialog.value = true;
-                
+
                 console.log(`❌ Puntos insuficientes: ${finalScore} / ${levelConfig.minScore}`);
                 return; // IMPORTANTE: Detenemos aquí. No llamamos al servidor.
             }
 
             // -- SI SUPERA LA PUNTUACIÓN, GUARDAMOS PROGRESO --
 
-            const previousLevel = progressStore.level; 
+            const previousLevel = progressStore.level;
 
             // Llamada al store (que llama al backend)
             const result = await progressStore.registerCompletedGame(
