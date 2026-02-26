@@ -30,10 +30,13 @@ const showLayoutElements = computed(() => {
 </script>
 
 <style>
+/* En App.vue */
 .app-container {
   background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%) !important;
   color: white !important;
-  height: 100vh;
+  min-height: 100vh;
+  /* Make sure the main layout can scroll vertically */
+  overflow-x: hidden;
   overflow-y: auto;
 }
 

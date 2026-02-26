@@ -17,11 +17,13 @@ declare module 'vue' {
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
     RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']
+    RhymeSquad: typeof import('./src/components/games/RhymeSquad.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
+    SymmetryBreaker: typeof import('./src/components/games/SymmetryBreaker.vue')['default']
     WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']
   }
 }

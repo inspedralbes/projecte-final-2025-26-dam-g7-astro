@@ -6,54 +6,78 @@
             <div class="start-spacer"></div>
 
             <div class="path-container">
-                <div v-for="(level, index) in levelSequence" :key="index" class="path-row">
-                    <div class="node-wrapper" :class="{
-                        'pos-left': index % 2 === 0,
-                        'pos-right': index % 2 !== 0
-                    }">
-
-                        <div v-if="index < levelSequence.length - 1" class="path-connector"
-                            :class="{ 'connector-flip': index % 2 !== 0 }">
-                            <svg viewBox="0 0 140 140">
-                                <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                    :class="{ 'line-active': index + 1 < progressStore.level }" />
-                            </svg>
-                        </div>
-
-                        <div v-if="index + 1 <= progressStore.level" class="floating-label" :class="getLevelState(index)">
-                            {{ level.name }}
-                        </div>
-
-                        <div v-if="getLevelState(index) === 'current'" class="target-score-label"
-                            style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); 
-                                   background: rgba(0,0,0,0.6); color: #00E5FF; padding: 2px 6px; 
-                                   border-radius: 4px; font-size: 10px; white-space: nowrap;">
-                            Meta: {{ level.minScore }} pts
-                        </div>
-
-                        <button class="node-btn" :class="[
-                            `state-${getLevelState(index)}`,
-                            { 'is-interactive': index + 1 <= progressStore.level }
-                        ]" @click="handleLevelClick(index)" v-ripple>
-                            <div class="icon-layer">
-                                <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
-                                    class="icon-completed" />
-
-                                <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
-                                    size="34" class="icon-current" />
-
-                                <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
+                <template v-for="(level, index) in levelSequence" :key="index">
+                    
+                    <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
+                        <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
+                            
+                            <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
+                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
+                                    {{ level.phaseTitle }}
+                                </h2>
                             </div>
 
-                            <div class="shine-effect"></div>
-
-                            <div v-if="getLevelState(index) === 'current'" class="stars-particles">
-                                <span>✦</span><span>✦</span>
+                            <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
+                                <v-divider class="border-cyan opacity-40"></v-divider>
+                                <div class="phase-center-node mx-2"></div>
+                                <v-divider class="border-cyan opacity-40"></v-divider>
                             </div>
-                        </button>
 
+                            <div class="phase-icon-box text-center">
+                                <v-icon :icon="level.phaseIcon" size="90" class="phase-watermark"></v-icon>
+                            </div>
+
+                        </div>
                     </div>
-                </div>
+
+                    <div class="path-row">
+                        <div class="node-wrapper" :class="{
+                            'pos-left': index % 2 === 0,
+                            'pos-right': index % 2 !== 0
+                        }">
+
+                            <div v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle" class="path-connector"
+                                :class="{ 'connector-flip': index % 2 !== 0 }">
+                                <svg viewBox="0 0 140 140">
+                                    <path d="M 0 0 Q 20 70 140 140" class="connector-line"
+                                        :class="{ 'line-active': index + 1 < progressStore.level }" />
+                                </svg>
+                            </div>
+
+                            <div v-if="index + 1 <= progressStore.level" class="floating-label"
+                                :class="getLevelState(index)">
+                                {{ level.name }}
+                            </div>
+
+                            <div v-if="getLevelState(index) === 'current'" class="target-score-label">
+                                Meta: {{ level.minScore }} pts
+                            </div>
+
+                            <button class="node-btn" :class="[
+                                `state-${getLevelState(index)}`,
+                                { 'is-interactive': index + 1 <= progressStore.level }
+                            ]" @click="handleLevelClick(index)" v-ripple>
+                                <div class="icon-layer">
+                                    <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
+                                        class="icon-completed" />
+
+                                    <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
+                                        size="34" class="icon-current" />
+
+                                    <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
+                                </div>
+
+                                <div class="shine-effect"></div>
+
+                                <div v-if="getLevelState(index) === 'current'" class="stars-particles">
+                                    <span>✦</span><span>✦</span>
+                                </div>
+                            </button>
+
+                        </div>
+                    </div>
+                </template>
             </div>
 
             <div class="end-spacer"></div>
@@ -80,8 +104,10 @@
                 </div>
 
                 <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
-                    Has guanyat més experiència i ets un pas més a prop de dominar la galàxia.
+                    Has acumulat un total de <span class="text-cyan-accent-3 font-weight-bold">{{ progressStore.xp }} XP</span>
+                    i ets un pas més a prop de dominar la galàxia.
                 </p>
+                
                 <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large"
                     class="font-weight-bold text-black" @click="showLevelUpDialog = false">
                     CONTINUAR
@@ -92,15 +118,15 @@
         <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
             <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #ff5252;">
                 <v-icon icon="mdi-close-circle-outline" color="red-accent-2" size="80" class="mb-4"></v-icon>
-                
+
                 <h2 class="text-h4 font-weight-black text-white mb-2">¡Casi lo logras!</h2>
-                
+
                 <div class="py-4">
                     <p class="text-body-1 text-grey-lighten-1">Has obtenido:</p>
                     <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} pts</div>
-                    
+
                     <v-divider class="mb-4"></v-divider>
-                    
+
                     <p class="text-body-2 text-grey-lighten-1">
                         Necesitas <span class="text-red-accent-2 font-weight-bold">{{ requiredScore }} puntos</span><br>
                         para desbloquear la siguiente misión.
@@ -119,22 +145,22 @@
 
 <script setup>
 import { ref, shallowRef } from 'vue';
-// Importamos el store correcto según el archivo progressStore.js que me pasaste
-import { useProgressStore } from '@/stores/progressStore'; 
+import { useProgressStore } from '@/stores/progressStore';
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
 import RadioSignal from '@/components/games/RadioSignal.vue';
+import RhymeSquad from '@/components/games/RhymeSquad.vue';
+import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
 const progressStore = useProgressStore();
 const activeGameComponent = shallowRef(null);
+const currentPlayingIndex = ref(null); 
 
-// Estados de los diálogos
 const showLevelUpDialog = ref(false);
 const showFailDialog = ref(false);
 
-// Datos temporales para la lógica de puntuación
 const lastScore = ref(0);
 const requiredScore = ref(0);
 
@@ -144,18 +170,26 @@ const newLevelData = ref({
     rankChanged: false
 });
 
-// DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
-// Ajusta 'minScore' a la dificultad real de tus juegos
+// MATRIZ ACTUALIZADA CON phaseAlign Y phaseIcon PARA EL DISEÑO LATERAL
 const levelSequence = [
-    { name: 'Despegue', component: WordConstruction, minScore: 100 },
-    { name: 'Navegación', component: RadarScan, minScore: 300 },
-    { name: 'Comunicaciones', component: RadioSignal, minScore: 500 },
-    { name: 'Sistemas', component: SpelledRosco, minScore: 800 },
-    { name: 'Agujero Negro', component: RadarScan, minScore: 1000 },
-    { name: 'Exoplaneta', component: RadioSignal, minScore: 1500 },
+    { 
+        name: 'Preparativos', component: WordConstruction, minScore: 100, 
+        phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', 
+        phaseAlign: 'left',
+    },
+    { name: '¡Despegue!', component: RadarScan, minScore: 200 },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 550 },
+    { 
+        name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, 
+        phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', 
+        phaseAlign: 'right',  
+    },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
+    { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
-// Determina el estado visual del nodo (bloqueado, actual, completado)
 const getLevelState = (index) => {
     const levelNum = index + 1;
     if (levelNum === progressStore.level) return 'current';
@@ -163,84 +197,58 @@ const getLevelState = (index) => {
     return 'locked';
 };
 
-// Maneja el click en el mapa
 const handleLevelClick = (index) => {
     const state = getLevelState(index);
     if (state !== 'locked') {
-        // Asignamos el componente del juego para que se abra
+        currentPlayingIndex.value = index;
         activeGameComponent.value = levelSequence[index].component;
     }
 };
 
-// LÓGICA PRINCIPAL AL TERMINAR UN MINIJUEGO
 const handleGameOver = async (finalScore) => {
-    // 1. Cerramos visualmente el juego
-    activeGameComponent.value = null; 
+    const levelIndex = currentPlayingIndex.value;
+    const gameName = levelSequence[levelIndex]?.name || 'Minijuego';
+
+    activeGameComponent.value = null;
     lastScore.value = finalScore;
 
-    // 2. Verificamos si hay usuario activo
     const user = progressStore.resolveUser();
-
-    if (user) {
+    if (user && levelIndex !== null) {
         try {
-            // -- LÓGICA DE VALIDACIÓN DE PUNTOS --
-            
-            // Calculamos qué nivel acaba de jugar el usuario.
-            // Si el usuario está en nivel 1, el índice es 0.
-            // NOTA: Si permites re-jugar niveles anteriores, aquí deberías saber
-            // exactamente cuál de los botones pulsó. 
-            // Asumimos que juega el nivel actual (progressStore.level).
-            const currentLevelIndex = progressStore.level - 1; 
-            
-            // Obtenemos la configuración de ese nivel
-            const levelConfig = levelSequence[currentLevelIndex];
+            const levelConfig = levelSequence[levelIndex];
 
-            // Si existe configuración y NO supera la puntuación mínima:
             if (levelConfig && finalScore < levelConfig.minScore) {
                 requiredScore.value = levelConfig.minScore;
                 showFailDialog.value = true;
-                
-                console.log(`❌ Puntos insuficientes: ${finalScore} / ${levelConfig.minScore}`);
-                return; // IMPORTANTE: Detenemos aquí. No llamamos al servidor.
+                return;
             }
 
-            // -- SI SUPERA LA PUNTUACIÓN, GUARDAMOS PROGRESO --
+            const previousLevel = progressStore.level;
+            const result = await progressStore.registerCompletedGame(gameName, finalScore);
 
-            const previousLevel = progressStore.level; 
-
-            // Llamada al store (que llama al backend)
-            const result = await progressStore.registerCompletedGame(
-                activeGameComponent.value?.__name || 'Minijuego', // Nombre del componente como fallback
-                finalScore
-            );
-
-            // Manejo de errores del servidor
             if (!result.success) throw new Error(result.message);
 
-            // Verificamos si el servidor nos ha subido de nivel
-            if (result.data.newLevel > previousLevel) {
+            if (progressStore.level > previousLevel) {
                 newLevelData.value = {
-                    level: result.data.newLevel,
-                    rank: result.data.newRank || 'Explorador', // Fallback si no viene rango
-                    rankChanged: false // Aquí podrías comparar con el rango anterior si lo tuvieras
+                    level: progressStore.level,
+                    rank: result.data.newRank || 'Explorador',
+                    rankChanged: !!result.data.newRank
                 };
                 showLevelUpDialog.value = true;
             }
 
         } catch (error) {
             console.error("❌ Error al registrar la partida:", error);
+        } finally {
+            currentPlayingIndex.value = null;
         }
-    } else {
-        console.warn("⚠️ Modo invitado: No se ha guardado la puntuación.");
-        // Opcional: Mostrar diálogo de registro para guardar progreso
     }
 };
 </script>
 
 <style scoped>
-/* 1. FONDO (Igual) */
 .space-map {
-    height: 100%;
+    height: 100vh;
     width: 100%;
     background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%);
     position: relative;
@@ -259,23 +267,58 @@ const handleGameOver = async (finalScore) => {
     padding-top: 20px;
 }
 
-.start-spacer {
-    height: 80px;
+.start-spacer { height: 80px; }
+.end-spacer { height: 150px; }
+
+/* NUEVOS ESTILOS PARA LAS CABECERAS LATERALES */
+.phase-divider-wrapper {
+    position: relative;
+    z-index: 10;
 }
 
-.end-spacer {
-    height: 150px;
+.phase-text-box {
+    min-width: 280px;
+    max-width: 350px;
 }
 
-/* 2. GRID Y POSICIONAMIENTO (Ajustado) */
+.phase-icon-box {
+    width: 120px;
+}
+
+.phase-watermark {
+    color: #455a64;
+    opacity: 0.3;
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.1));
+    transition: all 0.5s ease;
+}
+
+.phase-divider-wrapper:hover .phase-watermark {
+    opacity: 0.6;
+    color: #00e5ff;
+    transform: scale(1.1);
+}
+
+.phase-center-node {
+    width: 12px;
+    height: 12px;
+    background: #00e5ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff;
+}
+
+.tracking-widest { letter-spacing: 3px; }
+.glow-text { text-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
+.border-cyan { border-color: #00e5ff !important; border-width: 1px; border-style: solid; }
+
+/* CONTENEDOR AMPLIADO PARA USAR LOS BORDES DE LA PANTALLA */
 .path-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 400px;
-    /* Reducido un poco para centrar mejor en móviles */
+    max-width: 900px; /* Ampliado desde los 400px originales */
     margin: 0 auto;
+    padding: 0 20px;
 }
 
 .path-row {
@@ -283,16 +326,12 @@ const handleGameOver = async (finalScore) => {
     justify-content: center;
     width: 100%;
     height: 140px;
-    /* Altura fija entre niveles */
     position: relative;
-    /* Borde para depuración (quitar en prod) */
-    /* border: 1px dashed rgba(255,255,255,0.1); */
 }
 
 .node-wrapper {
     position: relative;
     width: 80px;
-    /* Igual al ancho del botón */
     height: 80px;
     display: flex;
     justify-content: center;
@@ -300,58 +339,32 @@ const handleGameOver = async (finalScore) => {
     z-index: 10;
 }
 
-/* ZIG-ZAG:
-   La distancia horizontal debe coincidir con el ancho del SVG 
-   para que la línea conecte bien.
-   70px izquierda + 70px derecha = 140px de separación total.
-*/
-.pos-left {
-    transform: translateX(-70px);
-}
+.pos-left { transform: translateX(-70px); }
+.pos-right { transform: translateX(70px); }
 
-.pos-right {
-    transform: translateX(70px);
-}
-
-/* 3. CONECTORES (REPARADO) */
 .path-connector {
     position: absolute;
-    /* Nace del centro absoluto del botón */
     top: 50%;
     left: 50%;
-
-    /* Dimensiones: 
-       Ancho = Distancia horizontal al siguiente nodo (140px)
-       Alto = Altura de la fila (140px)
-    */
     width: 140px;
     height: 140px;
-
     z-index: -1;
     pointer-events: none;
     transform-origin: top left;
-    /* Importante para el flip */
 }
 
-/* Si estamos a la derecha (impar), el siguiente está a la izquierda.
-   Volteamos el SVG horizontalmente para que la curva vaya hacia el otro lado.
-*/
-.connector-flip {
-    transform: scaleX(-1);
-}
+.connector-flip { transform: scaleX(-1); }
 
 svg {
     width: 100%;
     height: 100%;
     overflow: visible;
-    /* Permite que el trazo grueso no se corte */
 }
 
 .connector-line {
     fill: none;
     stroke: rgba(255, 255, 255, 0.15);
     stroke-width: 8;
-    /* Un poco más fino para elegancia */
     stroke-dasharray: 12 10;
     stroke-linecap: round;
 }
@@ -362,7 +375,6 @@ svg {
     animation: dash-flow 30s linear infinite;
 }
 
-/* 4. BOTONES (Estabilizados) */
 .node-btn {
     width: 80px;
     height: 80px;
@@ -375,19 +387,12 @@ svg {
     justify-content: center;
     align-items: center;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* Efecto rebote suave */
     -webkit-tap-highlight-color: transparent;
 }
 
-.node-btn.is-interactive {
-    cursor: pointer;
-}
+.node-btn.is-interactive { cursor: pointer; }
+.node-btn:active { transform: scale(0.92); }
 
-.node-btn:active {
-    transform: scale(0.92);
-}
-
-/* ESTADOS */
 .state-locked {
     background-color: #2b3040;
     box-shadow: 0 6px 0 #181b24, 0 10px 10px rgba(0, 0, 0, 0.3);
@@ -409,14 +414,24 @@ svg {
     animation: floating 3s ease-in-out infinite;
 }
 
-/* 5. OTROS DETALLES */
+.target-score-label {
+    position: absolute; 
+    bottom: -25px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: rgba(0,0,0,0.6); 
+    color: #00E5FF; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-size: 10px; 
+    white-space: nowrap;
+}
+
 .floating-label {
     position: absolute;
     top: -45px;
-    /* Un poco más arriba para que no tape el botón */
     left: 50%;
     transform: translateX(-50%);
-    /* Centrado perfecto respecto al botón */
     background: rgba(11, 15, 25, 0.8);
     backdrop-filter: blur(4px);
     padding: 4px 12px;
@@ -429,14 +444,8 @@ svg {
     z-index: 20;
 }
 
-.state-current.floating-label {
-    color: #00E5FF;
-    border-color: rgba(0, 229, 255, 0.5);
-}
-
-.state-completed.floating-label {
-    color: #FFD54F;
-}
+.state-current.floating-label { color: #00E5FF; border-color: rgba(0, 229, 255, 0.5); }
+.state-completed.floating-label { color: #FFD54F; }
 
 .shine-effect {
     position: absolute;
@@ -450,30 +459,17 @@ svg {
     pointer-events: none;
 }
 
-@keyframes dash-flow {
-    to {
-        stroke-dashoffset: -500;
-    }
-}
+@keyframes dash-flow { to { stroke-dashoffset: -500; } }
 
 @keyframes floating {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
 }
 
 .game-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: #0b0f19;
     z-index: 100;
     display: flex;
@@ -488,14 +484,6 @@ svg {
     z-index: 101;
 }
 
-.fade-zoom-enter-active,
-.fade-zoom-leave-active {
-    transition: all 0.3s ease;
-}
-
-.fade-zoom-enter-from,
-.fade-zoom-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
-}
+.fade-zoom-enter-active, .fade-zoom-leave-active { transition: all 0.3s ease; }
+.fade-zoom-enter-from, .fade-zoom-leave-to { opacity: 0; transform: scale(0.95); }
 </style>

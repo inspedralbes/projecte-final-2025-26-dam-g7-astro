@@ -137,12 +137,16 @@ function createGetUserStats({
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
             friends: userDoc.friends || [],
+<<<<<<< HEAD
             // NUEVOS CAMPOS PARA EL HISTORIAL
             gameHistory: recentGames,
             topGames: top5Games,
             maxScores: userDoc.maxScores || {},
             totalGamesPlayed: gamesPlayed,
             totalPoints: totalPoints
+=======
+            friendRequests: userDoc.friendRequests || []
+>>>>>>> 430a8b92799a050d2cbfe8633aa15f7d2358cf64
         };
     };
 }
