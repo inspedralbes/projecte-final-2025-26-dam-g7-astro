@@ -127,6 +127,7 @@ import SpelledRosco from '@/components/games/SpelledRosco.vue';
 import RadarScan from '@/components/games/RadarScan.vue';
 import RadioSignal from '@/components/games/RadioSignal.vue';
 import RhymeSquad from '@/components/games/RhymeSquad.vue';
+import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
 const progressStore = useProgressStore();
 const activeGameComponent = shallowRef(null);
@@ -149,12 +150,14 @@ const newLevelData = ref({
 // DEFINICIÓN DE NIVELES Y PUNTUACIONES MÍNIMAS
 // Ajusta 'minScore' a la dificultad real de tus juegos
 const levelSequence = [
-    { name: 'Despegue', component: WordConstruction, minScore: 100 },
-    { name: 'Navegación', component: RadarScan, minScore: 300 },
-    { name: 'Comunicaciones', component: RadioSignal, minScore: 500 },
-    { name: 'Sistemas', component: SpelledRosco, minScore: 800 },
-    { name: 'Agujero Negro', component: RadarScan, minScore: 1000 },
-    { name: 'Exoplaneta', component: RadioSignal, minScore: 1500 },
+    { name: 'Preparativos de Vuelo', component: WordConstruction, minScore: 100 },
+    { name: 'Cuenta Regresiva: ¡Despegue!', component: RadarScan, minScore: 300 },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 500 },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 800 },
+    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 1000 },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1500 },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1500 },
+    { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
 ];
 
 // Determina el estado visual del nodo (bloqueado, actual, completado)
