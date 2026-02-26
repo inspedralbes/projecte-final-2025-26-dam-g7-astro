@@ -1006,69 +1006,17 @@ export const useAstroStore = defineStore('astro', {
                 localStorage.setItem('astro_streak_freezes', this.streakFreezes);
 
                 return { success: true };
+            } catch (error) {
+                return { success: false, message: error.message };
             }
+        },
 
-    function setCoins(newCoins) {
-                progressStore.setCoins(newCoins);
-            }
+        setCoins(newCoins) {
+            this.coins = newCoins;
+        },
 
-            function setInventory(items) {
-                inventoryStore.setInventory(items);
-            }
-
-            return {
-                user,
-                plan,
-                rank,
-                coins,
-                partides,
-                level,
-                xp,
-                streak,
-                streakFreezes,
-                activeBoosters,
-                needsFreeze,
-                inventory,
-                selectedAchievements,
-                unlockedAchievements,
-                avatar,
-                mascot,
-                token,
-                lastActivity,
-                lastGame,
-                dailyMissions,
-                weeklyMissions,
-                friends,
-                explorers,
-                socket,
-                isConnected,
-                error,
-
-                isStreakActiveToday,
-                inventoryUnits,
-
-                registerTripulante,
-                loginTripulante,
-                fetchUserStats,
-                fetchAllUsers,
-                fetchUserBalance,
-                registerCompletedGame,
-                buyItem,
-                useInventoryItem,
-                claimMissionReward,
-                fetchUserInventory,
-                fetchUserAchievements,
-                syncUnlockedAchievements,
-                addFriendAction,
-                removeFriendAction,
-                connectWebSocket,
-                logout,
-                updateAvatar,
-                updateMascot,
-                updateAchievements,
-                updatePlan,
-                useStreakFreeze,
-                setCoins,
-                setInventory
-            };
-        });
+        setInventory(items) {
+            this.inventory = items;
+        }
+    }
+});
