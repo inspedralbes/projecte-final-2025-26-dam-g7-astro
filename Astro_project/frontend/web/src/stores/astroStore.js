@@ -40,6 +40,9 @@ export const useAstroStore = defineStore('astro', () => {
     const unlockedAchievements = computed({ get: () => achievementsStore.unlockedAchievements, set: (value) => achievementsStore.setUnlockedAchievements(value) });
     const friends = computed({ get: () => socialStore.friends, set: (value) => socialStore.setFriends(value) });
     const explorers = computed({ get: () => socialStore.explorers, set: (value) => socialStore.setExplorers(value) });
+    
+    // NUEVO: Estado para las solicitudes de amistad
+    const friendRequests = computed({ get: () => socialStore.friendRequests, set: (value) => socialStore.setFriendRequests(value) });
 
     // NUEVO: Propiedad reactiva para el nivel del mapa (desvinculado de la XP de cuenta)
     const mapLevel = computed({
@@ -68,7 +71,9 @@ export const useAstroStore = defineStore('astro', () => {
         progressStore.applyProfile(profile);
         achievementsStore.applyProfile(profile);
 
+        // Sincronizar listas sociales al iniciar sesión
         if (Array.isArray(profile.friends)) socialStore.setFriends(profile.friends);
+        if (Array.isArray(profile.friendRequests)) socialStore.setFriendRequests(profile.friendRequests);
 
         const inventoryResult = await inventoryStore.fetchUserInventory();
         if (inventoryResult.success && inventoryResult.data?.activeBoosters !== undefined) {
@@ -82,7 +87,9 @@ export const useAstroStore = defineStore('astro', () => {
     async function fetchUserStats() {
         const result = await progressStore.fetchUserStats();
         if (result.success && result.stats) {
+            // Sincronizar también al actualizar estadísticas
             socialStore.setFriends(result.stats.friends || []);
+            socialStore.setFriendRequests(result.stats.friendRequests || []);
         }
         return result;
     }
@@ -141,8 +148,14 @@ export const useAstroStore = defineStore('astro', () => {
 
     async function fetchUserAchievements() { return achievementsStore.fetchUserAchievements(); }
     async function syncUnlockedAchievements(nextIds) { return achievementsStore.syncUnlockedAchievements(nextIds); }
+    
+    // ACCIONES SOCIALES
     async function addFriendAction(friendName) { return socialStore.addFriendAction(friendName); }
     async function removeFriendAction(friendName) { return socialStore.removeFriendAction(friendName); }
+    async function sendFriendRequest(friendName) { return socialStore.sendFriendRequest(friendName); }
+    async function acceptFriendRequest(friendName) { return socialStore.acceptFriendRequest(friendName); }
+    async function rejectFriendRequest(friendName) { return socialStore.rejectFriendRequest(friendName); }
+
     function connectWebSocket() { multiplayerStore.connect(); }
 
     function logout() {
@@ -181,13 +194,16 @@ export const useAstroStore = defineStore('astro', () => {
         inventory, selectedAchievements, unlockedAchievements, avatar, mascot, token, lastActivity, lastGame,
         dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
         
+        friendRequests, // EXPORTADO
+
         mapLevel, // EXPORTADO
 
         gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints, error,
         isStreakActiveToday, inventoryUnits,
         registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
         buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
-        addFriendAction, removeFriendAction, connectWebSocket, logout, updateAvatar, updateMascot, updateAchievements,
+        addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, // EXPORTADAS
+        connectWebSocket, logout, updateAvatar, updateMascot, updateAchievements,
         updatePlan, useStreakFreeze, setCoins, setInventory
     };
 });

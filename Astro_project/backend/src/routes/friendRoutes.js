@@ -3,7 +3,7 @@ const express = require('express');
 function registerFriendRoutes(app, { getCollections }) {
     const router = express.Router();
 
-    // AÑADIR AMIGO
+    // AÑADIR AMIGO (Bidireccional por seguridad, aunque habitualmente usarás /accept)
     router.post('/add', async (req, res) => {
         try {
             const { user, friendName } = req.body;
@@ -19,13 +19,19 @@ function registerFriendRoutes(app, { getCollections }) {
                 return res.status(404).json({ message: "Ese explorador no existe" });
             }
 
-            // Usamos $addToSet para no duplicar si ya son amigos
+            // Usamos $addToSet para no duplicar si ya son amigos (Añadir a tu lista)
             await users.updateOne(
                 { user: user },
                 { $addToSet: { friends: friendName } }
             );
 
-            // Devolver la lista actualizada
+            // Añadirte a ti a la lista del amigo (Reciprocidad)
+            await users.updateOne(
+                { user: friendName },
+                { $addToSet: { friends: user } }
+            );
+
+            // Devolver tu lista actualizada
             const updatedUser = await users.findOne({ user }, { projection: { friends: 1 } });
 
             res.json({
@@ -39,18 +45,25 @@ function registerFriendRoutes(app, { getCollections }) {
         }
     });
 
-    // ELIMINAR AMIGO
+    // ELIMINAR AMIGO (Bidireccional)
     router.post('/remove', async (req, res) => {
         try {
             const { user, friendName } = req.body;
             const { users } = getCollections();
 
-            // Usamos $pull para sacar al amigo del array
+            // 1. Sacar al amigo de tu array
             await users.updateOne(
                 { user: user },
                 { $pull: { friends: friendName } }
             );
 
+            // 2. Sacarte a ti del array de tu amigo (Reciprocidad)
+            await users.updateOne(
+                { user: friendName },
+                { $pull: { friends: user } }
+            );
+
+            // Devolver tu lista actualizada
             const updatedUser = await users.findOne({ user }, { projection: { friends: 1 } });
 
             res.json({
@@ -59,6 +72,7 @@ function registerFriendRoutes(app, { getCollections }) {
             });
 
         } catch (error) {
+            console.error("Error eliminando amigo:", error);
             res.status(500).json({ message: "Error eliminando amigo" });
         }
     });
@@ -78,12 +92,12 @@ function registerFriendRoutes(app, { getCollections }) {
                 return res.status(404).json({ message: "Ese explorador no existe" });
             }
 
-            // Ya son amigos?
+            // ¿Ya sois amigos?
             if (friendExists.friends && friendExists.friends.includes(user)) {
                 return res.status(400).json({ message: "Ya sois amigos" });
             }
 
-            // Añadir al receptor la petición
+            // Añadir al receptor la petición (tú solicitas amistad a friendName)
             await users.updateOne(
                 { user: friendName },
                 { $addToSet: { friendRequests: user } }
@@ -102,7 +116,7 @@ function registerFriendRoutes(app, { getCollections }) {
             const { user, friendName } = req.body;
             const { users } = getCollections();
 
-            // Añadir a "user" el amigo "friendName", y quitar de friendRequests
+            // 1. Añadir a "user" el amigo "friendName", y quitar de friendRequests
             await users.updateOne(
                 { user: user },
                 {
@@ -111,13 +125,13 @@ function registerFriendRoutes(app, { getCollections }) {
                 }
             );
 
-            // Añadir a "friendName" el amigo "user"
+            // 2. Añadir a "friendName" el amigo "user"
             await users.updateOne(
                 { user: friendName },
                 { $addToSet: { friends: user } }
             );
 
-            // Devolver las nuevas listas
+            // Devolver las nuevas listas de "user"
             const updatedUser = await users.findOne({ user }, { projection: { friends: 1, friendRequests: 1 } });
 
             res.json({
@@ -137,12 +151,13 @@ function registerFriendRoutes(app, { getCollections }) {
             const { user, friendName } = req.body;
             const { users } = getCollections();
 
-            // Simplemente quitar de friendRequests
+            // Simplemente quitar de friendRequests de tu usuario
             await users.updateOne(
                 { user: user },
                 { $pull: { friendRequests: friendName } }
             );
 
+            // Devolver la lista de solicitudes actualizada
             const updatedUser = await users.findOne({ user }, { projection: { friends: 1, friendRequests: 1 } });
 
             res.json({
