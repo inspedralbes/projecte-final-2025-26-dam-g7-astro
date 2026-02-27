@@ -33,7 +33,15 @@
           <v-col v-for="friend in myFriendsList" :key="friend.user" cols="12" xl="4" lg="4" md="6" sm="12">
             <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
               <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
+                <div
+                  style="position: relative;"
+                  class="mr-4 clickable-profile"
+                  role="button"
+                  tabindex="0"
+                  @click="openProfile(friend)"
+                  @keydown.enter="openProfile(friend)"
+                  @keydown.space.prevent="openProfile(friend)"
+                >
                   <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
                     <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar)" alt="Avatar" cover></v-img>
                     <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
@@ -44,7 +52,16 @@
                 </div>
 
                 <div class="flex-grow-1">
-                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
+                  <h2
+                    class="text-h6 font-weight-bold text-white mb-1 clickable-profile clickable-name"
+                    role="button"
+                    tabindex="0"
+                    @click="openProfile(friend)"
+                    @keydown.enter="openProfile(friend)"
+                    @keydown.space.prevent="openProfile(friend)"
+                  >
+                    {{ friend.user }}
+                  </h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
                       Nivel {{ friend.level || 1 }}
@@ -71,9 +88,9 @@
                 <v-btn icon color="error" variant="tonal" class="rounded-lg mr-2" @click="removeFriend(friend.user)">
                   <v-icon icon="mdi-trash-can-outline"></v-icon>
                 </v-btn>
-                <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(friend)">
-                  <v-icon start icon="mdi-account-eye"></v-icon>
-                  Ver Perfil
+                <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="startChat(friend)">
+                  <v-icon start icon="mdi-message-text-outline"></v-icon>
+                  Enviar mensaje
                 </v-btn>
                 <v-btn color="primary" variant="elevated" class="rounded-lg px-2 flex-grow-1 text-caption font-weight-bold">
                   <v-icon start icon="mdi-sword-cross"></v-icon>
@@ -111,7 +128,15 @@
           <v-col v-for="explorer in randomExplorers" :key="explorer.user" cols="12" xl="4" lg="4" md="6" sm="12">
             <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
               <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
+                <div
+                  style="position: relative;"
+                  class="mr-4 clickable-profile"
+                  role="button"
+                  tabindex="0"
+                  @click="openProfile(explorer)"
+                  @keydown.enter="openProfile(explorer)"
+                  @keydown.space.prevent="openProfile(explorer)"
+                >
                   <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
                     <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar)" alt="Avatar" cover></v-img>
                     <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
@@ -122,7 +147,16 @@
                 </div>
 
                 <div class="flex-grow-1">
-                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ explorer.user }}</h2>
+                  <h2
+                    class="text-h6 font-weight-bold text-white mb-1 clickable-profile clickable-name"
+                    role="button"
+                    tabindex="0"
+                    @click="openProfile(explorer)"
+                    @keydown.enter="openProfile(explorer)"
+                    @keydown.space.prevent="openProfile(explorer)"
+                  >
+                    {{ explorer.user }}
+                  </h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
                       Nivel {{ explorer.level || 1 }}
@@ -175,7 +209,15 @@
           <v-col v-for="requester in requestsList" :key="requester.user" cols="12" xl="4" lg="4" md="6" sm="12">
             <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
               <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
+                <div
+                  style="position: relative;"
+                  class="mr-4 clickable-profile"
+                  role="button"
+                  tabindex="0"
+                  @click="openProfile(requester)"
+                  @keydown.enter="openProfile(requester)"
+                  @keydown.space.prevent="openProfile(requester)"
+                >
                   <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
                     <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar)" alt="Avatar" cover></v-img>
                     <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ requester.user.charAt(0).toUpperCase() }}</span>
@@ -186,7 +228,16 @@
                 </div>
 
                 <div class="flex-grow-1">
-                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ requester.user }}</h2>
+                  <h2
+                    class="text-h6 font-weight-bold text-white mb-1 clickable-profile clickable-name"
+                    role="button"
+                    tabindex="0"
+                    @click="openProfile(requester)"
+                    @keydown.enter="openProfile(requester)"
+                    @keydown.space.prevent="openProfile(requester)"
+                  >
+                    {{ requester.user }}
+                  </h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
                       Nivel {{ requester.level || 1 }}
@@ -448,6 +499,10 @@ const sendRequest = async (friendName) => {
   }
 };
 
+const startChat = (friendObj) => {
+  showMessage(`Chat con ${friendObj.user} disponible pronto`, 'info');
+};
+
 const acceptRequest = async (requesterName) => {
   const result = await astroStore.acceptFriendRequest(requesterName);
   if (result?.success) {
@@ -493,6 +548,38 @@ const rejectRequest = async (requesterName) => {
 
 .border-avatar {
   border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.clickable-profile {
+  cursor: pointer;
+}
+
+.clickable-profile:focus-visible {
+  outline: 2px solid rgba(0, 229, 255, 0.8);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.clickable-name {
+  display: inline-block;
+}
+
+.search-bar :deep(input) {
+  color: white !important;
+  caret-color: white !important;
+}
+
+.search-bar :deep(input::placeholder) {
+  color: rgba(255, 255, 255, 0.75) !important;
+  opacity: 1;
+}
+
+.search-bar :deep(.v-label) {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.search-bar :deep(.v-field__prepend-inner .v-icon) {
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 
 .bg-transparent {
