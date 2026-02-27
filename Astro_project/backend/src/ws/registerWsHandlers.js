@@ -29,8 +29,8 @@ function registerWsHandlers(wss) {
                         break;
 
                     case 'CREATE_ROOM':
-                        // { type: 'CREATE_ROOM', user: 'UserA', isPublic: true/false, maxPlayers: 8 }
-                        const roomId = await roomManager.createRoom(msg.user, msg.isPublic, msg.maxPlayers);
+                        // { type: 'CREATE_ROOM', user: 'UserA', isPublic: true/false, maxPlayers: 8, gameConfig: {...} }
+                        const roomId = await roomManager.createRoom(msg.user, msg.isPublic, msg.maxPlayers, msg.gameConfig);
                         ws.send(JSON.stringify({
                             type: 'ROOM_CREATED',
                             roomId
@@ -80,6 +80,11 @@ function registerWsHandlers(wss) {
                     case 'GAME_ACTION':
                         // { type: 'GAME_ACTION', roomId, user, action }
                         roomManager.handleGameAction(msg.roomId, msg.user, msg.action);
+                        break;
+
+                    case 'PLAYER_RETURN_TO_LOBBY':
+                        // { type: 'PLAYER_RETURN_TO_LOBBY', roomId, user }
+                        await roomManager.handlePlayerReturnToLobby(msg.roomId, msg.user);
                         break;
                 }
             } catch (e) {

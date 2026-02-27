@@ -130,7 +130,13 @@ app.get('/api/users', async (req, res) => {
             }
         }).toArray();
 
-        res.json(allUsers);
+        // Asegurar que todos tienen un avatar por defecto si falta en la DB
+        const processedUsers = allUsers.map(u => ({
+            ...u,
+            avatar: u.avatar || 'Astronauta_blanc.jpg'
+        }));
+
+        res.json(processedUsers);
     } catch (error) {
         console.error("❌ Error al obtener exploradores:", error);
         res.status(500).json({ message: "Error al obtener la lista de usuarios" });

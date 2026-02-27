@@ -46,7 +46,7 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
+    <v-overlay v-if="!isMultiplayer" v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
         <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
         <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
@@ -148,12 +148,12 @@ const checkLetter = (index) => {
     setTimeout(() => {
       correctClicked.value = false;
       
-      // Enviar sabotaje en multijugador
+      // Enviar sabotament en multijugador: -1s al rival
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({
           type: 'SABOTAGE',
-          target: 'RadarScan',
-          data: { reduceTime: 1 }
+          subtype: 'REDUCE_TIME',
+          amount: 1
         });
       }
 
@@ -224,10 +224,8 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     return;
   }
 
-  if (msg.type === 'GAME_ACTION' && msg.from !== astroStore.user) {
-    if (msg.action.type === 'SABOTAGE' && msg.action.data.reduceTime) {
-      timeLeft.value = Math.max(0, timeLeft.value - msg.action.data.reduceTime);
-    }
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
   }
 });
 

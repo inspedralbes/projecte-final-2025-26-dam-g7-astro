@@ -141,8 +141,8 @@
       </v-col>
     </v-row>
 
-    <!-- Pantalla Final -->
-    <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <!-- Pantalla Final (només en single player) -->
+    <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">Rosco Completat!</h2>
       <div class="d-flex justify-space-around my-6">
@@ -356,9 +356,13 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     if (!msg) return;
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
         gameFinished.value = true;
         emitExit();
+    }
+
+    // Rebre sabotatge del rival: restar temps
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
     }
 });
 
@@ -472,6 +476,11 @@ const checkAnswer = async () => {
         score.value += 100;
         feedbackMessage.value = "Correcte! Molt bé!";
         feedbackColor.value = 'success';
+        // Sabotatge multijugador: +10s per a tu, -15s per al rival
+        if (props.isMultiplayer) {
+            timeLeft.value = Math.min(timeLeft.value + 10, 999);
+            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
+        }
     } else {
         roscoLetters.value[currentIndex.value].status = 'incorrect';
         feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;

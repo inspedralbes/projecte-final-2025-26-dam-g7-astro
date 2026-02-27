@@ -38,7 +38,7 @@
     ></canvas>
 
     <!-- Overlays -->
-    <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
+    <v-overlay v-if="!isMultiplayer" v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
         <h2 class="text-h4 font-weight-bold text-white mb-4">Symmetry Breaker</h2>
         <p class="text-body-1 text-grey-lighten-1 mb-6">
@@ -50,7 +50,7 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="120">
+    <v-overlay v-if="!isMultiplayer" v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="120">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
         <v-icon icon="mdi-target-variant" color="cyan-accent-3" size="70" class="mb-4"></v-icon>
         <h2 class="text-h4 font-weight-bold text-white mb-2">Fi de la Missió</h2>
@@ -235,6 +235,15 @@ function lockTarget() {
   timeLeft.value = Math.min(99, timeLeft.value + 5);
   round.value++;
   generateTargets();
+
+  // Sabotatge: -2s al rival en multiplayer
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SABOTAGE',
+      subtype: 'REDUCE_TIME',
+      amount: 2
+    });
+  }
 }
 
 function draw() {
@@ -350,11 +359,16 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   if (!msg) return;
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
     isPlaying.value = false;
     isFiring.value = false;
     cancelAnimationFrame(animationFrame);
     returnToMenu();
+  }
+
+  // Rebre sabotatge del rival: restar temps al propi rellotge
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+    timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
+    if (timeLeft.value <= 0 && isPlaying.value) endGame();
   }
 });
 

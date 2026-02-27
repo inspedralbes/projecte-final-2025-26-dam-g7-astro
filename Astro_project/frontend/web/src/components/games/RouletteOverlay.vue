@@ -54,7 +54,6 @@ const getGameIcon = (name) => {
         'RadioSignal': 'mdi-waveform',
         'RhymeSquad': 'mdi-microphone-variant',
         'SpelledRosco': 'mdi-alphabetical-variant',
-        'SyllableQuest': 'mdi-text-short',
         'SymmetryBreaker': 'mdi-reflect-horizontal',
         'WordConstruction': 'mdi-hammer-wrench'
     };

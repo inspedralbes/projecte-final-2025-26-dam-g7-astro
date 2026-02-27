@@ -15,7 +15,9 @@ class RoomManager {
         ];
         this.roundTimers = new Map();
         this.roundGameScores = new Map();
-        this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadores que han terminado
+        this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadors que han acabat
+        this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
+        this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
     }
 
     init(getCollections, wss) {
@@ -92,7 +94,7 @@ class RoomManager {
         }
     }
 
-    async createRoom(host, isPublic = true, maxPlayers = 4) {
+    async createRoom(host, isPublic = true, maxPlayers = 4, initialConfig = {}) {
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
         const roomData = {
             id: roomId,
@@ -101,7 +103,14 @@ class RoomManager {
             maxPlayers,
             status: 'LOBBY',
             isPublic,
-            createdAt: new Date()
+            createdAt: new Date(),
+            gameConfig: {
+                pointsToWin: initialConfig.pointsToWin || 3,
+                totalRounds: initialConfig.pointsToWin || 3,
+                currentRound: 0,
+                scores: { [host]: 0 },
+                currentGame: null
+            }
         };
 
         this.rooms.set(roomId, {
@@ -110,13 +119,7 @@ class RoomManager {
             maxPlayers,
             status: 'LOBBY',
             isPublic,
-            gameConfig: {
-                pointsToWin: 3, // Por defecto (ahora = totalRounds)
-                totalRounds: 3,
-                currentRound: 0,
-                scores: { [host]: 0 },
-                currentGame: null
-            }
+            gameConfig: roomData.gameConfig
         });
 
         if (this.getCollections) {
@@ -256,15 +259,19 @@ class RoomManager {
         if (!room || room.players.size < 2) return { error: 'Se necesitan al menos 2 jugadores' };
 
         room.status = 'ROULETTE';
-        // Reset scores
+        // Reset scores i estat
         room.gameConfig.scores = {};
         room.gameConfig.currentRound = 0;
         room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
+        room.gameConfig.roundHistory = []; // AÑADIDO: Historial de rondas
         room.players.forEach(p => room.gameConfig.scores[p] = 0);
 
-        // Seleccionar primer juego
-        const randomGame = this.availableGames[Math.floor(Math.random() * this.availableGames.length)];
-        room.gameConfig.currentGame = randomGame;
+        // Reset jocs jugats
+        this.playedGames.set(roomId, new Set());
+
+        // Seleccionar primer joc (sense repeticions)
+        const firstGame = this.pickNextGame(roomId);
+        room.gameConfig.currentGame = firstGame;
 
         this.broadcastToRoom(roomId, {
             type: 'MATCH_STARTING',
@@ -272,6 +279,18 @@ class RoomManager {
         });
 
         return { success: true };
+    }
+
+    // Escull el proper joc sense repeticions
+    pickNextGame(roomId) {
+        const played = this.playedGames.get(roomId) || new Set();
+        const remaining = this.availableGames.filter(g => !played.has(g));
+        // Si ja hem jugat tots, reset i tornem a escollir (per si hi ha més rondes que jocs)
+        const pool = remaining.length > 0 ? remaining : this.availableGames;
+        const game = pool[Math.floor(Math.random() * pool.length)];
+        played.add(game);
+        this.playedGames.set(roomId, played);
+        return game;
     }
 
     async setRoomStatus(roomId, status) {
@@ -292,15 +311,34 @@ class RoomManager {
         });
     }
 
+    // Duraciones de cada juego (ms) + 5s de margen para que el cliente cierre antes
+    getGameDuration(gameName) {
+        const durations = {
+            'RadarScan': 60 + 5,
+            'RadioSignal': 60 + 5,
+            'RhymeSquad': 60 + 5,
+            'SpelledRosco': 90 + 5,
+            'SymmetryBreaker': 80 + 5,
+            'WordConstruction': 90 + 5,
+        };
+        return (durations[gameName] || 70) * 1000;
+    }
+
     startRoundTimer(roomId) {
         if (this.roundTimers.has(roomId)) {
             clearTimeout(this.roundTimers.get(roomId));
         }
 
+        const room = this.rooms.get(roomId);
+        const currentGame = room?.gameConfig?.currentGame;
+        const duration = this.getGameDuration(currentGame);
+
+        console.log(`⏱️ [Room ${roomId}] Timer de ronda: ${duration / 1000}s (juego: ${currentGame})`);
+
         const timerId = setTimeout(() => {
             console.log(`⏰ [Room ${roomId}] Tiempo agotado por servidor. Forzando fin de ronda.`);
             this.finalizeRound(roomId);
-        }, 65000);
+        }, duration);
 
         this.roundTimers.set(roomId, timerId);
     }
@@ -309,10 +347,27 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room || room.status !== 'PLAYING') return;
 
-        // En el nuevo modo "primero que acaba", finalizamos al recibir el primer aviso
-        console.log(`👤 [Room ${roomId}] Jugador ${user} ha terminado el juego primero. Finalizando ronda.`);
+        // Afegir el jugador al set de jugadors que han acabat
+        let finished = this.roundFinishedPlayers.get(roomId);
+        if (!finished) {
+            finished = new Set();
+            this.roundFinishedPlayers.set(roomId, finished);
+        }
+        finished.add(user);
+        console.log(`👤 [Room ${roomId}] Jugador ${user} ha acabat. (${finished.size}/${room.players.size})`);
 
-        this.finalizeRound(roomId, user);
+        // Avisar a tots que algú ha acabat (per si el rival vol saber)
+        this.broadcastToRoom(roomId, {
+            type: 'PLAYER_FINISHED',
+            user,
+            remaining: room.players.size - finished.size
+        });
+
+        // Finalitzar quan tots els jugadors hagin acabat
+        if (finished.size >= room.players.size) {
+            console.log(`✅ [Room ${roomId}] Tots els jugadors han acabat. Finalitzant ronda.`);
+            this.finalizeRound(roomId);
+        }
     }
 
     async finalizeRound(roomId, finisherUser = null) {
@@ -351,6 +406,15 @@ class RoomManager {
         if (winner) {
             room.gameConfig.scores[winner] = (room.gameConfig.scores[winner] || 0) + 1;
         }
+
+        // AÑADIDO: Guardar en el historial
+        if (!room.gameConfig.roundHistory) room.gameConfig.roundHistory = [];
+        room.gameConfig.roundHistory.push({
+            round: room.gameConfig.currentRound + 1,
+            game: room.gameConfig.currentGame,
+            winner: winner,
+            scores: { ...roundScores }
+        });
 
         console.log(`🏆 [Room ${roomId}] Fin de ronda. Ganador por puntos: ${winner || 'EMPATE'}`);
 
@@ -393,10 +457,30 @@ class RoomManager {
                     room: this.getRoom(roomId)
                 });
             }, 3000);
+
+            // Auto-cleanup: si en 10 minuts ningú ha sortit, esborrem la sala
+            setTimeout(async () => {
+                if (this.rooms.has(roomId) && this.rooms.get(roomId).status === 'GAME_OVER') {
+                    console.log(`🧹 [Room ${roomId}] Auto-cleanup: sala abandonada en GAME_OVER.`);
+                    this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'abandoned' });
+                    this.rooms.delete(roomId);
+                    this.roundGameScores.delete(roomId);
+                    this.roundFinishedPlayers.delete(roomId);
+                    if (this.getCollections) {
+                        try {
+                            const { rooms } = this.getCollections();
+                            await rooms.deleteOne({ id: roomId });
+                            await this.syncGlobalRooms();
+                        } catch (e) {
+                            console.error('❌ Error auto-cleanup sala:', e);
+                        }
+                    }
+                }
+            }, 10 * 60 * 1000); // 10 minuts
         } else {
-            // Todavía quedan rondas, pasar a la siguiente
+            // Todavía quedan rondas, pasar a la siguiente (sense repetir joc)
             room.status = 'ROUND_RESULTS';
-            const nextGame = this.availableGames[Math.floor(Math.random() * this.availableGames.length)];
+            const nextGame = this.pickNextGame(roomId);
             room.gameConfig.currentGame = nextGame;
 
             setTimeout(() => {
@@ -433,6 +517,42 @@ class RoomManager {
             from: user,
             action
         });
+    }
+
+    async handlePlayerReturnToLobby(roomId, user) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        let returned = this.returnedToLobbyPlayers.get(roomId);
+        if (!returned) {
+            returned = new Set();
+            this.returnedToLobbyPlayers.set(roomId, returned);
+        }
+
+        returned.add(user);
+        console.log(`🏠 [Room ${roomId}] Jugador ${user} vol tornar al lobby. (${returned.size}/${room.players.size})`);
+
+        // Notificar a tots qui ha tornat
+        this.broadcastToRoom(roomId, {
+            type: 'PLAYER_RETURNED',
+            user,
+            returnedCount: returned.size,
+            totalPlayers: room.players.size
+        });
+
+        // Si tots han decidit tornar al lobby
+        if (returned.size >= room.players.size) {
+            console.log(`✅ [Room ${roomId}] Tots els jugadors han tornat. Reset room to LOBBY.`);
+            room.status = 'LOBBY';
+            this.returnedToLobbyPlayers.delete(roomId);
+            this.roundFinishedPlayers.delete(roomId);
+            this.roundGameScores.delete(roomId);
+
+            this.broadcastToRoom(roomId, {
+                type: 'ROOM_UPDATE',
+                room: this.getRoom(roomId)
+            });
+        }
     }
 }
 

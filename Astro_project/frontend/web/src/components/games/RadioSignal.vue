@@ -163,7 +163,11 @@ const phrases = [
     'BASE LUNAR REPORTA BON ESTAT',
     // 'COORDENADES DEL PLANETA REBUDES',
 ];
-const currentPhrase = ref(phrases[Math.floor(Math.random() * phrases.length)]);
+// Phrases shuffled at start
+const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
+const phraseIndex = ref(0); // Frase atual
+const currentPhrase = ref(shuffledPhrases[0]);
+const totalPhrases = shuffledPhrases.length;
 let speechRepeatTimer = null;
 
 // ---- DIAL ----
@@ -318,23 +322,45 @@ const renderWave = (canvas, isTarget) => {
 
 // ---- VOZ ----
 const startSpeechLoop = () => {
-    stopSpeechLoop(); speakPhrase(1.0);
-    speechRepeatTimer = setInterval(() => {
-        if (isTuned.value && !window.speechSynthesis.speaking) speakPhrase(1.0);
-    }, 4000);
+    if (!isTuned.value || gameFinished.value) return;
+    speakPhrase(1.0);
 };
-const stopSpeechLoop = () => { clearInterval(speechRepeatTimer); speechRepeatTimer = null; window.speechSynthesis.cancel(); };
+
+const stopSpeechLoop = () => {
+    if (speechRepeatTimer) {
+        clearTimeout(speechRepeatTimer);
+        speechRepeatTimer = null;
+    }
+    window.speechSynthesis.cancel();
+};
 
 const speakPhrase = (volume = 1.0) => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis || gameFinished.value) return;
+    
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(currentPhrase.value);
+    
+    // Configurar veus
     const voices = window.speechSynthesis.getVoices();
     const v = voices.find(v => v.lang.includes('ca')) ||
               voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
               voices.find(v => v.lang.includes('es')) || voices[0];
+    
     if (v) u.voice = v;
-    u.lang = 'ca-ES'; u.rate = 0.8; u.pitch = 0.8; u.volume = volume;
+    u.lang = 'ca-ES';
+    u.rate = 0.8;
+    u.pitch = 0.8;
+    u.volume = volume;
+
+    // Lògica de repetició robusta: quan acaba, espera 1s i torna a parlar si seguim afinats
+    u.onend = () => {
+        if (isTuned.value && !gameFinished.value) {
+            speechRepeatTimer = setTimeout(() => {
+                if (isTuned.value && !gameFinished.value) speakPhrase(volume);
+            }, 1000);
+        }
+    };
+
     window.speechSynthesis.speak(u);
 };
 
@@ -343,7 +369,23 @@ const checkPhrase = () => {
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
         score.value += 50;
-        finishGame();
+        userGuess.value = '';
+        isTuned.value = false;
+        stopSpeechLoop();
+
+        const next = phraseIndex.value + 1;
+        if (next >= totalPhrases) {
+            // Totes les frases resoltes: acabem
+            finishGame();
+        } else {
+            // Avance a la següent frase
+            phraseIndex.value = next;
+            currentPhrase.value = shuffledPhrases[next];
+            targetFrequency.value = Math.random() * 90 + 5;
+            currentFrequency.value = Math.random() * 20;
+            knobRotation.value = (currentFrequency.value / 100) * 360;
+            currentKnobRotation = knobRotation.value;
+        }
     } else { showError.value = true; userGuess.value = ''; }
 };
 

@@ -15,7 +15,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         invitations: [],
         error: null,
         lastMessage: null,
-        roundScores: {} // Puntuaciones de la ronda actual en vivo
+        roundScores: {}, // Puntuaciones de la ronda actual en vivo
+        returnedPlayers: [] // Jugadores que han pulsado "Volver al lobby"
     }),
 
     actions: {
@@ -103,6 +104,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.room = data.room;
                     break;
                 case 'MATCH_STARTING':
+                    this.roundScores = {}; // Reset puntuacions en viu al començar nova partida
                     this.room = data.room;
                     console.log('🏁 ¡LA PARTIDA COMIENZA!', data.room.gameConfig.currentGame);
                     break;
@@ -125,8 +127,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     console.log('🏆 Ronda terminada. Ganador:', data.winner);
                     break;
                 case 'MATCH_FINISHED':
+                    this.returnedPlayers = []; // Reset al acabar partida
                     this.room = data.room;
+                    this.lastMessage = data; // Para que el lobby muestre el overlay de resultados
                     console.log('👑 ¡PARTIDA TERMINADA! Ganador absoluto:', data.winner);
+                    break;
+                case 'PLAYER_RETURNED':
+                    this.lastMessage = data;
+                    if (data.user && !this.returnedPlayers.includes(data.user)) {
+                        this.returnedPlayers.push(data.user);
+                    }
+                    break;
+                case 'ROOM_CLOSED':
+                    this.room = null;
+                    this.lastMessage = data;
+                    console.log('🚪 Sala tancada pel servidor:', data.reason);
                     break;
                 case 'ERROR':
                     this.error = data.message;
@@ -172,6 +187,16 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             }));
         },
 
+        returnToLobby() {
+            const sessionStore = useSessionStore();
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'PLAYER_RETURN_TO_LOBBY',
+                roomId: this.room.id,
+                user: sessionStore.user
+            }));
+        },
+
         sendGameAction(action) {
             const sessionStore = useSessionStore();
             if (!this.isConnected || !this.room || !this.socket) return;
@@ -183,13 +208,14 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             }));
         },
 
-        createRoom(userAccount, isPublic = true, maxPlayers = 4) {
+        createRoom(userAccount, isPublic = true, maxPlayers = 4, gameConfig = {}) {
             if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                 this.socket.send(JSON.stringify({
                     type: 'CREATE_ROOM',
                     user: userAccount,
                     isPublic,
-                    maxPlayers
+                    maxPlayers,
+                    gameConfig
                 }));
             }
         },

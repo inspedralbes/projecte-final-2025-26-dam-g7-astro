@@ -11,38 +11,56 @@
     <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
       <div v-if="activeGameComponent" class="game-active-overlay">
-        <!-- Marcador HUD -->
-        <div class="game-hud pa-4 d-flex justify-space-between align-center">
-          <div class="hud-player d-flex align-center">
-            <v-avatar size="40" class="mr-2 border-cyan">
-              <v-img :src="getPlayerAvatar(astroStore.user)"></v-img>
-            </v-avatar>
-            <div>
-              <div class="text-caption text-cyan-accent-2 line-height-1">TÚ ({{ multiplayerStore.roundScores[astroStore.user] || 0 }})</div>
-              <div class="text-h6 font-weight-black text-white">Partida: {{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }}</div>
+        <!-- HUD redissenyat: dades flotants al voltant del VS central -->
+        <div class="game-hud-container d-flex justify-center align-center">
+          <div class="hud-main-bar d-flex align-center px-6">
+            <!-- Jugador local -->
+            <div class="hud-item d-flex align-center gap-3">
+              <v-avatar size="36" class="border-cyan">
+                <v-img :src="getPlayerAvatar(astroStore.user)"></v-img>
+              </v-avatar>
+              <div class="hud-text">
+                <div class="hud-name">{{ astroStore.user }}</div>
+                <div class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
+              </div>
             </div>
-          </div>
 
-          <div class="hud-round text-caption font-weight-bold text-amber-accent-2" v-if="multiplayerStore.room?.status !== 'GAME_OVER'">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound || 0 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
+            <!-- Centro: VS + ronda + Indicador Tiempo -->
+            <div class="hud-center-unit mx-8 text-center position-relative">
+              <div class="vs-text">VS</div>
+              <div class="round-text">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound + 1 || 1 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
+              
+              <!-- Notificacions de sabotatge (flotants) -->
+              <transition-group name="floating-score">
+                <div 
+                  v-for="notif in activeNotifications" 
+                  :key="notif.id" 
+                  class="sabotage-notif"
+                  :class="notif.amount > 0 ? 'text-success' : 'text-error'"
+                >
+                  {{ notif.amount > 0 ? '+' : '' }}{{ notif.amount }}s
+                </div>
+              </transition-group>
+            </div>
 
-          <div class="hud-vs text-h5 font-weight-black text-cyan-accent-2 italic">VS</div>
-
-          <div class="hud-player d-flex align-center flex-row-reverse text-right">
-            <v-avatar size="40" class="ml-2 border-cyan">
-              <v-img :src="getPlayerAvatar(opponentName)"></v-img>
-            </v-avatar>
-            <div>
-              <div class="text-caption text-cyan-accent-2 line-height-1">{{ opponentName }} ({{ multiplayerStore.roundScores[opponentName] || 0 }})</div>
-              <div class="text-h6 font-weight-black text-white">Partida: {{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }}</div>
+            <!-- Oponente -->
+            <div class="hud-item d-flex align-center flex-row-reverse gap-3 text-right">
+              <v-avatar size="36" class="border-cyan">
+                <v-img :src="getPlayerAvatar(opponentName)"></v-img>
+              </v-avatar>
+              <div class="hud-text">
+                <div class="hud-name">{{ opponentName }}</div>
+                <div class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="game-content">
-          <component 
-            :is="activeGameComponent" 
+          <component
+            :is="activeGameComponent"
             :is-multiplayer="true"
-            @game-over="onGameFinished" 
+            @game-over="onGameFinished"
           />
         </div>
 
@@ -62,20 +80,21 @@
             </h1>
           </div>
         </transition>
-
-        <!-- Overlay de Victoria Final -->
-        <transition name="scale">
-          <div v-if="matchWinner" class="match-result-overlay d-flex flex-column align-center justify-center">
-            <v-icon :icon="matchWinner === astroStore.user ? 'mdi-trophy' : 'mdi-skull'" size="150" :color="matchWinner === astroStore.user ? 'amber' : 'red'"></v-icon>
-            <h1 class="text-h2 font-weight-black text-white mt-6 glow-text">{{ matchWinner === astroStore.user ? '¡VICTORIA ABSOLUTA!' : 'DERROTA EN EL ESPACIO' }}</h1>
-            <p class="text-h4 text-cyan-accent-2 mt-4">{{ matchWinner === astroStore.user ? 'Has conquistado la galaxia' : 'Tu oponente ha sido superior esta vez' }}</p>
-            <v-btn color="cyan-accent-2" size="x-large" rounded="xl" class="mt-10 font-weight-black text-black" @click="returnToLobby">
-              VOLVER AL CUARTEL
-            </v-btn>
-          </div>
-        </transition>
       </div>
     </transition>
+
+    <!-- Pantalla de Resultados Final -->
+    <MatchResultScreen
+      v-if="showMatchResult"
+      :scores="finalScores"
+      :winner="matchWinnerName"
+      :is-tie="matchWinnerName === null"
+      :total-rounds="multiplayerStore.room?.gameConfig?.totalRounds || 0"
+      :opponent-name="opponentName"
+      :is-host="isHost"
+      @rematch="requestRematch"
+      @return-to-lobby="returnToLobby"
+    />
 
     <div v-if="!activeGameComponent" class="w-100">
       <div class="mb-10 text-center">
@@ -272,6 +291,30 @@
 
       <!-- Panel Lateral -->
       <v-col cols="12" md="4">
+        <!-- SELECCIONA MODALITAT -->
+        <v-card class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
+          <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
+            <v-icon icon="mdi-gamepad-variant" color="cyan-accent-2" class="mr-2"></v-icon>
+            Selecciona modalitat
+          </h3>
+          <v-row dense>
+            <v-col v-for="mode in modalities" :key="mode.id" cols="6">
+              <v-card
+                class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg cursor-pointer"
+                :class="{ 'active-mode': selectedModality === mode.id, 'disabled-mode': !mode.active }"
+                @click="mode.active ? selectedModality = mode.id : null"
+                variant="flat"
+              >
+                <v-icon :icon="mode.icon" :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-darken-1'" size="28" class="mb-2"></v-icon>
+                <div class="text-caption font-weight-black line-height-1" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-darken-1'">
+                  {{ mode.name }}
+                </div>
+                <v-chip v-if="!mode.active" size="x-small" color="grey-darken-2" variant="tonal" class="mt-2 text-7px">PROXIMAMENT</v-chip>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card>
+
         <!-- Invitaciones -->
         <v-card v-if="multiplayerStore.invitations.length > 0" class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
           <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
@@ -432,17 +475,16 @@ import RadarScan from '@/components/games/RadarScan.vue';
 import RadioSignal from '@/components/games/RadioSignal.vue';
 import RhymeSquad from '@/components/games/RhymeSquad.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import SyllableQuest from '@/components/games/SyllableQuest.vue';
 import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import RouletteOverlay from '@/components/games/RouletteOverlay.vue';
+import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue';
 
 const gameComponents = {
   RadarScan,
   RadioSignal,
   RhymeSquad,
   SpelledRosco,
-  SyllableQuest,
   SymmetryBreaker,
   WordConstruction
 };
@@ -463,7 +505,26 @@ const activeGameComponent = shallowRef(null);
 const roundWinner = ref(null);
 const isRoundTie = ref(false);
 const showRoundResults = ref(false);
-const matchWinner = ref(null);
+const showMatchResult = ref(false);
+const finalScores = ref({});
+const matchWinnerName = ref(null);
+const selectedModality = ref('1vs1');
+const modalities = [
+  { id: '1vs1', name: 'Mode 1vs1', icon: 'mdi-sword-cross', active: true },
+  { id: '2vs2', name: 'Mode 2vs2', icon: 'mdi-account-group', active: false },
+  { id: 'boss', name: 'Mode Boss', icon: 'mdi-skull', active: false },
+  { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: false },
+  { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
+];
+
+const matchResult = computed(() => {
+  const me = astroStore.user;
+  if (matchWinnerName.value === null) return { isWin: false, isTie: true };
+  return {
+    isWin: matchWinnerName.value === me,
+    isTie: false
+  };
+});
 
 watch(() => multiplayerStore.room?.status, (newStatus) => {
   if (newStatus === 'ROULETTE') {
@@ -488,7 +549,9 @@ watch(() => multiplayerStore.room?.status, (newStatus) => {
     showRoulette.value = false;
     roundWinner.value = null;
     showRoundResults.value = false;
-    matchWinner.value = null;
+    showMatchResult.value = false;
+    matchWinnerName.value = null;
+    finalScores.value = {};
   }
 });
 
@@ -501,9 +564,46 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   }
   
   if (msg.type === 'MATCH_FINISHED') {
-    matchWinner.value = msg.winner;
+    matchWinnerName.value = msg.winner ?? null;
+    finalScores.value = msg.room?.gameConfig?.scores || {};
+    showMatchResult.value = true;
+    activeGameComponent.value = null;
+    showRoundResults.value = false;
+  }
+
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE') {
+    handleSabotageNotification(msg);
   }
 });
+
+const activeNotifications = ref([]);
+let notifCounter = 0;
+
+const handleSabotageNotification = (data) => {
+  const isMe = data.from === astroStore.user;
+  const amount = data.action.amount || 0;
+  
+  if (data.action.subtype === 'REDUCE_TIME') {
+    const id = notifCounter++;
+    activeNotifications.value.push({
+      id,
+      amount: isMe ? 10 : -amount,
+      from: data.from
+    });
+
+    setTimeout(() => {
+      activeNotifications.value = activeNotifications.value.filter(n => n.id !== id);
+    }, 2500);
+  }
+};
+
+// AÑADIDO: Watcher para asegurar que tenemos los datos de todos los jugadores que entran
+watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
+  if (newLen > (oldLen || 0)) {
+    console.log("🔄 Jugador detectado! Refrescando lista de exploradores...");
+    astroStore.fetchAllUsers();
+  }
+}, { immediate: true });
 
 watch(() => multiplayerStore.error, (newError) => {
   if (newError) {
@@ -538,25 +638,50 @@ const opponentName = computed(() => {
   return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente';
 });
 
+// Sincronizar rondas si el host las cambia
+watch(pointsToWin, (newVal) => {
+  if (isHost.value && multiplayerStore.room) {
+    multiplayerStore.updateGameConfig({ pointsToWin: newVal });
+  }
+});
+
 // Helpers para Avatares
-const getAvatarUrl = (avatar, user) => {
-  // Si el avatar es un archivo local válido (los JPG de astronautas)
-  if (avatar && (avatar.includes('.jpg') || avatar.includes('.png'))) {
-    return `/${avatar}`;
+const getAvatarUrl = (avatarName, username) => {
+  // 1. Si tenemos un nombre de archivo de astronauta válido
+  if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
+    return `/${avatarName.trim()}`;
   }
-  // Si no hay avatar o es un seed de texto, usamos DiceBear (o podrías usar Astronauta_blanc.jpg si prefieres)
-  if (user) {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`;
+  
+  // 2. Si es un seed o nombre, pero parece un astronauta (por si acaso se guardó mal)
+  if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
+    return `/${avatarName.trim()}`;
   }
-  return '/Astronauta_blanc.jpg'; // Último recurso
+
+  // 3. Si no hay nada, pero tenemos el username, usamos DiceBear como fallback robótico
+  if (username) {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+  }
+
+  // 4. Fallback final absoluto (Astronauta blanco)
+  return '/Astronauta_blanc.jpg';
 };
 
 const getPlayerAvatar = (username) => {
+  if (!username) return '/Astronauta_blanc.jpg';
+  
+  // Caso 1: Soy yo mismo (usamos datos de sesión frescos)
   if (username === astroStore.user) {
     return getAvatarUrl(astroStore.avatar, username);
   }
-  const explorer = astroStore.explorers.find(e => e.user === username);
-  return getAvatarUrl(explorer?.avatar, username);
+  
+  // Caso 2: Es otro jugador (buscamos en la lista de exploradores)
+  const explorer = astroStore.explorers?.find(e => e.user === username);
+  if (explorer) {
+    return getAvatarUrl(explorer.avatar, username);
+  }
+  
+  // Caso 3: No lo tenemos en la lista (todavía cargando), usamos DiceBear con su nombre
+  return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
 };
 
 const showMessage = (text, color = 'success') => {
@@ -564,11 +689,8 @@ const showMessage = (text, color = 'success') => {
 };
 
 const createRoom = () => {
-  multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value);
-  // Enviar configuración inicial de puntos
-  setTimeout(() => {
-    multiplayerStore.updateGameConfig({ pointsToWin: pointsToWin.value });
-  }, 500);
+  const initialConfig = { pointsToWin: pointsToWin.value };
+  multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value, initialConfig);
 };
 
 const joinByCode = () => {
@@ -601,7 +723,17 @@ const onGameFinished = (score) => {
 };
 
 const returnToLobby = () => {
-  multiplayerStore.setRoomStatus('LOBBY');
+  showMatchResult.value = false;
+  activeGameComponent.value = null;
+  // NO hacemos leaveRoom() porque queremos quedarnos en la sala
+};
+
+const requestRematch = () => {
+  showMatchResult.value = false;
+  activeGameComponent.value = null;
+  showRoundResults.value = false;
+  // El host inicia una nueva partida directamente
+  multiplayerStore.startMatch();
 };
 
 onMounted(() => {
@@ -690,6 +822,11 @@ onMounted(() => {
 .mission-card-v3:hover {
   border-color: rgba(0, 229, 255, 0.3) !important;
   transform: translateX(4px);
+}
+
+.mission-card-v3 :deep(.v-avatar) {
+  background: #0a1929;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mission-status-led {
@@ -795,7 +932,8 @@ onMounted(() => {
   letter-spacing: 1px;
 }
 /* Avatar Global Styling (Matching profile.vue zoom) */
-:deep(.v-avatar .v-img__img) {
+:deep(.v-avatar .v-img__img),
+:deep(.v-avatar img) {
   border-radius: 50%;
   transform: scale(1.4);
   transform-origin: center center;
@@ -805,13 +943,13 @@ onMounted(() => {
 .player-glow-avatar {
   border: 2px solid rgba(0, 229, 255, 0.4);
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-  padding: 0; /* Quitamos padding para que el zoom funcione bien */
-  background: white; /* Fondo blanco para que el avatar resalte si es transparente */
+  padding: 0; 
+  background: #0a1929; /* Fondo oscuro (Deep Space) para que el astronauta blanco resalte */
   overflow: hidden;
 }
 
 .recruit-item :deep(.v-avatar) {
-  background: white;
+  background: #0a1929;
 }
 
 /* Custom Scrollbar */
@@ -857,38 +995,114 @@ onMounted(() => {
   justify-content: center;
 }
 
-.game-hud {
-  background: rgba(10, 25, 41, 0.9);
-  border-bottom: 2px solid rgba(0, 229, 255, 0.3);
-  height: 80px;
-  z-index: 600;
+.game-hud-container {
+  position: fixed;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  z-index: 2500;
+  pointer-events: none;
 }
 
-.border-cyan {
-  border: 2px solid #00e5ff;
+.hud-main-bar {
+  background: rgba(10, 25, 41, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 50px;
+  height: 64px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 229, 255, 0.15);
+  pointer-events: auto;
+  backdrop-filter: blur(10px);
 }
 
-.line-height-1 {
+.hud-item {
+  min-width: 150px;
+}
+
+.hud-text {
+  line-height: 1.1;
+}
+
+.hud-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #00e5ff;
+  letter-spacing: 0.05em;
+}
+
+.hud-puntos {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: white;
+}
+
+.hud-total {
+  font-size: 0.8rem;
+  color: #9e9e9e;
+  font-weight: 500;
+}
+
+.hud-center-unit {
+  min-width: 120px;
+}
+
+.vs-text {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #00e5ff;
   line-height: 1;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
-.fade-zoom-enter-active, .fade-zoom-leave-active {
-  transition: all 0.5s ease;
-}
-.fade-zoom-enter-from, .fade-zoom-leave-to {
-  opacity: 0;
-  transform: scale(0.9);
+.round-text {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #ffca28;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.round-result-overlay, .match-result-overlay {
+/* Notificacions Sabotatge */
+.sabotage-notif {
   position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-shadow: 0 0 15px currentColor;
+  z-index: 10;
+}
+
+.floating-score-enter-active {
+  animation: float-up 2s ease-out forwards;
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
+  80% { opacity: 1; transform: translate(-50%, -60px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -80px) scale(0.8); }
+}
+
+.game-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 80px; /* Espai pel HUD fixat */
+}
+
+/* Resta de estils existents... */
+.match-result-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(11, 20, 33, 0.9);
-  z-index: 1000;
-  backdrop-filter: blur(10px);
+  background: rgba(11, 20, 33, 0.97);
+  z-index: 3000;
+  backdrop-filter: blur(16px);
 }
 
 .glow-cyan {
@@ -910,4 +1124,53 @@ onMounted(() => {
   opacity: 0;
   transform: scale(1.5);
 }
+
+.final-score-card {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 24px;
+  padding: 32px 48px;
+}
+
+.hud-round {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.game-hud {
+  flex-shrink: 0;
+}
+
+.modality-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 90px;
+}
+
+.modality-card:hover:not(.disabled-mode) {
+  background: rgba(0, 229, 255, 0.05) !important;
+  border-color: rgba(0, 229, 255, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+.active-mode {
+  background: rgba(0, 229, 255, 0.1) !important;
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+}
+
+.disabled-mode {
+  opacity: 0.6;
+  cursor: default !important;
+  filter: grayscale(0.8);
+}
+
+.text-7px {
+  font-size: 8px;
+  height: 16px;
+}
 </style>
+

@@ -14,6 +14,7 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
+    MatchResultScreen: typeof import('./src/components/multiplayer/MatchResultScreen.vue')['default']
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
     RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']

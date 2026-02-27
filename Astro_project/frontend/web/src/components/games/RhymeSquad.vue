@@ -71,7 +71,7 @@
       </div>
     </template>
 
-    <v-card v-else-if="isGameOver" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <v-card v-else-if="isGameOver && !isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
       
