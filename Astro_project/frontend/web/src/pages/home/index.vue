@@ -4,10 +4,10 @@
     <v-app-bar flat color="transparent" class="px-6">
       <v-spacer></v-spacer>
       <v-btn variant="text" to="/login" class="text-white mx-2">
-        Iniciar sesión
+        {{ $t('home.login') }}
       </v-btn>
       <v-btn variant="outlined" to="/register" color="primary" class="mx-2">
-        Registrarse
+        {{ $t('home.register') }}
       </v-btn>
     </v-app-bar>
 
@@ -18,12 +18,11 @@
           PROYECTO ASTRO
         </h1>
         <p class="text-h5 mb-6 text-grey-lighten-1 mx-auto" style="max-width: 800px;">
-          Plataforma de entrenamiento visual y neurocognitivo de alto rendimiento.
-          Agilidad lectora y decodificación sin límites.
+          {{ $t('home.subtitle') }}
         </p>
         <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4"
           :to="isLoggedIn ? '/singleplayer' : '/register'">
-          {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR MISIÓN' }}
+          {{ isLoggedIn ? $t('home.continue') : $t('home.start') }}
           <v-icon end :icon="isLoggedIn ? 'mdi-rocket' : 'mdi-rocket-launch-outline'" class="ms-2"></v-icon>
         </v-btn>
       </div>

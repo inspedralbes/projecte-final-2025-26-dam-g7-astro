@@ -3,14 +3,14 @@
     <div class="mb-8">
       <div class="d-flex align-center justify-center mb-6">
         <v-icon icon="mdi-account-group" size="x-large" color="cyan-accent-2" class="mr-4"></v-icon>
-        <h1 class="text-h4 font-weight-bold text-white tracking-wide">Tripulación</h1>
+        <h1 class="text-h4 font-weight-bold text-white tracking-wide">{{ $t('friends.title') }}</h1>
       </div>
 
       <v-tabs v-model="tab" align-tabs="center" color="cyan-accent-2" bg-color="transparent" class="mb-6">
-        <v-tab value="friends">Mis Amigos</v-tab>
-        <v-tab value="search">Buscar Amigos</v-tab>
+        <v-tab value="friends">{{ $t('friends.tabs.myFriends') }}</v-tab>
+        <v-tab value="search">{{ $t('friends.tabs.search') }}</v-tab>
         <v-tab value="requests">
-          Solicitudes
+          {{ $t('friends.tabs.requests') }}
           <v-chip v-if="friendRequests && friendRequests.length > 0" color="error" size="small" class="ml-2 font-weight-bold">
             {{ friendRequests.length }}
           </v-chip>
@@ -21,7 +21,7 @@
     <v-window v-model="tab" class="bg-transparent" :touch="false">
       <!-- PESTAÑA: MIS AMIGOS -->
       <v-window-item value="friends">
-        <v-text-field v-model="searchQuery" label="Buscar en mi tripulación..." prepend-inner-icon="mdi-magnify" variant="solo"
+        <v-text-field v-model="searchQuery" :label="$t('friends.searchBar1')" prepend-inner-icon="mdi-magnify" variant="solo"
           bg-color="rgba(255, 255, 255, 0.05)" class="search-bar w-100 mb-6" hide-details rounded="xl"
           clearable></v-text-field>
 
@@ -47,7 +47,7 @@
                   <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                      Nivel {{ friend.level || 1 }}
+                      {{ $t('friends.level', { level: friend.level || 1 }) }}
                     </v-chip>
                   </div>
                 </div>
@@ -73,11 +73,11 @@
                 </v-btn>
                 <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(friend)">
                   <v-icon start icon="mdi-account-eye"></v-icon>
-                  Ver Perfil
+                  {{ $t('friends.viewProfile') }}
                 </v-btn>
                 <v-btn color="primary" variant="elevated" class="rounded-lg px-2 flex-grow-1 text-caption font-weight-bold">
                   <v-icon start icon="mdi-sword-cross"></v-icon>
-                  Desafiar
+                  {{ $t('friends.challenge') }}
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -86,20 +86,20 @@
 
         <div v-else class="text-center py-10">
           <v-icon icon="mdi-account-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-          <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">No tienes amigos que coincidan con la búsqueda.</h3>
-          <h3 v-else class="text-h6 text-grey-lighten-1">Tu tripulación está vacía. ¡Busca nuevos reclutas!</h3>
+          <h3 v-if="searchQuery" class="text-h6 text-grey-lighten-1">{{ $t('friends.noSearchMatch') }}</h3>
+          <h3 v-else class="text-h6 text-grey-lighten-1">{{ $t('friends.emptyCrew') }}</h3>
         </div>
       </v-window-item>
 
       <!-- PESTAÑA: BUSCAR AMIGOS -->
       <v-window-item value="search">
         <div class="d-flex justify-space-between align-center mb-6 px-2">
-          <v-text-field v-model="searchExploreQuery" label="Buscar exploradores en la galaxia..." prepend-inner-icon="mdi-magnify" variant="solo"
+          <v-text-field v-model="searchExploreQuery" :label="$t('friends.searchExplore')" prepend-inner-icon="mdi-magnify" variant="solo"
             bg-color="rgba(255, 255, 255, 0.05)" class="search-bar flex-grow-1 mr-4" hide-details rounded="xl"
             clearable density="comfortable" @update:model-value="reloadRandomExplorers"></v-text-field>
 
           <v-btn color="cyan-accent-2" variant="elevated" prepend-icon="mdi-refresh" class="rounded-pill font-weight-bold" @click="reloadRandomExplorers" :loading="reloading">
-            Buscar Otros
+            {{ $t('friends.searchOthersBtn') }}
           </v-btn>
         </div>
 
@@ -125,7 +125,7 @@
                   <h2 class="text-h6 font-weight-bold text-white mb-1">{{ explorer.user }}</h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                      Nivel {{ explorer.level || 1 }}
+                      {{ $t('friends.level', { level: explorer.level || 1 }) }}
                     </v-chip>
                   </div>
                 </div>
@@ -148,11 +148,11 @@
               <v-card-actions class="pa-0 mt-auto">
                 <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-4 mr-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(explorer)">
                   <v-icon start icon="mdi-account-eye"></v-icon>
-                  Ver Perfil
+                  {{ $t('friends.viewProfile') }}
                 </v-btn>
                 <v-btn color="success" variant="elevated" :disabled="hasSentRequest(explorer.user)" class="rounded-lg px-4 flex-grow-1 text-caption font-weight-bold" @click="sendRequest(explorer.user)">
                   <v-icon start :icon="hasSentRequest(explorer.user) ? 'mdi-check' : 'mdi-account-plus'"></v-icon>
-                  {{ hasSentRequest(explorer.user) ? 'Enviada' : 'Reclutar' }}
+                  {{ hasSentRequest(explorer.user) ? $t('friends.sentReq') : $t('friends.recruit') }}
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -161,7 +161,7 @@
 
         <div v-else-if="!loading && !reloading" class="text-center py-10">
           <v-icon icon="mdi-telescope" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-          <h3 class="text-h6 text-grey-lighten-1">No hay más exploradores por la galaxia ahora mismo.</h3>
+          <h3 class="text-h6 text-grey-lighten-1">{{ $t('friends.noExplorers') }}</h3>
         </div>
       </v-window-item>
 
@@ -189,7 +189,7 @@
                   <h2 class="text-h6 font-weight-bold text-white mb-1">{{ requester.user }}</h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                      Nivel {{ requester.level || 1 }}
+                      {{ $t('friends.level', { level: requester.level || 1 }) }}
                     </v-chip>
                   </div>
                 </div>
@@ -212,15 +212,15 @@
               <v-card-actions class="pa-0 mt-auto">
                 <v-btn color="error" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="rejectRequest(requester.user)">
                   <v-icon start icon="mdi-close"></v-icon>
-                  Rechazar
+                  {{ $t('friends.reject') }}
                 </v-btn>
                 <v-btn color="success" variant="elevated" class="rounded-lg px-2 flex-grow-1 text-caption font-weight-bold" @click="acceptRequest(requester.user)">
                   <v-icon start icon="mdi-check"></v-icon>
-                  Aceptar
+                  {{ $t('friends.accept') }}
                 </v-btn>
                 <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 ml-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(requester)">
                   <v-icon start icon="mdi-account-eye"></v-icon>
-                  Ver Perfil
+                  {{ $t('friends.viewProfile') }}
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -229,7 +229,7 @@
 
         <div v-else class="text-center py-10">
           <v-icon icon="mdi-email-open-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-          <h3 class="text-h6 text-grey-lighten-1">No tienes solicitudes pendientes.</h3>
+          <h3 class="text-h6 text-grey-lighten-1">{{ $t('friends.noReqs') }}</h3>
         </div>
       </v-window-item>
     </v-window>
@@ -254,11 +254,11 @@
         </div>
 
         <h2 class="text-h4 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
-        <div class="text-cyan-accent-2 font-weight-bold text-subtitle-1 mb-4">Nivel {{ profileDialog.user?.level || 1 }} - {{ profileDialog.user?.rank || 'Explorador' }}</div>
+        <div class="text-cyan-accent-2 font-weight-bold text-subtitle-1 mb-4">{{ $t('friends.level', { level: profileDialog.user?.level || 1 }) }} - {{ profileDialog.user?.rank || $t('profile.guest') }}</div>
         
         <v-divider class="my-4 border-opacity-25" color="white"></v-divider>
         
-        <h3 class="text-overline font-weight-black text-grey-lighten-1 mb-4">LOGROS ACTIVOS</h3>
+        <h3 class="text-overline font-weight-black text-grey-lighten-1 mb-4">{{ $t('friends.activeAchievements') }}</h3>
         <div class="d-flex justify-center gap-4 mb-6">
            <div v-for="i in 3" :key="i" class="achievement-display-box">
              <Medal v-if="getAchievement(profileDialog.user?.selectedAchievements?.[i - 1])"
@@ -274,7 +274,7 @@
           color="success" block size="large" :disabled="hasSentRequest(profileDialog.user?.user)" class="rounded-lg font-weight-bold" 
           @click="sendRequest(profileDialog.user?.user); profileDialog.show = false;">
           <v-icon start :icon="hasSentRequest(profileDialog.user?.user) ? 'mdi-check' : 'mdi-account-plus'"></v-icon>
-          {{ hasSentRequest(profileDialog.user?.user) ? 'Solicitud Enviada a ' + profileDialog.user?.user : 'Reclutar a ' + profileDialog.user?.user }}
+          {{ hasSentRequest(profileDialog.user?.user) ? $t('friends.sentReqTo', { name: profileDialog.user?.user }) : $t('friends.recruitName', { name: profileDialog.user?.user }) }}
         </v-btn>
       </v-card>
     </v-dialog>
@@ -291,7 +291,9 @@ import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import Medal from '@/components/achievements/Medal.vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const astroStore = useAstroStore();
 const { explorers, friends, friendRequests } = storeToRefs(astroStore);
 
@@ -405,7 +407,7 @@ const fetchFriends = async () => {
     reloadRandomExplorers(); // Llenar la pestaña de búsqueda al iniciar
   } catch (error) {
     console.error("Error cargando tripulación:", error);
-    showMessage("Error de conexión con la flota", "error");
+    showMessage(t('friends.errConnection'), "error");
   } finally {
     loading.value = false;
   }
@@ -417,7 +419,7 @@ onMounted(() => {
 
 const removeFriend = async (friendName) => {
   await astroStore.removeFriendAction(friendName);
-  showMessage(`${friendName} ha abandonado la tripulación.`, 'warning');
+  showMessage(t('friends.abandoned', { name: friendName }), 'warning');
   await astroStore.fetchUserStats(); 
   // Recargar aleatorios por si queremos que ese amigo vuelva a aparecer en "buscar"
   if (tab.value === 'search') reloadRandomExplorers();
@@ -428,7 +430,7 @@ const addFriend = async (friendName) => {
   if (isFriend(friendName)) return;
   const result = await astroStore.addFriendAction(friendName);
   if (result?.success) {
-    showMessage(`¡${friendName} reclutado con éxito!`);
+    showMessage(t('friends.recruited', { name: friendName }));
   }
 };
 
@@ -441,29 +443,29 @@ const sendRequest = async (friendName) => {
   const result = await astroStore.sendFriendRequest(friendName);
   
   if (result && result.success) {
-    showMessage(`Solicitud enviada a ${friendName}`);
+    showMessage(t('friends.sent', { name: friendName }));
     sentRequests.value.push(friendName);
   } else {
-    showMessage(result?.message || "Error al enviar solicitud", "error");
+    showMessage(result?.message || t('friends.errSendReq'), "error");
   }
 };
 
 const acceptRequest = async (requesterName) => {
   const result = await astroStore.acceptFriendRequest(requesterName);
   if (result?.success) {
-    showMessage(`Has aceptado a ${requesterName} en tu tripulación`);
+    showMessage(t('friends.accepted', { name: requesterName }));
     await astroStore.fetchUserStats();
   } else {
-    showMessage(result?.message || "Error al aceptar solicitud", "error");
+    showMessage(result?.message || t('friends.errAccept'), "error");
   }
 };
 
 const rejectRequest = async (requesterName) => {
   const result = await astroStore.rejectFriendRequest(requesterName);
   if (result?.success) {
-    showMessage(`Has rechazado a ${requesterName}`);
+    showMessage(t('friends.rejected', { name: requesterName }));
   } else {
-    showMessage("Error al rechazar solicitud", "error");
+    showMessage(t('friends.errReject'), "error");
   }
 };
 </script>

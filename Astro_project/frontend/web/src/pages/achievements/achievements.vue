@@ -2,8 +2,8 @@
     <div class="scroll-container">
         <v-container fluid class="pa-8">
             <div class="header mb-16 text-center">
-                <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">LOGROS</h1>
-                <p class="text-h6 text-cyan-accent-1 opacity-75">Tus condecoraciones en la flota estelar</p>
+                <h1 class="text-h2 font-weight-bold text-white mb-4 tracking-wide">{{ $t('achievements.title') }}</h1>
+                <p class="text-h6 text-cyan-accent-1 opacity-75">{{ $t('achievements.subtitle') }}</p>
             </div>
 
             <v-alert
@@ -49,7 +49,7 @@
                                 {{ achievement.progress }} / {{ achievement.goal }} {{ achievement.metricLabel }}
                             </v-chip>
                             <v-chip v-else size="x-small" color="green-accent-3" variant="tonal" class="mt-2">
-                                Desbloqueado
+                                {{ $t('achievements.unlocked') }}
                             </v-chip>
                         </div>
                     </div>
@@ -61,10 +61,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Medal from '@/components/achievements/Medal.vue'
 import { useAstroStore } from '@/stores/astroStore'
 import { ACHIEVEMENTS as ACHIEVEMENT_DEFINITIONS } from '@/constants/achievements'
 
+const { t } = useI18n()
 const astroStore = useAstroStore()
 const loading = ref(false)
 const loadError = ref(null)
@@ -89,13 +91,13 @@ onMounted(async () => {
         ])
 
         if (statsResult?.success === false || achievementsResult?.success === false) {
-            loadError.value = "No se pudo sincronizar completamente con MongoDB Atlas."
+            loadError.value = t('achievements.syncErrorAtlas')
         } else {
             loadError.value = null
         }
     } catch (err) {
         console.error("Error de sincronización:", err)
-        loadError.value = "No se pudo sincronizar con la base de mando."
+        loadError.value = t('achievements.syncErrorBase')
     } finally {
         loading.value = false
         readyToSync.value = true

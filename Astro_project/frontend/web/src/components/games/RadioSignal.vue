@@ -13,8 +13,8 @@
         </div>
 
         <div class="session-hud">
-            <div class="hud-pill">Punts: {{ score }}</div>
-            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+            <div class="hud-pill">{{ $t('radioSignal.points', { score }) }}</div>
+            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">{{ $t('radioSignal.time', { time: timeLeft }) }}</div>
         </div>
 
         <!-- Pantalla del Osciloscopio -->
@@ -47,7 +47,7 @@
             </div>
             <div class="status-display">
                 <span :class="isTuned ? 'status-sync' : 'status-lost'">
-                    {{ isTuned ? '● LOCKED' : '○ SCANNING' }}
+                    {{ isTuned ? $t('radioSignal.locked') : $t('radioSignal.scanning') }}
                 </span>
             </div>
         </div>
@@ -89,31 +89,34 @@
                     <input
                         v-model="userGuess"
                         class="radio-input"
-                        placeholder="Escriu la frase..."
+                        :placeholder="$t('radioSignal.placeholder')"
                         @keyup.enter="checkPhrase"
                         autofocus
                     />
                     <button class="send-btn" @click="checkPhrase">
-                        SEND
+                        {{ $t('radioSignal.send') }}
                     </button>
                 </div>
             </div>
             <div v-else class="input-placeholder">
                 <v-icon size="18" color="#444">mdi-antenna</v-icon>
-                <span>ESPERANT SENYAL...</span>
+                <span>{{ $t('radioSignal.waiting') }}</span>
             </div>
         </div>
 
         <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
-            ✗ DADES INCORRECTES - TORNA A INTENTAR
+            {{ $t('radioSignal.error') }}
         </v-snackbar>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { radioSignalData } from '@/data/radioSignalData';
 
 const emit = defineEmits(['game-over']);
+const { t, locale } = useI18n();
 
 // Frecuencia objetivo: rango completo 5-95, siempre diferente
 const targetFrequency = ref(Math.random() * 90 + 5);
@@ -127,30 +130,12 @@ const timeLeft = ref(60);
 const gameFinished = ref(false);
 let roundTimer = null;
 
-const phrases = [
-    'EL VAIXELL DAURAT BRILLA DE DIA',
-    // 'LA BALENA BALLA SOTA DEL BOT', no va
-    'LA BIODIVERSITAT ABUNDA AL BOSC',
-    'EL PETIT PAQUET VA QUEDAR AL PARC',
-    // 'PERQUE EL FORMATGE PESA POC', no va
-    // 'VULL PA AMB QUINZE COGOMBRES', no va
-    'ELS DRACS BOTEN SOBRE LES PEDRES',
-    'TRES TRISTOS TIGRES MENGEN BLAT',
-    // 'LA BRISA FRESCA CREUA LA PRADERIA', no va
-    'LES FLORS CREIXEN AL COSTAT DE LA PLACA',
-    //'EL DUC VOLA DE NIT FINS A LA MATINADA', no va
-    // 'LA HERBA HUMIDA FA OLOR DE FERRO', no va
-    'LA MAMA EM MIMA MOLT CADA MATI',
-    'LA SARA SURT SOLA SEMPRE SENSE BARRET',
-    'EN PEP POSA PERES PER AL PAPA',
-    'EXTRAORDINARI DESCOBRIMENT A LA BIBLIOTECA',
-    // 'EL RINOCERONT NECESSITA REFRIGERACIO', no va
-    'INCOMPRENSIBLE PREDICCIO METEOROLOGICA',
-    'LA NAU ESPACIAL DESPEGA A L\'ALBA',
-    'BASE LUNAR REPORTA BON ESTAT',
-    // 'COORDENADES DEL PLANETA REBUDES',
-];
-const currentPhrase = ref(phrases[Math.floor(Math.random() * phrases.length)]);
+const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['ca']);
+const currentPhrase = ref(phrases.value[Math.floor(Math.random() * phrases.value.length)]);
+
+watch(locale, () => {
+    currentPhrase.value = phrases.value[Math.floor(Math.random() * phrases.value.length)];
+});
 let speechRepeatTimer = null;
 
 // ---- DIAL ----
@@ -317,11 +302,12 @@ const speakPhrase = (volume = 1.0) => {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(currentPhrase.value);
     const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(v => v.lang.includes('ca')) ||
+    const targetLang = locale.value === 'ca' ? 'ca' : 'es';
+    const v = voices.find(v => v.lang.includes(targetLang)) ||
               voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
               voices.find(v => v.lang.includes('es')) || voices[0];
     if (v) u.voice = v;
-    u.lang = 'ca-ES'; u.rate = 0.8; u.pitch = 0.8; u.volume = volume;
+    u.lang = locale.value === 'ca' ? 'ca-ES' : 'es-ES'; u.rate = 0.8; u.pitch = 0.8; u.volume = volume;
     window.speechSynthesis.speak(u);
 };
 

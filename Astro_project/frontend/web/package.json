@@ -14,8 +14,9 @@
     "@mdi/font": "7.4.47",
     "pinia": "^3.0.4",
     "vue": "^3.5.28",
-    "vuedraggable": "^4.1.0",
+    "vue-i18n": "^9.14.5",
     "vue-router": "^4.5.1",
+    "vuedraggable": "^4.1.0",
     "vuetify": "^3.11.8"
   },
   "devDependencies": {

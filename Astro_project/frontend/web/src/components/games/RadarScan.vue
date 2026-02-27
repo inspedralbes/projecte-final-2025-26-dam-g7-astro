@@ -2,8 +2,8 @@
   <div class="game-container" @mousemove="updateFlashlight" ref="gameArea">
     <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
-        <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
-        <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
+        <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('radarScan.points', { score }) }}</div>
+        <div class="text-h5 font-weight-bold text-cyan-accent-3">{{ $t('radarScan.time') }} <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
       </div>
     </div>
 
@@ -36,12 +36,12 @@
 
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
-        <h2 class="text-h4 font-weight-bold text-white mb-4">Escàner de Ràdar</h2>
+        <h2 class="text-h4 font-weight-bold text-white mb-4">{{ $t('radarScan.title') }}</h2>
         <p class="text-body-1 text-grey-lighten-1 mb-6">
-          Troba la lletra diferent abans que s'esgoti el temps. Vigila, el teu camp de visió és limitat i fer clics a l'atzar et restarà temps!
+          {{ $t('radarScan.desc') }}
         </p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black block" @click="startGame">
-          COMENÇAR (60s)
+          {{ $t('radarScan.startBtn') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -49,10 +49,10 @@
     <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
         <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
-        <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
-        <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radarScan.completed') }}</h2>
+        <p class="text-h6 text-cyan-accent-3 mb-8">{{ $t('radarScan.totalPoints', { score }) }}</p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
-          TORNAR AL MENÚ
+          {{ $t('radarScan.returnMenu') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -61,8 +61,10 @@
 
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const emit = defineEmits(['game-over']);
+const { t } = useI18n();
 
 // --- VARIABLES D'ESTAT ---
 const showStartOverlay = ref(true);

@@ -6,16 +6,17 @@
                 <v-col cols="12" class="text-center mb-8">
                     <div class="d-flex align-center justify-center mb-2">
                         <v-icon color="cyan-accent-3" size="40" class="mr-3">mdi-archive-outline</v-icon>
-                        <h1 class="text-h2 font-weight-bold tracking-wide text-white">MI INVENTARIO</h1>
+                        <h1 class="text-h2 font-weight-bold tracking-wide text-white">{{ $t('inventory.title') }}</h1>
                     </div>
-                    <p class="text-h6 text-cyan-accent-1 opacity-75">Gestiona tu equipo y personaliza tu presencia
-                        estelar</p>
+                    <p class="text-h6 text-cyan-accent-1 opacity-75">
+                        {{ $t('inventory.subtitle') }}
+                    </p>
                 </v-col>
 
                 <!-- Categorías -->
                 <v-col cols="12" md="3">
                     <v-list class="glass-sidebar pa-2 rounded-xl" bg-color="transparent">
-                        <v-list-item v-for="cat in categories" :key="cat.id" :prepend-icon="cat.icon" :title="cat.name"
+                        <v-list-item v-for="cat in categories" :key="cat.id" :prepend-icon="cat.icon" :title="$t(`inventory.categories.${cat.id}`)"
                             v-model="activeCategory" :value="cat.id" class="mb-2 rounded-lg category-item"
                             :class="{ 'active-cat': activeCategory === cat.id }"
                             @click="activeCategory = cat.id"></v-list-item>
@@ -44,7 +45,7 @@
                                     variant="tonal"
                                     class="mb-2"
                                 >
-                                    ACTIVO: {{ getBoosterGamesLeft(item) }} partidas
+                                    {{ $t('inventory.active', { games: getBoosterGamesLeft(item) }) }}
                                 </v-chip>
                                 <v-spacer></v-spacer>
                                 <v-btn
@@ -64,9 +65,9 @@
                     <v-row v-else justify="center" align="center" style="min-height: 300px;">
                         <v-col cols="12" class="text-center">
                             <v-icon size="80" color="grey-darken-2" class="mb-4">mdi-package-variant</v-icon>
-                            <h3 class="text-h5 text-grey">Aún no tienes equipo en esta categoría</h3>
+                            <h3 class="text-h5 text-grey">{{ $t('inventory.empty') }}</h3>
                             <v-btn color="cyan-accent-3" variant="text" class="mt-4" to="/shop">
-                                Visitar la Tienda
+                                {{ $t('inventory.goToShop') }}
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -79,7 +80,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
 const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
@@ -147,9 +150,9 @@ function getBoosterGamesLeft(item) {
 }
 
 function getItemActionLabel(item) {
-    if (isUsableBooster(item)) return 'UTILIZAR';
-    if (!isEquipable(item)) return 'NO EQUIPABLE';
-    return item.equipped ? 'EQUIPADO' : 'EQUIPAR';
+    if (isUsableBooster(item)) return t('inventory.use');
+    if (!isEquipable(item)) return t('inventory.unequipable');
+    return item.equipped ? t('inventory.equipped') : t('inventory.equip');
 }
 
 function getItemActionColor(item) {

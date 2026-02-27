@@ -12,9 +12,9 @@
                         <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
                             
                             <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
-                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ $t(level.phaseSubtitleKey) }}</div>
                                 <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
-                                    {{ level.phaseTitle }}
+                                    {{ $t(level.phaseTitleKey) }}
                                 </h2>
                             </div>
 
@@ -47,11 +47,11 @@
 
                             <div v-if="index + 1 <= progressStore.level" class="floating-label"
                                 :class="getLevelState(index)">
-                                {{ level.name }}
+                                {{ $t(level.nameKey) }}
                             </div>
 
                             <div v-if="getLevelState(index) === 'current'" class="target-score-label">
-                                Meta: {{ level.minScore }} pts
+                                {{ $t('singleplayer.goal', { score: level.minScore }) }}
                             </div>
 
                             <button class="node-btn" :class="[
@@ -95,22 +95,21 @@
             <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #00e5ff;">
                 <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="80"
                     class="mb-2 animate-bounce"></v-icon>
-                <h2 class="text-h3 font-weight-black text-white mb-2">¡NIVELL {{ newLevelData.level }}!</h2>
+                <h2 class="text-h3 font-weight-black text-white mb-2">{{ $t('singleplayer.level_up', { level: newLevelData.level }) }}</h2>
 
                 <div v-if="newLevelData.rankChanged" class="my-4 pa-3 rounded-lg"
                     style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
-                    <div class="text-caption text-grey-lighten-1 text-uppercase">Nou Rang Assolit</div>
+                    <div class="text-caption text-grey-lighten-1 text-uppercase">{{ $t('singleplayer.new_rank') }}</div>
                     <div class="text-h6 font-weight-bold text-amber-accent-3">{{ newLevelData.rank }}</div>
                 </div>
 
                 <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
-                    Has acumulat un total de <span class="text-cyan-accent-3 font-weight-bold">{{ progressStore.xp }} XP</span>
-                    i ets un pas més a prop de dominar la galàxia.
+                    {{ $t('singleplayer.accumulated_xp', { xp: `<span class="text-cyan-accent-3 font-weight-bold">${progressStore.xp} XP</span>` }) }}
                 </p>
                 
                 <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large"
                     class="font-weight-bold text-black" @click="showLevelUpDialog = false">
-                    CONTINUAR
+                    {{ $t('singleplayer.continue') }}
                 </v-btn>
             </v-card>
         </v-dialog>
@@ -119,23 +118,22 @@
             <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #ff5252;">
                 <v-icon icon="mdi-close-circle-outline" color="red-accent-2" size="80" class="mb-4"></v-icon>
 
-                <h2 class="text-h4 font-weight-black text-white mb-2">¡Casi lo logras!</h2>
+                <h2 class="text-h4 font-weight-black text-white mb-2">{{ $t('singleplayer.almost_there') }}</h2>
 
                 <div class="py-4">
-                    <p class="text-body-1 text-grey-lighten-1">Has obtenido:</p>
-                    <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} pts</div>
+                    <p class="text-body-1 text-grey-lighten-1">{{ $t('singleplayer.obtained') }}</p>
+                    <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} {{ $t('singleplayer.pts') }}</div>
 
                     <v-divider class="mb-4"></v-divider>
 
                     <p class="text-body-2 text-grey-lighten-1">
-                        Necesitas <span class="text-red-accent-2 font-weight-bold">{{ requiredScore }} puntos</span><br>
-                        para desbloquear la siguiente misión.
+                        {{ $t('singleplayer.need', { score: `<span class="text-red-accent-2 font-weight-bold">${requiredScore}</span>` }) }}
                     </p>
                 </div>
 
                 <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="large"
                     class="font-weight-bold text-black mt-4" @click="showFailDialog = false">
-                    INTENTAR DE NUEVO
+                    {{ $t('singleplayer.retry') }}
                 </v-btn>
             </v-card>
         </v-dialog>
@@ -146,6 +144,7 @@
 <script setup>
 import { ref, shallowRef } from 'vue';
 import { useProgressStore } from '@/stores/progressStore';
+import { useI18n } from 'vue-i18n';
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
@@ -155,6 +154,7 @@ import RhymeSquad from '@/components/games/RhymeSquad.vue';
 import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
 const progressStore = useProgressStore();
+const { t } = useI18n();
 const activeGameComponent = shallowRef(null);
 const currentPlayingIndex = ref(null); 
 
@@ -173,21 +173,21 @@ const newLevelData = ref({
 // MATRIZ ACTUALIZADA CON phaseAlign Y phaseIcon PARA EL DISEÑO LATERAL
 const levelSequence = [
     { 
-        name: 'Preparativos', component: WordConstruction, minScore: 100, 
-        phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', 
+        name: 'Preparativos', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, 
+        phaseTitle: 'Entrenamiento', phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitle: 'Fase 1: La Tierra', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle',
         phaseAlign: 'left',
     },
-    { name: '¡Despegue!', component: RadarScan, minScore: 200 },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500 },
+    { name: '¡Despegue!', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200 },
+    { name: 'Rompiendo la Gravedad', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350 },
+    { name: 'Desacoplamiento Orbital', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500 },
     { 
-        name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, 
-        phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', 
+        name: 'Ruta Estelar', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, 
+        phaseTitle: 'El Viaje Comienza', phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle',
         phaseAlign: 'right',  
     },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 100 },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
-    { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
+    { name: 'Llamando a la Base', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 100 },
+    { name: 'Recarga Solar', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250 },
+    { name: 'Reparación Express', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500 },
 ];
 
 const getLevelState = (index) => {
@@ -231,7 +231,7 @@ const handleGameOver = async (finalScore) => {
             if (progressStore.level > previousLevel) {
                 newLevelData.value = {
                     level: progressStore.level,
-                    rank: result.data.newRank || 'Explorador',
+                    rank: result.data.newRank || t('profile.guest'),
                     rankChanged: !!result.data.newRank
                 };
                 showLevelUpDialog.value = true;

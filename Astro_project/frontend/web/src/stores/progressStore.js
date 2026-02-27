@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
+import i18n from '@/i18n';
 import {
     STORAGE_KEYS,
     normalizeActiveBoosters,
@@ -145,7 +146,7 @@ export const useProgressStore = defineStore('progress', {
         async fetchUserStats() {
             this.error = null;
             const user = this.resolveUser();
-            if (!user) return { success: false, message: 'No hay una sesión activa.' };
+            if (!user) return { success: false, message: i18n.global.t('errors.noSession') };
 
             try {
                 const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/stats`);
@@ -184,7 +185,7 @@ export const useProgressStore = defineStore('progress', {
             this.error = null;
             const user = this.resolveUser();
             if (!user) {
-                return { success: false, message: 'No hay una sesión activa.' };
+                return { success: false, message: i18n.global.t('errors.noSession') };
             }
 
             try {
@@ -214,11 +215,11 @@ export const useProgressStore = defineStore('progress', {
             const user = this.resolveUser();
 
             if (!user) {
-                return { success: false, message: 'No hay una sesión activa.' };
+                return { success: false, message: i18n.global.t('errors.noSession') };
             }
 
             if (!game) {
-                return { success: false, message: 'Nombre de juego inválido.' };
+                return { success: false, message: i18n.global.t('errors.invalidGame') };
             }
 
             try {
@@ -267,7 +268,7 @@ export const useProgressStore = defineStore('progress', {
         async claimMissionReward(missionId, type = 'daily') {
             this.error = null;
             const user = this.resolveUser();
-            if (!user) return { success: false, message: 'No hay sesión activa.' };
+            if (!user) return { success: false, message: i18n.global.t('errors.noSession') };
 
             try {
                 const { response, data } = await requestJson('/api/missions/claim', {
@@ -299,7 +300,7 @@ export const useProgressStore = defineStore('progress', {
         async useStreakFreeze() {
             this.error = null;
             const user = this.resolveUser();
-            if (!user) return { success: false, message: 'No hay sesión activa.' };
+            if (!user) return { success: false, message: i18n.global.t('errors.noSession') };
 
             try {
                 const { response, data } = await requestJson('/api/user/use-freeze', {

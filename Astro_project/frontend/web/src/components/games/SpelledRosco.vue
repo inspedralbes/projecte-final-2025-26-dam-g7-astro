@@ -5,11 +5,11 @@
     <v-card width="100%" max-width="800" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
       <div class="d-flex justify-space-between align-center">
         <div>
-          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar</h2>
+          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">{{ $t('spelledRosco.title') }}</h2>
           <div class="text-caption text-grey-lighten-2">
-            <span>Puntuació: {{ score }}</span>
+            <span>{{ $t('spelledRosco.score', { score: score }) }}</span>
             <span class="mx-2">|</span>
-            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">{{ $t('spelledRosco.time', { time: timeLeft }) }}</span>
           </div>
         </div>
         <div class="d-flex align-center gap-4">
@@ -81,21 +81,21 @@
       <v-col cols="12" md="6" class="px-md-8">
         <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
           <div class="mb-4">
-            <v-chip color="cyan" label class="mb-2 font-weight-bold">Definició</v-chip>
+            <v-chip color="cyan" label class="mb-2 font-weight-bold">{{ $t('spelledRosco.definition') }}</v-chip>
             <p class="text-h6 text-white">{{ currentLetter.question }}</p>
           </div>
 
           <v-divider class="mb-6 border-opacity-25"></v-divider>
 
           <div class="text-center mb-4">
-            <p class="text-overline text-grey-lighten-1 mb-2">ESCRIU LA PARAULA</p>
+            <p class="text-overline text-grey-lighten-1 mb-2">{{ $t('spelledRosco.writeWord') }}</p>
             
             <v-text-field
               v-model="rawInput"
               variant="outlined"
               color="cyan-accent-3"
               bg-color="#263238"
-              placeholder="Escriu aquí..."
+              :placeholder="$t('spelledRosco.placeholder')"
               class="mb-4 spelling-input"
               density="comfortable"
               hide-details
@@ -111,11 +111,11 @@
                 class="px-4"
                 @click="pasapalabra"
               >
-                Pasapalabra
+                {{ $t('spelledRosco.pasapalabra') }}
               </v-btn>
             </div>
 
-             <v-btn
+              <v-btn
                 color="success"
                 size="large"
                 block
@@ -124,7 +124,7 @@
                 @click="checkAnswer"
                 :disabled="rawInput.length === 0"
               >
-                Confirmar
+                {{ $t('spelledRosco.confirm') }}
               </v-btn>
               
               <v-btn
@@ -134,7 +134,7 @@
                 @click="clearInput"
                 size="small"
               >
-                Esborrar tot
+                {{ $t('spelledRosco.clearAll') }}
               </v-btn>
           </div>
         </v-card>
@@ -144,23 +144,23 @@
     <!-- Pantalla Final -->
     <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
-      <h2 class="text-h4 text-white mb-2">Rosco Completat!</h2>
+      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') }}</h2>
       <div class="d-flex justify-space-around my-6">
         <div class="text-center">
             <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
-            <div class="text-caption">Encerts</div>
+            <div class="text-caption">{{ $t('spelledRosco.correctHits') }}</div>
         </div>
         <div class="text-center">
             <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
-            <div class="text-caption">Errors</div>
+            <div class="text-caption">{{ $t('spelledRosco.incorrectHits') }}</div>
         </div>
       </div>
-      <p class="text-h5 text-white mb-2">Puntuació Final: {{ score }}</p>
-      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps Restant: {{ timeLeft }}s</p>
-      <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
+      <p class="text-h5 text-white mb-2">{{ $t('spelledRosco.finalScore', { score: score }) }}</p>
+      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
+      <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
-        Obtenir Recompensa
+        {{ $t('spelledRosco.getReward') }}
       </v-btn>
     </v-card>
 
@@ -172,91 +172,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { roscoData } from '@/data/roscoGamesData';
+
+const { locale, t } = useI18n();
 
 const emit = defineEmits(['game-over']);
 
-// --- DADES DEL JOC (temes variats) ---
-const allLettersData = [
-  // 🌌 Espai
-  { char: 'A', question: "Cos rocallós que orbita al voltant del Sol.", answer: "ASTEROIDE" },
-  { char: 'C', question: "Astre de gel i pols amb una cua lluminosa.", answer: "COMETA" },
-  { char: 'E', question: "Esfera de gas que emet llum i calor.", answer: "ESTRELLA" },
-  { char: 'G', question: "Sistema enorme d'estrelles units per la gravetat.", answer: "GALAXIA" },
-  { char: 'N', question: "Núvol de gas on neixen noves estrelles.", answer: "NEBULOSA" },
-  { char: 'P', question: "Cos celest que orbita una estrella.", answer: "PLANETA" },
-  { char: 'S', question: "L'estrella central del nostre sistema.", answer: "SOL" },
-  { char: 'T', question: "Instrument per observar objectes llunyans a l'espai.", answer: "TELESCOPI" },
-  { char: 'U', question: "Tot el que existeix: matèria, energia, espai i temps.", answer: "UNIVERS" },
-  { char: 'O', question: "Trajectòria corba d'un objecte a l'espai.", answer: "ORBITA" },
-  // 🐾 Animals
-  { char: 'G', question: "Felí domèstic molt independent i juganer.", answer: "GAT" },
-  { char: 'A', question: "Au rapinyaire de gran envergadura, símbol de llibertat.", answer: "AGUILA" },
-  { char: 'D', question: "Mamífer marí molt intel·ligent que viu en grups.", answer: "DOLFI" },
-  { char: 'E', question: "El mamífer terrestre més gran del món.", answer: "ELEFANT" },
-  { char: 'L', question: "Gran felí conegut com el rei de la selva.", answer: "LLEO" },
-  { char: 'T', question: "Rèptil amb closca dura que es mou lentament.", answer: "TORTUGA" },
-  { char: 'C', question: "Animal amb vuit tentacles que viu al fons del mar.", answer: "CRANC" },
-  { char: 'P', question: "Ocell tropical de colors vius que pot imitar sons.", answer: "LLORO" },
-  // 🔬 Ciència
-  { char: 'A', question: "La unitat bàsica de la matèria.", answer: "ATOM" },
-  { char: 'C', question: "Unitat bàsica dels éssers vius.", answer: "CELULA" },
-  { char: 'G', question: "Força que atrau els objectes cap al centre de la Terra.", answer: "GRAVETAT" },
-  { char: 'O', question: "Gas essencial per a la respiració dels éssers vius.", answer: "OXIGEN" },
-  { char: 'H', question: "L'element químic més lleuger de l'univers.", answer: "HIDROGEN" },
-  { char: 'E', question: "Capacitat per fer un treball o produir un canvi.", answer: "ENERGIA" },
-  { char: 'M', question: "Aparell que fa que les coses petites es vegin grans.", answer: "MICROSCOPI" },
-  { char: 'V', question: "Rapidesa amb què un objecte canvia de posició.", answer: "VELOCITAT" },
-  // 🌍 Geografia
-  { char: 'M', question: "Gran massa d'aigua salada que cobreix la Terra.", answer: "MAR" },
-  { char: 'V', question: "Muntanya que pot fer erupció amb lava.", answer: "VOLCA" },
-  { char: 'R', question: "Corrent natural d'aigua que desemboca al mar.", answer: "RIU" },
-  { char: 'I', question: "Porció de terra envoltada d'aigua per tots els costats.", answer: "ILLA" },
-  { char: 'D', question: "Zona àrida amb molt poques precipitacions.", answer: "DESERT" },
-  { char: 'S', question: "Gran extensió de bosc tropical amb molta biodiversitat.", answer: "SELVA" },
-  { char: 'L', question: "Massa d'aigua dolça envoltada de terra.", answer: "LLAC" },
-  // 🍎 Aliments
-  { char: 'P', question: "Fruita allargada i groga molt energètica.", answer: "PLATAN" },
-  { char: 'T', question: "Fruita vermella molt usada en amanides i salses.", answer: "TOMAQUET" },
-  { char: 'F', question: "Preparat comestible fet amb llet coagulada.", answer: "FORMATGE" },
-  { char: 'X', question: "Dolç elaborat amb cacau.", answer: "XOCOLATA" },
-  { char: 'P', question: "Plat italià amb base de massa, tomàquet i formatge.", answer: "PIZZA" },
-  { char: 'M', question: "Producte dolç que fan les abelles.", answer: "MEL" },
-  { char: 'A', question: "Fruita vermella o verda que creix als arbres.", answer: "POMA" },
-  // ⚽ Esports
-  { char: 'F', question: "Esport d'equip amb una pilota rodona i porteries.", answer: "FUTBOL" },
-  { char: 'B', question: "Esport on es llança una pilota a una cistella.", answer: "BASQUET" },
-  { char: 'N', question: "Esport aquàtic on es fan braçades a la piscina.", answer: "NATACIO" },
-  { char: 'T', question: "Esport de raqueta amb una pilota sobre una xarxa.", answer: "TENNIS" },
-  { char: 'C', question: "Esport on es pedala amb dues rodes.", answer: "CICLISME" },
-  { char: 'R', question: "Esport d'equip amb una pilota ovalada.", answer: "RUGBY" },
-  { char: 'E', question: "Esport d'hivern on es llisca per la neu.", answer: "ESQUI" },
-  // 💻 Tecnologia
-  { char: 'R', question: "Màquina programable que pot fer tasques automàtiques.", answer: "ROBOT" },
-  { char: 'I', question: "Xarxa global que connecta ordinadors de tot el món.", answer: "INTERNET" },
-  { char: 'P', question: "Acció de crear instruccions perquè un ordinador faci una tasca.", answer: "PROGRAMAR" },
-  { char: 'W', question: "Lloc a internet on pots consultar informació.", answer: "WEB" },
-  { char: 'D', question: "Informació emmagatzemada en sistemes informàtics.", answer: "DADES" },
-  { char: 'S', question: "Dispositiu electrònic de butxaca amb pantalla tàctil.", answer: "SMARTPHONE" },
-  // 🌿 Natura
-  { char: 'B', question: "Gran extensió de terreny cobert d'arbres.", answer: "BOSC" },
-  { char: 'F', question: "Part de la planta que sol ser de colors i atrau insectes.", answer: "FLOR" },
-  { char: 'A', question: "Planta gran amb tronc llenyós i branques.", answer: "ARBRE" },
-  { char: 'P', question: "Precipitació d'aigua que cau dels núvols.", answer: "PLUJA" },
-  { char: 'N', question: "Massa visible de gotes d'aigua al cel.", answer: "NUVOL" },
-  { char: 'L', question: "Font natural de llum que ve del Sol.", answer: "LLUM" },
-  { char: 'V', question: "Moviment de l'aire a l'atmosfera.", answer: "VENT" },
-  // 🏛 Història i Cultura
-  { char: 'C', question: "Edifici fortificat medieval amb torres i muralles.", answer: "CASTELL" },
-  { char: 'M', question: "Lloc on s'exposen obres d'art i objectes històrics.", answer: "MUSEU" },
-  { char: 'L', question: "Conjunt de signes escrits que serveix per comunicar-se.", answer: "LLENGUA" },
-  // 🎵 Música
-  { char: 'G', question: "Instrument de cordes molt popular en el rock.", answer: "GUITARRA" },
-  { char: 'P', question: "Instrument de tecles blanques i negres.", answer: "PIANO" },
-  { char: 'B', question: "Instrument de percussió que es toca amb baquetes.", answer: "BATERIA" },
-  { char: 'F', question: "Instrument de vent de fusta amb forats.", answer: "FLAUTA" },
-  { char: 'M', question: "Art de combinar sons de forma agradable.", answer: "MUSICA" },
-];
+// Computada reactiva per dependre de l'idioma
+const allLettersData = computed(() => {
+    return roscoData[locale.value] || roscoData['es'];
+});
 
 // --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
 const STAR_CENTER = 200;
@@ -436,11 +363,11 @@ const checkAnswer = async () => {
     if (userAnswer === correctAnswer) {
         roscoLetters.value[currentIndex.value].status = 'correct';
         score.value += 100;
-        feedbackMessage.value = "Correcte! Molt bé!";
+        feedbackMessage.value = t('spelledRosco.msgCorrect');
         feedbackColor.value = 'success';
     } else {
         roscoLetters.value[currentIndex.value].status = 'incorrect';
-        feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;
+        feedbackMessage.value = t('spelledRosco.msgIncorrect', { answer: currentLetter.value.answer });
         feedbackColor.value = 'error';
     }
 

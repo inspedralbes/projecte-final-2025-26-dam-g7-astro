@@ -4,13 +4,13 @@
     <div class="hud pa-4 w-100 position-absolute" style="top: 0; z-index: 12;">
       <div class="d-flex justify-center align-center">
         <div class="hud-pill d-flex align-center ga-6">
-          <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
-          <div class="text-h6 text-cyan-accent-2">Objectiu: {{ currentChallenge?.target || '-' }}</div>
+          <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('symmetryBreaker.points', { score }) }}</div>
+          <div class="text-h6 text-cyan-accent-2">{{ $t('symmetryBreaker.target', { target: currentChallenge?.target || '-' }) }}</div>
           <div 
             class="text-h5 font-weight-bold" 
             :class="isPenaltyActive || timeLeft <= 10 ? 'text-red-accent-2' : 'text-white'"
           >
-            Temps: {{ Math.ceil(timeLeft) }}s
+            {{ $t('symmetryBreaker.time', { time: Math.ceil(timeLeft) }) }}
           </div>
         </div>
       </div>
@@ -18,7 +18,7 @@
 
     <!-- Barra de progrés (Fixada perquè arribi al final) -->
     <div class="lock-meter-wrapper">
-      <div class="text-caption text-grey-lighten-1 mb-1">Bloqueig de precisió (Ronda {{ round }})</div>
+      <div class="text-caption text-grey-lighten-1 mb-1">{{ $t('symmetryBreaker.lockMeter', { round }) }}</div>
       <v-progress-linear
         :model-value="holdProgressPct"
         color="lime-accent-3"
@@ -40,12 +40,12 @@
     <!-- Overlays -->
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
-        <h2 class="text-h4 font-weight-bold text-white mb-4">Symmetry Breaker</h2>
+        <h2 class="text-h4 font-weight-bold text-white mb-4">{{ $t('symmetryBreaker.title') }}</h2>
         <p class="text-body-1 text-grey-lighten-1 mb-6">
-          Manté el làser sobre l'objectiu correcte. La velocitat augmentarà cada ronda!
+          {{ $t('symmetryBreaker.desc') }}
         </p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black" @click="startGame">
-          INICIAR MISSIÓ
+          {{ $t('symmetryBreaker.startMission') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -53,10 +53,10 @@
     <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="120">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
         <v-icon icon="mdi-target-variant" color="cyan-accent-3" size="70" class="mb-4"></v-icon>
-        <h2 class="text-h4 font-weight-bold text-white mb-2">Fi de la Missió</h2>
-        <p class="text-h5 text-amber-accent-2 mb-6">Punts: {{ score }}</p>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('symmetryBreaker.endMission') }}</h2>
+        <p class="text-h5 text-amber-accent-2 mb-6">{{ $t('symmetryBreaker.points', { score }) }}</p>
         <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
-          TORNAR AL MENÚ
+          {{ $t('symmetryBreaker.returnMenu') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -65,21 +65,33 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const emit = defineEmits(['game-over']);
 
-const confusionSets = [
-  { target: 'B', decoys: ['D', 'P', 'Q', '8'] },
-  { target: 'M', decoys: ['N', 'W', 'H', 'U'] },
-  { target: 'FORMA', decoys: ['FIRMA', 'NORMA', 'FARMA', 'FORAT'] },
-  { target: 'CASA', decoys: ['COSA', 'CAPA', 'CARA', 'CAIXA'] },
-  { target: 'LLETRA', decoys: ['LLETRA?', 'LETRA', 'LINTER', 'LENTA'] },
-  { target: 'ORBITA', decoys: ['ORBETA', 'ORBE', 'ORBITS', 'ORDITA'] }
-];
+const targetLocale = computed(() => {
+  return t('symmetryBreaker.title') === "Symmetry Breaker" ? 'es' : 'ca'; // Basic check but we are translating a "dummy text" below
+});
+
+// Since language is dynamic, game sets should be dynamic
+const confusionSetsDynamic = computed(() => {
+    // You can adapt target and decoys conditionally if they have language dependencies.
+    // For now we map as is since they are short simple words. (e.g., ORBITA vs ORBETA).
+    // Let's assume this requires identical sets in ES / CA for now, or adapt them later.
+    return [
+      { target: 'B', decoys: ['D', 'P', 'Q', '8'] },
+      { target: 'M', decoys: ['N', 'W', 'H', 'U'] },
+      { target: 'FORMA', decoys: ['FIRMA', 'NORMA', 'FARMA', 'FORAT'] },
+      { target: 'CASA', decoys: ['COSA', 'CAPA', 'CARA', 'CAIXA'] },
+      { target: 'LLETRA', decoys: ['LLETRA?', 'LETRA', 'LINTER', 'LENTA'] },
+      { target: 'ORBITA', decoys: ['ORBETA', 'ORBE', 'ORBITS', 'ORDITA'] }
+    ]
+});
 
 // Separar per tipus
-const wordSets = confusionSets.filter(s => s.target.length > 1);
-const letterSets = confusionSets.filter(s => s.target.length === 1);
+const wordSets = computed(() => confusionSetsDynamic.value.filter(s => s.target.length > 1));
+const letterSets = computed(() => confusionSetsDynamic.value.filter(s => s.target.length === 1));
 
 const container = ref(null);
 const gameCanvas = ref(null);
@@ -131,7 +143,7 @@ function resizeCanvas() {
 function generateTargets() {
   if (!gameCanvas.value) return;
 
-  const sourceSet = round.value <= 6 ? wordSets : letterSets;
+  const sourceSet = round.value <= 6 ? wordSets.value : letterSets.value;
   const challenge = sourceSet[Math.floor(Math.random() * sourceSet.length)];
   currentChallenge.value = challenge;
 

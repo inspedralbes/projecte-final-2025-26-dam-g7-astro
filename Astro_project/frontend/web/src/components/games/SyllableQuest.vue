@@ -2,15 +2,14 @@
   <v-container class="text-center d-flex justify-center align-center fill-height">
     <v-card class="pa-6 bg-slate-900 border-amber game-shell" rounded="xl" width="100%" max-width="560">
       <div class="hud-row mb-6">
-        <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">Punts: {{ score }}</div>
+        <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
         <div class="text-subtitle-1 font-weight-bold" :class="timeLeft <= 10 ? 'text-red-accent-2' : 'text-cyan-accent-2'">
-          Temps: {{ timeLeft }}s
+          {{ $t('syllableQuest.time', { time: timeLeft }) }}
         </div>
       </div>
 
       <template v-if="!gameFinished">
-        <div class="text-h4 mb-2">{{ currentWord.text }}</div>
-        <div class="text-caption text-grey-lighten-1 mb-6">Paraula {{ currentWordIndex + 1 }} / {{ words.length }}</div>
+        <div class="text-caption text-grey-lighten-1 mb-6">{{ $t('syllableQuest.missionProgress', { current: currentWordIndex + 1, total: words.length }) }}</div>
 
         <div class="d-flex justify-center gap-4 mb-8">
           <v-avatar
@@ -32,10 +31,10 @@
           class="mb-4"
         ></v-btn>
 
-        <p class="text-subtitle-1 mb-4">Fes un "clic" per cada síl·laba!</p>
+        <p class="text-subtitle-1 mb-4">{{ $t('syllableQuest.clickInstruction') }}</p>
 
         <v-btn @click="checkSyllables" color="success" block rounded="lg" class="font-weight-bold">
-          Comprovar
+          {{ $t('syllableQuest.check') }}
         </v-btn>
 
         <v-alert v-if="message" :type="messageType" class="mt-4" variant="tonal">
@@ -45,13 +44,13 @@
 
       <template v-else>
         <v-icon icon="mdi-trophy" color="amber-accent-3" size="70" class="mb-4"></v-icon>
-        <h2 class="text-h4 mb-3">Missió completada</h2>
-        <p class="text-h6 mb-1">Punts: {{ score }}</p>
-        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps restant: {{ timeLeft }}s</p>
-        <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
+        <h2 class="text-h4 mb-3">{{ $t('syllableQuest.completedTitle') }}</h2>
+        <p class="text-h6 mb-1">{{ $t('syllableQuest.finalScore', { score: score }) }}</p>
+        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('syllableQuest.timeRemaining', { time: timeLeft }) }}</p>
+        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('syllableQuest.reward', { reward: finalReward }) }}</p>
 
         <v-btn @click="emitExit" color="amber-accent-3" class="text-black font-weight-bold" rounded="pill" size="large">
-          Obtenir Recompensa
+          {{ $t('syllableQuest.getReward') }}
         </v-btn>
       </template>
     </v-card>
@@ -59,19 +58,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { syllableData } from '@/data/syllableGamesData';
 
+const { locale, t } = useI18n();
 const emit = defineEmits(['game-over']);
 
-const words = [
-  { text: 'OR-DI-NA-DOR', syllables: 4 },
-  { text: 'GA-LÀ-XI-A', syllables: 4 },
-  { text: 'COET', syllables: 2 },
-  { text: 'TE-LES-CO-PI', syllables: 4 }
-];
+const words = computed(() => {
+    return syllableData[locale.value] || syllableData['es'];
+});
 
 const currentWordIndex = ref(0);
-const currentWord = computed(() => words[currentWordIndex.value]);
+const currentWord = computed(() => words.value[currentWordIndex.value]);
 const userSyllables = ref(0);
 const score = ref(0);
 const timeLeft = ref(60);
@@ -100,10 +99,10 @@ const checkSyllables = () => {
 
   if (userSyllables.value === currentWord.value.syllables) {
     score.value += 60;
-    message.value = 'Correcte!';
+    message.value = t('syllableQuest.msgCorrect');
     messageType.value = 'success';
 
-    if (currentWordIndex.value >= words.length - 1) {
+    if (currentWordIndex.value >= words.value.length - 1) {
       finishGame();
       return;
     }
@@ -112,7 +111,7 @@ const checkSyllables = () => {
     userSyllables.value = 0;
   } else {
     score.value = Math.max(0, score.value - 10);
-    message.value = 'Incorrecte, torna a provar.';
+    message.value = t('syllableQuest.msgIncorrect');
     messageType.value = 'error';
     userSyllables.value = 0;
   }

@@ -13,20 +13,45 @@
                     <v-icon :icon="item.icon" color="cyan-accent-2" class="mr-4"></v-icon>
                 </template>
                 <v-list-item-title class="text-h6 text-white font-weight-medium">
-                    {{ item.title }}
+                    {{ $t(item.titleKey) }}
                 </v-list-item-title>
             </v-list-item>
         </v-list>
+
+        <template v-slot:append>
+             <div class="pa-4 w-100 d-flex justify-center">
+                 <v-btn-toggle
+                    v-model="currentLang"
+                    mandatory
+                    rounded="xl"
+                    color="cyan-accent-3"
+                    class="bg-grey-darken-4 elevation-5"
+                    @update:modelValue="changeLanguage"
+                 >
+                     <v-btn value="es" class="font-weight-bold">ES</v-btn>
+                     <v-btn value="ca" class="font-weight-bold">CA</v-btn>
+                 </v-btn-toggle>
+             </div>
+        </template>
     </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const store = useAstroStore()
+const { locale } = useI18n()
+
+const currentLang = ref(locale.value)
+
+const changeLanguage = (newLang) => {
+    locale.value = newLang
+    localStorage.setItem('astro_language', newLang)
+}
 
 const handleLogout = () => {
     store.logout()
@@ -34,12 +59,12 @@ const handleLogout = () => {
 }
 
 const menuItems = ref([
-    { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
-    { title: 'Multijugador', icon: 'mdi-sword-cross', to: '/multiplayer' },
-    { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
-    { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
-    { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
-    { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
+    { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
+    { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
+    { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
+    { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
+    { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
+    { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
 ])
 </script>
 

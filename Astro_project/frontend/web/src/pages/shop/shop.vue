@@ -5,10 +5,10 @@
 
                 <v-col cols="12" class="text-center mt-2 mb-6">
                     <h1 class="text-h3 font-weight-bold text-uppercase text-cyan-accent-3 glow-text">
-                        Bazar Espacial
+                        {{ $t('store.title') }}
                     </h1>
                     <p class="text-subtitle-1 text-grey-lighten-1 mt-2">
-                        Mejora tu equipamiento para la misión
+                        {{ $t('store.subtitle') }}
                     </p>
                 </v-col>
 
@@ -33,11 +33,11 @@
                             <v-col cols="12" md="6" class="d-flex flex-column justify-center pl-md-10 mt-6 mt-md-0">
                                 <div class="d-flex align-center mb-4 justify-center justify-md-start">
                                     <v-icon color="purple-accent-3" class="mr-3" size="x-large">mdi-black-hole</v-icon>
-                                    <h2 class="text-h3 font-weight-black text-white text-uppercase" style="letter-spacing: 2px;">Vòrtex Quàntic</h2>
+                                    <h2 class="text-h3 font-weight-black text-white text-uppercase" style="letter-spacing: 2px;">{{ $t('store.wheelTitle') }}</h2>
                                 </div>
                                 
                                 <p class="text-body-1 text-grey-lighten-1 mb-8 text-center text-md-left">
-                                    Gira el vòrtex per obtenir subministraments únics, monedes o aspectes èpics. La sort afavoreix als audaços.
+                                    {{ $t('store.wheelDesc') }}
                                 </p>
 
                                 <div class="d-flex flex-column gap-4 w-100 px-4 px-md-0">
@@ -53,7 +53,7 @@
                                             @click="triggerSingleSpin"
                                         >
                                             <v-icon start>mdi-ticket</v-icon>
-                                            EXTRAURE (100 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                            {{ $t('store.extract') }} <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
                                         </v-btn>
 
                                         <v-btn 
@@ -66,7 +66,7 @@
                                             @click="triggerMultiSpin"
                                         >
                                             <v-icon start>mdi-ticket-percent</v-icon>
-                                            COMPRAR 10 TIRADES (900 <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
+                                            {{ $t('store.buy10') }} <v-icon size="small" class="ml-1">mdi-currency-usd</v-icon>)
                                         </v-btn>
                                     </template>
 
@@ -82,14 +82,14 @@
                                             @click="triggerSingleSpin"
                                         >
                                             <v-icon start size="large">mdi-ticket-confirmation</v-icon>
-                                            {{ userTickets }} TIRADES GRATIS
+                                            {{ $t('store.freeSpins', { spins: userTickets }) }}
                                         </v-btn>
                                     </template>
                                 </div>
 
                                 <div class="mt-8 px-8 py-4 rounded-xl balance-pill d-flex align-center justify-space-between w-100 mx-auto mx-md-0">
                                     <div class="flex-grow-1">
-                                        <span class="text-caption text-grey-lighten-1 block text-uppercase">Saldo disponible</span>
+                                        <span class="text-caption text-grey-lighten-1 block text-uppercase">{{ $t('store.balance') }}</span>
                                         <div class="d-flex align-center">
                                             <span class="text-h3 font-weight-black text-amber-accent-3 mr-2" style="text-shadow: 0 0 15px rgba(255, 193, 7, 0.4);">{{ userCoins }}</span>
                                             <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
@@ -104,7 +104,7 @@
                 <v-col cols="12" max-width="1200">
                     <div class="d-flex align-center mb-6 px-2">
                         <v-icon color="cyan-accent-3" class="mr-3">mdi-cube-outline</v-icon>
-                        <h3 class="text-h5 font-weight-bold text-white">Suministros Básicos</h3>
+                        <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
                         <v-divider class="ml-4 border-cyan opacity-50"></v-divider>
                     </div>
 
@@ -129,7 +129,7 @@
                                             {{ item.limitacio }}
                                         </div>
                                         <div class="text-caption text-grey mt-1">
-                                            Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong> / 99
+                                            {{ $t('store.units', { qty: getItemQuantity(item.id) }) }} / 99
                                         </div>
                                     </div>
                                 </div>
@@ -142,7 +142,7 @@
                                         :disabled="userCoins < item.price || hasReachedMax(item.id)"
                                         @click="buyProduct(item)">
                                         <template v-if="hasReachedMax(item.id)">
-                                            MAX 99
+                                            {{ $t('store.max') }}
                                         </template>
                                         <template v-else>
                                             {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
@@ -157,7 +157,7 @@
                 <v-col cols="12" max-width="1200" class="pb-16">
                     <div class="d-flex align-center mb-8 px-2">
                         <v-icon color="amber-accent-3" class="mr-3">mdi-crown-outline</v-icon>
-                        <h3 class="text-h5 font-weight-bold text-white">Colección de Élite</h3>
+                        <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.eliteTitle') }}</h3>
                         <v-divider class="ml-4 border-amber opacity-50"></v-divider>
                     </div>
 
@@ -175,7 +175,7 @@
                                     {{ item.name }}
                                 </v-card-title>
                                 <div class="text-center text-caption text-grey mb-2">
-                                    Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong>
+                                    {{ $t('store.units', { qty: getItemQuantity(item.id) }) }}
                                 </div>
                                 <v-card-actions class="justify-center px-4 pb-2">
                                     <v-btn block height="40"
@@ -185,7 +185,7 @@
                                         :disabled="(userCoins < item.price && !isOwned(item.id)) || isOwned(item.id)"
                                         @click="buyProduct(item)">
                                         <template v-if="isOwned(item.id)">
-                                            ADQUIRIDO <v-icon end>mdi-check</v-icon>
+                                            {{ $t('store.owned') }} <v-icon end>mdi-check</v-icon>
                                         </template>
                                         <template v-else>
                                             {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
@@ -206,11 +206,11 @@
                             {{ lastPrize?.icon }}
                         </v-icon>
                     </div>
-                    <h3 class="text-h5 font-weight-bold mb-2 text-white">¡RECOMPENSA!</h3>
+                    <h3 class="text-h5 font-weight-bold mb-2 text-white">{{ $t('store.reward') }}</h3>
                     <p class="text-body-1 text-cyan-accent-3 mb-6">{{ lastPrize?.label }}</p>
                     <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" class="font-weight-bold text-black"
                         @click="showWinDialog = false">
-                        Aceptar
+                        {{ $t('store.accept') }}
                     </v-btn>
                 </v-card>
             </v-dialog>
@@ -222,7 +222,9 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const astroStore = useAstroStore();
 const userCoins = computed(() => astroStore.coins);
 const userGames = computed(() => astroStore.partides);
@@ -243,7 +245,7 @@ const updateStats = (data) => {
 };
 
 const triggerMultiSpin = async () => {
-    if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
+    if (!confirm(t('shopActions.confirmMulti'))) return;
     try {
         const response = await fetch('http://localhost:3000/api/shop/buy-tickets', {
             method: 'POST',
@@ -293,16 +295,16 @@ const hasReachedMax = (itemId) => {
 const buyProduct = async (item) => {
     const quantity = getItemQuantity(item.id);
     if (item.cat !== 'items' && quantity > 0) {
-        alert(`¡Ya tienes ${item.name} en tu inventario!`);
+        alert(t('shopActions.alreadyOwned', { item: item.name }));
         return;
     }
 
     if (item.cat === 'items' && quantity >= 99) {
-        alert(`Has alcanzado el máximo de 99 unidades para ${item.name}.`);
+        alert(t('shopActions.maxReached', { item: item.name }));
         return;
     }
 
-    if (!confirm(`¿Quieres comprar ${item.name} por ${item.price} créditos?`)) return;
+    if (!confirm(t('shopActions.confirmBuy', { item: item.name, price: item.price }))) return;
 
     try {
         const result = await astroStore.buyItem(item);
@@ -316,18 +318,18 @@ const buyProduct = async (item) => {
     }
 };
 
-const basicItems = ref([
-    { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
-    { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
-    { id: 3, name: 'Doble de Monedas', cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
-    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
+const basicItems = computed(() => [
+    { id: 1, name: t('shopItems.vidas.name'), cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: t('shopItems.vidas.desc'), bgColor: 'rgba(255, 82, 82, 0.1)' },
+    { id: 2, name: t('shopItems.racha.name'), cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: t('shopItems.racha.desc'), bgColor: 'rgba(24, 255, 255, 0.1)' },
+    { id: 3, name: t('shopItems.dobleMonedas.name'), cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: t('shopItems.dobleMonedas.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 213, 79, 0.1)' },
+    { id: 4, name: t('shopItems.doblePuntos.name'), cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: t('shopItems.doblePuntos.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 152, 0, 0.1)' }
 ]);
 
-const premiumItems = ref([
-    { id: 101, name: 'Pin Comandante', cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
-    { id: 102, name: 'Skin Cyberpunk', cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
-    { id: 103, name: 'Mascota Dron', cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
-    { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' }
+const premiumItems = computed(() => [
+    { id: 101, name: t('shopItems.pin.name'), cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: t('shopItems.pin.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
+    { id: 102, name: t('shopItems.cyberpunk.name'), cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: t('shopItems.cyberpunk.desc'), bgColor: 'rgba(224, 64, 251, 0.15)' },
+    { id: 103, name: t('shopItems.dron.name'), cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: t('shopItems.dron.desc'), bgColor: 'rgba(0, 230, 118, 0.15)' },
+    { id: 104, name: t('shopItems.neon.name'), cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: t('shopItems.neon.desc'), bgColor: 'rgba(255, 64, 129, 0.15)' }
 ]);
 
 onMounted(async () => {
