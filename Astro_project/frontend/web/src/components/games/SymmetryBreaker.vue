@@ -120,23 +120,12 @@ const EDGE_PADDING = 18;
 const BASE_DECOYS = 4;
 const MAX_DECOYS = 10;
 const BASE_ENTITY_SIZE = 110;
-const RANDOM_COLORS_FROM_ROUND = 15;
 const CLASSIC_TARGET_RING = '#00e5ff';
 const CLASSIC_TARGET_FILL = 'rgba(0, 229, 255, 0.14)';
 const CLASSIC_DECOY_RING = 'rgba(255, 255, 255, 0.25)';
 const CLASSIC_DECOY_FILL = 'rgba(255, 255, 255, 0.06)';
 const PROGRESS_DECAY_OUTSIDE = 950;
 const PROGRESS_DECAY_ON_DECOY = 700;
-const CIRCLE_COLORS = [
-  '#00e5ff',
-  '#ffd54f',
-  '#69f0ae',
-  '#82b1ff',
-  '#b388ff',
-  '#ff80ab',
-  '#ffab91',
-  '#c6ff00'
-];
 
 let animationFrame = null;
 let lastFrameTs = 0;
@@ -163,30 +152,10 @@ function randomVelocity(speed) {
   };
 }
 
-function hexToRgba(hex, alpha) {
-  const sanitized = hex.replace('#', '');
-  if (sanitized.length !== 6) return `rgba(0, 229, 255, ${alpha})`;
-  const r = Number.parseInt(sanitized.slice(0, 2), 16);
-  const g = Number.parseInt(sanitized.slice(2, 4), 16);
-  const b = Number.parseInt(sanitized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function randomCircleColor() {
-  return CIRCLE_COLORS[Math.floor(Math.random() * CIRCLE_COLORS.length)];
-}
-
-function resolveEntityColors({ isTarget, useRandomColors }) {
-  if (!useRandomColors) {
-    return isTarget
-      ? { ringColor: CLASSIC_TARGET_RING, fillColor: CLASSIC_TARGET_FILL }
-      : { ringColor: CLASSIC_DECOY_RING, fillColor: CLASSIC_DECOY_FILL };
-  }
-
-  const ringColor = randomCircleColor();
+function resolveEntityColors({ isTarget }) {
   return {
-    ringColor,
-    fillColor: hexToRgba(ringColor, isTarget ? 0.2 : 0.14)
+    ringColor: isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING,
+    fillColor: isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL
   };
 }
 
@@ -268,7 +237,6 @@ function generateTargets() {
   const baseSpeed = 80;
   const currentSpeed = baseSpeed + (round.value - 1) * 18;
   const bounds = getPlayBounds(entitySize);
-  const useRandomColors = round.value >= RANDOM_COLORS_FROM_ROUND;
 
   const newTargets = [];
   for (let i = 0; i < totalEntities; i++) {
@@ -277,7 +245,7 @@ function generateTargets() {
       ? challenge.target
       : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
     const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
-    const { ringColor, fillColor } = resolveEntityColors({ isTarget, useRandomColors });
+    const { ringColor, fillColor } = resolveEntityColors({ isTarget });
 
     newTargets.push({
       text,
@@ -384,8 +352,10 @@ function draw() {
     ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)');
     ctx.stroke();
 
+    const textLength = String(t.text || '').length;
+    const fontScale = textLength <= 1 ? 0.36 : textLength <= 4 ? 0.30 : 0.25;
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${t.size * 0.22}px 'Roboto Mono'`;
+    ctx.font = `bold ${t.size * fontScale}px 'Roboto Mono'`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(t.text, 0, 0);
