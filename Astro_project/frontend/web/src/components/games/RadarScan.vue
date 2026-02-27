@@ -56,13 +56,25 @@
         </v-btn>
       </v-card>
     </v-overlay>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
 
 const emit = defineEmits(['game-over']);
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 // --- VARIABLES D'ESTAT ---
 const showStartOverlay = ref(true);
@@ -135,6 +147,16 @@ const checkLetter = (index) => {
     
     setTimeout(() => {
       correctClicked.value = false;
+      
+      // Enviar sabotaje en multijugador
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+          type: 'SABOTAGE',
+          target: 'RadarScan',
+          data: { reduceTime: 1 }
+        });
+      }
+
       nextRound(); 
       
       setTimeout(() => {
@@ -168,14 +190,56 @@ const startGame = () => {
   }, 1000);
 };
 
-const endGame = () => {
+const endGame = (silent = false) => {
   clearInterval(timerInterval);
-  showGameOverOverlay.value = true; 
+  
+  if (props.isMultiplayer) {
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
+  if (!silent) {
+    showGameOverOverlay.value = true;
+  } else {
+    emit('game-over', score.value);
+  }
 };
 
 const returnToMenu = () => {
   emit('game-over', score.value); 
 };
+
+onMounted(() => {
+  if (props.isMultiplayer) {
+    startGame();
+  }
+});
+
+// Listener para acciones multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    emit('game-over', score.value);
+    return;
+  }
+
+  if (msg.type === 'GAME_ACTION' && msg.from !== astroStore.user) {
+    if (msg.action.type === 'SABOTAGE' && msg.action.data.reduceTime) {
+      timeLeft.value = Math.max(0, timeLeft.value - msg.action.data.reduceTime);
+    }
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
+});
 
 onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval);

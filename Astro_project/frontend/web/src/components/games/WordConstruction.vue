@@ -102,11 +102,24 @@
     </v-card>
 
   </v-container>
+
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import draggable from 'vuedraggable';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
@@ -217,6 +230,7 @@ const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
 const gameSaved = ref(false);
+const isWaitingForOthers = ref(false);
 const isRoundLocked = ref(false);
 const totalTime = 90;
 const timeLeft = ref(totalTime);
@@ -299,8 +313,15 @@ const checkAnswer = () => {
   }
 };
 
-const finishGame = async () => {
+const finishGame = async (silent = false) => {
   if (gameFinished.value) return;
+
+  if (props.isMultiplayer && !silent) {
+    gameFinished.value = true;
+    if (timerInterval) clearInterval(timerInterval);
+    multiplayerStore.submitRoundResult();
+    return;
+  }
 
   gameFinished.value = true;
   if (timerInterval) {
@@ -331,6 +352,27 @@ const startTimer = () => {
 onMounted(() => {
   loadNextWord();
   startTimer();
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    gameFinished.value = true;
+    emitExit(); 
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
 });
 
 onUnmounted(() => {

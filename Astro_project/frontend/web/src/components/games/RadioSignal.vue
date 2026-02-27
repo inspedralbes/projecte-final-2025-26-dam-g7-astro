@@ -107,11 +107,24 @@
         <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
             ✗ DADES INCORRECTES - TORNA A INTENTAR
         </v-snackbar>
+
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+    isMultiplayer: {
+        type: Boolean,
+        default: false
+    }
+});
 
 const emit = defineEmits(['game-over']);
 
@@ -348,8 +361,14 @@ const startTimer = () => {
     }, 1000);
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
     if (gameFinished.value) return;
+    
+    if (props.isMultiplayer && !silent) {
+        multiplayerStore.submitRoundResult();
+        return;
+    }
+
     gameFinished.value = true;
     isDragging = false;
     removeDragListeners();
@@ -377,6 +396,27 @@ onMounted(() => {
     drawWaves();
     startTimer();
 });
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+    if (!msg) return;
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+        // Alguien ganó la ronda, cerrar este juego formalmente
+        gameFinished.value = true; 
+        emit('game-over', score.value + timeLeft.value);
+    }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+            type: 'SCORE_UPDATE',
+            score: newScore
+        });
+    }
+});
+
 onUnmounted(() => {
     isDragging = false;
     removeDragListeners();

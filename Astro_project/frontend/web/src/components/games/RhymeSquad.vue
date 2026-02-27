@@ -94,11 +94,32 @@
       </v-btn>
     </v-card>
 
+    <!-- Overlay de Espera Multijugador -->
+    <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
+      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
+        <v-progress-circular indeterminate color="cyan-accent-3" size="64" class="mb-4"></v-progress-circular>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">Muntant resultats...</h2>
+        <p class="text-body-1 text-grey-lighten-1">Esperant que el company acabi la seva missió.</p>
+      </v-card>
+    </v-overlay>
+
   </v-container>
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const emit = defineEmits(['game-over']);
 
@@ -283,7 +304,17 @@ const forceEndGame = () => {
   endGame();
 };
 
-const endGame = () => {
+const endGame = (silent = false) => {
+  if (props.isMultiplayer && !silent) {
+    isPlaying.value = false;
+    isGameOver.value = false; // No mostrar el overlay de single player
+    clearInterval(gameLoopInterval);
+    clearInterval(timerInterval);
+    activeWords.value = [];
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
   isPlaying.value = false;
   isGameOver.value = true;
   clearInterval(gameLoopInterval);
@@ -294,6 +325,34 @@ const endGame = () => {
 const emitExit = () => { 
     emit('game-over', score.value); 
 };
+
+onMounted(() => {
+  if (props.isMultiplayer) {
+    startGame();
+  }
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    isPlaying.value = false;
+    isGameOver.value = true;
+    emitExit();
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
+});
 
 onUnmounted(() => {
   clearInterval(gameLoopInterval);

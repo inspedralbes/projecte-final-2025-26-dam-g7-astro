@@ -172,7 +172,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const emit = defineEmits(['game-over']);
 
@@ -308,6 +320,7 @@ const feedbackColor = ref('info');
 const isChecking = ref(false);
 const totalTime = 90;
 const timeLeft = ref(totalTime);
+const isWaitingForOthers = ref(false);
 let timerInterval = null;
 
 // Rocket animation state
@@ -336,6 +349,27 @@ onMounted(() => {
     const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
     roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
     startTimer();
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+    if (!msg) return;
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+        // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+        gameFinished.value = true;
+        emitExit();
+    }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+            type: 'SCORE_UPDATE',
+            score: newScore
+        });
+    }
 });
 
 onUnmounted(() => {
@@ -483,10 +517,16 @@ const advanceTurn = async () => {
     }
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
     if (gameFinished.value) return;
-    gameFinished.value = true;
+    
+    if (props.isMultiplayer && !silent) {
+        if (timerInterval) clearInterval(timerInterval);
+        multiplayerStore.submitRoundResult();
+        return;
+    }
 
+    gameFinished.value = true;
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;

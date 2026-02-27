@@ -1,14 +1,92 @@
 <template>
-  <v-container fluid class="lobby-container py-8 px-6">
-    <div class="mb-10 text-center">
-      <div class="d-flex align-center justify-center mb-6">
-        <v-icon icon="mdi-sword-cross" size="x-large" color="orange-accent-2" class="mr-4"></v-icon>
-        <h1 class="text-h4 font-weight-bold text-white tracking-wide">Centro de Mando Multijugador</h1>
-      </div>
-      <p class="text-subtitle-1 text-grey-lighten-1">Invita a tus amigos y preparaos para la misión.</p>
-    </div>
+  <v-container fluid class="lobby-container py-8 px-6 fill-height gradient-bg">
+    <!-- Overlay de Ruleta -->
+    <RouletteOverlay 
+      :show="showRoulette" 
+      :games="availableGames" 
+      :target-game="multiplayerStore.room?.gameConfig?.currentGame"
+      @finished="onRouletteFinished"
+    />
 
-    <v-row>
+    <!-- Overlay de Juego Activo -->
+    <transition name="fade-zoom">
+      <div v-if="activeGameComponent" class="game-active-overlay">
+        <!-- Marcador HUD -->
+        <div class="game-hud pa-4 d-flex justify-space-between align-center">
+          <div class="hud-player d-flex align-center">
+            <v-avatar size="40" class="mr-2 border-cyan">
+              <v-img :src="getPlayerAvatar(astroStore.user)"></v-img>
+            </v-avatar>
+            <div>
+              <div class="text-caption text-cyan-accent-2 line-height-1">TÚ ({{ multiplayerStore.roundScores[astroStore.user] || 0 }})</div>
+              <div class="text-h6 font-weight-black text-white">Partida: {{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }}</div>
+            </div>
+          </div>
+
+          <div class="hud-round text-caption font-weight-bold text-amber-accent-2" v-if="multiplayerStore.room?.status !== 'GAME_OVER'">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound || 0 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
+
+          <div class="hud-vs text-h5 font-weight-black text-cyan-accent-2 italic">VS</div>
+
+          <div class="hud-player d-flex align-center flex-row-reverse text-right">
+            <v-avatar size="40" class="ml-2 border-cyan">
+              <v-img :src="getPlayerAvatar(opponentName)"></v-img>
+            </v-avatar>
+            <div>
+              <div class="text-caption text-cyan-accent-2 line-height-1">{{ opponentName }} ({{ multiplayerStore.roundScores[opponentName] || 0 }})</div>
+              <div class="text-h6 font-weight-black text-white">Partida: {{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-content">
+          <component 
+            :is="activeGameComponent" 
+            :is-multiplayer="true"
+            @game-over="onGameFinished" 
+          />
+        </div>
+
+        <!-- Overlay de Resultados de Ronda -->
+        <transition name="scale">
+          <div v-if="showRoundResults" class="round-result-overlay d-flex flex-column align-center justify-center">
+            <v-avatar size="120" class="mb-4 border-cyan glow-cyan">
+              <v-img v-if="roundWinner" :src="getPlayerAvatar(roundWinner)"></v-img>
+              <v-icon v-else-if="isRoundTie" icon="mdi-handshake" size="80" color="amber-accent-2"></v-icon>
+              <v-icon v-else icon="mdi-timer-off" size="80" color="grey-lighten-1"></v-icon>
+            </v-avatar>
+            <h2 class="text-h2 font-weight-black text-cyan-accent-2 mb-2 italic">
+              {{ roundWinner ? '¡RONDA PARA!' : (isRoundTie ? '¡EMPATE!' : '¡TIEMPO AGOTADO!') }}
+            </h2>
+            <h1 class="text-h1 font-weight-black text-white glow-text">
+              {{ roundWinner ? (roundWinner === astroStore.user ? 'TU' : roundWinner) : (isRoundTie ? 'EMPATE' : '-') }}
+            </h1>
+          </div>
+        </transition>
+
+        <!-- Overlay de Victoria Final -->
+        <transition name="scale">
+          <div v-if="matchWinner" class="match-result-overlay d-flex flex-column align-center justify-center">
+            <v-icon :icon="matchWinner === astroStore.user ? 'mdi-trophy' : 'mdi-skull'" size="150" :color="matchWinner === astroStore.user ? 'amber' : 'red'"></v-icon>
+            <h1 class="text-h2 font-weight-black text-white mt-6 glow-text">{{ matchWinner === astroStore.user ? '¡VICTORIA ABSOLUTA!' : 'DERROTA EN EL ESPACIO' }}</h1>
+            <p class="text-h4 text-cyan-accent-2 mt-4">{{ matchWinner === astroStore.user ? 'Has conquistado la galaxia' : 'Tu oponente ha sido superior esta vez' }}</p>
+            <v-btn color="cyan-accent-2" size="x-large" rounded="xl" class="mt-10 font-weight-black text-black" @click="returnToLobby">
+              VOLVER AL CUARTEL
+            </v-btn>
+          </div>
+        </transition>
+      </div>
+    </transition>
+
+    <div v-if="!activeGameComponent" class="w-100">
+      <div class="mb-10 text-center">
+        <div class="d-flex align-center justify-center mb-6">
+          <v-icon icon="mdi-sword-cross" size="x-large" color="orange-accent-2" class="mr-4"></v-icon>
+          <h1 class="text-h4 font-weight-bold text-white tracking-wide">Centro de Mando Multijugador</h1>
+        </div>
+        <p class="text-subtitle-1 text-grey-lighten-1">Invita a tus amigos y preparaos para la misión.</p>
+      </div>
+
+      <v-row>
       <!-- Pantalla Principal de Misión -->
       <v-col cols="12" md="8">
         <!-- VISTA: EN UNA SALA ACTIVA -->
@@ -80,6 +158,7 @@
                 class="start-mission-btn rounded-pill px-12 font-weight-black" 
                 elevation="12"
                 :disabled="(multiplayerStore.room?.players?.length || 0) < 2"
+                @click="multiplayerStore.startMatch()"
               >
                 ¡DESPEGAR AHORA!
               </v-btn>
@@ -131,9 +210,29 @@
                         hide-details
                         density="comfortable"
                         prepend-inner-icon="mdi-account-group"
+                        :menu-props="{ maxHeight: '300' }"
                      >
                         <template v-slot:selection="{ item }">
                            <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
+                        </template>
+                     </v-select>
+                  </div>
+                  
+                  <div class="mb-6">
+                     <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NOMBRE DE RONDES</div>
+                     <v-select
+                        v-model="pointsToWin"
+                        :items="[1, 2, 3, 4, 5]"
+                        variant="solo-filled"
+                        bg-color="rgba(255,255,255,0.05)"
+                        class="points-limit-select"
+                        rounded="pill"
+                        hide-details
+                        density="comfortable"
+                        prepend-inner-icon="mdi-trophy-outline"
+                     >
+                        <template v-slot:selection="{ item }">
+                           <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
                         </template>
                      </v-select>
                   </div>
@@ -314,6 +413,7 @@
         </v-card>
       </v-col>
     </v-row>
+  </div>
 
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
       {{ snackbar.text }}
@@ -322,10 +422,32 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { storeToRefs } from 'pinia';
+
+// Importar juegos
+import RadarScan from '@/components/games/RadarScan.vue';
+import RadioSignal from '@/components/games/RadioSignal.vue';
+import RhymeSquad from '@/components/games/RhymeSquad.vue';
+import SpelledRosco from '@/components/games/SpelledRosco.vue';
+import SyllableQuest from '@/components/games/SyllableQuest.vue';
+import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
+import WordConstruction from '@/components/games/WordConstruction.vue';
+import RouletteOverlay from '@/components/games/RouletteOverlay.vue';
+
+const gameComponents = {
+  RadarScan,
+  RadioSignal,
+  RhymeSquad,
+  SpelledRosco,
+  SyllableQuest,
+  SymmetryBreaker,
+  WordConstruction
+};
+
+const availableGames = Object.keys(gameComponents);
 
 const astroStore = useAstroStore();
 const multiplayerStore = useMultiplayerStore();
@@ -334,7 +456,54 @@ const { friends } = storeToRefs(astroStore);
 const snackbar = ref({ show: false, text: '', color: 'success' });
 const isPublic = ref(true);
 const maxPlayers = ref(4);
+const pointsToWin = ref(3);
 const roomCode = ref('');
+const showRoulette = ref(false);
+const activeGameComponent = shallowRef(null);
+const roundWinner = ref(null);
+const isRoundTie = ref(false);
+const showRoundResults = ref(false);
+const matchWinner = ref(null);
+
+watch(() => multiplayerStore.room?.status, (newStatus) => {
+  if (newStatus === 'ROULETTE') {
+    showRoulette.value = true;
+    roundWinner.value = null;
+    showRoundResults.value = false;
+    activeGameComponent.value = null; // Importantísimo para cambiar de juego
+  } else if (newStatus === 'PLAYING') {
+    showRoulette.value = false;
+    roundWinner.value = null;
+    showRoundResults.value = false;
+    const gameName = multiplayerStore.room?.gameConfig?.currentGame;
+    if (gameName && gameComponents[gameName]) {
+      activeGameComponent.value = gameComponents[gameName];
+    }
+  } else if (newStatus === 'ROUND_RESULTS') {
+    showRoundResults.value = true;
+  } else if (newStatus === 'GAME_OVER') {
+    showRoundResults.value = false;
+  } else if (newStatus === 'LOBBY') {
+    activeGameComponent.value = null;
+    showRoulette.value = false;
+    roundWinner.value = null;
+    showRoundResults.value = false;
+    matchWinner.value = null;
+  }
+});
+
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+  
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    roundWinner.value = msg.winner;
+    isRoundTie.value = msg.tie || false;
+  }
+  
+  if (msg.type === 'MATCH_FINISHED') {
+    matchWinner.value = msg.winner;
+  }
+});
 
 watch(() => multiplayerStore.error, (newError) => {
   if (newError) {
@@ -364,6 +533,11 @@ const otherExplorersList = computed(() => {
   );
 });
 
+const opponentName = computed(() => {
+  if (!multiplayerStore.room) return 'Oponente';
+  return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente';
+});
+
 // Helpers para Avatares
 const getAvatarUrl = (avatar, user) => {
   // Si el avatar es un archivo local válido (los JPG de astronautas)
@@ -391,6 +565,10 @@ const showMessage = (text, color = 'success') => {
 
 const createRoom = () => {
   multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value);
+  // Enviar configuración inicial de puntos
+  setTimeout(() => {
+    multiplayerStore.updateGameConfig({ pointsToWin: pointsToWin.value });
+  }, 500);
 };
 
 const joinByCode = () => {
@@ -408,6 +586,22 @@ const acceptInvitation = (inv, index) => {
 
 const rejectInvitation = (index) => {
   multiplayerStore.invitations.splice(index, 1);
+};
+
+const onRouletteFinished = () => {
+  if (isHost.value) {
+    multiplayerStore.setRoomStatus('PLAYING');
+  }
+};
+
+const onGameFinished = (score) => {
+  // En multijugador enviamos al server que hemos terminado
+  // Solo el primero que envíe ganará el punto
+  multiplayerStore.submitRoundResult();
+};
+
+const returnToLobby = () => {
+  multiplayerStore.setRoomStatus('LOBBY');
 };
 
 onMounted(() => {
@@ -641,5 +835,79 @@ onMounted(() => {
 }
 .player-limit-select :deep(.v-select__selection-text) {
   color: #fff !important;
+}
+
+.game-active-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0b1421;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-hud {
+  background: rgba(10, 25, 41, 0.9);
+  border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+  height: 80px;
+  z-index: 600;
+}
+
+.border-cyan {
+  border: 2px solid #00e5ff;
+}
+
+.line-height-1 {
+  line-height: 1;
+}
+
+.fade-zoom-enter-active, .fade-zoom-leave-active {
+  transition: all 0.5s ease;
+}
+.fade-zoom-enter-from, .fade-zoom-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.round-result-overlay, .match-result-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(11, 20, 33, 0.9);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.scale-enter-active, .scale-leave-active {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.scale-enter-from {
+  opacity: 0;
+  transform: scale(0.5);
+}
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(1.5);
 }
 </style>

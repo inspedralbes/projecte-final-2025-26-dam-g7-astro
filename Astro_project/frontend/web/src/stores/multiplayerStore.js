@@ -13,7 +13,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         room: null,
         availableRooms: [],
         invitations: [],
-        error: null
+        error: null,
+        lastMessage: null,
+        roundScores: {} // Puntuaciones de la ronda actual en vivo
     }),
 
     actions: {
@@ -100,12 +102,85 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 case 'ROOM_UPDATE':
                     this.room = data.room;
                     break;
+                case 'MATCH_STARTING':
+                    this.room = data.room;
+                    console.log('🏁 ¡LA PARTIDA COMIENZA!', data.room.gameConfig.currentGame);
+                    break;
+                case 'ROUND_ENDED_BY_WINNER':
+                    console.log('🏁 Ronda terminada instantáneamente por:', data.winner);
+                    if (this.room) {
+                        this.room.gameConfig.scores = data.scores;
+                    }
+                    this.lastMessage = data; // Para que los componentes reaccionen
+                    break;
+                case 'SCORE_UPDATE_LIVE':
+                    this.roundScores[data.user] = data.score;
+                    break;
+                case 'GAME_ACTION':
+                    this.lastMessage = data; // Para que los componentes reaccionen (sabotaje)
+                    break;
+                case 'ROUND_FINISHED':
+                    this.roundScores = {}; // Limpiar para la siguiente
+                    this.room = data.room;
+                    console.log('🏆 Ronda terminada. Ganador:', data.winner);
+                    break;
+                case 'MATCH_FINISHED':
+                    this.room = data.room;
+                    console.log('👑 ¡PARTIDA TERMINADA! Ganador absoluto:', data.winner);
+                    break;
                 case 'ERROR':
                     this.error = data.message;
                     break;
                 default:
                     break;
             }
+        },
+
+        updateGameConfig(config) {
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'UPDATE_GAME_CONFIG',
+                roomId: this.room.id,
+                config
+            }));
+        },
+
+        startMatch() {
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'START_MATCH',
+                roomId: this.room.id
+            }));
+        },
+
+        setRoomStatus(status) {
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'SET_ROOM_STATUS',
+                roomId: this.room.id,
+                status
+            }));
+        },
+
+        submitRoundResult() {
+            const sessionStore = useSessionStore();
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'SUBMIT_ROUND_RESULT',
+                roomId: this.room.id,
+                user: sessionStore.user
+            }));
+        },
+
+        sendGameAction(action) {
+            const sessionStore = useSessionStore();
+            if (!this.isConnected || !this.room || !this.socket) return;
+            this.socket.send(JSON.stringify({
+                type: 'GAME_ACTION',
+                roomId: this.room.id,
+                user: sessionStore.user,
+                action
+            }));
         },
 
         createRoom(userAccount, isPublic = true, maxPlayers = 4) {

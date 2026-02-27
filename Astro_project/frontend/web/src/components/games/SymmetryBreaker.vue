@@ -60,11 +60,24 @@
         </v-btn>
       </v-card>
     </v-overlay>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const emit = defineEmits(['game-over']);
 
@@ -304,7 +317,15 @@ function startGame() {
   animationFrame = requestAnimationFrame(gameLoop);
 }
 
-function endGame() {
+function endGame(silent = false) {
+  if (props.isMultiplayer && !silent) {
+    isPlaying.value = false;
+    isFiring.value = false;
+    cancelAnimationFrame(animationFrame);
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
   isPlaying.value = false;
   isFiring.value = false;
   showGameOverOverlay.value = true;
@@ -319,6 +340,32 @@ onMounted(() => {
   ctx = gameCanvas.value.getContext('2d');
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
+  if (props.isMultiplayer) {
+    startGame();
+  }
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    isPlaying.value = false;
+    isFiring.value = false;
+    cancelAnimationFrame(animationFrame);
+    returnToMenu();
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
 });
 
 onBeforeUnmount(() => {

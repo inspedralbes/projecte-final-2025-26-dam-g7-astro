@@ -53,6 +53,34 @@ function registerWsHandlers(wss) {
                     case 'LEAVE_ROOM':
                         await roomManager.leaveRoom(msg.roomId, msg.user);
                         break;
+
+                    case 'UPDATE_GAME_CONFIG':
+                        // { type: 'UPDATE_GAME_CONFIG', roomId, config: { pointsToWin: 3 } }
+                        await roomManager.updateGameConfig(msg.roomId, msg.config);
+                        break;
+
+                    case 'START_MATCH':
+                        // { type: 'START_MATCH', roomId }
+                        const startResult = await roomManager.startMatch(msg.roomId);
+                        if (startResult.error) {
+                            ws.send(JSON.stringify({ type: 'ERROR', message: startResult.error }));
+                        }
+                        break;
+
+                    case 'SET_ROOM_STATUS':
+                        // Cambio manual de estado (ej: de ROULETTE a PLAYING)
+                        await roomManager.setRoomStatus(msg.roomId, msg.status);
+                        break;
+
+                    case 'SUBMIT_ROUND_RESULT':
+                        // { type: 'SUBMIT_ROUND_RESULT', roomId, user }
+                        await roomManager.handlePlayerFinished(msg.roomId, msg.user);
+                        break;
+
+                    case 'GAME_ACTION':
+                        // { type: 'GAME_ACTION', roomId, user, action }
+                        roomManager.handleGameAction(msg.roomId, msg.user, msg.action);
+                        break;
                 }
             } catch (e) {
                 console.error('❌ Error procesando mensaje WS:', e);

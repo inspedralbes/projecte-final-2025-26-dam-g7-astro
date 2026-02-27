@@ -19,6 +19,7 @@ declare module 'vue' {
     RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']
     RhymeSquad: typeof import('./src/components/games/RhymeSquad.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
+    RouletteOverlay: typeof import('./src/components/games/RouletteOverlay.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']

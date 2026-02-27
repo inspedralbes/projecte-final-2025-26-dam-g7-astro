@@ -55,13 +55,25 @@
         </v-btn>
       </template>
     </v-card>
+
   </v-container>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
 
 const emit = defineEmits(['game-over']);
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const words = [
   { text: 'OR-DI-NA-DOR', syllables: 4 },
@@ -86,8 +98,16 @@ const addSyllable = () => {
   if (userSyllables.value < 8) userSyllables.value++;
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
   if (gameFinished.value) return;
+  
+  if (props.isMultiplayer && !silent) {
+    gameFinished.value = true;
+    if (timerInterval) clearInterval(timerInterval);
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
   gameFinished.value = true;
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -105,6 +125,7 @@ const checkSyllables = () => {
 
     if (currentWordIndex.value >= words.length - 1) {
       finishGame();
+      if (props.isMultiplayer) emitExit();
       return;
     }
 
@@ -138,6 +159,32 @@ const emitExit = () => {
 
 onMounted(() => {
   startTimer();
+  if (props.isMultiplayer) {
+    // En multijugador no necesitamos botón de "Obtener Recompensa"
+    // Pero este juego ya empieza el timer al montar, 
+    // así que solo lo dejamos así.
+  }
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    gameFinished.value = true;
+    emitExit(); 
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
 });
 
 onUnmounted(() => {

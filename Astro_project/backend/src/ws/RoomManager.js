@@ -2,9 +2,20 @@ class RoomManager {
     constructor() {
         // user -> ws
         this.sessions = new Map();
-        // roomId -> { host, players: Set<username>, gameType, status }
+        // roomId -> { host, players: Set<username>, maxPlayers, status, gameConfig: { pointsToWin, currentGame, scores: {} } }
         this.rooms = new Map();
         this.getCollections = null;
+        this.availableGames = [
+            'RadarScan',
+            'RadioSignal',
+            'RhymeSquad',
+            'SpelledRosco',
+            'SymmetryBreaker',
+            'WordConstruction'
+        ];
+        this.roundTimers = new Map();
+        this.roundGameScores = new Map();
+        this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadores que han terminado
     }
 
     init(getCollections, wss) {
@@ -98,7 +109,14 @@ class RoomManager {
             players: new Set([host]),
             maxPlayers,
             status: 'LOBBY',
-            isPublic
+            isPublic,
+            gameConfig: {
+                pointsToWin: 3, // Por defecto (ahora = totalRounds)
+                totalRounds: 3,
+                currentRound: 0,
+                scores: { [host]: 0 },
+                currentGame: null
+            }
         });
 
         if (this.getCollections) {
@@ -125,6 +143,9 @@ class RoomManager {
         }
 
         room.players.add(user);
+        if (room.gameConfig && room.gameConfig.scores) {
+            room.gameConfig.scores[user] = 0;
+        }
 
         if (this.getCollections) {
             try {
@@ -214,8 +235,204 @@ class RoomManager {
             host: room.host,
             players: Array.from(room.players),
             maxPlayers: room.maxPlayers,
-            status: room.status
+            status: room.status,
+            gameConfig: room.gameConfig
         };
+    }
+
+    async updateGameConfig(roomId, config) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+        room.gameConfig = { ...room.gameConfig, ...config };
+
+        this.broadcastToRoom(roomId, {
+            type: 'ROOM_UPDATE',
+            room: this.getRoom(roomId)
+        });
+    }
+
+    async startMatch(roomId) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.players.size < 2) return { error: 'Se necesitan al menos 2 jugadores' };
+
+        room.status = 'ROULETTE';
+        // Reset scores
+        room.gameConfig.scores = {};
+        room.gameConfig.currentRound = 0;
+        room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
+        room.players.forEach(p => room.gameConfig.scores[p] = 0);
+
+        // Seleccionar primer juego
+        const randomGame = this.availableGames[Math.floor(Math.random() * this.availableGames.length)];
+        room.gameConfig.currentGame = randomGame;
+
+        this.broadcastToRoom(roomId, {
+            type: 'MATCH_STARTING',
+            room: this.getRoom(roomId)
+        });
+
+        return { success: true };
+    }
+
+    async setRoomStatus(roomId, status) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        room.status = status;
+
+        if (status === 'PLAYING') {
+            this.roundGameScores.set(roomId, {}); // Resetear puntos de la ronda
+            this.roundFinishedPlayers.set(roomId, new Set()); // Resetear finalizados
+            this.startRoundTimer(roomId);
+        }
+
+        this.broadcastToRoom(roomId, {
+            type: 'ROOM_UPDATE',
+            room: this.getRoom(roomId)
+        });
+    }
+
+    startRoundTimer(roomId) {
+        if (this.roundTimers.has(roomId)) {
+            clearTimeout(this.roundTimers.get(roomId));
+        }
+
+        const timerId = setTimeout(() => {
+            console.log(`⏰ [Room ${roomId}] Tiempo agotado por servidor. Forzando fin de ronda.`);
+            this.finalizeRound(roomId);
+        }, 65000);
+
+        this.roundTimers.set(roomId, timerId);
+    }
+
+    async handlePlayerFinished(roomId, user) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.status !== 'PLAYING') return;
+
+        // En el nuevo modo "primero que acaba", finalizamos al recibir el primer aviso
+        console.log(`👤 [Room ${roomId}] Jugador ${user} ha terminado el juego primero. Finalizando ronda.`);
+
+        this.finalizeRound(roomId, user);
+    }
+
+    async finalizeRound(roomId, finisherUser = null) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.status !== 'PLAYING') return;
+
+        // Limpiar temporizador
+        if (this.roundTimers.has(roomId)) {
+            clearTimeout(this.roundTimers.get(roomId));
+            this.roundTimers.delete(roomId);
+        }
+
+        // Decidir ganador por puntos acumulados en la ronda
+        const roundScores = this.roundGameScores.get(roomId) || {};
+        let winner = null;
+        let maxScore = -1;
+        let tie = false;
+
+        for (const [player, score] of Object.entries(roundScores)) {
+            if (score > maxScore) {
+                maxScore = score;
+                winner = player;
+                tie = false;
+            } else if (score === maxScore && maxScore > 0) {
+                // Empate real solo si ambos tienen > 0 puntos iguales
+                tie = true;
+                winner = null;
+            }
+        }
+
+        // Si nadie puntuó (maxScore sigue en -1 o 0), el que acabó primero se lleva el punto
+        if (maxScore <= 0 && !tie) {
+            winner = finisherUser || null;
+        }
+
+        if (winner) {
+            room.gameConfig.scores[winner] = (room.gameConfig.scores[winner] || 0) + 1;
+        }
+
+        console.log(`🏆 [Room ${roomId}] Fin de ronda. Ganador por puntos: ${winner || 'EMPATE'}`);
+
+        // Notificar a todos los resultados finales
+        this.broadcastToRoom(roomId, {
+            type: 'ROUND_ENDED_BY_WINNER',
+            winner,
+            tie,
+            scores: room.gameConfig.scores
+        });
+
+        // Limpiar para la siguiente ronda
+        this.roundFinishedPlayers.delete(roomId);
+
+        // Incrementar el contador de rondas
+        room.gameConfig.currentRound = (room.gameConfig.currentRound || 0) + 1;
+        const totalRounds = room.gameConfig.totalRounds || room.gameConfig.pointsToWin || 3;
+
+        console.log(`📊 [Room ${roomId}] Ronda ${room.gameConfig.currentRound}/${totalRounds}`);
+
+        // Comprobar si hemos jugado todas las rondas
+        if (room.gameConfig.currentRound >= totalRounds) {
+            // Determinar ganador final por mayor puntuación global
+            let matchWinner = null;
+            let maxMatchScore = -1;
+            for (const [player, playerScore] of Object.entries(room.gameConfig.scores)) {
+                if (playerScore > maxMatchScore) {
+                    maxMatchScore = playerScore;
+                    matchWinner = player;
+                } else if (playerScore === maxMatchScore) {
+                    matchWinner = null; // Empate total
+                }
+            }
+
+            room.status = 'GAME_OVER';
+            setTimeout(() => {
+                this.broadcastToRoom(roomId, {
+                    type: 'MATCH_FINISHED',
+                    winner: matchWinner,
+                    room: this.getRoom(roomId)
+                });
+            }, 3000);
+        } else {
+            // Todavía quedan rondas, pasar a la siguiente
+            room.status = 'ROUND_RESULTS';
+            const nextGame = this.availableGames[Math.floor(Math.random() * this.availableGames.length)];
+            room.gameConfig.currentGame = nextGame;
+
+            setTimeout(() => {
+                room.status = 'ROULETTE';
+                this.broadcastToRoom(roomId, {
+                    type: 'ROUND_FINISHED',
+                    winner,
+                    room: this.getRoom(roomId)
+                });
+            }, 3000);
+        }
+    }
+
+    handleGameAction(roomId, user, action) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        // Si es una actualización de puntuación, guardarla localmente
+        if (action.type === 'SCORE_UPDATE') {
+            const scores = this.roundGameScores.get(roomId) || {};
+            scores[user] = action.score;
+            this.roundGameScores.set(roomId, scores);
+
+            // Broadcast inmediato para que el HUD vea los puntos en vivo
+            this.broadcastToRoom(roomId, {
+                type: 'SCORE_UPDATE_LIVE',
+                user,
+                score: action.score
+            });
+        }
+
+        this.broadcastToRoom(roomId, {
+            type: 'GAME_ACTION',
+            from: user,
+            action
+        });
     }
 }
 
