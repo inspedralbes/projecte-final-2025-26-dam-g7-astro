@@ -120,6 +120,7 @@ const EDGE_PADDING = 18;
 const BASE_DECOYS = 4;
 const MAX_DECOYS = 10;
 const BASE_ENTITY_SIZE = 110;
+const UNIFORM_COLORS_FROM_ROUND = 15;
 const CLASSIC_TARGET_RING = '#00e5ff';
 const CLASSIC_TARGET_FILL = 'rgba(0, 229, 255, 0.14)';
 const CLASSIC_DECOY_RING = 'rgba(255, 255, 255, 0.25)';
@@ -152,7 +153,14 @@ function randomVelocity(speed) {
   };
 }
 
-function resolveEntityColors({ isTarget }) {
+function resolveEntityColors({ isTarget, isUniformMode }) {
+  if (isUniformMode) {
+    return {
+      ringColor: CLASSIC_DECOY_RING,
+      fillColor: CLASSIC_DECOY_FILL
+    };
+  }
+
   return {
     ringColor: isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING,
     fillColor: isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL
@@ -237,6 +245,7 @@ function generateTargets() {
   const baseSpeed = 80;
   const currentSpeed = baseSpeed + (round.value - 1) * 18;
   const bounds = getPlayBounds(entitySize);
+  const isUniformMode = round.value >= UNIFORM_COLORS_FROM_ROUND;
 
   const newTargets = [];
   for (let i = 0; i < totalEntities; i++) {
@@ -245,7 +254,7 @@ function generateTargets() {
       ? challenge.target
       : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
     const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
-    const { ringColor, fillColor } = resolveEntityColors({ isTarget });
+    const { ringColor, fillColor } = resolveEntityColors({ isTarget, isUniformMode });
 
     newTargets.push({
       text,
