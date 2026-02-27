@@ -9,12 +9,6 @@
       <v-tabs v-model="tab" align-tabs="center" color="cyan-accent-2" bg-color="transparent" class="mb-6">
         <v-tab value="friends">Mis Amigos</v-tab>
         <v-tab value="search">Buscar Amigos</v-tab>
-        <v-tab value="requests">
-          Solicitudes
-          <v-chip v-if="friendRequests && friendRequests.length > 0" color="error" size="small" class="ml-2 font-weight-bold">
-            {{ friendRequests.length }}
-          </v-chip>
-        </v-tab>
       </v-tabs>
     </div>
 
@@ -33,21 +27,20 @@
           <v-col v-for="friend in myFriendsList" :key="friend.user" cols="12" xl="4" lg="4" md="6" sm="12">
             <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
               <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
-                  <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
-                    <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar)" alt="Avatar" cover></v-img>
-                    <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
-                  </v-avatar>
-                  <v-avatar v-if="friend.mascot" size="28" class="friend-mascot-badge shadow-lg">
-                    <v-img :src="getAvatarUrl(friend.mascot)" cover></v-img>
-                  </v-avatar>
-                </div>
+                <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
+                  <v-img v-if="friend.avatar" :src="'/' + friend.avatar" alt="Avatar" cover></v-img>
+                  <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
+                </v-avatar>
 
                 <div class="flex-grow-1">
                   <h2 class="text-h6 font-weight-bold text-white mb-1">{{ friend.user }}</h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
                       Nivel {{ friend.level || 1 }}
+                    </v-chip>
+                    <v-chip v-if="friend.mascot" size="small" color="amber-accent-3" variant="tonal" class="font-weight-bold">
+                      <v-icon start icon="mdi-paw" size="x-small"></v-icon>
+                      {{ formatMascotName(friend.mascot) }}
                     </v-chip>
                   </div>
                 </div>
@@ -111,21 +104,20 @@
           <v-col v-for="explorer in randomExplorers" :key="explorer.user" cols="12" xl="4" lg="4" md="6" sm="12">
             <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
               <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
-                  <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
-                    <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar)" alt="Avatar" cover></v-img>
-                    <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
-                  </v-avatar>
-                  <v-avatar v-if="explorer.mascot" size="28" class="friend-mascot-badge shadow-lg">
-                    <v-img :src="getAvatarUrl(explorer.mascot)" cover></v-img>
-                  </v-avatar>
-                </div>
+                <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="mr-4 border-avatar">
+                  <v-img v-if="explorer.avatar" :src="'/' + explorer.avatar" alt="Avatar" cover></v-img>
+                  <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
+                </v-avatar>
 
                 <div class="flex-grow-1">
                   <h2 class="text-h6 font-weight-bold text-white mb-1">{{ explorer.user }}</h2>
                   <div class="d-flex align-center flex-wrap gap-2">
                     <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
                       Nivel {{ explorer.level || 1 }}
+                    </v-chip>
+                    <v-chip v-if="explorer.mascot" size="small" color="amber-accent-3" variant="tonal" class="font-weight-bold">
+                      <v-icon start icon="mdi-paw" size="x-small"></v-icon>
+                      {{ formatMascotName(explorer.mascot) }}
                     </v-chip>
                   </div>
                 </div>
@@ -150,9 +142,9 @@
                   <v-icon start icon="mdi-account-eye"></v-icon>
                   Ver Perfil
                 </v-btn>
-                <v-btn color="success" variant="elevated" :disabled="hasSentRequest(explorer.user)" class="rounded-lg px-4 flex-grow-1 text-caption font-weight-bold" @click="sendRequest(explorer.user)">
-                  <v-icon start :icon="hasSentRequest(explorer.user) ? 'mdi-check' : 'mdi-account-plus'"></v-icon>
-                  {{ hasSentRequest(explorer.user) ? 'Enviada' : 'Reclutar' }}
+                <v-btn color="success" variant="elevated" class="rounded-lg px-4 flex-grow-1 text-caption font-weight-bold" @click="addFriend(explorer.user)">
+                  <v-icon start icon="mdi-account-plus"></v-icon>
+                  Reclutar
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -162,74 +154,6 @@
         <div v-else-if="!loading && !reloading" class="text-center py-10">
           <v-icon icon="mdi-telescope" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
           <h3 class="text-h6 text-grey-lighten-1">No hay más exploradores por la galaxia ahora mismo.</h3>
-        </div>
-      </v-window-item>
-
-      <!-- PESTAÑA: SOLICITUDES -->
-      <v-window-item value="requests">
-        <div v-if="loading" class="d-flex justify-center align-center py-10">
-          <v-progress-circular indeterminate color="cyan-accent-2" size="64"></v-progress-circular>
-        </div>
-
-        <v-row v-else-if="requestsList.length > 0">
-          <v-col v-for="requester in requestsList" :key="requester.user" cols="12" xl="4" lg="4" md="6" sm="12">
-            <v-card class="friend-card rounded-xl pa-4 d-flex flex-column h-100" elevation="0">
-              <div class="d-flex align-center mb-4">
-                <div style="position: relative;" class="mr-4">
-                  <v-avatar size="64" color="rgba(0, 229, 255, 0.1)" class="border-avatar">
-                    <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar)" alt="Avatar" cover></v-img>
-                    <span v-else class="text-h5 text-cyan-accent-2 font-weight-bold">{{ requester.user.charAt(0).toUpperCase() }}</span>
-                  </v-avatar>
-                  <v-avatar v-if="requester.mascot" size="28" class="friend-mascot-badge shadow-lg">
-                    <v-img :src="getAvatarUrl(requester.mascot)" cover></v-img>
-                  </v-avatar>
-                </div>
-
-                <div class="flex-grow-1">
-                  <h2 class="text-h6 font-weight-bold text-white mb-1">{{ requester.user }}</h2>
-                  <div class="d-flex align-center flex-wrap gap-2">
-                    <v-chip size="small" color="cyan-accent-2" variant="tonal" class="font-weight-bold">
-                      Nivel {{ requester.level || 1 }}
-                    </v-chip>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Medallas del solicitante -->
-              <div class="achievements-mini-grid mb-4 mt-auto">
-                <div v-for="i in 3" :key="i" class="achievement-slot">
-                  <Medal v-if="getAchievement(requester.selectedAchievements?.[i - 1])"
-                    :type="getAchievement(requester.selectedAchievements[i - 1]).type"
-                    :icon="getAchievement(requester.selectedAchievements[i - 1]).icon" 
-                    :scale="0.32"
-                    :icon-size="48" />
-                  <div v-else class="empty-slot-indicator"></div>
-                </div>
-              </div>
-
-              <v-divider class="my-3 border-opacity-25" color="white"></v-divider>
-
-              <v-card-actions class="pa-0 mt-auto">
-                <v-btn color="error" variant="tonal" class="rounded-lg px-2 mr-2 flex-grow-1 text-caption font-weight-bold" @click="rejectRequest(requester.user)">
-                  <v-icon start icon="mdi-close"></v-icon>
-                  Rechazar
-                </v-btn>
-                <v-btn color="success" variant="elevated" class="rounded-lg px-2 flex-grow-1 text-caption font-weight-bold" @click="acceptRequest(requester.user)">
-                  <v-icon start icon="mdi-check"></v-icon>
-                  Aceptar
-                </v-btn>
-                <v-btn color="cyan-accent-2" variant="tonal" class="rounded-lg px-2 ml-2 flex-grow-1 text-caption font-weight-bold" @click="openProfile(requester)">
-                  <v-icon start icon="mdi-account-eye"></v-icon>
-                  Ver Perfil
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <div v-else class="text-center py-10">
-          <v-icon icon="mdi-email-open-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-          <h3 class="text-h6 text-grey-lighten-1">No tienes solicitudes pendientes.</h3>
         </div>
       </v-window-item>
     </v-window>
@@ -244,11 +168,11 @@
         <div class="position-relative mb-6 d-flex justify-center">
           <div style="position: relative;">
             <v-avatar size="120" class="profile-dialog-avatar bg-black">
-              <v-img v-if="profileDialog.user?.avatar" :src="getAvatarUrl(profileDialog.user.avatar)" cover></v-img>
+              <v-img v-if="profileDialog.user?.avatar" :src="'/' + profileDialog.user.avatar" cover></v-img>
               <span v-else class="text-h2 text-cyan-accent-2 font-weight-bold">{{ profileDialog.user?.user?.charAt(0).toUpperCase() }}</span>
             </v-avatar>
             <v-avatar v-if="profileDialog.user?.mascot" size="50" class="profile-dialog-mascot shadow-lg">
-              <v-img :src="getAvatarUrl(profileDialog.user?.mascot)" cover></v-img>
+              <v-img :src="'/' + profileDialog.user.mascot" cover></v-img>
             </v-avatar>
           </div>
         </div>
@@ -271,10 +195,10 @@
         </div>
 
         <v-btn v-if="!isFriend(profileDialog.user?.user) && profileDialog.user?.user !== astroStore.user" 
-          color="success" block size="large" :disabled="hasSentRequest(profileDialog.user?.user)" class="rounded-lg font-weight-bold" 
-          @click="sendRequest(profileDialog.user?.user); profileDialog.show = false;">
-          <v-icon start :icon="hasSentRequest(profileDialog.user?.user) ? 'mdi-check' : 'mdi-account-plus'"></v-icon>
-          {{ hasSentRequest(profileDialog.user?.user) ? 'Solicitud Enviada a ' + profileDialog.user?.user : 'Reclutar a ' + profileDialog.user?.user }}
+          color="success" block size="large" class="rounded-lg font-weight-bold" 
+          @click="addFriend(profileDialog.user.user); profileDialog.show = false;">
+          <v-icon start icon="mdi-account-plus"></v-icon>
+          Reclutar a {{ profileDialog.user?.user }}
         </v-btn>
       </v-card>
     </v-dialog>
@@ -293,7 +217,7 @@ import { ACHIEVEMENTS } from '@/constants/achievements';
 import Medal from '@/components/achievements/Medal.vue';
 
 const astroStore = useAstroStore();
-const { explorers, friends, friendRequests } = storeToRefs(astroStore);
+const { explorers, friends } = storeToRefs(astroStore);
 
 const loading = ref(true);
 const reloading = ref(false);
@@ -301,7 +225,6 @@ const searchQuery = ref('');
 const searchExploreQuery = ref('');
 const tab = ref('friends');
 const randomExplorers = ref([]);
-const sentRequests = ref([]); // Store users to whom we've sent requests this session
 
 const profileDialog = ref({
   show: false,
@@ -332,12 +255,6 @@ const getAchievement = (id) => {
   return ACHIEVEMENTS.find(a => a.id === Number(id));
 };
 
-const getAvatarUrl = (avatarStr) => {
-  if (!avatarStr) return '';
-  // Si ya empieza con /, devolver tal cual, si no, poner barra
-  return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`;
-};
-
 const formatMascotName = (mascotData) => {
   if (typeof mascotData === 'object' && mascotData !== null) {
     return mascotData.name || 'Mascota';
@@ -363,12 +280,6 @@ const myFriendsList = computed(() => {
   }
 
   return myFriends;
-});
-
-// Solicitudes recibidas
-const requestsList = computed(() => {
-  const allUsers = Array.isArray(explorers.value) ? explorers.value : [];
-  return allUsers.filter(f => friendRequests.value?.includes(f.user));
 });
 
 // Función para cargar exploradores aleatorios
@@ -424,46 +335,16 @@ const removeFriend = async (friendName) => {
 };
 
 const addFriend = async (friendName) => {
-  // Función mantenida por compatibilidad si se usaba internamente
   if (isFriend(friendName)) return;
+
   const result = await astroStore.addFriendAction(friendName);
-  if (result?.success) {
-    showMessage(`¡${friendName} reclutado con éxito!`);
-  }
-};
-
-const hasSentRequest = (username) => {
-  return sentRequests.value.includes(username);
-};
-
-const sendRequest = async (friendName) => {
-  if (isFriend(friendName)) return;
-  const result = await astroStore.sendFriendRequest(friendName);
   
   if (result && result.success) {
-    showMessage(`Solicitud enviada a ${friendName}`);
-    sentRequests.value.push(friendName);
+    showMessage(`¡${friendName} reclutado con éxito!`);
+    // Quitarlo inmediatamente de la vista general
+    randomExplorers.value = randomExplorers.value.filter(e => e.user !== friendName);
   } else {
-    showMessage(result?.message || "Error al enviar solicitud", "error");
-  }
-};
-
-const acceptRequest = async (requesterName) => {
-  const result = await astroStore.acceptFriendRequest(requesterName);
-  if (result?.success) {
-    showMessage(`Has aceptado a ${requesterName} en tu tripulación`);
-    await astroStore.fetchUserStats();
-  } else {
-    showMessage(result?.message || "Error al aceptar solicitud", "error");
-  }
-};
-
-const rejectRequest = async (requesterName) => {
-  const result = await astroStore.rejectFriendRequest(requesterName);
-  if (result?.success) {
-    showMessage(`Has rechazado a ${requesterName}`);
-  } else {
-    showMessage("Error al rechazar solicitud", "error");
+    showMessage(result?.message || "Error al añadir recluta", "error");
   }
 };
 </script>
@@ -557,14 +438,6 @@ const rejectRequest = async (requesterName) => {
   bottom: -5px;
   right: -10px;
   border: 3px solid #1a1d26;
-  background: white;
-}
-
-.friend-mascot-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -5px;
-  border: 2px solid #1a1d26;
   background: white;
 }
 
