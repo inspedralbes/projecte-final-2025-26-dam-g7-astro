@@ -1,44 +1,45 @@
 <template>
   <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
     
-    <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="600" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="80" class="mb-4 animate-bounce"></v-icon>
-      <h1 class="text-h3 font-weight-black text-white mb-4">Escuadrón de Rimas</h1>
-      <p class="text-h6 text-grey-lighten-1 mb-8">
-        Tienes <span class="text-cyan-accent-3 font-weight-bold">60 SEGUNDOS</span>. Atrapa rimas para sumar 2 segundos extra. ¡Si fallas perderás vidas!
+    <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+      <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="100" class="mb-6 animate-bounce"></v-icon>
+      <h1 class="text-h2 font-weight-black text-white mb-6">Escuadrón de Rimas</h1>
+      <p class="text-h5 text-grey-lighten-1 mb-10">
+        Tienes <span class="text-cyan-accent-3 font-weight-bold">60 SEGUNDOS</span>. Atrapa rimas para sumar 1 segundo extra. <br>
+        <span class="text-red-accent-2 mt-2 d-block">¡Si fallas o dejas que una rima caiga al vacío, perderás vidas!</span>
       </p>
-      <v-btn color="cyan-accent-3" size="x-large" block rounded="pill" class="font-weight-black text-black" @click="startGame">
+      <v-btn color="cyan-accent-3" size="x-large" height="60" block rounded="pill" class="font-weight-black text-black text-h6" @click="startGame">
         INICIAR MISIÓN
       </v-btn>
     </v-card>
 
     <template v-else-if="isPlaying">
       
-      <v-card width="100%" max-width="1000" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10 flex-shrink-0" rounded="xl" style="z-index: 10;">
+      <v-card width="100%" max-width="1200" class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0" rounded="xl" style="z-index: 10;">
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🎧 Escuadrón Fonológico</h2>
-            <div class="text-caption text-grey-lighten-2 mt-1">
+            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadrón Fonológico</h2>
+            <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
               <span class="font-weight-bold">Punts: {{ score }}</span>
-              <span class="mx-2">|</span>
+              <span class="mx-3">|</span>
               <span class="font-weight-bold" :class="timeLeft <= 15 ? 'text-red-accent-2 animate-pulse' : 'text-blue-lighten-2'">
                 Temps: {{ timeLeft }}s
               </span>
-              <span class="mx-2">|</span>
+              <span class="mx-3">|</span>
               <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">Vides: {{ lives }}</span>
             </div>
           </div>
 
-          <div class="text-center px-6 target-box rounded-lg">
-            <div class="text-caption text-cyan-accent-1 text-uppercase">Busca rimas con:</div>
-            <div class="text-h4 font-weight-black text-white glow-text">{{ currentTarget.word }}</div>
+          <div class="text-center px-10 target-box rounded-xl py-3">
+            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimas con:</div>
+            <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget.word }}</div>
           </div>
 
-          <div class="d-flex align-center gap-4">
-            <v-chip v-if="combo > 0" :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'" class="font-weight-bold" :class="{ 'animate-pulse': isTurbo }">
+          <div class="d-flex align-center gap-6">
+            <v-chip v-if="combo > 0" :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'" size="x-large" class="font-weight-bold text-h6" :class="{ 'animate-pulse': isTurbo }">
               COMBO x{{ combo }} {{ isTurbo ? '🔥' : '' }}
             </v-chip>
-            <v-btn icon="mdi-close" variant="text" color="grey" @click="forceEndGame"></v-btn>
+            <v-btn icon="mdi-close" size="large" variant="text" color="grey" @click="forceEndGame"></v-btn>
           </div>
         </div>
       </v-card>
@@ -47,7 +48,7 @@
         class="play-area position-relative rounded-xl overflow-hidden w-100" 
         :class="{ 'turbo-mode': isTurbo }"
         @click.self="missClick" 
-        style="max-width: 1000px; height: 65vh; min-height: 450px; border: 1px solid rgba(255, 255, 255, 0.1);"
+        style="max-width: 1200px; height: 75vh; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
       >
         <div class="nebula-bg" v-if="isTurbo"></div>
         
@@ -66,30 +67,30 @@
         </transition-group>
         
         <transition name="fade-up">
-          <div v-if="showTimeBonus" class="time-bonus-feedback text-h4 font-weight-black text-green-accent-3">+2s</div>
+          <div v-if="showTimeBonus" class="time-bonus-feedback text-h2 font-weight-black text-green-accent-3">+1s</div>
         </transition>
       </div>
     </template>
 
-    <v-card v-else-if="isGameOver && !isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" size="80" class="mb-4"></v-icon>
-      <h2 class="text-h4 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
+    <v-card v-else-if="isGameOver && !isMultiplayer" width="100%" max-width="600" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+      <v-icon :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" size="100" class="mb-4"></v-icon>
+      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
       
-      <div class="d-flex justify-space-around my-6">
+      <div class="d-flex justify-space-around my-8">
         <div class="text-center">
-            <div class="text-h3 text-success font-weight-bold">{{ correctHits }}</div>
-            <div class="text-caption">Rimas Atrapadas</div>
+            <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
+            <div class="text-subtitle-1">Rimas Atrapadas</div>
         </div>
         <div class="text-center">
-            <div class="text-h3 text-error font-weight-bold">{{ incorrectHits }}</div>
-            <div class="text-caption">Errores</div>
+            <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
+            <div class="text-subtitle-1">Errors y Omisiones</div>
         </div>
       </div>
       
-      <p class="text-h5 text-white mb-2">Puntuación Final: {{ score }}</p>
-      <p class="text-subtitle-1 text-grey-lighten-1 mb-6">Combo Máximo: x{{ maxCombo }}</p>
+      <p class="text-h4 text-white mb-2">Puntuación Final: {{ score }}</p>
+      <p class="text-h6 text-grey-lighten-1 mb-8">Combo Máximo: x{{ maxCombo }}</p>
       
-      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold block w-100">
+      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="x-large" height="60" rounded="pill" class="text-black font-weight-bold text-h6 block w-100">
         Obtener Recompensa
       </v-btn>
     </v-card>
@@ -175,7 +176,6 @@ const startGame = () => {
   pickNewTarget();
   gameLoopInterval = setInterval(spawnWord, currentSpawnRate);
   
-  // Reloj de cuenta atrás
   timerInterval = setInterval(() => {
     if (!isPlaying.value) return;
     timeLeft.value--;
@@ -238,8 +238,8 @@ const catchWord = (word) => {
     word.status = 'correct';
     correctHits.value++;
     
-    // Sumar 2 segundos de tiempo
-    timeLeft.value += 2;
+    // MODIFICACIÓN: Sumar 1 segundo en lugar de 2
+    timeLeft.value += 1;
     triggerTimeBonusVisual();
 
     const points = isTurbo.value ? 20 : 10;
@@ -276,11 +276,15 @@ const removeWord = (id, clicked) => {
   const wordIndex = activeWords.value.findIndex(w => w.id === id);
   if (wordIndex > -1) {
     const word = activeWords.value[wordIndex];
-    if (!clicked && word.isRhyme && word.status === 'falling') {
-      combo.value = 0;
-      isTurbo.value = false;
-    }
+    
+    // Eliminamos la palabra del DOM primero
     activeWords.value.splice(wordIndex, 1);
+
+    // MODIFICACIÓN: Si NO se clicó, era la correcta (isRhyme) y seguía cayendo... cuenta como fallo total
+    if (!clicked && word.isRhyme && word.status === 'falling') {
+      incorrectHits.value++;
+      takeDamage();
+    }
   }
 };
 
@@ -374,11 +378,11 @@ const getWordStatusClass = (status) => {
 
 .target-box {
   background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  border: 2px solid rgba(0, 229, 255, 0.4);
 }
 
 .glow-text {
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
 }
 
 .border-cyan { border-color: #00e5ff !important; border-width: 2px; border-style: solid; }
@@ -404,11 +408,11 @@ const getWordStatusClass = (status) => {
 
 .falling-word {
   position: absolute;
-  top: -60px;
-  padding: 12px 24px;
-  border-radius: 30px;
+  top: -100px;
+  padding: 12px 24px;      /* Tamaño revertido */
+  border-radius: 30px;     /* Tamaño revertido */
   font-weight: 900;
-  font-size: 1.3rem;
+  font-size: 1.3rem;       /* Tamaño revertido */
   color: white;
   user-select: none;
   animation-name: fallAnimation;
@@ -419,11 +423,12 @@ const getWordStatusClass = (status) => {
 }
 
 .word-falling {
-  background: rgba(30, 41, 59, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  background: rgba(30, 41, 59, 0.9);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
 }
+
 .word-falling:hover {
   transform: scale(1.1);
   border-color: #00e5ff;
@@ -431,8 +436,8 @@ const getWordStatusClass = (status) => {
 
 .word-correct {
   background: #00c853 !important;
-  border: 2px solid #b9f6ca !important;
-  box-shadow: 0 0 25px rgba(0, 200, 83, 0.8) !important;
+  border: 3px solid #b9f6ca !important;
+  box-shadow: 0 0 35px rgba(0, 200, 83, 0.9) !important;
   transform: scale(1.2);
   color: white;
   z-index: 20;
@@ -440,25 +445,24 @@ const getWordStatusClass = (status) => {
 
 .word-incorrect {
   background: #d50000 !important;
-  border: 2px solid #ff8a80 !important;
-  box-shadow: 0 0 25px rgba(213, 0, 0, 0.8) !important;
+  border: 3px solid #ff8a80 !important;
+  box-shadow: 0 0 35px rgba(213, 0, 0, 0.9) !important;
   transform: scale(0.9) rotate(5deg);
   color: white;
   z-index: 20;
 }
 
-/* Indicador visual de tiempo extra */
 .time-bonus-feedback {
   position: absolute;
-  top: 20px;
-  right: 40px;
+  top: 30px;
+  right: 50px;
   z-index: 30;
   pointer-events: none;
-  text-shadow: 0 0 10px rgba(0, 200, 83, 0.8);
+  text-shadow: 0 0 15px rgba(0, 200, 83, 0.9);
 }
 
 @keyframes fallAnimation {
-  0% { top: -60px; opacity: 0; }
+  0% { top: -100px; opacity: 0; }
   5% { opacity: 1; }
   95% { opacity: 1; }
   100% { top: 100%; opacity: 0; }
@@ -474,8 +478,8 @@ const getWordStatusClass = (status) => {
 }
 
 @keyframes pulse-chip {
-  0% { transform: scale(1); box-shadow: 0 0 10px rgba(224, 64, 251, 0.5); }
-  100% { transform: scale(1.05); box-shadow: 0 0 25px rgba(224, 64, 251, 0.9); }
+  0% { transform: scale(1); box-shadow: 0 0 15px rgba(224, 64, 251, 0.5); }
+  100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(224, 64, 251, 0.9); }
 }
 
 .fade-leave-active {

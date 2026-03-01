@@ -33,12 +33,13 @@ export const useProgressStore = defineStore('progress', {
         lastGame: storageGetItem(STORAGE_KEYS.lastGame) || null,
         dailyMissions: [],
         weeklyMissions: [],
-        // NUEVOS CAMPOS DE HISTORIAL Y ESTADÍSTICAS
         gameHistory: [],
         topGames: [],
         maxScores: {},
         totalGamesPlayed: 0,
         totalPoints: 0,
+        // NUEVA VARIABLE: Nivel del mapa independiente
+        mapLevel: Number(storageGetItem('astro_mapLevel')) || 1,
         error: null
     }),
 
@@ -70,6 +71,12 @@ export const useProgressStore = defineStore('progress', {
         setLevel(level) {
             this.level = Number(level) || 1;
             storageSetItem(STORAGE_KEYS.level, this.level);
+        },
+
+        // NUEVO: Setter para el mapa
+        setMapLevel(level) {
+            this.mapLevel = Number(level) || 1;
+            storageSetItem('astro_mapLevel', this.mapLevel);
         },
 
         setXp(xp) {
@@ -126,6 +133,11 @@ export const useProgressStore = defineStore('progress', {
             this.setLastActivity(profile.lastActivity ?? this.lastActivity);
             this.setLastGame(profile.lastGame ?? this.lastGame);
 
+            // NUEVO: Sincronizar el mapa al hacer login
+            if (profile.mapLevel !== undefined) {
+                this.setMapLevel(profile.mapLevel);
+            }
+
             if (Array.isArray(profile.dailyMissions)) {
                 this.setDailyMissions(profile.dailyMissions);
             }
@@ -134,7 +146,6 @@ export const useProgressStore = defineStore('progress', {
                 this.setWeeklyMissions(profile.weeklyMissions);
             }
 
-            // Aplicar historial y récords
             this.gameHistory = profile.gameHistory || [];
             this.topGames = profile.topGames || [];
             this.maxScores = profile.maxScores || {};
@@ -165,7 +176,11 @@ export const useProgressStore = defineStore('progress', {
                 this.setDailyMissions(data.dailyMissions || []);
                 this.setWeeklyMissions(data.weeklyMissions || []);
 
-                // Actualizar historial y récords desde stats
+                // NUEVO: Actualizar el mapa al recargar stats
+                if (data.mapLevel !== undefined) {
+                    this.setMapLevel(data.mapLevel);
+                }
+
                 this.gameHistory = data.gameHistory || [];
                 this.topGames = data.topGames || [];
                 this.maxScores = data.maxScores || {};
@@ -209,7 +224,8 @@ export const useProgressStore = defineStore('progress', {
             }
         },
 
-        async registerCompletedGame(game, score = 0) {
+        // MODIFICADO: Aceptar completedMapNode y enviarlo al servidor
+        async registerCompletedGame(game, score = 0, completedMapNode = null) {
             this.error = null;
             const user = this.resolveUser();
 
@@ -228,7 +244,8 @@ export const useProgressStore = defineStore('progress', {
                     body: JSON.stringify({
                         user,
                         game,
-                        score
+                        score,
+                        completedMapNode // ENVIANDO AL SERVIDOR
                     })
                 });
 
@@ -246,7 +263,11 @@ export const useProgressStore = defineStore('progress', {
                 this.setWeeklyMissions(data.weeklyMissions || this.weeklyMissions);
                 this.setNeedsFreeze(data.needsFreeze);
 
-                // Actualizar desde respuesta de completar partida
+                // NUEVO: Recibir si hemos avanzado en el mapa
+                if (data.newMapLevel !== undefined) {
+                    this.setMapLevel(data.newMapLevel);
+                }
+
                 if (data.gameHistory) this.gameHistory = data.gameHistory;
                 if (data.maxScores) this.maxScores = data.maxScores;
                 if (data.totalGamesPlayed !== undefined) this.totalGamesPlayed = data.totalGamesPlayed;
@@ -339,6 +360,10 @@ export const useProgressStore = defineStore('progress', {
             this.lastGame = null;
             this.dailyMissions = [];
             this.weeklyMissions = [];
+            
+            // NUEVO: Limpiar mapa
+            this.mapLevel = 1;
+
             this.error = null;
 
             storageRemoveItem(STORAGE_KEYS.level);
@@ -348,6 +373,7 @@ export const useProgressStore = defineStore('progress', {
             storageRemoveItem(STORAGE_KEYS.activeBoosters);
             storageRemoveItem(STORAGE_KEYS.lastActivity);
             storageRemoveItem(STORAGE_KEYS.lastGame);
+            storageRemoveItem('astro_mapLevel'); // Limpieza local
         }
     }
 });

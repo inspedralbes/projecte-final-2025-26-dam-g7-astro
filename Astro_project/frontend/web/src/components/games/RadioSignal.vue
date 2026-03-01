@@ -1,12 +1,10 @@
 <template>
     <div class="radio-cabinet">
-        <!-- Tornillos decorativos -->
         <div class="screw screw-tl"></div>
         <div class="screw screw-tr"></div>
         <div class="screw screw-bl"></div>
         <div class="screw screw-br"></div>
 
-        <!-- Cabecera de la radio -->
         <div class="radio-brand">
             <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
             <div class="brand-subtitle">COMMS RECEIVER</div>
@@ -17,7 +15,6 @@
             <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
         </div>
 
-        <!-- Pantalla del Osciloscopio -->
         <div class="screen-housing">
             <div class="screen-bezel">
                 <div class="wave-panels">
@@ -35,7 +32,6 @@
             </div>
         </div>
 
-        <!-- Panel de Indicadores -->
         <div class="indicator-strip">
             <div class="freq-display">
                 <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
@@ -52,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Zona del Dial -->
         <div class="dial-housing">
             <div class="dial-markings">
                 <span v-for="n in 11" :key="n" class="dial-mark" 
@@ -76,7 +71,6 @@
             </div>
         </div>
 
-        <!-- Sección de Entrada (siempre visible con altura fija) -->
         <div class="input-housing">
             <div v-if="isTuned" class="input-active">
                 <div class="input-header">
@@ -108,6 +102,9 @@
             ✗ DADES INCORRECTES - TORNA A INTENTAR
         </v-snackbar>
 
+        <v-snackbar v-model="showSuccess" color="success" timeout="2000" location="top">
+            ✓ SENYAL DESXIFRADA! +150 PTS | +15s
+        </v-snackbar>
     </div>
 </template>
 
@@ -128,13 +125,14 @@ const props = defineProps({
 
 const emit = defineEmits(['game-over']);
 
-// Frecuencia objetivo: rango completo 5-95, siempre diferente
+// Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
-const currentFrequency = ref(Math.random() * 20); // posición inicial aleatoria también
+const currentFrequency = ref(Math.random() * 20); 
 const tuningThreshold = 2.0;
 const userGuess = ref('');
 const isTuned = ref(false);
 const showError = ref(false);
+const showSuccess = ref(false); // NUEVO: Feedback de éxito
 const score = ref(0);
 const timeLeft = ref(60);
 const gameFinished = ref(false);
@@ -142,26 +140,18 @@ let roundTimer = null;
 
 const phrases = [
     'EL VAIXELL DAURAT BRILLA DE DIA',
-    // 'LA BALENA BALLA SOTA DEL BOT', no va
-    'LA BIODIVERSITAT ABUNDA AL BOSC',
+    // 'LA BIODIVERSITAT ABUNDA AL BOSC',
     'EL PETIT PAQUET VA QUEDAR AL PARC',
-    // 'PERQUE EL FORMATGE PESA POC', no va
-    // 'VULL PA AMB QUINZE COGOMBRES', no va
     'ELS DRACS BOTEN SOBRE LES PEDRES',
     'TRES TRISTOS TIGRES MENGEN BLAT',
-    // 'LA BRISA FRESCA CREUA LA PRADERIA', no va
-    'LES FLORS CREIXEN AL COSTAT DE LA PLACA',
-    //'EL DUC VOLA DE NIT FINS A LA MATINADA', no va
-    // 'LA HERBA HUMIDA FA OLOR DE FERRO', no va
-    'LA MAMA EM MIMA MOLT CADA MATI',
+    // 'LES FLORS CREIXEN AL COSTAT DE LA PLACA',
+    // 'LA MAMA EM MIMA MOLT CADA MATI',
     'LA SARA SURT SOLA SEMPRE SENSE BARRET',
     'EN PEP POSA PERES PER AL PAPA',
     'EXTRAORDINARI DESCOBRIMENT A LA BIBLIOTECA',
-    // 'EL RINOCERONT NECESSITA REFRIGERACIO', no va
-    'INCOMPRENSIBLE PREDICCIO METEOROLOGICA',
+    // 'INCOMPRENSIBLE PREDICCIO METEOROLOGICA',
     'LA NAU ESPACIAL DESPEGA A L\'ALBA',
     'BASE LUNAR REPORTA BON ESTAT',
-    // 'COORDENADES DEL PLANETA REBUDES',
 ];
 // Phrases shuffled at start
 const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
@@ -183,7 +173,6 @@ const removeDragListeners = () => {
     window.removeEventListener('touchend', stopRotating);
 };
 
-// Sincronizar knob con frecuencia inicial
 knobRotation.value = (currentFrequency.value / 100) * 360;
 currentKnobRotation = knobRotation.value;
 
@@ -285,7 +274,6 @@ const renderWave = (canvas, isTarget) => {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    // Grid
     ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5;
     for (let i = 0; i < w; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
     for (let i = 0; i < h; i += 18) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
@@ -364,29 +352,30 @@ const speakPhrase = (volume = 1.0) => {
     window.speechSynthesis.speak(u);
 };
 
+// LÓGICA CORE CORREGIDA
 const checkPhrase = () => {
     if (gameFinished.value) return;
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        score.value += 50;
+        // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
+        score.value += 150;
+        timeLeft.value += 15;
         userGuess.value = '';
+        showSuccess.value = true;
+        
+        // Generamos nueva señal objetivo
+        currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
+        targetFrequency.value = Math.random() * 90 + 5;
+        
+        // Reseteamos el estado para que vuelva a buscar
         isTuned.value = false;
         stopSpeechLoop();
-
-        const next = phraseIndex.value + 1;
-        if (next >= totalPhrases) {
-            // Totes les frases resoltes: acabem
-            finishGame();
-        } else {
-            // Avance a la següent frase
-            phraseIndex.value = next;
-            currentPhrase.value = shuffledPhrases[next];
-            targetFrequency.value = Math.random() * 90 + 5;
-            currentFrequency.value = Math.random() * 20;
-            knobRotation.value = (currentFrequency.value / 100) * 360;
-            currentKnobRotation = knobRotation.value;
-        }
-    } else { showError.value = true; userGuess.value = ''; }
+        updateNoise();
+    } else { 
+        showError.value = true; 
+        userGuess.value = ''; 
+    }
 };
 
 const startTimer = () => {
@@ -438,7 +427,8 @@ onMounted(() => {
     drawWaves();
     startTimer();
 });
-// Listener para eventos multijugador
+
+// Listener para eventos multijugador (Mantenemos de HEAD)
 watch(() => multiplayerStore.lastMessage, (msg) => {
     if (!msg) return;
 
@@ -449,7 +439,7 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     }
 });
 
-// Notificar puntuación al servidor en modo multijugador
+// Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
 watch(score, (newScore) => {
     if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({
@@ -484,7 +474,6 @@ onUnmounted(() => {
         inset 0 -1px 0 rgba(0,0,0,0.3);
 }
 
-/* TORNILLOS */
 .screw {
     position: absolute;
     width: 12px; height: 12px;
@@ -506,7 +495,6 @@ onUnmounted(() => {
 .screw-bl { bottom: 8px; left: 8px; }
 .screw-br { bottom: 8px; right: 8px; }
 
-/* BRAND */
 .radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
 .brand-text { 
     font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
@@ -539,7 +527,6 @@ onUnmounted(() => {
     border-color: #8b2d2d;
 }
 
-/* PANTALLA */
 .screen-housing {
     background: #111;
     border: 2px solid #3a3f4b;
@@ -576,7 +563,6 @@ canvas { display: block; width: 100%; height: auto; }
     pointer-events: none;
 }
 
-/* INDICADORES */
 .indicator-strip {
     display: flex; align-items: center; justify-content: space-between;
     background: #15171c;
@@ -600,7 +586,6 @@ canvas { display: block; width: 100%; height: auto; }
 .status-sync { color: #4caf50; }
 .status-lost { color: #666; }
 
-/* DIAL */
 .dial-housing {
     background: #15171c;
     border: 1px solid #2a2e36;
@@ -652,7 +637,6 @@ canvas { display: block; width: 100%; height: auto; }
     transform: translateX(-50%);
 }
 
-/* ENTRADA */
 .input-housing {
     min-height: 90px;
     background: #15171c;
