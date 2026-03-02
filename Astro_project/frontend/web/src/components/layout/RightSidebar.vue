@@ -60,8 +60,8 @@
                     <v-list-item v-for="mission in (dailyMissions || []).slice(0, 3)" :key="mission.id"
                         class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
                         <v-list-item-title
-                            :class="['text-body-2 font-weight-bold', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ mission.text }}
+                            :class="['text-body-2 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
+                            {{ $te('missionsList.daily.' + mission.type) ? $t('missionsList.daily.' + mission.type, { goal: mission.goal }) : mission.text }}
                         </v-list-item-title>
                         <v-list-item-subtitle
                             :class="['text-caption mt-1', mission.claimed ? 'text-grey' : 'text-cyan-accent-1']"
@@ -101,8 +101,8 @@
                     <v-list-item v-for="mission in (weeklyMissions || []).slice(0, 3)" :key="mission.id"
                         class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
                         <v-list-item-title
-                            :class="['text-body-2 font-weight-bold', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ mission.text }}
+                            :class="['text-body-2 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
+                            {{ $te('missionsList.weekly.' + mission.type) ? $t('missionsList.weekly.' + mission.type, { goal: mission.goal }) : mission.text }}
                         </v-list-item-title>
                         <v-list-item-subtitle
                             :class="['text-caption mt-1', mission.claimed ? 'text-grey' : 'text-blue-accent-1']"
@@ -137,8 +137,8 @@
                     <v-list-item v-for="mission in dailyMissions" :key="mission.id"
                         class="mission-item mb-3 pa-4 rounded-xl">
                         <v-list-item-title
-                            :class="['text-h6 font-weight-bold', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ mission.text }}
+                            :class="['text-h6 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
+                            {{ $te('missionsList.daily.' + mission.type) ? $t('missionsList.daily.' + mission.type, { goal: mission.goal }) : mission.text }}
                         </v-list-item-title>
                         <v-list-item-subtitle
                             :class="['text-body-2 mt-1', mission.claimed ? 'text-grey' : 'text-cyan-accent-1']">
@@ -175,8 +175,8 @@
                     <v-list-item v-for="mission in weeklyMissions" :key="mission.id"
                         class="mission-item mb-3 pa-4 rounded-xl">
                         <v-list-item-title
-                            :class="['text-h6 font-weight-bold', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ mission.text }}
+                            :class="['text-h6 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
+                            {{ $te('missionsList.weekly.' + mission.type) ? $t('missionsList.weekly.' + mission.type, { goal: mission.goal }) : mission.text }}
                         </v-list-item-title>
                         <v-list-item-subtitle
                             :class="['text-body-2 mt-1', mission.claimed ? 'text-grey' : 'text-blue-accent-1']">
@@ -262,6 +262,12 @@ const claimReward = async (missionId, type = 'daily') => {
 </script>
 
 <style scoped>
+.truncate-text {
+    white-space: normal !important;
+    word-break: break-word;
+    line-height: 1.2;
+}
+
 .shadow-cyan {
     filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
 }

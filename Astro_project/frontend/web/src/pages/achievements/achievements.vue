@@ -29,11 +29,11 @@
                     <div class="medal-info text-center mt-4">
                         <h3
                             :class="['text-h6 font-weight-bold mb-1', achievement.unlocked ? 'text-white' : 'text-grey-darken-1']">
-                            {{ achievement.title }}
+                            {{ $te('achievementsList.' + achievement.id + '.title') ? $t('achievementsList.' + achievement.id + '.title') : achievement.title }}
                         </h3>
                         <p class="text-caption text-grey-lighten-1"
                             :style="{ opacity: achievement.unlocked ? 1 : 0.5 }">
-                            {{ achievement.description }}
+                            {{ $te('achievementsList.' + achievement.id + '.desc') ? $t('achievementsList.' + achievement.id + '.desc') : achievement.description }}
                         </p>
 
                         <div class="mt-2 d-flex flex-column align-center">
@@ -46,7 +46,7 @@
                                 style="width: 150px;"
                             />
                             <v-chip v-if="!achievement.unlocked" size="x-small" color="cyan-accent-1" variant="tonal" class="mt-2">
-                                {{ achievement.progress }} / {{ achievement.goal }} {{ achievement.metricLabel }}
+                                {{ achievement.progress }} / {{ achievement.goal }} {{ $te('achievementsList.' + achievement.id + '.metric') ? $t('achievementsList.' + achievement.id + '.metric') : achievement.metricLabel }}
                             </v-chip>
                             <v-chip v-else size="x-small" color="green-accent-3" variant="tonal" class="mt-2">
                                 {{ $t('achievements.unlocked') }}

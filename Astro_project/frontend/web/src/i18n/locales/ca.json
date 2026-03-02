@@ -11,6 +11,8 @@
         "multiplayer": "Multijugador",
         "shop": "Botiga",
         "inventory": "Inventari",
+        "achievements": "Assoliments",
+        "friends": "Amics",
         "profile": "Perfil"
     },
     "home": {
@@ -205,7 +207,7 @@
     "rightSidebar": {
         "progress": "PROGRÉS",
         "streak": "Ratxa",
-        "coins": "Monedes",
+        "coins": "AstroCoins",
         "level": "NIVELL {level}",
         "xpRemaining": "Falten {xp} XP per al següent nivell",
         "dailyMissions": "Missions Diàries",
@@ -215,7 +217,7 @@
         "claimCaps": "RECLAMAR",
         "weeklyMissions": "Missions Setmanals",
         "noWeeklyMissions": "No hi ha missions setmanals disponibles",
-        "coinsSuffix": "monedes"
+        "coinsSuffix": "astrocoins"
     },
     "achievements": {
         "title": "ASSOLIMENTS",
@@ -443,5 +445,91 @@
         "noSession": "No hi ha una sessió activa.",
         "invalidGame": "Nom de joc invàlid.",
         "invalidItem": "Objecte invàlid."
+    },
+    "games": {
+        "word-construction": "Construcció de Paraules",
+        "syllable-quest": "Aventura Sil·làbica",
+        "rhyme-squad": "Esquadró de Rimes",
+        "spelled-rosco": "Rosco Estel·lar",
+        "radar-scan": "Escàner de Ràdar",
+        "radio-signal": "Senyal de Ràdio",
+        "symmetry-breaker": "Symmetry Breaker"
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Juga {goal} partides",
+            "coins": "Guanya {goal} monedes",
+            "xp": "Aconsegueix {goal} XP",
+            "item": "Utilitza {goal} Potenciadors",
+            "streak": "Activitat Diària"
+        },
+        "weekly": {
+            "games": "Mestre de Jocs ({goal} partides)",
+            "coins": "Buscador d'Or ({goal} monedes)",
+            "level": "Ascensió Lunar (Puja {goal} nivells)",
+            "streak": "Supervivent Espacial (Ratxa {goal} dies)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "Primer Vol",
+            "desc": "Completa 1 missió.",
+            "metric": "Partides"
+        },
+        "2": {
+            "title": "Tripulant Actiu",
+            "desc": "Completa 5 missions.",
+            "metric": "Partides"
+        },
+        "3": {
+            "title": "Veterà Estel·lar",
+            "desc": "Completa 20 missions.",
+            "metric": "Partides"
+        },
+        "4": {
+            "title": "Primer Botí",
+            "desc": "Acumula 1.200 monedes.",
+            "metric": "Monedes"
+        },
+        "5": {
+            "title": "Fortuna Galàctica",
+            "desc": "Acumula 3.000 monedes.",
+            "metric": "Monedes"
+        },
+        "6": {
+            "title": "Primer Col·leccionable",
+            "desc": "Aconsegueix 1 objecte a l'inventari.",
+            "metric": "Objectes"
+        },
+        "7": {
+            "title": "Col·leccionista",
+            "desc": "Aconsegueix 5 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "8": {
+            "title": "Museu Orbital",
+            "desc": "Aconsegueix 10 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "9": {
+            "title": "Pujant de Rang",
+            "desc": "Assoleix el nivell 3.",
+            "metric": "Nivell"
+        },
+        "10": {
+            "title": "Capità Novell",
+            "desc": "Assoleix el nivell 5.",
+            "metric": "Nivell"
+        },
+        "11": {
+            "title": "Comandant",
+            "desc": "Assoleix el nivell 8.",
+            "metric": "Nivell"
+        },
+        "12": {
+            "title": "Energia Infinita",
+            "desc": "Aconsegueix 500 XP.",
+            "metric": "XP"
+        }
     }
 }

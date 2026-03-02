@@ -11,6 +11,8 @@
         "multiplayer": "Multijugador",
         "shop": "Tienda",
         "inventory": "Inventario",
+        "achievements": "Logros",
+        "friends": "Amigos",
         "profile": "Perfil"
     },
     "home": {
@@ -205,7 +207,7 @@
     "rightSidebar": {
         "progress": "PROGRESO",
         "streak": "Racha",
-        "coins": "Monedas",
+        "coins": "AstroCoins",
         "level": "NIVEL {level}",
         "xpRemaining": "Faltan {xp} XP para el siguiente nivel",
         "dailyMissions": "Misiones Diarias",
@@ -215,7 +217,7 @@
         "claimCaps": "RECLAMAR",
         "weeklyMissions": "Misiones Semanales",
         "noWeeklyMissions": "No hay misiones semanales disponibles",
-        "coinsSuffix": "monedas"
+        "coinsSuffix": "astrocoins"
     },
     "achievements": {
         "title": "LOGROS",
@@ -443,5 +445,91 @@
         "noSession": "No hay una sesión activa.",
         "invalidGame": "Nombre de juego inválido.",
         "invalidItem": "Objeto inválido."
+    },
+    "games": {
+        "word-construction": "Construcción de Palabras",
+        "syllable-quest": "Aventura Silábica",
+        "rhyme-squad": "Escuadrón de Rimas",
+        "spelled-rosco": "Rosco Estelar",
+        "radar-scan": "Escáner de Radar",
+        "radio-signal": "Señal de Radio",
+        "symmetry-breaker": "Symmetry Breaker"
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Juega {goal} partidas",
+            "coins": "Gana {goal} monedas",
+            "xp": "Consigue {goal} XP",
+            "item": "Usa {goal} Potenciadores",
+            "streak": "Actividad Diaria"
+        },
+        "weekly": {
+            "games": "Maestro de Juegos ({goal} partidas)",
+            "coins": "Buscador de Oro ({goal} monedas)",
+            "level": "Ascensión Lunar (Sube {goal} niveles)",
+            "streak": "Superviviente Espacial (Racha {goal} días)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "Primer Vuelo",
+            "desc": "Completa 1 misión.",
+            "metric": "Partidas"
+        },
+        "2": {
+            "title": "Tripulante Activo",
+            "desc": "Completa 5 misiones.",
+            "metric": "Partidas"
+        },
+        "3": {
+            "title": "Veterano Estelar",
+            "desc": "Completa 20 misiones.",
+            "metric": "Partidas"
+        },
+        "4": {
+            "title": "Primer Botín",
+            "desc": "Acumula 1.200 monedas.",
+            "metric": "Monedas"
+        },
+        "5": {
+            "title": "Fortuna Galáctica",
+            "desc": "Acumula 3.000 monedas.",
+            "metric": "Monedas"
+        },
+        "6": {
+            "title": "Primer Coleccionable",
+            "desc": "Consigue 1 objeto en inventario.",
+            "metric": "Objetos"
+        },
+        "7": {
+            "title": "Coleccionista",
+            "desc": "Consigue 5 objetos en inventario.",
+            "metric": "Objetos"
+        },
+        "8": {
+            "title": "Museo Orbital",
+            "desc": "Consigue 10 objetos en inventario.",
+            "metric": "Objetos"
+        },
+        "9": {
+            "title": "Subiendo de Rango",
+            "desc": "Alcanza el nivel 3.",
+            "metric": "Nivel"
+        },
+        "10": {
+            "title": "Capitán Novato",
+            "desc": "Alcanza el nivel 5.",
+            "metric": "Nivel"
+        },
+        "11": {
+            "title": "Comandante",
+            "desc": "Alcanza el nivel 8.",
+            "metric": "Nivel"
+        },
+        "12": {
+            "title": "Energía Infinita",
+            "desc": "Consigue 500 XP.",
+            "metric": "XP"
+        }
     }
 }

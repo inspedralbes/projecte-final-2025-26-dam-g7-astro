@@ -20,7 +20,7 @@ function registerShopRoutes(app, {
             if (!currentUser) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
             const currentCoins = currentUser.coins !== undefined ? currentUser.coins : 1000;
-            const currentTickets = currentUser.tickets || 0; 
+            const currentTickets = currentUser.tickets || 0;
             const SPIN_COST = 100; // COSTE FORZADO A 100
 
             let finalCoins = currentCoins;
@@ -50,11 +50,11 @@ function registerShopRoutes(app, {
             let prizeApplied = false;
             let rewardMessage = null;
 
-            // LÓGICA EXIGIDA: Si toca la casilla de monedas, sumar 200
+            // LÓGICA EXIGIDA: Si toca la casilla de monedas, sumar 500
             if (prize.id === 3 || prize.label === 'Monedas') {
-                finalCoins += 200;
+                finalCoins += 500;
                 prizeApplied = true;
-                rewardMessage = "¡Has ganado 200 monedas!";
+                rewardMessage = "¡Has ganado 500 AstroCoins!";
             } else if (Number.isInteger(prize.coinsReward) && prize.coinsReward > 0) {
                 finalCoins += prize.coinsReward;
                 prizeApplied = true;
@@ -134,7 +134,7 @@ function registerShopRoutes(app, {
             const finalTickets = currentTickets + 10;
 
             await usersCol.updateOne(
-                { user }, 
+                { user },
                 { $set: { coins: finalCoins, tickets: finalTickets } }
             );
 

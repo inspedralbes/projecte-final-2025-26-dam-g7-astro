@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid class="profile-container d-flex justify-center" style="overflow-x: auto;">
+    <v-container fluid class="profile-container d-flex justify-center">
         <div class="profile-wrapper" style="display: flex !important; flex-wrap: nowrap; align-items: stretch; justify-content: center;">
             <v-card width="620" class="profile-card" :class="{ 'history-open': historyDialog }" elevation="24">
 
@@ -142,24 +142,34 @@
                         </v-btn>
                     </div>
                 </div>
-            </v-card>
 
-            <!-- PANEL DE HISTORIAL INTEGRADO (DERECHA) -->
-            <div v-show="historyDialog" class="history-panel-inline" style="display: block !important;">
-                <div class="history-content pa-6">
-                    <div class="mb-10">
-                        <h3 class="text-overline cyan--text mb-4 d-flex align-center">
+                <!-- PANEL DE HISTORIAL INTEGRADO (OVERLAY A LA DERECHA) -->
+            <div v-show="historyDialog" class="history-panel-inline">
+                <div class="history-content pa-4">
+                    <div class="mb-4 position-relative">
+                        <!-- Botón de Cerrar (X) -->
+                        <v-btn 
+                            icon="mdi-close" 
+                            variant="text" 
+                            color="cyan-accent-3" 
+                            size="small"
+                            class="position-absolute"
+                            style="top: -10px; right: -10px; z-index: 100;"
+                            @click="historyDialog = false"
+                        ></v-btn>
+
+                        <h3 class="text-overline cyan--text mb-4 d-flex align-center pr-8">
                             <v-icon size="18" color="amber-accent-2" class="mr-2">mdi-trophy-variant</v-icon>
                             {{ $t('profile.topGames') }}
                         </h3>
-                        <v-row v-if="topGames.length > 0">
+                        <v-row v-if="topGames.length > 0" dense>
                             <v-col v-for="(match, idx) in topGames" :key="'top-'+idx" cols="12">
-                                <v-card class="top-match-card pa-4" variant="flat">
+                                <v-card class="top-match-card pa-2" variant="flat">
                                     <div class="d-flex align-center justify-space-between w-100">
                                         <div class="d-flex align-center">
-                                            <div class="top-rank mr-4">{{ idx + 1 }}</div>
+                                            <div class="top-rank mr-3" style="width: 24px; height: 24px; font-size: 14px;">{{ idx + 1 }}</div>
                                             <div>
-                                                <div class="text-h6 font-weight-bold text-white text-capitalize">{{ match.game }}</div>
+                                                <div class="text-body-1 font-weight-bold text-white text-capitalize">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</div>
                                                 <div class="text-caption text-grey">
                                                     {{ new Date(match.createdAt).toLocaleDateString() }}
                                                     <v-chip size="x-small" color="grey-darken-3" class="ml-1" v-if="match.timeSeconds">
@@ -169,7 +179,7 @@
                                             </div>
                                         </div>
                                         <div class="text-right">
-                                            <div class="text-h5 font-weight-black text-amber-accent-2">{{ match.score }} {{ $t('profile.pts') }}</div>
+                                            <div class="text-h6 font-weight-black text-amber-accent-2">{{ match.score }} {{ $t('profile.pts') }}</div>
                                             <div class="text-tiny grey--text">{{ $t('profile.xpEarned', { xp: match.xpEarned }) }}</div>
                                         </div>
                                     </div>
@@ -188,23 +198,24 @@
                             <v-list-item
                                 v-for="(match, idx) in paginatedHistory"
                                 :key="'hist-'+idx"
-                                class="recent-match-item mb-2"
+                                class="recent-match-item mb-1"
                                 rounded="lg"
+                                density="compact"
                             >
                                 <template v-slot:prepend>
-                                    <v-avatar color="cyan-darken-4" size="40" class="mr-3">
-                                        <v-icon color="cyan-accent-2" size="20">mdi-sword-cross</v-icon>
+                                    <v-avatar color="cyan-darken-4" size="32" class="mr-3">
+                                        <v-icon color="cyan-accent-2" size="16">mdi-sword-cross</v-icon>
                                     </v-avatar>
                                 </template>
-                                <v-list-item-title class="text-capitalize text-white font-weight-medium">
-                                    {{ match.game }}
+                                <v-list-item-title class="text-capitalize text-white font-weight-medium text-body-2">
+                                    {{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}
                                 </v-list-item-title>
-                                <v-list-item-subtitle class="text-caption grey--text">
+                                <v-list-item-subtitle class="text-caption grey--text" style="font-size: 10px !important;">
                                     {{ new Date(match.createdAt).toLocaleDateString() }}
                                 </v-list-item-subtitle>
                                 <template v-slot:append>
                                     <div class="text-right">
-                                        <div class="text-body-1 font-weight-bold text-cyan-accent-3">{{ match.score }}</div>
+                                        <div class="text-body-2 font-weight-bold text-cyan-accent-3">{{ match.score }} pts</div>
                                     </div>
                                 </template>
                             </v-list-item>
@@ -238,6 +249,7 @@
                     </div>
                 </div>
             </div>
+            </v-card>
         </div>
 
         <!-- Diálogo de Selección de Logros -->
@@ -250,7 +262,8 @@
                 <v-card-text>
                     <v-list bg-color="transparent" class="text-white">
                         <v-list-item v-for="achievement in allAchievements" :key="achievement.id"
-                            :title="achievement.title" :subtitle="achievement.description"
+                            :title="$te('achievementsList.' + achievement.id + '.title') ? $t('achievementsList.' + achievement.id + '.title') : achievement.title" 
+                            :subtitle="$te('achievementsList.' + achievement.id + '.desc') ? $t('achievementsList.' + achievement.id + '.desc') : achievement.description"
                             @click="achievement.unlocked ? selectAchievement(achievement.id) : null"
                             :disabled="!achievement.unlocked" class="mb-2 achievement-list-item" :class="{
                                 'selected': isSelected(achievement.id),
@@ -341,7 +354,7 @@ const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const historyDialog = ref(false)
 const currentPage = ref(1)
-const pageSize = 5
+const pageSize = 4
 const currentSlotIndex = ref(null)
 const { 
     user, rank, plan, selectedAchievements, unlockedAchievements, 
@@ -517,7 +530,7 @@ watch(historyDialog, async (isOpen) => {
     min-height: 100vh;
     padding-top: 40px;
     padding-bottom: 120px;
-    /* Aumentado para mejor scroll */
+    overflow-x: auto;
 }
 
 /* Tarjeta Principal (Sólida, no Glassmorphism) */
@@ -525,13 +538,13 @@ watch(historyDialog, async (isOpen) => {
     background: #0d0f14 !important;
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    overflow: hidden;
     transition: all 0.3s;
+    position: relative; /* Ajuste para overlay */
 }
 
 .profile-card.history-open {
-    border-radius: 16px 0 0 16px !important;
-    border-right: none !important;
+    /* Mantenemos el border radius original porque el historial ahora flota, no se fusiona. */
+    border-radius: 16px !important;
 }
 
 /* Banner superior */
@@ -732,21 +745,20 @@ watch(historyDialog, async (isOpen) => {
 }
 
 .history-panel-inline {
-    width: 420px !important;
-    min-width: 420px !important;
-    background: #0d0f14 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid rgba(0, 229, 255, 0.6) !important;
-    border-radius: 0 16px 16px 0 !important;
+    width: 100% !important;
+    background: rgba(13, 15, 20, 0.95) !important;
+    backdrop-filter: blur(15px);
+    border-radius: 16px !important;
     min-height: 100%;
-    overflow-y: auto;
-    box-shadow: 15px 0 35px rgba(0,0,0,0.6);
-    z-index: 100 !important;
-    animation: slideInRight 0.4s ease-out;
+    z-index: 50 !important;
+    animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
 @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(-20px); }
+    from { opacity: 0; transform: translateX(100%); }
     to { opacity: 1; transform: translateX(0); }
 }
 

@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer app permanent width="260" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
+    <v-navigation-drawer app permanent width="340" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
         <div class="menu-header d-flex justify-center align-center py-10">
             <h1 class="text-h3 font-weight-bold text-white tracking-wide">ASTRO</h1>
         </div>
@@ -73,6 +73,7 @@ const menuItems = ref([
     background: rgba(255, 255, 255, 0.03) !important;
     backdrop-filter: blur(10px);
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    overflow-y: hidden !important;
 }
 
 .tracking-wide {
