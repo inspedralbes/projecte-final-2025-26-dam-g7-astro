@@ -79,6 +79,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
+import { requestJson } from '@/stores/astroShared';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
@@ -112,7 +113,7 @@ async function toggleEquip(item) {
     if (!isEquipable(item)) return;
 
     try {
-        const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
+        const { response, data } = await requestJson('/api/inventory/toggle-equip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -121,11 +122,12 @@ async function toggleEquip(item) {
             })
         });
 
-        const data = await response.json();
-        if (data.success) {
-            // Actualizamos el estado global con el inventario devuelto por el servidor
-            astroStore.setInventory(data.inventory || []);
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo equipar el objeto.');
         }
+
+        // Actualizamos el estado global con el inventario devuelto por el servidor
+        astroStore.setInventory(data.inventory || []);
     } catch (error) {
         console.error("Error al equipar item:", error);
     }

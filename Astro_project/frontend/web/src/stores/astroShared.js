@@ -325,7 +325,18 @@ export function normalizeInventoryItems(values = []) {
     return [...mergedById.values()].sort((a, b) => a.id - b.id);
 }
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+function resolveDefaultApiBaseUrl() {
+    if (typeof window === 'undefined') return 'http://localhost:3000';
+
+    const { protocol, hostname } = window.location;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    if (isLocalHost) return 'http://localhost:3000';
+
+    return `${protocol}//${hostname}:3000`;
+}
+
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || resolveDefaultApiBaseUrl();
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 
 export function buildApiUrl(path) {

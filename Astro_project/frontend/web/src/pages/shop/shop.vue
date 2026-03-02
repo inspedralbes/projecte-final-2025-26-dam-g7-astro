@@ -222,6 +222,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
+import { requestJson } from '@/stores/astroShared';
 
 const astroStore = useAstroStore();
 const userCoins = computed(() => astroStore.coins);
@@ -245,12 +246,12 @@ const updateStats = (data) => {
 const triggerMultiSpin = async () => {
     if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
     try {
-        const response = await fetch('http://localhost:3000/api/shop/buy-tickets', {
+        const { response, data } = await requestJson('/api/shop/buy-tickets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: astroStore.user })
         });
-        const data = await response.json();
+
         if (!response.ok || !data.success) throw new Error(data.message);
 
         astroStore.setCoins(data.newBalance);
