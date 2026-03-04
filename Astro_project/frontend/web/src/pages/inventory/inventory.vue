@@ -111,8 +111,12 @@ onMounted(async () => {
 async function toggleEquip(item) {
     if (!isEquipable(item)) return;
 
+    // 1. Usamos la variable de entorno. Si no existe, usa localhost como backup.
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
     try {
-        const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
+        // 2. Reemplazamos la URL fija por el Template Literal
+        const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
