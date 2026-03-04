@@ -328,16 +328,74 @@ export function normalizeInventoryItems(values = []) {
 function resolveDefaultApiBaseUrl() {
     if (typeof window === 'undefined') return 'http://localhost:3000';
 
-    const { protocol, hostname } = window.location;
+    const { hostname, origin } = window.location;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
 
     if (isLocalHost) return 'http://localhost:3000';
 
-    return `${protocol}//${hostname}:3000`;
+    return origin;
+}
+
+function normalizeRuntimeApiBaseUrl(rawBaseUrl) {
+    const trimmedBaseUrl = String(rawBaseUrl || '').trim();
+    if (!trimmedBaseUrl) return resolveDefaultApiBaseUrl();
+    if (!hasWindow) return trimmedBaseUrl;
+
+    try {
+        const parsedBaseUrl = new URL(trimmedBaseUrl, window.location.origin);
+
+        // Evita mixed-content quan l'app corre sobre HTTPS.
+        if (window.location.protocol === 'https:' && parsedBaseUrl.protocol === 'http:') {
+            parsedBaseUrl.protocol = 'https:';
+        }
+
+        return parsedBaseUrl.toString();
+    } catch (error) {
+        return trimmedBaseUrl;
+    }
 }
 
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || resolveDefaultApiBaseUrl();
-export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
+export const API_BASE_URL = normalizeRuntimeApiBaseUrl(rawApiBaseUrl).replace(/\/$/, '');
+
+export function buildWebSocketBaseUrl() {
+    const explicitWsBaseUrl = String(import.meta.env.VITE_WS_BASE_URL || '').trim();
+    const sourceUrl = explicitWsBaseUrl || API_BASE_URL;
+
+    try {
+        const parsedUrl = hasWindow
+            ? new URL(sourceUrl, window.location.origin)
+            : new URL(sourceUrl);
+
+        const mustUseSecureWebSocket = hasWindow
+            ? window.location.protocol === 'https:'
+            : parsedUrl.protocol === 'https:';
+
+        if (parsedUrl.protocol === 'ws:' || parsedUrl.protocol === 'wss:') {
+            if (mustUseSecureWebSocket && parsedUrl.protocol === 'ws:') {
+                parsedUrl.protocol = 'wss:';
+            }
+        } else {
+            parsedUrl.protocol = mustUseSecureWebSocket ? 'wss:' : 'ws:';
+        }
+
+        // Si no hi ha URL WS explícita, usem només host/port de l'API base.
+        if (!explicitWsBaseUrl) {
+            parsedUrl.pathname = '';
+            parsedUrl.search = '';
+            parsedUrl.hash = '';
+        }
+
+        return parsedUrl.toString().replace(/\/$/, '');
+    } catch (error) {
+        if (hasWindow) {
+            const fallbackProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            return `${fallbackProtocol}://${window.location.host}`;
+        }
+
+        return 'ws://localhost:3000';
+    }
+}
 
 export function buildApiUrl(path) {
     if (!path.startsWith('/')) {
