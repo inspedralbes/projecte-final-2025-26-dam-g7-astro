@@ -1,11 +1,15 @@
 const BOOSTER_ITEM_FIELD_MAP = Object.freeze({
     3: 'doubleCoinsGamesLeft',
-    4: 'doubleScoreGamesLeft'
+    4: 'doubleScoreGamesLeft',
+    5: 'slowTimeGamesLeft',  // NUEVO: ID 5 -> Cronómetro
+    6: 'shieldGamesLeft'     // NUEVO: ID 6 -> Escudo
 });
 
 const DEFAULT_ACTIVE_BOOSTERS = Object.freeze({
     doubleCoinsGamesLeft: 0,
-    doubleScoreGamesLeft: 0
+    doubleScoreGamesLeft: 0,
+    slowTimeGamesLeft: 0,    // NUEVO
+    shieldGamesLeft: 0       // NUEVO
 });
 
 const DEFAULT_BOOSTER_DURATION_GAMES = 3;
@@ -24,7 +28,9 @@ function normalizeActiveBoosters(activeBoosters = {}) {
 
     return {
         doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
-        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft),
+        slowTimeGamesLeft: toNonNegativeInteger(source.slowTimeGamesLeft), // NUEVO
+        shieldGamesLeft: toNonNegativeInteger(source.shieldGamesLeft)      // NUEVO
     };
 }
 
@@ -45,12 +51,10 @@ function addBoosterDuration(activeBoosters, field, duration = DEFAULT_BOOSTER_DU
 function consumeBoostersForCompletedGame(activeBoosters) {
     const normalized = normalizeActiveBoosters(activeBoosters);
 
-    if (normalized.doubleCoinsGamesLeft > 0) {
-        normalized.doubleCoinsGamesLeft -= 1;
-    }
-    if (normalized.doubleScoreGamesLeft > 0) {
-        normalized.doubleScoreGamesLeft -= 1;
-    }
+    if (normalized.doubleCoinsGamesLeft > 0) normalized.doubleCoinsGamesLeft -= 1;
+    if (normalized.doubleScoreGamesLeft > 0) normalized.doubleScoreGamesLeft -= 1;
+    if (normalized.slowTimeGamesLeft > 0)    normalized.slowTimeGamesLeft -= 1;    // NUEVO
+    if (normalized.shieldGamesLeft > 0)      normalized.shieldGamesLeft -= 1;      // NUEVO
 
     return normalized;
 }

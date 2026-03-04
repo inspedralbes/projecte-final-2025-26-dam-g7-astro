@@ -321,7 +321,9 @@ const basicItems = ref([
     { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
     { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
     { id: 3, name: 'Doble de Monedas', cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
-    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
+    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' },
+    { id: 5, name: 'Cronómetro Lento', cat: 'items', price: 400, icon: 'mdi-timer-sand-empty', color: 'blue-accent-2', desc: 'El tiempo pasa un 20% más lento.', limitacio: '* Válido durante 2 partidas', bgColor: 'rgba(68, 138, 255, 0.1)' },
+    { id: 6, name: 'Escudo Protector', cat: 'items', price: 600, icon: 'mdi-shield-check', color: 'teal-accent-4', desc: 'Evita perder vida/racha al fallar.', limitacio: '* Válido para 1 partida', bgColor: 'rgba(0, 191, 165, 0.1)' }
 ]);
 
 const premiumItems = ref([
