@@ -80,14 +80,19 @@
       <!-- Panell de Pregunta i Resposta -->
       <v-col cols="12" md="6" class="px-md-8">
         <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
-          <div class="mb-4">
+          <div v-if="canSeeDefinition" class="mb-4">
             <v-chip color="cyan" label class="mb-2 font-weight-bold">Definició</v-chip>
             <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+          </div>
+          <div v-else class="mb-4 text-center py-8">
+            <v-icon size="48" color="cyan-darken-2" class="mb-2">mdi-account-voice</v-icon>
+            <p class="text-h6 text-grey-lighten-1">ESCOLTA EL TEU COMPANY</p>
+            <p class="text-caption text-grey">Ell té la definició</p>
           </div>
 
           <v-divider class="mb-6 border-opacity-25"></v-divider>
 
-          <div class="text-center mb-4">
+          <div v-if="canInput" class="text-center mb-4">
             <p class="text-overline text-grey-lighten-1 mb-2">ESCRIU LA PARAULA</p>
             
             <v-text-field
@@ -136,6 +141,9 @@
               >
                 Esborrar tot
               </v-btn>
+          </div>
+          <div v-else class="text-center py-4">
+              <v-chip color="orange" variant="outlined" label>MODRE ESCRIU LA RESPOSTA</v-chip>
           </div>
         </v-card>
       </v-col>
@@ -188,6 +196,7 @@ const props = defineProps({
 
 const emit = defineEmits(['game-over']);
 
+// --- DADES DEL JOC (temes variats) ---
 // --- DADES DEL JOC (temes variats) ---
 const allLettersData = [
   // 🌌 Espai
@@ -270,7 +279,7 @@ const allLettersData = [
   { char: 'M', question: "Art de combinar sons de forma agradable.", answer: "MUSICA" },
 ];
 
-// --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
+// --- STAR GEOMETRY ---
 const STAR_CENTER = 200;
 const STAR_RADIUS = 150;
 const INNER_RADIUS = 60; 
@@ -297,13 +306,11 @@ const starSegments = computed(() => {
 });
 
 const tipPolygons = computed(() => {
-  // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
   return letterPositions.map(pos => {
     const pPrev = starPoints[(pos - 1 + 10) % 10];
     const pCurr = starPoints[pos];
     const pNext = starPoints[(pos + 1) % 10];
     const pCenter = { x: STAR_CENTER, y: STAR_CENTER };
-    // Formem un rombe o triangle des del centre per omplir la punta
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`;
   });
 });
@@ -329,6 +336,22 @@ const rocketPos = reactive({ x: 0, y: 0 });
 const trailParticles = ref([]);
 const visitedSegments = ref(new Set());
 
+// ---- COOPERATIVO ASIMÉTRICO ----
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const myTeam = computed(() => {
+    if (!isCoop.value) return null;
+    return multiplayerStore.room.gameConfig.teams.find(t => t.members.includes(astroStore.user.username));
+});
+
+// Role A: Oráculo (Lee definición), Role B: Escriba (Escribe respuesta)
+const myRole = computed(() => {
+    if (!myTeam.value) return null;
+    return myTeam.value.members[0] === astroStore.user.username ? 'A' : 'B';
+});
+
+const canSeeDefinition = computed(() => !isCoop.value || myRole.value === 'A');
+const canInput = computed(() => !isCoop.value || myRole.value === 'B');
+
 // Computed
 const currentLetter = computed(() => {
     if (roscoLetters.value.length === 0) return { char: '?', question: '' };
@@ -339,7 +362,7 @@ const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 
 const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
 const finalReward = computed(() => score.value + timeLeft.value);
 
-// Helper: normalize string (remove accents, uppercase, trim spaces)
+// Helper: normalize string
 const normalize = (str) => {
     return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
@@ -363,6 +386,22 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     // Rebre sabotatge del rival: restar temps
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
+    }
+
+    // Lógica COOP: Sincronizar avances de turno y respuestas
+    if (isCoop.value && msg.type === 'GAME_ACTION' && msg.from !== astroStore.user.username) {
+        if (msg.action.type === 'ADVANCE_TURN') {
+            currentIndex.value = msg.action.nextIndex;
+            // Si hay cambio de índice, animar cohete localmente (ya sea por correcto o pasapalabra)
+            if (msg.action.wasCorrect !== undefined) {
+                 roscoLetters.value[msg.action.prevIndex].status = msg.action.wasCorrect ? 'correct' : 'incorrect';
+                 if (msg.action.wasCorrect) score.value += 100;
+            }
+            animateRocket(msg.action.prevIndex, msg.action.nextIndex);
+        }
+        if (msg.action.type === 'FINISH_GAME') {
+            finishGame();
+        }
     }
 });
 
@@ -476,6 +515,10 @@ const checkAnswer = async () => {
         score.value += 100;
         feedbackMessage.value = "Correcte! Molt bé!";
         feedbackColor.value = 'success';
+        
+        // Notificar al compañero en modo COOP
+        const wasCorrect = true;
+        
         // Sabotatge multijugador: +10s per a tu, -15s per al rival
         if (props.isMultiplayer) {
             timeLeft.value = Math.min(timeLeft.value + 10, 999);
@@ -518,10 +561,26 @@ const advanceTurn = async () => {
     }
 
     if (nextIdx !== -1) {
+        const wasCorrect = roscoLetters.value[prevIndex].status === 'correct';
+        const wasIncorrect = roscoLetters.value[prevIndex].status === 'incorrect';
+        
+        // Sincronizar avance en modo COOP antes de animar localmente
+        if (isCoop.value) {
+            multiplayerStore.sendGameAction({
+                type: 'ADVANCE_TURN',
+                prevIndex,
+                nextIndex: nextIdx,
+                wasCorrect: wasCorrect ? true : (wasIncorrect ? false : undefined)
+            });
+        }
+
         visitedSegments.value.add(prevIndex);
         await animateRocket(prevIndex, nextIdx);
         currentIndex.value = nextIdx;
     } else {
+        if (isCoop.value) {
+            multiplayerStore.sendGameAction({ type: 'FINISH_GAME' });
+        }
         finishGame();
     }
 };

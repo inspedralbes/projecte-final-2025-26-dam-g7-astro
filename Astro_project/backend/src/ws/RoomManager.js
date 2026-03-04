@@ -57,7 +57,7 @@ class RoomManager {
                             type: 'SPACE_RACE_LOSE',
                             reason: 'HAZARD_CAUGHT'
                         });
-                        setTimeout(() => this.finalizeMatch(roomId, 'Nadie (Escapada Fallida)'), 3000);
+                        setTimeout(() => this.finishMatch(roomId, 'Nadie (Escapada Fallida)'), 3000);
                     }
 
                     // 2. Los equipos BOT avanzan con IA Dinámica (Arrebatos y frenazos)

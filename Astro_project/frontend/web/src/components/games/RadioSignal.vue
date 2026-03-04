@@ -18,15 +18,24 @@
         <div class="screen-housing">
             <div class="screen-bezel">
                 <div class="wave-panels">
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+                    <div v-if="canSeeTarget" class="wave-screen" :class="{ 'screen-synced': isTuned }">
                         <div class="screen-label">TARGET</div>
                         <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
                         <div class="scanline"></div>
                     </div>
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+                    <div v-else class="wave-screen screen-hidden">
+                        <v-icon size="24" color="#222">mdi-lock-pattern</v-icon>
+                        <div class="screen-label">TARGET ENCRYPTED</div>
+                    </div>
+
+                    <div v-if="canSeeSignal" class="wave-screen" :class="{ 'screen-synced': isTuned }">
                         <div class="screen-label">SIGNAL</div>
                         <canvas ref="currentWaveCanvas" width="260" height="90"></canvas>
                         <div class="scanline"></div>
+                    </div>
+                    <div v-else class="wave-screen screen-hidden">
+                        <v-icon size="24" color="#222">mdi-radio-tower</v-icon>
+                        <div class="screen-label">SIGNAL LOCKED</div>
                     </div>
                 </div>
             </div>
@@ -61,6 +70,7 @@
             <div class="knob-row">
                 <div
                     class="knob-container"
+                    :class="{ 'knob-disabled': !canDial }"
                     @mousedown="startRotating"
                     @touchstart.prevent="startRotating"
                 >
@@ -72,9 +82,9 @@
         </div>
 
         <div class="input-housing">
-            <div v-if="isTuned" class="input-active">
+            <div v-if="canInput && isTuned" class="input-active">
                 <div class="input-header">
-                    <button class="replay-btn" @click="speakPhrase(1.0)">
+                    <button class="replay-btn" :class="{ 'replay-disable': !canHearVoz }" @click="speakPhrase(1.0)">
                         <v-icon size="18">mdi-volume-high</v-icon>
                     </button>
                     <span class="input-label">INCOMING TRANSMISSION</span>
@@ -94,7 +104,8 @@
             </div>
             <div v-else class="input-placeholder">
                 <v-icon size="18" color="#444">mdi-antenna</v-icon>
-                <span>ESPERANT SENYAL...</span>
+                <span v-if="!canInput">EL COMPANY HA DE DESXIFRAR</span>
+                <span v-else-if="!isTuned">ESPERANT SENYAL...</span>
             </div>
         </div>
 
@@ -124,6 +135,26 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['game-over']);
+
+// ---- COOPERATIVO ASIMÉTRICO ----
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const myTeam = computed(() => {
+    if (!isCoop.value) return null;
+    return multiplayerStore.room.gameConfig.teams.find(t => t.members.includes(astroStore.user.username));
+});
+
+// Role A: Sintonizador (Primer miembro), Role B: Decodificador (Segundo miembro)
+const myRole = computed(() => {
+    if (!myTeam.value) return null;
+    return myTeam.value.members[0] === astroStore.user.username ? 'A' : 'B';
+});
+
+// Visibilidad asimétrica
+const canSeeTarget = computed(() => !isCoop.value || myRole.value === 'A');
+const canSeeSignal = computed(() => !isCoop.value || myRole.value === 'B');
+const canDial = computed(() => !isCoop.value || myRole.value === 'A');
+const canInput = computed(() => !isCoop.value || myRole.value === 'B');
+const canHearVoz = computed(() => !isCoop.value || myRole.value === 'A');
 
 // Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
@@ -177,7 +208,7 @@ knobRotation.value = (currentFrequency.value / 100) * 360;
 currentKnobRotation = knobRotation.value;
 
 const startRotating = (e) => {
-    if (gameFinished.value) return;
+    if (gameFinished.value || !canDial.value) return;
     isDragging = true;
     const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
@@ -206,6 +237,15 @@ const onRotating = (e) => {
     currentKnobRotation = rotation;
     knobRotation.value = rotation;
     currentFrequency.value = (rotation / 360) * 100;
+
+    // Sincronizar frecuencia con el compañero en modo COOP
+    if (isCoop.value) {
+        multiplayerStore.sendGameAction({
+            type: 'FREQ_UPDATE',
+            freq: currentFrequency.value
+        });
+    }
+
     updateNoise();
     if (isTuned.value) { isTuned.value = false; stopSpeechLoop(); }
 };
@@ -214,11 +254,15 @@ const stopRotating = () => {
     if (gameFinished.value) return;
     isDragging = false;
     removeDragListeners();
+    checkTuningStatus();
+};
+
+const checkTuningStatus = () => {
     const distance = Math.abs(currentFrequency.value - targetFrequency.value);
     if (distance < tuningThreshold) {
         isTuned.value = true;
         if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1);
-        startSpeechLoop();
+        if (canHearVoz.value) startSpeechLoop();
     } else {
         isTuned.value = false;
         stopSpeechLoop();
@@ -283,6 +327,7 @@ const renderWave = (canvas, isTarget) => {
     const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time;
 
     if (isTarget) {
+        if (!canSeeTarget.value) return; // ASIMETRÍA
         ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#FF9800'; ctx.setLineDash([]);
         for (let x = 0; x < w; x++) {
             const y = h/2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp;
@@ -291,6 +336,7 @@ const renderWave = (canvas, isTarget) => {
         ctx.stroke();
         if (isTuned.value) { ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0; }
     } else {
+        if (!canSeeSignal.value) return; // ASIMETRÍA
         const dist = Math.abs(currentFrequency.value - targetFrequency.value);
         const prox = Math.max(0, 1 - (dist / 50));
         ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`;
@@ -310,7 +356,7 @@ const renderWave = (canvas, isTarget) => {
 
 // ---- VOZ ----
 const startSpeechLoop = () => {
-    if (!isTuned.value || gameFinished.value) return;
+    if (!isTuned.value || gameFinished.value || !canHearVoz.value) return;
     speakPhrase(1.0);
 };
 
@@ -323,7 +369,7 @@ const stopSpeechLoop = () => {
 };
 
 const speakPhrase = (volume = 1.0) => {
-    if (!window.speechSynthesis || gameFinished.value) return;
+    if (!window.speechSynthesis || gameFinished.value || !canHearVoz.value) return;
     
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(currentPhrase.value);
@@ -354,7 +400,7 @@ const speakPhrase = (volume = 1.0) => {
 
 // LÓGICA CORE CORREGIDA
 const checkPhrase = () => {
-    if (gameFinished.value) return;
+    if (gameFinished.value || !canInput.value) return;
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
     
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
@@ -372,6 +418,15 @@ const checkPhrase = () => {
         isTuned.value = false;
         stopSpeechLoop();
         updateNoise();
+
+        // Notificar al compañero del éxito
+        if (isCoop.value) {
+            multiplayerStore.sendGameAction({
+                type: 'SIGNAL_DECODED',
+                nextPhrase: currentPhrase.value,
+                nextFrequency: targetFrequency.value
+            });
+        }
     } else { 
         showError.value = true; 
         userGuess.value = ''; 
@@ -436,6 +491,24 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
         // Alguien ganó la ronda, cerrar este juego formalmente
         gameFinished.value = true; 
         emit('game-over', score.value + timeLeft.value);
+    }
+
+    // Lógica COOP: Recibir frecuencia del sintonizador
+    if (isCoop.value && msg.type === 'GAME_ACTION' && msg.from !== astroStore.user.username) {
+        if (msg.action.type === 'FREQ_UPDATE') {
+            currentFrequency.value = msg.action.freq;
+            checkTuningStatus();
+            updateNoise();
+        }
+        if (msg.action.type === 'SIGNAL_DECODED') {
+            currentPhrase.value = msg.action.nextPhrase;
+            targetFrequency.value = msg.action.nextFrequency;
+            isTuned.value = false;
+            stopSpeechLoop();
+            showSuccess.value = true;
+            score.value += 150;
+            timeLeft.value += 15;
+        }
     }
 });
 
@@ -550,6 +623,13 @@ onUnmounted(() => {
     position: relative;
     overflow: hidden;
     transition: border-color 0.4s, box-shadow 0.4s;
+    min-height: 90px;
+}
+.screen-hidden {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0c10;
 }
 .screen-synced { border-color: #00E5FF !important; box-shadow: inset 0 0 15px rgba(0,229,255,0.1); }
 .screen-label {
@@ -620,6 +700,7 @@ canvas { display: block; width: 100%; height: auto; }
     cursor: pointer; user-select: none;
     position: relative;
 }
+.knob-disabled { cursor: not-allowed; opacity: 0.5; }
 .knob-body {
     width: 100%; height: 100%;
     background: radial-gradient(circle at 38% 32%, #d0d0d0 0%, #8a8a8a 60%, #666 100%);
@@ -652,7 +733,8 @@ canvas { display: block; width: 100%; height: auto; }
     padding: 4px 6px; cursor: pointer; color: #00E5FF;
     transition: all 0.2s;
 }
-.replay-btn:hover { background: rgba(0,229,255,0.1); }
+.replay-disable { opacity: 0.3; cursor: not-allowed; border-color: #333; color: #333; }
+.replay-btn:hover:not(.replay-disable) { background: rgba(0,229,255,0.1); }
 .input-label { font-size: 10px; color: #00E5FF; letter-spacing: 2px; font-weight: bold; font-family: 'Courier New', monospace; }
 .input-row { display: flex; gap: 6px; }
 .radio-input {
@@ -673,5 +755,6 @@ canvas { display: block; width: 100%; height: auto; }
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     height: 70px; gap: 6px;
     font-size: 10px; color: #333; letter-spacing: 2px; font-family: 'Courier New', monospace;
+    text-align: center;
 }
 </style>

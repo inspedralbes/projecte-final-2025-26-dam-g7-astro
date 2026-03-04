@@ -15,9 +15,9 @@
 
     <template v-else-if="isPlaying">
       
-      <v-card width="100%" max-width="1200" class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0" rounded="xl" style="z-index: 10;">
-        <div class="d-flex justify-space-between align-center">
-          <div>
+      <v-card width="100%" max-width="1200" class="mx-auto mb-6 pa-6 bg-deep-purple-darken-4 elevation-12 flex-shrink-0" rounded="xl" style="z-index: 10; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="d-flex justify-space-between align-center px-4">
+          <div style="flex: 1;">
             <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadrón Fonológico</h2>
             <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
               <span class="font-weight-bold">Punts: {{ score }}</span>
@@ -30,12 +30,12 @@
             </div>
           </div>
 
-          <div class="text-center px-10 target-box rounded-xl py-3">
+          <div class="text-center px-10 target-box rounded-xl py-3" style="flex: 1;">
             <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimas con:</div>
             <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget.word }}</div>
           </div>
 
-          <div class="d-flex align-center gap-6">
+          <div class="d-flex align-center justify-end gap-6" style="flex: 1;">
             <v-chip v-if="combo > 0" :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'" size="x-large" class="font-weight-bold text-h6" :class="{ 'animate-pulse': isTurbo }">
               COMBO x{{ combo }} {{ isTurbo ? '🔥' : '' }}
             </v-chip>
@@ -45,10 +45,10 @@
       </v-card>
 
       <div 
-        class="play-area position-relative rounded-xl overflow-hidden w-100" 
+        class="play-area position-relative rounded-xl overflow-hidden w-100 mx-auto" 
         :class="{ 'turbo-mode': isTurbo }"
         @click.self="missClick" 
-        style="max-width: 1200px; height: 75vh; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
+        style="max-width: 1200px; height: 65vh; min-height: 500px; border: 4px solid rgba(255, 255, 255, 0.05); box-shadow: 0 0 30px rgba(0,0,0,0.5);"
       >
         <div class="nebula-bg" v-if="isTurbo"></div>
         

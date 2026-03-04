@@ -29,74 +29,71 @@
     </template>
 
     <template v-else>
-      <!-- Fondo Espacial Profundo con Parallax -->
-      <div class="space-bg" :style="parallaxStyle">
-        <div v-for="n in 100" :key="n" class="star" :style="getRandomStarStyle()"></div>
-      </div>
+      <!-- Fondo Minimalista (Sin estrellas para efecto silueta) -->
+      <div class="space-bg-minimal"></div>
 
-      <!-- Túnel Hiperespacio (Efecto visual al ganar) -->
-      <div v-if="isHyperspace" class="hyperspace-tunnel">
-        <div v-for="n in 20" :key="'h-'+n" class="tunnel-ring"></div>
-      </div>
-
-      <!-- Circuito Curvo (SVG Principal) -->
+      <!-- Circuito Curvo (SVG Principal con Efecto Silueta) -->
       <svg class="main-circuit" viewBox="0 0 1000 400">
-        <!-- Glow del Camino -->
+        <!-- Glow Intenso del Camino -->
         <path 
           :d="circuitPath" 
           fill="none" 
-          stroke="rgba(0, 229, 255, 0.1)" 
+          stroke="rgba(0, 229, 255, 0.4)" 
+          stroke-width="20" 
+          stroke-linecap="round"
+          class="path-glow-external"
+        />
+        <path 
+          :d="circuitPath" 
+          fill="none" 
+          stroke="rgba(0, 229, 255, 0.2)" 
           stroke-width="12" 
           stroke-linecap="round"
         />
-        <!-- Línea del Camino -->
+        <!-- Línea del Camino (Silueta) -->
         <path 
           id="racePath"
           :d="circuitPath" 
           fill="none" 
-          stroke="rgba(255, 255, 255, 0.2)" 
-          stroke-width="2" 
-          stroke-dasharray="10 10"
+          stroke="#fff" 
+          stroke-width="1" 
+          stroke-dasharray="8 8"
+          opacity="0.6"
         />
 
-        <!-- Planetas / Checkpoints -->
+        <!-- Checkpoints Minimalistas (Solo puntos de luz) -->
         <g v-for="(point, i) in checkpointCoords" :key="'cp-'+i">
-          <circle :cx="point.x" :cy="point.y" r="20" :class="'planet-svg planet-' + (i+1)" />
-          <text :x="point.x" :y="point.y + 35" text-anchor="middle" class="checkpoint-label">PLANETA {{ i + 1 }}</text>
+          <circle :cx="point.x" :cy="point.y" r="8" :class="'checkpoint-dot dp-' + (i+1)" />
+          <text v-if="i > 0 && i < 4" :x="point.x" :y="point.y - 20" text-anchor="middle" class="checkpoint-label-minimal">P{{ i }}</text>
         </g>
 
-        <!-- Amenaza -->
-        <g :transform="`translate(${threatCoords.x - 40}, ${threatCoords.y - 40})`" class="threat-g" :class="hazardType.toLowerCase()">
-          <rect x="0" y="0" width="80" height="80" fill="transparent" />
-          <foreignObject width="80" height="80">
-            <div class="threat-visual d-flex flex-column align-center">
-              <v-icon :icon="getHazardIcon()" size="40" color="white"></v-icon>
-              <div class="text-7px font-weight-bold text-white mt-1">{{ hazardType.replace('_', ' ') }}</div>
-            </div>
-          </foreignObject>
+        <!-- Amenaza (Simplificada) -->
+        <g :transform="`translate(${threatCoords.x}, ${threatCoords.y})`" class="threat-minimal">
+           <circle r="30" fill="rgba(244, 63, 94, 0.2)" class="threat-pulse-glow" />
+           <v-icon :icon="getHazardIcon()" size="24" color="#f43f5e" x="-12" y="-12"></v-icon>
         </g>
 
-        <!-- Naves de los Equipos -->
-        <g v-for="team in teams" :key="team.id" :transform="`translate(${getTeamCoords(team).x - 20}, ${getTeamCoords(team).y - 40})`">
-          <foreignObject width="100" height="80" style="overflow: visible;">
-            <div class="ship-container" :class="{ 'my-ship': isPlayerInTeam(team) }">
-              <v-icon icon="mdi-rocket-launch" :color="team.isBot ? '#94a3b8' : '#00e5ff'" size="24" class="ship-icon"></v-icon>
-              <div class="ship-tag">
-                <span class="text-7px font-weight-black">EQ {{ team.id }}</span>
-                <v-icon v-if="team.isBot" icon="mdi-robot" size="8" class="ml-1"></v-icon>
-              </div>
-            </div>
-          </foreignObject>
+        <!-- Naves de los Equipos (Siluetas) -->
+        <g v-for="team in teams" :key="team.id" :transform="`translate(${getTeamCoords(team).x}, ${getTeamCoords(team).y})`">
+          <circle r="15" :fill="isPlayerInTeam(team) ? 'rgba(0, 229, 255, 0.3)' : 'rgba(255,255,255,0.1)'" class="ship-glow" />
+          <v-icon 
+            icon="mdi-rocket-launch" 
+            :color="isPlayerInTeam(team) ? '#00e5ff' : (team.isBot ? '#64748b' : '#f59e0b')" 
+            size="20" 
+            x="-10" y="-10"
+            :class="{ 'ship-float': true, 'my-ship-pulse': isPlayerInTeam(team) }"
+          ></v-icon>
+          <text y="-25" text-anchor="middle" class="team-label-minimal" :class="{ 'my-team-text': isPlayerInTeam(team) }">
+            {{ team.id }}
+          </text>
         </g>
       </svg>
 
-      <!-- HUD de Información -->
-      <div class="hud-info">
-        <div class="evacuation-timer text-right">
-          <div class="text-overline text-cyan-accent-2 line-height-1">SALTO HIPERESPACIAL EN</div>
-          <div class="time-value" :class="{ 'critical-time': remainingTime < 30 }">
-            {{ formatTime(remainingTime) }}
-          </div>
+      <!-- HUD Minimalista -->
+      <div class="hud-minimal">
+        <div class="timer-minimal">
+          <span class="label">STATUS: </span>
+          <span class="value" :class="{ 'critical': remainingTime < 30 }">{{ formatTime(remainingTime) }}</span>
         </div>
       </div>
     </template>
@@ -239,31 +236,22 @@ onUnmounted(() => {
 .space-race-map {
   width: 100%;
   height: 400px;
-  background: #020617;
-  border-radius: 20px;
+  background: #010409;
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(0, 229, 255, 0.2);
-  margin-bottom: 20px;
+  border: 2px solid rgba(0, 229, 255, 0.1);
+  box-shadow: inset 0 0 50px rgba(0, 229, 255, 0.05);
 }
 
-.space-bg { 
-  position: absolute; 
-  width: 200%; 
-  height: 100%; 
-  z-index: 0; 
-  transition: transform 0.5s linear;
-}
-
-.star {
+.space-bg-minimal {
   position: absolute;
-  width: 2px; height: 2px;
-  background: white;
-  border-radius: 50%;
-  animation: twinkle 4s infinite;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle at 50% 50%, #0a1120 0%, #010409 100%);
+  z-index: 0;
 }
 
-/* SVG Circuit */
+/* SVG Circuit Silhouette */
 .main-circuit {
   width: 100%;
   height: 100%;
@@ -271,118 +259,112 @@ onUnmounted(() => {
   z-index: 2;
 }
 
-.checkpoint-label {
-  fill: #94a3b8;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 1px;
+.path-glow-external {
+  filter: blur(8px);
+  opacity: 0.4;
 }
 
-.planet-svg {
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+.checkpoint-dot {
+  fill: #1e293b;
+  stroke: rgba(0, 229, 255, 0.3);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.2));
 }
 
-.planet-1 { fill: #444; }
-.planet-2 { fill: #5b21b6; }
-.planet-3 { fill: #166534; }
-.planet-4 { fill: #991b1b; }
-.planet-5 { fill: #0369a1; }
+.checkpoint-label-minimal {
+  fill: rgba(0, 229, 255, 0.5);
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'Roboto Mono', monospace;
+}
 
-/* Ship Visuals */
-.ship-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.threat-minimal {
+  transition: all 0.5s linear;
+}
+
+.threat-pulse-glow {
+  animation: pulse-threat-glow 1.5s infinite;
+}
+
+@keyframes pulse-threat-glow {
+  0% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.5); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0.2; }
+}
+
+.ship-glow {
+  filter: blur(4px);
+  opacity: 0.5;
+}
+
+.my-ship-pulse {
+  animation: my-ship-glow 2s infinite;
+}
+
+@keyframes my-ship-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px #00e5ff); }
+  50% { filter: drop-shadow(0 0 10px #00e5ff); }
+}
+
+.ship-float {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ship-icon {
-  filter: drop-shadow(0 0 5px currentColor);
+.team-label-minimal {
+  fill: #64748b;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: 'Roboto Mono', monospace;
 }
 
-.my-ship .ship-icon {
-  transform: scale(1.3);
-  filter: drop-shadow(0 0 10px #00e5ff);
+.my-team-text {
+  fill: #00e5ff;
+  font-size: 12px;
 }
 
-.ship-tag {
-  background: rgba(0,0,0,0.8);
-  padding: 1px 6px;
-  border-radius: 10px;
-  margin-top: 4px;
-  color: white;
+.hud-minimal {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 16px;
+  border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
+  backdrop-filter: blur(4px);
 }
 
-.my-ship .ship-tag {
-  border-color: #00e5ff;
-  background: rgba(0, 229, 255, 0.2);
+.timer-minimal {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 18px;
+  color: #fff;
 }
 
-/* Threat Visuals */
-.threat-visual {
-  animation: pulse-threat 2s infinite;
-}
+.timer-minimal .label { color: #64748b; font-size: 10px; }
+.timer-minimal .value.critical { color: #f43f5e; animation: blink 1s infinite; }
 
-.black_hole .threat-visual { color: #a855f7; }
-.kraken_space .threat-visual { color: #10b981; }
-.supernova .threat-visual { color: #ef4444; }
-
-@keyframes pulse-threat {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; }
-}
-
-/* Estilos Mini Overlay (Minimapa durante el juego) */
+/* Estilos Mini Overlay (Minimapa) */
 .mini-overlay {
   position: fixed !important;
   top: 20px;
   right: 20px;
-  width: 280px !important;
-  height: 120px !important;
-  background: rgba(10, 25, 41, 0.7) !important;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(0, 229, 255, 0.4) !important;
+  width: 320px !important;
+  height: 140px !important;
+  background: rgba(1, 4, 9, 0.8) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
   z-index: 2100;
-  padding: 10px;
-  border-radius: 16px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  margin-bottom: 0px !important;
-}
-
-.mini-hud-horizontal {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  padding: 12px;
+  border-radius: 20px !important;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
 }
 
 .mini-timer {
   font-family: 'Roboto Mono', monospace;
-  font-size: 14px;
-  color: white;
-  margin-bottom: 5px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 16px;
+  color: #00e5ff;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
 }
 
-.mini-circuit-container {
-  flex: 1;
-}
-
-.mini-circuit-container svg {
-  width: 100%;
-  height: 100%;
-}
-
-.mini-glow-cyan {
-  filter: drop-shadow(0 0 5px #00e5ff);
-}
-
-.mini-glow-red {
-  filter: drop-shadow(0 0 5px #f43f5e);
-}
-
-@keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 </style>
