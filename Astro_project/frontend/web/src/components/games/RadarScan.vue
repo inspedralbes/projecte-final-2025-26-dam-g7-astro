@@ -3,7 +3,13 @@
     <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
         <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
-        <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
+        <div class="text-h5 font-weight-bold text-cyan-accent-3 d-flex align-center">
+          Temps: <span :class="{'text-red': timeLeft <= 10}" class="mx-1">{{ timeLeft }}s</span>
+          <v-icon v-if="isSlowTimeActive" size="small" color="blue-accent-2" class="ml-1">mdi-timer-sand-empty</v-icon>
+        </div>
+        <div v-if="isShieldActive" class="text-h5">
+          <v-icon color="teal-accent-4">mdi-shield-check</v-icon>
+        </div>
       </div>
     </div>
 
@@ -46,17 +52,9 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay v-if="!isMultiplayer" v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
-        <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
-        <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
-        <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
-        <v-btn color="cyan-accent-3" size="x-large" rounded="xl" class="font-weight-black text-black px-8" @click="returnToMenu">
-          TORNAR AL MENÚ
-        </v-btn>
-      </v-card>
-    </v-overlay>
-
+    <v-snackbar v-model="showShieldFeedback" color="warning" timeout="2000" location="top">
+      <v-icon start>mdi-shield-check</v-icon> ERROR ANULADO. EL ESCUDO TE HA SALVADO.
+    </v-snackbar>
   </div>
 </template>
 
@@ -70,32 +68,29 @@ const astroStore = useAstroStore();
 
 const emit = defineEmits(['game-over']);
 const props = defineProps({
-  isMultiplayer: {
-    type: Boolean,
-    default: false
-  }
+  isMultiplayer: { type: Boolean, default: false }
 });
 
-// --- VARIABLES D'ESTAT ---
+// LÓGICA DE BOOSTERS
+const isSlowTimeActive = computed(() => (astroStore.activeBoosters?.slowTimeGamesLeft || 0) > 0);
+const isShieldActive = ref(false);
+const showShieldFeedback = ref(false);
+
 const showStartOverlay = ref(true);
-const showGameOverOverlay = ref(false);
 const isTransitioning = ref(false);
 const correctClicked = ref(false);
 const score = ref(0);
 const timeLeft = ref(60);
 let timerInterval = null;
 
-// --- SISTEMA DE VISIÓ ---
 const mouseX = ref(0);
 const mouseY = ref(0);
 const gameArea = ref(null);
 
-// --- LÒGICA DEL TAULER ---
 const board = ref([]);
 const currentLevel = ref(1);
 const targetIndex = ref(-1);
 
-// --- CONFIGURACIÓ DE NIVELLS ---
 const levels = [
   { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
   { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
@@ -104,15 +99,11 @@ const levels = [
   { distractor: 'E', target: 'F', grid: 15, tunnel: 100 }
 ];
 
-// --- COMPUTADES ---
-const currentConfig = computed(() => {
-  return levels[Math.min(currentLevel.value - 1, levels.length - 1)];
-});
+const currentConfig = computed(() => levels[Math.min(currentLevel.value - 1, levels.length - 1)]);
 const currentTunnelSize = computed(() => currentConfig.value.tunnel);
 const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid));
 const boardSize = computed(() => currentConfig.value.grid * cellSize.value);
 
-// --- FUNCIONS CORE ---
 const updateFlashlight = (e) => {
   if (!gameArea.value) return;
   const rect = gameArea.value.getBoundingClientRect();
@@ -123,11 +114,9 @@ const updateFlashlight = (e) => {
 const generateBoard = () => {
   const config = currentConfig.value;
   const totalCells = config.grid * config.grid;
-  
   let newBoard = Array(totalCells).fill(config.distractor);
   targetIndex.value = Math.floor(Math.random() * totalCells);
   newBoard[targetIndex.value] = config.target;
-  
   board.value = newBoard;
 };
 
@@ -139,33 +128,26 @@ const nextRound = () => {
 };
 
 const checkLetter = (index) => {
-  if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
+  if (showStartOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
 
   if (index === targetIndex.value) {
     isTransitioning.value = true;
     correctClicked.value = true;
-    
     setTimeout(() => {
       correctClicked.value = false;
-      
-      // Enviar sabotament en multijugador: -1s al rival
       if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-          type: 'SABOTAGE',
-          subtype: 'REDUCE_TIME',
-          amount: 1
-        });
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 1 });
       }
-
       nextRound(); 
-      
-      setTimeout(() => {
-        isTransitioning.value = false;
-      }, 200);
-      
+      setTimeout(() => isTransitioning.value = false, 200);
     }, 800);
-
   } else {
+    // INTERCEPCIÓN DEL ESCUDO
+    if (isShieldActive.value) {
+        isShieldActive.value = false;
+        showShieldFeedback.value = true;
+        return; // Sin penalización de tiempo
+    }
     timeLeft.value = Math.max(0, timeLeft.value - 3);
     score.value = Math.max(0, score.value - 5);
     if (timeLeft.value === 0) endGame();
@@ -174,75 +156,50 @@ const checkLetter = (index) => {
 
 const startGame = () => {
   showStartOverlay.value = false;
-  showGameOverOverlay.value = false;
   isTransitioning.value = false;
   correctClicked.value = false;
   score.value = 0;
   timeLeft.value = 60;
   currentLevel.value = 1;
+  isShieldActive.value = (astroStore.activeBoosters?.shieldGamesLeft || 0) > 0;
+  
   generateBoard();
   
+  const tickTime = isSlowTimeActive.value ? 1250 : 1000;
   timerInterval = setInterval(() => {
     if (!isTransitioning.value && timeLeft.value > 0) {
       timeLeft.value--;
       if (timeLeft.value <= 0) endGame();
     }
-  }, 1000);
+  }, tickTime);
 };
 
 const endGame = (silent = false) => {
   clearInterval(timerInterval);
-  
-  if (props.isMultiplayer) {
+  if (props.isMultiplayer && !silent) {
     multiplayerStore.submitRoundResult();
     return;
   }
-
-  if (!silent) {
-    showGameOverOverlay.value = true;
-  } else {
-    emit('game-over', score.value);
-  }
+  emit('game-over', score.value);
 };
 
-const returnToMenu = () => {
-  emit('game-over', score.value); 
-};
+onMounted(() => { if (props.isMultiplayer) startGame(); });
 
-onMounted(() => {
-  if (props.isMultiplayer) {
-    startGame();
-  }
-});
-
-// Listener para acciones multijugador
 watch(() => multiplayerStore.lastMessage, (msg) => {
   if (!msg) return;
-
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    emit('game-over', score.value);
-    return;
-  }
-
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') { emit('game-over', score.value); return; }
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
       timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
   }
 });
 
-// Notificar puntuación al servidor en modo multijugador
 watch(score, (newScore) => {
-  if (props.isMultiplayer) {
-    multiplayerStore.sendGameAction({
-      type: 'SCORE_UPDATE',
-      score: newScore
-    });
-  }
+  if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore });
 });
 
-onBeforeUnmount(() => {
-  if (timerInterval) clearInterval(timerInterval);
-});
+onBeforeUnmount(() => { if (timerInterval) clearInterval(timerInterval); });
 </script>
+
 
 <style scoped>
 .game-container {
