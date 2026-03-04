@@ -244,11 +244,17 @@ const finalReward = computed(() => score.value + timeLeft.value);
 // --- LÒGICA ---
 const orderedGuess = computed(() => scrambledLetters.value.map((tile) => tile.letter).join(''));
 
+let currentSeed = 1;
+const seededDice = () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+};
+
 // Funció per barrejar lletres (Fisher-Yates) mantenint identificadors únics
 const shuffleArray = (arr) => {
   const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(seededDice() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
@@ -279,20 +285,25 @@ const loadNextWord = () => {
     return;
   }
   
-  // Selecciona una paraula aleatòria
-  const randomIndex = Math.floor(Math.random() * words.length);
+  // Selecciona una paraula aleatòria usando semilla
+  const randomIndex = Math.floor(seededDice() * words.length);
   currentWordObj.value = words[randomIndex];
   shuffleCurrentLetters();
   message.value = '';
 };
 
-const checkAnswer = () => {
+const checkAnswer = (fromRemote = false) => {
   if (!scrambledLetters.value.length || isRoundLocked.value) return;
 
   const guess = orderedGuess.value.toUpperCase().trim();
   const correct = currentWordObj.value.word.toUpperCase();
 
-  if (guess === correct) {
+  // En cooperativo, si nosotros hemos acertado, avisamos al otro
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' && !fromRemote && guess === correct) {
+     multiplayerStore.sendGameAction({ type: 'ANSWER_CHECKED', guess });
+  }
+
+  if (guess === correct || (fromRemote)) {
     isRoundLocked.value = true;
 
     // Recompensa base
@@ -379,6 +390,9 @@ const startTimer = () => {
 
 // --- INICI ---
 onMounted(() => {
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
+     currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
+  }
   loadNextWord();
   startTimer();
 });
@@ -393,12 +407,17 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     emitExit(); 
   }
 
-  // REBRE SABOTATGE: Restar temps
+  // REBRE SABOTATGE: Restar temps (Solo en Individual)
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
     timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
     if (timeLeft.value <= 0 && !gameFinished.value) {
       finishGame();
     }
+  }
+
+  // REBRE RESPOSTA COOPERATIVA
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
+     checkAnswer(true);
   }
 });
 

@@ -186,8 +186,14 @@ const startGame = () => {
   }, 1000);
 };
 
+let currentSeed = 1;
+const seededDice = () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+};
+
 const pickNewTarget = () => {
-  const randomIndex = Math.floor(Math.random() * dictionary.length);
+  const randomIndex = Math.floor(seededDice() * dictionary.length);
   currentTarget.value = dictionary[randomIndex];
 };
 
@@ -195,23 +201,24 @@ const spawnWord = () => {
   if (!isPlaying.value) return;
 
   let wordsToSpawn = 1;
-  if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2;
-  if (isTurbo.value && Math.random() < 0.25) wordsToSpawn = 3;
+  const rnd = seededDice();
+  if (combo.value > 3 && rnd < 0.35) wordsToSpawn = 2;
+  if (isTurbo.value && rnd < 0.25) wordsToSpawn = 3;
 
   const zones = [
     { min: 5, max: 25 },   // Izquierda
     { min: 35, max: 55 },  // Centro
     { min: 65, max: 85 }   // Derecha
   ];
-  zones.sort(() => Math.random() - 0.5);
+  zones.sort(() => seededDice() - 0.5);
 
   for (let i = 0; i < wordsToSpawn; i++) {
-    const isRhyme = Math.random() < 0.35; 
+    const isRhyme = seededDice() < 0.35; 
     const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes;
-    const wordText = wordList[Math.floor(Math.random() * wordList.length)];
+    const wordText = wordList[Math.floor(seededDice() * wordList.length)];
 
     const targetZone = zones[i % zones.length];
-    const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min;
+    const posX = seededDice() * (targetZone.max - targetZone.min) + targetZone.min;
 
     activeWords.value.push({
       id: wordIdCounter++,
@@ -231,32 +238,37 @@ const spawnWord = () => {
   }
 };
 
-const catchWord = (word) => {
+const catchWord = (word, fromRemote = false) => {
   if (!isPlaying.value || word.status !== 'falling') return;
+
+  // Si es cooperativo y lo hemos atrapado nosotros, notificamos
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' && !fromRemote) {
+    multiplayerStore.sendGameAction({
+      type: 'WORD_CAUGHT',
+      id: word.id,
+      isRhyme: word.isRhyme
+    });
+  }
 
   if (word.isRhyme) {
     word.status = 'correct';
-    correctHits.value++;
-    
-    // MODIFICACIÓN: Sumar 1 segundo en lugar de 2
-    timeLeft.value += 1;
-    triggerTimeBonusVisual();
-
-    const points = isTurbo.value ? 20 : 10;
-    score.value += points;
-    combo.value += 1;
-    if (combo.value > maxCombo.value) maxCombo.value = combo.value;
-    
-    if (combo.value >= 10 && !isTurbo.value) {
-      isTurbo.value = true;
+    if (!fromRemote) {
+        correctHits.value++;
+        timeLeft.value += 1;
+        triggerTimeBonusVisual();
+        const points = isTurbo.value ? 20 : 10;
+        score.value += points;
+        combo.value += 1;
+        if (combo.value > maxCombo.value) maxCombo.value = combo.value;
+        if (combo.value >= 10 && !isTurbo.value) isTurbo.value = true;
+        if (combo.value % 5 === 0) pickNewTarget();
     }
-
-    if (combo.value % 5 === 0) pickNewTarget();
-
   } else {
     word.status = 'incorrect';
-    incorrectHits.value++;
-    takeDamage();
+    if (!fromRemote) {
+        incorrectHits.value++;
+        takeDamage();
+    }
   }
 
   setTimeout(() => {
@@ -332,6 +344,10 @@ const emitExit = () => {
 
 onMounted(() => {
   if (props.isMultiplayer) {
+    if (multiplayerStore.room?.gameConfig?.seed) {
+        // Usamos la semilla del servidor para que todos vean lo mismo
+        currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
+    }
     startGame();
   }
 });
@@ -345,6 +361,14 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     isPlaying.value = false;
     isGameOver.value = true;
     emitExit();
+  }
+
+  // Sincronización de capturas en modo cooperativo
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'WORD_CAUGHT') {
+     const word = activeWords.value.find(w => w.id === msg.action.id);
+     if (word) {
+        catchWord(word, true);
+     }
   }
 });
 

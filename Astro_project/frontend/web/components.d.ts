@@ -23,6 +23,7 @@ declare module 'vue' {
     RouletteOverlay: typeof import('./src/components/games/RouletteOverlay.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpaceRaceMap: typeof import('./src/components/multiplayer/SpaceRaceMap.vue')['default']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
     SymmetryBreaker: typeof import('./src/components/games/SymmetryBreaker.vue')['default']

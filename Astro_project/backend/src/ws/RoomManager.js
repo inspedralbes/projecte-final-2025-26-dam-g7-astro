@@ -18,12 +18,71 @@ class RoomManager {
         this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadors que han acabat
         this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
+        this.hazards = ['BLACK_HOLE', 'KRAKEN_SPACE', 'SUPERNOVA'];
+        this.hazardInterval = null;
     }
 
     init(getCollections, wss) {
         this.getCollections = getCollections;
         this.wss = wss;
+        this.startHazardTicker();
         console.log("🛠️ RoomManager inicializado con acceso a DB y WSS");
+    }
+
+    startHazardTicker() {
+        if (this.hazardInterval) return;
+        this.hazardInterval = setInterval(() => {
+            this.rooms.forEach((room, roomId) => {
+                if (room.status === 'PLAYING' && room.gameConfig.mode === 'COOPERATIVE') {
+                    // 1. El peligro avanza con Rubber-banding
+                    // Si los jugadores van muy adelantados, el peligro acelera un poco para mantener presión
+                    const maxPlayerProgress = Math.max(...room.gameConfig.teams.filter(t => !t.isBot).map(t => t.progress || 0), 0);
+                    let baseSpeed = room.gameConfig.hazardSpeed || 0.4;
+
+                    if (maxPlayerProgress > 70) baseSpeed *= 1.2; // Acelera al final
+                    if (maxPlayerProgress < 20) baseSpeed *= 0.8; // Da un respiro al principio
+
+                    // Mecánica especial: Supernova acelera con el tiempo
+                    if (room.gameConfig.hazard === 'SUPERNOVA') {
+                        const elapsed = (Date.now() - room.gameConfig.startTime) / 1000;
+                        if (elapsed > 60) baseSpeed *= 1.5;
+                        if (elapsed > 120) baseSpeed *= 2;
+                    }
+
+                    room.gameConfig.hazardProgress = Math.min((room.gameConfig.hazardProgress || 0) + baseSpeed, 100);
+
+                    // Si el peligro alcanza el 100% (o a algún equipo rezagado), FIN DE JUEGO (Perdida)
+                    if (room.gameConfig.hazardProgress >= 95) { // Un poco antes del final por si acaso
+                        this.broadcastToRoom(roomId, {
+                            type: 'SPACE_RACE_LOSE',
+                            reason: 'HAZARD_CAUGHT'
+                        });
+                        setTimeout(() => this.finalizeMatch(roomId, 'Nadie (Escapada Fallida)'), 3000);
+                    }
+
+                    // 2. Los equipos BOT avanzan con IA Dinámica (Arrebatos y frenazos)
+                    room.gameConfig.teams.forEach(t => {
+                        if (t.isBot) {
+                            // Cambio de velocidad cada tick (pequeñas variaciones)
+                            const variation = (Math.random() - 0.5) * 0.1;
+                            t.speed = Math.max(0.1, Math.min(0.6, (t.speed || 0.3) + variation));
+
+                            // Probabilidad de "Arrebato de velocidad"
+                            if (Math.random() > 0.98) t.speed += 0.5;
+
+                            t.progress = Math.min((t.progress || 0) + t.speed, 100);
+                        }
+                    });
+
+                    // Sincronizar con todos los jugadores
+                    this.broadcastToRoom(roomId, {
+                        type: 'HAZARD_UPDATE',
+                        hazardProgress: room.gameConfig.hazardProgress,
+                        teams: room.gameConfig.teams
+                    });
+                }
+            });
+        }, 1000);
     }
 
     addSession(user, ws) {
@@ -162,13 +221,7 @@ class RoomManager {
 
         this.broadcastToRoom(roomId, {
             type: 'ROOM_UPDATE',
-            room: {
-                id: roomId,
-                host: room.host,
-                players: Array.from(room.players),
-                maxPlayers: room.maxPlayers,
-                status: room.status
-            }
+            room: this.getRoom(roomId)
         });
         return { success: true, room };
     }
@@ -219,13 +272,7 @@ class RoomManager {
             // Notificar a los que quedan en la sala del cambio
             this.broadcastToRoom(roomId, {
                 type: 'ROOM_UPDATE',
-                room: {
-                    id: roomId,
-                    host: room.host,
-                    players: Array.from(room.players),
-                    maxPlayers: room.maxPlayers,
-                    status: room.status
-                }
+                room: this.getRoom(roomId)
             });
         }
     }
@@ -246,12 +293,22 @@ class RoomManager {
     async updateGameConfig(roomId, config) {
         const room = this.rooms.get(roomId);
         if (!room) return;
+
+        // Manejar propiedades de primer nivel
+        if (config.maxPlayers) {
+            room.maxPlayers = config.maxPlayers;
+            delete config.maxPlayers;
+        }
+
         room.gameConfig = { ...room.gameConfig, ...config };
 
         this.broadcastToRoom(roomId, {
             type: 'ROOM_UPDATE',
             room: this.getRoom(roomId)
         });
+
+        // Sincronizar con el lobby si es pública
+        await this.syncGlobalRooms();
     }
 
     async startMatch(roomId) {
@@ -269,16 +326,73 @@ class RoomManager {
         // Reset jocs jugats
         this.playedGames.set(roomId, new Set());
 
-        // Seleccionar primer joc (sense repeticions)
+        // Seleccionar primer joc (senze repeticions)
         const firstGame = this.pickNextGame(roomId);
         room.gameConfig.currentGame = firstGame;
+        room.gameConfig.seed = Math.random();
+        room.gameConfig.startTime = Date.now();
 
         this.broadcastToRoom(roomId, {
             type: 'MATCH_STARTING',
+            seed: room.gameConfig.seed,
+            startTime: room.gameConfig.startTime,
             room: this.getRoom(roomId)
         });
 
+        // Si es modo COOPERATIVO, inicializar equipos y amenaza
+        if (room.gameConfig.mode === 'COOPERATIVE') {
+            this.initSpaceRace(roomId);
+        }
+
         return { success: true };
+    }
+
+    initSpaceRace(roomId) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        // 1. Asignar equipos (Parejas de jugadores)
+        const players = Array.from(room.players);
+        const teams = [];
+        for (let i = 0; i < players.length; i += 2) {
+            const p1 = players[i];
+            const p2 = players[i + 1] || 'BOT_ASTRONAUT';
+            teams.push({ id: teams.length + 1, members: [p1, p2], progress: 0, isBot: false });
+        }
+
+        // 2. Añadir equipos competidores totalmente BOTS (para que sea una carrera)
+        const totalTeams = 4;
+        while (teams.length < totalTeams) {
+            teams.push({
+                id: teams.length + 1,
+                members: ['BOT_ALPHA', 'BOT_BETA'],
+                progress: 0,
+                isBot: true,
+                speed: 0.2 + Math.random() * 0.3 // Progreso por segundo
+            });
+        }
+        room.gameConfig.teams = teams;
+
+        // 3. Seleccionar amenaza aleatoria y su velocidad
+        room.gameConfig.hazard = this.hazards[Math.floor(Math.random() * this.hazards.length)];
+        room.gameConfig.hazardProgress = 0;
+
+        // Velocidad base del peligro (progreso por segundo)
+        room.gameConfig.hazardSpeed = 0.4;
+        if (room.gameConfig.hazard === 'SUPERNOVA') room.gameConfig.hazardSpeed = 0.3; // Empieza lento
+        if (room.gameConfig.hazard === 'KRAKEN_SPACE') room.gameConfig.hazardSpeed = 0.5;
+
+        // 3. Calcular tiempo límite (85% de la suma de duraciones)
+        let totalRawTime = 0;
+        // Asumiendo 3 rondas por defecto para el cálculo si no se especifica
+        const rounds = room.gameConfig.totalRounds || 3;
+        for (let i = 0; i < rounds; i++) {
+            totalRawTime += 60; // Base 60s por juego
+        }
+        room.gameConfig.timeLimit = Math.floor(totalRawTime * 0.85);
+        room.gameConfig.startTime = Date.now();
+
+        console.log(`🚀 [Room ${roomId}] Carrera Espacial iniciada. Amenaza: ${room.gameConfig.hazard}, Tiempo: ${room.gameConfig.timeLimit}s`);
     }
 
     // Escull el proper joc sense repeticions
@@ -363,9 +477,37 @@ class RoomManager {
             remaining: room.players.size - finished.size
         });
 
+        // Si es carrera espacial, avanzar equipo
+        if (room.gameConfig.mode === 'COOPERATIVE') {
+            const team = room.gameConfig.teams.find(t => t.members.includes(user));
+            if (team) {
+                // Cada juego completado avanza un 20% (asumiendo 5 planetas/checkpoints)
+                team.progress = Math.min((team.progress || 0) + 20, 100);
+                console.log(`🚀 [Room ${roomId}] Equipo ${team.id} avanza a ${team.progress}%`);
+
+                // Notificar avance del equipo
+                this.broadcastToRoom(roomId, {
+                    type: 'TEAM_PROGRESS_UPDATE',
+                    teams: room.gameConfig.teams
+                });
+
+                // Si este equipo llega al final, ¡GANAN LA CARRERA!
+                if (team.progress >= 100) {
+                    this.broadcastToRoom(roomId, {
+                        type: 'SPACE_RACE_WIN',
+                        winnerTeam: team.id,
+                        isDraw: false
+                    });
+                    // Terminar partida después de animaciones
+                    setTimeout(() => this.finishMatch(roomId, `Equipo ${team.id}`), 5000);
+                    return; // Ya hemos gestionat el final
+                }
+            }
+        }
+
         // Finalitzar quan tots els jugadors hagin acabat
         if (finished.size >= room.players.size) {
-            console.log(`✅ [Room ${roomId}] Tots els jugadors han acabat. Finalitzant ronda.`);
+            console.log(`✅ [Room ${roomId}] Tots els jugadors han acabat. Finalitzando ronda.`);
             this.finalizeRound(roomId);
         }
     }
@@ -409,12 +551,24 @@ class RoomManager {
 
         // AÑADIDO: Guardar en el historial
         if (!room.gameConfig.roundHistory) room.gameConfig.roundHistory = [];
-        room.gameConfig.roundHistory.push({
+
+        const historyItem = {
             round: room.gameConfig.currentRound + 1,
             game: room.gameConfig.currentGame,
             winner: winner,
             scores: { ...roundScores }
-        });
+        };
+
+        // Si es cooperativo, guardamos también el progreso de los equipos
+        if (room.gameConfig.mode === 'COOPERATIVE') {
+            historyItem.teamsProgress = room.gameConfig.teams.map(t => ({
+                id: t.id,
+                progress: t.progress,
+                isBot: t.isBot
+            }));
+        }
+
+        room.gameConfig.roundHistory.push(historyItem);
 
         console.log(`🏆 [Room ${roomId}] Fin de ronda. Ganador por puntos: ${winner || 'EMPATE'}`);
 
@@ -449,14 +603,7 @@ class RoomManager {
                 }
             }
 
-            room.status = 'GAME_OVER';
-            setTimeout(() => {
-                this.broadcastToRoom(roomId, {
-                    type: 'MATCH_FINISHED',
-                    winner: matchWinner,
-                    room: this.getRoom(roomId)
-                });
-            }, 3000);
+            this.finishMatch(roomId, matchWinner);
 
             // Auto-cleanup: si en 10 minuts ningú ha sortit, esborrem la sala
             setTimeout(async () => {
@@ -481,13 +628,17 @@ class RoomManager {
             // Todavía quedan rondas, pasar a la siguiente (sense repetir joc)
             room.status = 'ROUND_RESULTS';
             const nextGame = this.pickNextGame(roomId);
-            room.gameConfig.currentGame = nextGame;
+            room.gameConfig.currentGame = nextGame; // Use the result of pickNextGame
+            room.gameConfig.startTime = Date.now();
+            room.gameConfig.seed = Math.random(); // Añadimos semilla para sincronización
 
             setTimeout(() => {
-                room.status = 'ROULETTE';
+                room.status = 'ROULETTE'; // Set status to ROULETTE before broadcasting MATCH_STARTING
                 this.broadcastToRoom(roomId, {
-                    type: 'ROUND_FINISHED',
-                    winner,
+                    type: 'MATCH_STARTING', // Changed from ROUND_FINISHED
+                    game: room.gameConfig.currentGame,
+                    seed: room.gameConfig.seed,
+                    startTime: room.gameConfig.startTime,
                     room: this.getRoom(roomId)
                 });
             }, 3000);
@@ -553,6 +704,38 @@ class RoomManager {
                 room: this.getRoom(roomId)
             });
         }
+    }
+
+    finishMatch(roomId, winner) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.status === 'GAME_OVER') return;
+
+        room.status = 'GAME_OVER';
+        this.broadcastToRoom(roomId, {
+            type: 'MATCH_FINISHED',
+            winner: winner,
+            room: this.getRoom(roomId)
+        });
+
+        // Auto-cleanup: si en 10 minuts ningú ha sortit, esborrem la sala
+        setTimeout(async () => {
+            if (this.rooms.has(roomId) && this.rooms.get(roomId).status === 'GAME_OVER') {
+                console.log(`🧹 [Room ${roomId}] Auto-cleanup: sala abandonada en GAME_OVER.`);
+                this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'abandoned' });
+                this.rooms.delete(roomId);
+                this.roundGameScores.delete(roomId);
+                this.roundFinishedPlayers.delete(roomId);
+                if (this.getCollections) {
+                    try {
+                        const { rooms } = this.getCollections();
+                        await rooms.deleteOne({ id: roomId });
+                        await this.syncGlobalRooms();
+                    } catch (e) {
+                        console.error('❌ Error auto-cleanup sala:', e);
+                    }
+                }
+            }
+        }, 10 * 60 * 1000); // 10 minuts
     }
 }
 

@@ -243,11 +243,17 @@ function triggerRoundHint(text) {
   }, 1000);
 }
 
+let currentSeed = 1;
+function seededDice() {
+  const x = Math.sin(currentSeed++) * 10000;
+  return x - Math.floor(x);
+}
+
 function generateTargets() {
   if (!gameCanvas.value) return;
 
   const sourceSet = round.value <= 6 ? wordSets : letterSets;
-  const challenge = sourceSet[Math.floor(Math.random() * sourceSet.length)];
+  const challenge = sourceSet[Math.floor(seededDice() * sourceSet.length)];
   currentChallenge.value = challenge;
   triggerRoundHint(challenge.target);
 
@@ -265,16 +271,16 @@ function generateTargets() {
     const isTarget = i === 0;
     const text = isTarget
       ? challenge.target
-      : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
-    const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
+      : challenge.decoys[Math.floor(seededDice() * challenge.decoys.length)];
+    const velocity = randomVelocity(currentSpeed * (0.92 + seededDice() * 0.16));
     const { ringColor, fillColor } = resolveEntityColors({ isTarget, isUniformMode });
 
     newTargets.push({
       text,
       isTarget,
       size: entitySize,
-      x: randomBetween(bounds.minX, bounds.maxX),
-      y: randomBetween(bounds.minY, bounds.maxY),
+      x: bounds.minX + seededDice() * (bounds.maxX - bounds.minX),
+      y: bounds.minY + seededDice() * (bounds.maxY - bounds.minY),
       vx: velocity.vx,
       vy: velocity.vy,
       bounds,
@@ -337,16 +343,20 @@ function update(dt) {
   }
 }
 
-function lockTarget() {
+function lockTarget(fromRemote = false) {
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' && !fromRemote) {
+    multiplayerStore.sendGameAction({ type: 'TARGET_LOCKED' });
+  }
+
   const pointsEarned = 100 + (round.value * 22) + (successfulLocks.value * 18);
-  score.value += pointsEarned;
+  if (!fromRemote) score.value += pointsEarned;
   successfulLocks.value += 1;
   timeLeft.value = Math.min(99, timeLeft.value + 3);
   round.value++;
   generateTargets();
 
-  // Sabotatge: -2s al rival en multiplayer
-  if (props.isMultiplayer) {
+  // Sabotatge: -2s al rival en multiplayer solo en 1vs1
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode !== 'COOPERATIVE') {
     multiplayerStore.sendGameAction({
       type: 'SABOTAGE',
       subtype: 'REDUCE_TIME',
@@ -358,6 +368,22 @@ function lockTarget() {
 function draw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height);
+
+  // Dibujar lasers remotos
+  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE') {
+    Object.entries(multiplayerStore.remoteCursors).forEach(([user, pos]) => {
+      // Necesitamos saber si el otro está disparando. Lo asumimos si está en modo cooperativo y se mueve?
+      // O añadimos un estado firing en el store. Para simplificar, si se mueve, mostramos un laser tenue
+      ctx.beginPath();
+      ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height);
+      const rx = (pos.x / 100) * gameCanvas.value.width;
+      const ry = (pos.y / 100) * gameCanvas.value.height;
+      ctx.lineTo(rx, ry);
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  }
 
   if (isFiring.value) {
     ctx.beginPath();
@@ -467,6 +493,9 @@ onMounted(() => {
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
   if (props.isMultiplayer) {
+    if (multiplayerStore.room?.gameConfig?.seed) {
+        currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
+    }
     startGame();
   }
 });
@@ -482,10 +511,15 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     returnToMenu();
   }
 
-  // Rebre sabotatge del rival: restar temps al propi rellotge
+  // Rebre sabotatge del rival
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
     timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
     if (timeLeft.value <= 0 && isPlaying.value) endGame();
+  }
+
+  // REBRE BLOQUEIG COOPERATIU
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'TARGET_LOCKED') {
+    lockTarget(true);
   }
 });
 

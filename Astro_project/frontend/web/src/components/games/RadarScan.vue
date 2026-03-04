@@ -120,12 +120,19 @@ const updateFlashlight = (e) => {
   mouseY.value = e.clientY - rect.top;
 };
 
+let currentSeed = 1;
+const seededDice = () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+};
+
 const generateBoard = () => {
   const config = currentConfig.value;
   const totalCells = config.grid * config.grid;
   
   let newBoard = Array(totalCells).fill(config.distractor);
-  targetIndex.value = Math.floor(Math.random() * totalCells);
+  // Usar semilla para que el objetivo sea el mismo
+  targetIndex.value = Math.floor(seededDice() * totalCells);
   newBoard[targetIndex.value] = config.target;
   
   board.value = newBoard;
@@ -138,18 +145,25 @@ const nextRound = () => {
   generateBoard();
 };
 
-const checkLetter = (index) => {
+const checkLetter = (index, fromRemote = false) => {
   if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
 
-  if (index === targetIndex.value) {
+  if (index === targetIndex.value || fromRemote) {
+    if (fromRemote) targetIndex.value = index; // Sincronizar por si acaso
+    
     isTransitioning.value = true;
     correctClicked.value = true;
     
+    // Si somos nosotros los que acertamos en cooperativo, avisamos
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' && !fromRemote) {
+        multiplayerStore.sendGameAction({ type: 'TARGET_FOUND', index });
+    }
+
     setTimeout(() => {
       correctClicked.value = false;
       
-      // Enviar sabotament en multijugador: -1s al rival
-      if (props.isMultiplayer) {
+      // Enviar sabotament en multijugador: -1s al rival (Solo en Individual)
+      if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode !== 'COOPERATIVE' && !fromRemote) {
         multiplayerStore.sendGameAction({
           type: 'SABOTAGE',
           subtype: 'REDUCE_TIME',
@@ -211,6 +225,9 @@ const returnToMenu = () => {
 
 onMounted(() => {
   if (props.isMultiplayer) {
+    if (multiplayerStore.room?.gameConfig?.seed) {
+        currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
+    }
     startGame();
   }
 });
@@ -224,8 +241,14 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     return;
   }
 
+  // REBRE SABOTATGE: Restar temps (Solo en Individual)
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
       timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
+  }
+
+  // REBRE TROBADA COOPERATIVA
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'TARGET_FOUND') {
+      checkLetter(msg.action.index, true);
   }
 });
 
