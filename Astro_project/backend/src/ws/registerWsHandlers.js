@@ -50,8 +50,12 @@ function registerWsHandlers(wss) {
                         }
                         break;
 
-                    case 'LEAVE_ROOM':
-                        await roomManager.leaveRoom(msg.roomId, msg.user);
+                    case 'DELETE_ROOM':
+                        // { type: 'DELETE_ROOM', roomId: 'XYZ', user: 'UserA' }
+                        const deleteResult = await roomManager.deleteRoom(msg.roomId, msg.user);
+                        if (deleteResult.error) {
+                            ws.send(JSON.stringify({ type: 'ERROR', message: deleteResult.error }));
+                        }
                         break;
 
                     case 'UPDATE_GAME_CONFIG':

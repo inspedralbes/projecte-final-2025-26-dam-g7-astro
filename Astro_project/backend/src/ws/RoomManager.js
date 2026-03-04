@@ -143,7 +143,11 @@ class RoomManager {
         if (!this.getCollections) return;
         try {
             const { rooms } = this.getCollections();
-            const availableRooms = await rooms.find({ status: 'LOBBY', isPublic: true }).toArray();
+            const availableRooms = await rooms.find({
+                status: 'LOBBY',
+                isPublic: true,
+                $expr: { $lt: [{ $size: "$players" }, "$maxPlayers"] }
+            }).toArray();
             this.broadcastGlobal({
                 type: 'GLOBAL_ROOMS_UPDATE',
                 rooms: availableRooms
@@ -155,11 +159,13 @@ class RoomManager {
 
     async createRoom(host, isPublic = true, maxPlayers = 4, initialConfig = {}) {
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const finalMaxPlayers = parseInt(maxPlayers) || 4;
+
         const roomData = {
             id: roomId,
             host,
             players: [host],
-            maxPlayers,
+            maxPlayers: finalMaxPlayers,
             status: 'LOBBY',
             isPublic,
             createdAt: new Date(),
@@ -175,7 +181,7 @@ class RoomManager {
         this.rooms.set(roomId, {
             host,
             players: new Set([host]),
-            maxPlayers,
+            maxPlayers: finalMaxPlayers,
             status: 'LOBBY',
             isPublic,
             gameConfig: roomData.gameConfig
@@ -275,6 +281,36 @@ class RoomManager {
                 room: this.getRoom(roomId)
             });
         }
+    }
+
+    async deleteRoom(roomId, user) {
+        const room = this.rooms.get(roomId);
+        if (!room) return { error: 'Sala no encontrada' };
+        if (room.host !== user) return { error: 'Solo el comandante puede cerrar la misión' };
+
+        console.log(`🧨 Host ${user} cerrando sala ${roomId}.`);
+
+        this.broadcastToRoom(roomId, {
+            type: 'ROOM_CLOSED',
+            reason: 'host_closed'
+        });
+
+        this.rooms.delete(roomId);
+        this.roundGameScores.delete(roomId);
+        this.roundFinishedPlayers.delete(roomId);
+        this.roundTimers.delete(roomId);
+
+        if (this.getCollections) {
+            try {
+                const { rooms } = this.getCollections();
+                await rooms.deleteOne({ id: roomId });
+                console.log(`✅ Sala ${roomId} eliminada de DB por el host`);
+                await this.syncGlobalRooms();
+            } catch (error) {
+                console.error("❌ Error eliminando sala de DB por el host:", error);
+            }
+        }
+        return { success: true };
     }
 
     getRoom(roomId) {

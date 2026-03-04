@@ -6,11 +6,17 @@ function buildWsUrl() {
     const envWsUrl = (import.meta.env.VITE_WS_URL || '').trim();
     if (envWsUrl) return envWsUrl;
 
-    const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    const parsedApiBase = new URL(API_BASE_URL, fallbackOrigin);
-    const wsProtocol = parsedApiBase.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Si estamos en desarrollo (localhost), el backend suele estar en el 3000
+    // mientras el frontend (Vite) está en el 3001.
+    let host = window.location.host;
+    if (host.includes('localhost:3001')) {
+        host = 'localhost:3000';
+    } else if (host.includes('127.0.0.1:3001')) {
+        host = '127.0.0.1:3000';
+    }
 
-    return `${wsProtocol}//${parsedApiBase.host}/ws`;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${wsProtocol}//${host}/ws`;
 }
 
 export const useMultiplayerStore = defineStore('multiplayer', {
@@ -293,6 +299,23 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 user: sessionStore.user
             }));
             this.room = null;
+        },
+
+        deleteRoom(targetRoomId = null) {
+            const sessionStore = this.getSession();
+            const roomId = targetRoomId || (this.room ? this.room.id : null);
+            if (!this.isConnected || !roomId || !this.socket) return;
+
+            this.socket.send(JSON.stringify({
+                type: 'DELETE_ROOM',
+                roomId: roomId,
+                user: sessionStore.user
+            }));
+
+            // Si estem esborrant la sala on estem, la posem a null
+            if (this.room && this.room.id === roomId) {
+                this.room = null;
+            }
         }
     }
 });

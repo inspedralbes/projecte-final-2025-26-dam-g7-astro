@@ -95,10 +95,24 @@
                 <h2 class="text-h4 font-weight-black text-white tracking-widest">SALA {{ multiplayerStore.room.id }}</h2>
               </div>
             </div>
-            <v-btn color="error" variant="tonal" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-bold">
-              <v-icon icon="mdi-logout" start></v-icon>
-              Abortar
-            </v-btn>
+            <div class="d-flex gap-2">
+              <v-btn 
+                v-if="isHost" 
+                color="red-accent-2" 
+                variant="elevated" 
+                rounded="pill" 
+                size="small" 
+                @click="multiplayerStore.deleteRoom()" 
+                class="px-6 font-weight-black action-glow-red"
+              >
+                <v-icon icon="mdi-delete" start></v-icon>
+                Cerrar Misión
+              </v-btn>
+              <v-btn color="error" variant="tonal" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-bold">
+                <v-icon icon="mdi-logout" start></v-icon>
+                Abortar
+              </v-btn>
+            </div>
           </div>
 
           <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
@@ -399,16 +413,27 @@
                       </div>
                     </div>
 
-                    <v-btn 
-                      block 
-                      color="cyan-accent-2" 
-                      size="small" 
-                      variant="elevated" 
-                      class="rounded-pill font-weight-black text-black action-glow-btn" 
-                      @click="multiplayerStore.joinRoom(room.id)"
-                    >
-                      ESTABLECER ENLACE
-                    </v-btn>
+                    <div class="d-flex gap-2">
+                      <v-btn 
+                        flex-grow-1
+                        color="cyan-accent-2" 
+                        size="small" 
+                        variant="elevated" 
+                        class="rounded-pill font-weight-black text-black action-glow-btn" 
+                        @click="multiplayerStore.joinRoom(room.id)"
+                      >
+                        ESTABLECER ENLACE
+                      </v-btn>
+                      <v-btn
+                        v-if="room.host === astroStore.user"
+                        icon="mdi-delete-outline"
+                        color="red-accent-2"
+                        variant="tonal"
+                        size="small"
+                        class="rounded-circle action-glow-red-small"
+                        @click="multiplayerStore.deleteRoom(room.id)"
+                      ></v-btn>
+                    </div>
                   </div>
                 </v-list-item>
               </v-fade-transition>
@@ -1001,9 +1026,9 @@ onMounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
+  padding-top: 80px; /* Espai pel HUD fixat */
 }
 
-<<<<<<< HEAD
 .game-hud-container {
   position: fixed;
   top: 10px;
@@ -1149,16 +1174,6 @@ onMounted(() => {
   100% { opacity: 0; transform: translate(-50%, -80px) scale(0.8); }
 }
 
-=======
-.game-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 80px; /* Espai pel HUD fixat */
-}
->>>>>>> origin/main
-
 .modality-card {
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1187,5 +1202,27 @@ onMounted(() => {
 .text-7px {
   font-size: 8px;
   height: 16px;
+}
+.action-glow-red {
+  box-shadow: 0 0 15px rgba(255, 82, 82, 0.4) !important;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 82, 82, 0.5) !important;
+}
+
+.action-glow-red:hover {
+  box-shadow: 0 0 25px rgba(255, 82, 82, 0.7) !important;
+  transform: translateY(-2px);
+  background-color: #FF5252 !important;
+  color: white !important;
+}
+
+.action-glow-red-small {
+  transition: all 0.3s ease;
+}
+
+.action-glow-red-small:hover {
+  background-color: rgba(255, 82, 82, 0.15) !important;
+  color: #FF5252 !important;
+  box-shadow: 0 0 10px rgba(255, 82, 82, 0.3) !important;
 }
 </style>

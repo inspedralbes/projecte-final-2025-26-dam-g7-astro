@@ -327,7 +327,15 @@ export function normalizeInventoryItems(values = []) {
 
 const envApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
 const browserOrigin = hasWindow ? window.location.origin : '';
-const resolvedApiBaseUrl = envApiBaseUrl || browserOrigin || 'http://localhost:3000';
+let resolvedApiBaseUrl = envApiBaseUrl || browserOrigin || 'http://localhost:3000';
+
+// Corrección para desarrollo: Si el origen es puerto 3001 (Vite), el backend es 3000
+if (resolvedApiBaseUrl.includes('localhost:3001')) {
+    resolvedApiBaseUrl = resolvedApiBaseUrl.replace('localhost:3001', 'localhost:3000');
+} else if (resolvedApiBaseUrl.includes('127.0.0.1:3001')) {
+    resolvedApiBaseUrl = resolvedApiBaseUrl.replace('127.0.0.1:3001', '127.0.0.1:3000');
+}
+
 export const API_BASE_URL = resolvedApiBaseUrl.replace(/\/$/, '');
 
 export function buildApiUrl(path) {
