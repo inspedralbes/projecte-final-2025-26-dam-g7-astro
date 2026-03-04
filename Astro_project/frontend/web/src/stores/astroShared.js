@@ -325,8 +325,10 @@ export function normalizeInventoryItems(values = []) {
     return [...mergedById.values()].sort((a, b) => a.id - b.id);
 }
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
+const envApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+const browserOrigin = hasWindow ? window.location.origin : '';
+const resolvedApiBaseUrl = envApiBaseUrl || browserOrigin || 'http://localhost:3000';
+export const API_BASE_URL = resolvedApiBaseUrl.replace(/\/$/, '');
 
 export function buildApiUrl(path) {
     if (!path.startsWith('/')) {

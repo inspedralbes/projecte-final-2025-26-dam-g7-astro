@@ -17,6 +17,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { buildApiUrl } from '@/stores/astroShared';
 
 const getSegmentStyle = (index) => {
   const degreePerItem = 360 / items.length;
@@ -63,13 +64,8 @@ async function spin() {
   isSpinning.value = true;
   emit('spin-start');
 
-  // 1. Definimos la URL base usando la variable de entorno de Vite/Astro
-  // Si la variable no existe, usará localhost por defecto para que no se rompa nada
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
   try {
-    // 2. Usamos la variable API_BASE en lugar del texto fijo
-    const response = await fetch(`${API_BASE}/api/shop/spin`, {
+    const response = await fetch(buildApiUrl('/api/shop/spin'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: props.user }) 

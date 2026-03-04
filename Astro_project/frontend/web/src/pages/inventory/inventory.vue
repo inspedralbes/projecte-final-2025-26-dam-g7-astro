@@ -79,6 +79,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
+import { buildApiUrl } from '@/stores/astroShared';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
@@ -111,12 +112,8 @@ onMounted(async () => {
 async function toggleEquip(item) {
     if (!isEquipable(item)) return;
 
-    // 1. Usamos la variable de entorno. Si no existe, usa localhost como backup.
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
     try {
-        // 2. Reemplazamos la URL fija por el Template Literal
-        const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
+        const response = await fetch(buildApiUrl('/api/inventory/toggle-equip'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

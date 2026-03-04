@@ -3,7 +3,14 @@ import { useSessionStore } from './sessionStore';
 import { API_BASE_URL, requestJson } from './astroShared';
 
 function buildWsUrl() {
-    return API_BASE_URL.replace(/^http/i, 'ws');
+    const envWsUrl = (import.meta.env.VITE_WS_URL || '').trim();
+    if (envWsUrl) return envWsUrl;
+
+    const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const parsedApiBase = new URL(API_BASE_URL, fallbackOrigin);
+    const wsProtocol = parsedApiBase.protocol === 'https:' ? 'wss:' : 'ws:';
+
+    return `${wsProtocol}//${parsedApiBase.host}/ws`;
 }
 
 export const useMultiplayerStore = defineStore('multiplayer', {
@@ -38,6 +45,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         connect() {
             const sessionStore = this.getSession();
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
+            this.error = null;
 
             const ws = new WebSocket(buildWsUrl());
 

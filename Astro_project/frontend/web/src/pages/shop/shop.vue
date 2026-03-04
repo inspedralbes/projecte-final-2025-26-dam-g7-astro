@@ -221,6 +221,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
+import { buildApiUrl } from '@/stores/astroShared';
 import LuckyWheel from '../../components/shop/LuckyWheel.vue';
 
 const astroStore = useAstroStore();
@@ -245,12 +246,8 @@ const updateStats = (data) => {
 const triggerMultiSpin = async () => {
     if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
 
-    // 1. Definimos la URL base dinámica
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
     try {
-        // 2. Reemplazamos la URL estática por la variable
-        const response = await fetch(`${API_BASE}/api/shop/buy-tickets`, {
+        const response = await fetch(buildApiUrl('/api/shop/buy-tickets'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: astroStore.user })
