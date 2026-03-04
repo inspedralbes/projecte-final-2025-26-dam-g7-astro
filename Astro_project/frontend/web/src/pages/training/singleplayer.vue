@@ -91,63 +91,7 @@
             </div>
         </transition>
 
-        <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl elevation-24" 
-                style="background: #020617; border: 2px solid #00e5ff; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);">
-                
-                <div class="glow-icon-wrapper mb-4">
-                    <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="90" class="animate-bounce"></v-icon>
-                </div>
-
-                <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
-                    ¡NIVELL {{ newLevelData.level }}!
-                </h2>
-
-                <div v-if="newLevelData.rankChanged" class="my-5 pa-4 rounded-lg"
-                    style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;">
-                    <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
-                    <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
-                </div>
-
-                <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
-                    Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
-                    <br>i ets un pas més a prop de dominar la galàxia.
-                </p>
-                
-                <v-btn color="cyan-accent-3" variant="elevated" block rounded="xl" size="x-large"
-                    class="font-weight-black text-black" @click="showLevelUpDialog = false">
-                    CONTINUAR EXPLORACIÓ
-                </v-btn>
-            </v-card>
-        </v-dialog>
-
-        <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl elevation-24" 
-                style="background: #0f0505; border: 2px solid #ff5252; box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);">
-                
-                <v-icon icon="mdi-alert-octagon" color="red-accent-2" size="80" class="mb-4 pulse-red"></v-icon>
-
-                <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
-
-                <div class="py-4">
-                    <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
-                    <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
-
-                    <v-divider class="border-red-accent-2 opacity-30 mb-6"></v-divider>
-
-                    <p class="text-body-1 text-blue-grey-lighten-2">
-                        Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
-                        para desbloquear este sector.
-                    </p>
-                </div>
-
-                <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="x-large"
-                    class="font-weight-bold text-white mt-4" @click="showFailDialog = false" 
-                    style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;">
-                    REINTENTAR MISIÓN
-                </v-btn>
-            </v-card>
-        </v-dialog>
+        <SingleplayerScoreSystem ref="singleplayerScoreSystem" />
 
     </v-container>
 </template>
@@ -156,38 +100,23 @@
 import { ref, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore'; 
 
-import WordConstruction from '@/components/games/WordConstruction.vue';
-import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import RadarScan from '@/components/games/RadarScan.vue';
-import RadioSignal from '@/components/games/RadioSignal.vue';
-import RhymeSquad from '@/components/games/RhymeSquad.vue';
-import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
+import SingleplayerScoreSystem from '@/components/games/SingleplayerScoreSystem.vue';
+import { gameComponents } from '@/components/games/gameRegistry';
 
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
-const currentPlayingIndex = ref(null); 
-
-const showLevelUpDialog = ref(false);
-const showFailDialog = ref(false);
-
-const lastScore = ref(0);
-const requiredScore = ref(0);
-
-const newLevelData = ref({
-    level: 1,
-    rank: '',
-    rankChanged: false
-});
+const currentPlayingIndex = ref(null);
+const singleplayerScoreSystem = ref(null);
 
 const levelSequence = [
-    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth' },
-    { name: '¡Despegue!', component: RadarScan, minScore: 200 },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500 },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system' },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
-    { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
+    { name: 'Preparativos', component: gameComponents.WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth' },
+    { name: '¡Despegue!', component: gameComponents.RadarScan, minScore: 200 },
+    { name: 'Rompiendo la Gravedad', component: gameComponents.RadioSignal, minScore: 350 },
+    { name: 'Desacoplamiento Orbital', component: gameComponents.SpelledRosco, minScore: 500 },
+    { name: 'Ruta Estelar', component: gameComponents.RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system' },
+    { name: 'Llamando a la Base', component: gameComponents.RadioSignal, minScore: 1000 },
+    { name: 'Recarga Solar', component: gameComponents.SymmetryBreaker, minScore: 1250 },
+    { name: 'Reparación Express', component: gameComponents.RadarScan, minScore: 1500 },
 ];
 
 const getLevelState = (index) => {
@@ -208,45 +137,27 @@ const handleLevelClick = (index) => {
 
 const handleGameOver = async (finalScore) => {
     const levelIndex = currentPlayingIndex.value;
-    const gameName = levelSequence[levelIndex]?.name || 'Minijuego';
-
     activeGameComponent.value = null;
-    lastScore.value = finalScore;
 
-    if (astroStore.user && levelIndex !== null) {
-        try {
-            const levelConfig = levelSequence[levelIndex];
-
-            if (levelConfig && finalScore < levelConfig.minScore) {
-                requiredScore.value = levelConfig.minScore;
-                showFailDialog.value = true;
-                return;
-            }
-
-            const previousAccountLevel = astroStore.level;
-            const currentMap = astroStore.mapLevel || 1;
-            
-            const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null;
-
-            const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete);
-
-            if (!result.success) throw new Error(result.message);
-
-            if (astroStore.level > previousAccountLevel) {
-                newLevelData.value = {
-                    level: astroStore.level,
-                    rank: result.data.newRank || 'Explorador',
-                    rankChanged: !!result.data.newRank
-                };
-                showLevelUpDialog.value = true;
-            }
-
-        } catch (error) {
-            console.error("❌ Error al registrar la partida:", error);
-        } finally {
-            currentPlayingIndex.value = null;
-        }
+    if (levelIndex === null) {
+        return;
     }
+
+    const levelConfig = levelSequence[levelIndex] || null;
+    const gameName = levelConfig?.name || 'Minijuego';
+
+    const result = await singleplayerScoreSystem.value?.processGameResult({
+        finalScore,
+        levelIndex,
+        levelConfig,
+        gameName
+    });
+
+    if (result && !result.success && result.reason !== 'min-score') {
+        console.error('❌ Error al registrar la partida:', result.message || result.reason);
+    }
+
+    currentPlayingIndex.value = null;
 };
 </script>
 
@@ -488,38 +399,4 @@ svg {
 
 .fade-zoom-enter-active, .fade-zoom-leave-active { transition: all 0.3s ease; }
 .fade-zoom-enter-from, .fade-zoom-leave-to { opacity: 0; transform: scale(0.95); }
-
-/* --- NUEVAS ANIMACIONES PARA LOS DIÁLOGOS --- */
-
-.animate-bounce {
-    animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-    40% {transform: translateY(-20px);}
-    60% {transform: translateY(-10px);}
-}
-
-.pulse-red {
-    animation: pulse-red-effect 2s infinite;
-}
-
-@keyframes pulse-red-effect {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.tracking-tighter {
-    letter-spacing: -1px !important;
-}
-
-.uppercase {
-    text-transform: uppercase;
-}
-
-.v-divider {
-    opacity: 0.2 !important;
-}
 </style>
