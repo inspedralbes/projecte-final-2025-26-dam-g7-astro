@@ -1,18 +1,32 @@
-# Etapa 1: Build
-FROM node:20-alpine AS build-stage
+# --- ETAPA 1: Construcción (Build) ---
+FROM node:24-alpine AS build-stage
+
+
 WORKDIR /app
+
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+
 COPY . .
 RUN npm run build
 
-# Etapa 2: Servidor Web ligero (Nginx)
+
+# --- ETAPA 2: Servidor Web Ligero (Nginx) ---
 FROM nginx:stable-alpine AS production-stage
 
-# Copiamos los archivos estáticos generados en la etapa anterior
+
+# Copiamos los archivos de Vue compilados
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Exponemos el puerto estándar web
+
+# Inyectamos nuestra configuración HTTP
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+
+# Exponemos solo el puerto HTTP
 EXPOSE 80
+
 
 CMD ["nginx", "-g", "daemon off;"]

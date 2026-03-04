@@ -8,6 +8,14 @@
       @finished="onRouletteFinished"
     />
 
+    <MultiplayerScoreSystem
+      ref="multiplayerScoreSystem"
+      :visible="Boolean(activeGameComponent)"
+      :opponent-name="opponentName"
+      :get-player-avatar="getPlayerAvatar"
+      @match-finished="onMatchFinished"
+    />
+
     <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
       <div 
@@ -42,75 +50,13 @@
             <div class="cursor-tag">Tú (Comandante)</div>
           </div>
         </template>
-        <!-- HUD redissenyat: dades flotants al voltant del VS central -->
-        <div class="game-hud-container d-flex justify-center align-center">
-          <div class="hud-main-bar d-flex align-center px-6">
-            <!-- Jugador local -->
-            <div class="hud-item d-flex align-center gap-3">
-              <v-avatar size="36" class="border-cyan">
-                <v-img :src="getPlayerAvatar(astroStore.user)"></v-img>
-              </v-avatar>
-              <div class="hud-text">
-                <div class="hud-name">{{ astroStore.user }}</div>
-                <div class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
-              </div>
-            </div>
-
-            <!-- Centro: VS + ronda + Indicador Tiempo -->
-            <div class="hud-center-unit mx-8 text-center position-relative">
-              <div class="vs-text">VS</div>
-              <div class="round-text">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound + 1 || 1 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
-              
-              <!-- Notificacions de sabotatge (flotants) -->
-              <transition-group name="floating-score">
-                <div 
-                  v-for="notif in activeNotifications" 
-                  :key="notif.id" 
-                  class="sabotage-notif"
-                  :class="notif.amount > 0 ? 'text-success' : 'text-error'"
-                >
-                  {{ notif.amount > 0 ? '+' : '' }}{{ notif.amount }}s
-                </div>
-              </transition-group>
-            </div>
-
-            <!-- Oponente -->
-            <div class="hud-item d-flex align-center flex-row-reverse gap-3 text-right">
-              <v-avatar size="36" class="border-cyan">
-                <v-img :src="getPlayerAvatar(opponentName)"></v-img>
-              </v-avatar>
-              <div class="hud-text">
-                <div class="hud-name">{{ opponentName }}</div>
-                <div class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        
         <div class="game-content">
           <component
             :is="activeGameComponent"
             :is-multiplayer="true"
-            @game-over="onGameFinished"
           />
         </div>
-
-        <!-- Overlay de Resultados de Ronda -->
-        <transition name="scale">
-          <div v-if="showRoundResults" class="round-result-overlay d-flex flex-column align-center justify-center">
-            <v-avatar size="120" class="mb-4 border-cyan glow-cyan">
-              <v-img v-if="roundWinner" :src="getPlayerAvatar(roundWinner)"></v-img>
-              <v-icon v-else-if="isRoundTie" icon="mdi-handshake" size="80" color="amber-accent-2"></v-icon>
-              <v-icon v-else icon="mdi-timer-off" size="80" color="grey-lighten-1"></v-icon>
-            </v-avatar>
-            <h2 class="text-h2 font-weight-black text-cyan-accent-2 mb-2 italic">
-              {{ roundWinner ? '¡RONDA PARA!' : (isRoundTie ? '¡EMPATE!' : '¡TIEMPO AGOTADO!') }}
-            </h2>
-            <h1 class="text-h1 font-weight-black text-white glow-text">
-              {{ roundWinner ? (roundWinner === astroStore.user ? 'TU' : roundWinner) : (isRoundTie ? 'EMPATE' : '-') }}
-            </h1>
-          </div>
-        </transition>
       </div>
     </transition>
 
@@ -553,33 +499,17 @@
 import { ref, computed, onMounted, watch, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { storeToRefs } from 'pinia';
 
-// Importar juegos
-import RadarScan from '@/components/games/RadarScan.vue';
-import RadioSignal from '@/components/games/RadioSignal.vue';
-import RhymeSquad from '@/components/games/RhymeSquad.vue';
-import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
-import WordConstruction from '@/components/games/WordConstruction.vue';
+import { availableGameNames, gameComponents } from '@/components/games/gameRegistry';
+import MultiplayerScoreSystem from '@/components/games/MultiplayerScoreSystem.vue';
 import RouletteOverlay from '@/components/games/RouletteOverlay.vue';
 import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue';
 import SpaceRaceMap from '@/components/multiplayer/SpaceRaceMap.vue';
 
-const gameComponents = {
-  RadarScan,
-  RadioSignal,
-  RhymeSquad,
-  SpelledRosco,
-  SymmetryBreaker,
-  WordConstruction
-};
-
-const availableGames = Object.keys(gameComponents);
+const availableGames = availableGameNames;
 
 const astroStore = useAstroStore();
 const multiplayerStore = useMultiplayerStore();
-const { friends } = storeToRefs(astroStore);
 
 const snackbar = ref({ show: false, text: '', color: 'success' });
 const isPublic = ref(true);
@@ -588,9 +518,7 @@ const pointsToWin = ref(3);
 const roomCode = ref('');
 const showRoulette = ref(false);
 const activeGameComponent = shallowRef(null);
-const roundWinner = ref(null);
-const isRoundTie = ref(false);
-const showRoundResults = ref(false);
+const multiplayerScoreSystem = ref(null);
 const showMatchResult = ref(false);
 const finalScores = ref({});
 const matchWinnerName = ref(null);
@@ -602,85 +530,25 @@ const modalities = [
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
 ];
 
-const matchResult = computed(() => {
-  const me = astroStore.user;
-  if (matchWinnerName.value === null) return { isWin: false, isTie: true };
-  return {
-    isWin: matchWinnerName.value === me,
-    isTie: false
-  };
-});
-
 watch(() => multiplayerStore.room?.status, (newStatus) => {
   if (newStatus === 'ROULETTE') {
     showRoulette.value = true;
-    roundWinner.value = null;
-    showRoundResults.value = false;
-    activeGameComponent.value = null; // Importantísimo para cambiar de juego
+    activeGameComponent.value = null;
   } else if (newStatus === 'PLAYING') {
     showRoulette.value = false;
-    roundWinner.value = null;
-    showRoundResults.value = false;
     const gameName = multiplayerStore.room?.gameConfig?.currentGame;
     if (gameName && gameComponents[gameName]) {
       activeGameComponent.value = gameComponents[gameName];
     }
-  } else if (newStatus === 'ROUND_RESULTS') {
-    showRoundResults.value = true;
-  } else if (newStatus === 'GAME_OVER') {
-    showRoundResults.value = false;
   } else if (newStatus === 'LOBBY') {
     activeGameComponent.value = null;
     showRoulette.value = false;
-    roundWinner.value = null;
-    showRoundResults.value = false;
     showMatchResult.value = false;
     matchWinnerName.value = null;
     finalScores.value = {};
+    multiplayerScoreSystem.value?.resetLocalState();
   }
 });
-
-watch(() => multiplayerStore.lastMessage, (msg) => {
-  if (!msg) return;
-  
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    roundWinner.value = msg.winner;
-    isRoundTie.value = msg.tie || false;
-  }
-  
-  if (msg.type === 'MATCH_FINISHED') {
-    matchWinnerName.value = msg.winner ?? null;
-    finalScores.value = msg.room?.gameConfig?.scores || {};
-    showMatchResult.value = true;
-    activeGameComponent.value = null;
-    showRoundResults.value = false;
-  }
-
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE') {
-    handleSabotageNotification(msg);
-  }
-});
-
-const activeNotifications = ref([]);
-let notifCounter = 0;
-
-const handleSabotageNotification = (data) => {
-  const isMe = data.from === astroStore.user;
-  const amount = data.action.amount || 0;
-  
-  if (data.action.subtype === 'REDUCE_TIME') {
-    const id = notifCounter++;
-    activeNotifications.value.push({
-      id,
-      amount: isMe ? 10 : -amount,
-      from: data.from
-    });
-
-    setTimeout(() => {
-      activeNotifications.value = activeNotifications.value.filter(n => n.id !== id);
-    }, 2500);
-  }
-};
 
 // AÑADIDO: Watcher para asegurar que tenemos los datos de todos los jugadores que entran
 watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
@@ -836,23 +704,23 @@ const onRouletteFinished = () => {
   }
 };
 
-const onGameFinished = (score) => {
-  // En multijugador enviamos al server que hemos terminado
-  // Solo el primero que envíe ganará el punto
-  multiplayerStore.submitRoundResult();
+const onMatchFinished = ({ winner, scores }) => {
+  matchWinnerName.value = winner ?? null;
+  finalScores.value = scores || {};
+  showMatchResult.value = true;
+  activeGameComponent.value = null;
 };
 
 const returnToLobby = () => {
   showMatchResult.value = false;
   activeGameComponent.value = null;
-  // NO hacemos leaveRoom() porque queremos quedarnos en la sala
+  multiplayerScoreSystem.value?.resetLocalState();
 };
 
 const requestRematch = () => {
   showMatchResult.value = false;
   activeGameComponent.value = null;
-  showRoundResults.value = false;
-  // El host inicia una nueva partida directamente
+  multiplayerScoreSystem.value?.resetLocalState();
   multiplayerStore.startMatch();
 };
 
@@ -1135,6 +1003,7 @@ onMounted(() => {
   height: 100%;
 }
 
+<<<<<<< HEAD
 .game-hud-container {
   position: fixed;
   top: 10px;
@@ -1280,56 +1149,15 @@ onMounted(() => {
   100% { opacity: 0; transform: translate(-50%, -80px) scale(0.8); }
 }
 
-
-/* Resta de estils existents... */
-.match-result-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(11, 20, 33, 0.97);
-  z-index: 3000;
-  backdrop-filter: blur(16px);
+=======
+.game-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 80px; /* Espai pel HUD fixat */
 }
-
-.glow-cyan {
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
-}
-
-.glow-text {
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-}
-
-.scale-enter-active, .scale-leave-active {
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.scale-enter-from {
-  opacity: 0;
-  transform: scale(0.5);
-}
-.scale-leave-to {
-  opacity: 0;
-  transform: scale(1.5);
-}
-
-.final-score-card {
-  background: rgba(0, 229, 255, 0.05);
-  border: 1px solid rgba(0, 229, 255, 0.25);
-  border-radius: 24px;
-  padding: 32px 48px;
-}
-
-.hud-round {
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.game-hud {
-  flex-shrink: 0;
-}
+>>>>>>> origin/main
 
 .modality-card {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -1361,4 +1189,3 @@ onMounted(() => {
   height: 16px;
 }
 </style>
-

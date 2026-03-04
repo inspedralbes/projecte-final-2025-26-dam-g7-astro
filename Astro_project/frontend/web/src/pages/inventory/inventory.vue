@@ -79,6 +79,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
+import { buildApiUrl } from '@/stores/astroShared';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
@@ -112,7 +113,7 @@ async function toggleEquip(item) {
     if (!isEquipable(item)) return;
 
     try {
-        const response = await fetch('http://localhost:3000/api/inventory/toggle-equip', {
+        const response = await fetch(buildApiUrl('/api/inventory/toggle-equip'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
