@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
     
-    <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <v-card v-if="!isPlaying && !isGameOver && !isMultiplayer" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="100" class="mb-6 animate-bounce"></v-icon>
       <h1 class="text-h2 font-weight-black text-white mb-6">Escuadrón de Rimas</h1>
       <p class="text-h5 text-grey-lighten-1 mb-10">
@@ -57,8 +57,12 @@
             v-for="word in activeWords" 
             :key="word.id"
             class="falling-word"
-            :class="getWordStatusClass(word.status)"
-            :style="{ left: word.x + '%', animationDuration: word.speed + 's' }"
+            :class="[getWordStatusClass(word.status), word.direction || 'top-down', { 'magnet-glow': isMagnetActive && word.isRhyme }]"
+            :style="{ 
+                left: word.x + '%', 
+                top: word.y + '%',
+                animationDuration: word.speed + 's' 
+            }"
             @mousedown="catchWord(word)"
             @animationend="removeWord(word.id, false)"
           >
@@ -69,6 +73,27 @@
         <transition name="fade-up">
           <div v-if="showTimeBonus" class="time-bonus-feedback text-h2 font-weight-black text-green-accent-3">+1s</div>
         </transition>
+
+        <!-- Banners d'Efectes -->
+        <div v-if="isDustStormActive" class="rs-effect-banner storm-banner">
+            <v-icon icon="mdi-weather-windy" class="mr-2"></v-icon>
+            TEMPESTA DE POLS
+        </div>
+        <div v-if="isMagnetActive" class="rs-effect-banner magnet-banner">
+            <v-icon icon="mdi-magnet" class="mr-2"></v-icon>
+            IMANT DE RIMES
+        </div>
+
+        <!-- Cursores compartis (Només en COOPERATIU) -->
+        <template v-if="remoteCursor">
+             <div 
+               class="remote-cursor-game"
+               :style="{ left: remoteCursor.x + '%', top: remoteCursor.y + '%' }"
+             >
+               <v-icon icon="mdi-cursor-default" color="cyan-accent-2" size="24" class="mouse-icon-shadow"></v-icon>
+               <div class="cursor-tag-mini">{{ remoteCursor.user }}</div>
+             </div>
+        </template>
       </div>
     </template>
 
@@ -90,17 +115,24 @@
       <p class="text-h4 text-white mb-2">Puntuación Final: {{ score }}</p>
       <p class="text-h6 text-grey-lighten-1 mb-8">Combo Máximo: x{{ maxCombo }}</p>
       
-      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="x-large" height="60" rounded="pill" class="text-black font-weight-bold text-h6 block w-100">
-        Obtener Recompensa
-      </v-btn>
+        <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="x-large" height="60" rounded="pill" class="text-black font-weight-bold text-h6 block w-100">
+          Obtener Recompensa
+        </v-btn>
+      </v-card>
+
+    <v-card v-else-if="isGameOver && isMultiplayer" width="100%" max-width="500" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+      <v-icon icon="mdi-account-group" color="cyan-accent-2" size="100" class="mb-6 animate-bounce"></v-icon>
+      <h2 class="text-h3 text-white mb-2">¡Perfecto, equipo!</h2>
+      <p class="text-h5 text-grey-lighten-1 mb-10">Esperando a que la misión actual finalice...</p>
+      <v-progress-circular indeterminate color="cyan-accent-3" size="64" width="6"></v-progress-circular>
     </v-card>
 
-    <!-- Overlay de Espera Multijugador -->
+    <!-- Overlay de Espera Multijugador (Manual) -->
     <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
         <v-progress-circular indeterminate color="cyan-accent-3" size="64" class="mb-4"></v-progress-circular>
-        <h2 class="text-h4 font-weight-bold text-white mb-2">Muntant resultats...</h2>
-        <p class="text-body-1 text-grey-lighten-1">Esperant que el company acabi la seva missió.</p>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">Sincronizando...</h2>
+        <p class="text-body-1 text-grey-lighten-1">Esperando al resto de la tripulación.</p>
       </v-card>
     </v-overlay>
 
@@ -108,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
 
@@ -123,6 +155,26 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['game-over']);
+const remoteCursor = computed(() => {
+  if (!props.isMultiplayer || multiplayerStore.room?.gameConfig?.mode !== 'COOPERATIVE') return null;
+  const opp = multiplayerStore.room?.players?.find(p => p !== astroStore.user);
+  if (!opp) return null;
+  const pos = multiplayerStore.remoteCursors[opp];
+  if (!pos) return null;
+  
+  // Convertir porcentaje de pantalla a pixels locales
+  const playArea = document.querySelector('.play-area');
+  if (!playArea) return null;
+  const rect = playArea.getBoundingClientRect();
+  const clientX = (pos.x / 100) * window.innerWidth;
+  const clientY = (pos.y / 100) * window.innerHeight;
+  
+  return {
+    x: ((clientX - rect.left) / rect.width) * 100,
+    y: ((clientY - rect.top) / rect.height) * 100,
+    user: opp
+  };
+});
 
 // DICCIONARIO ESTRUCTURADO
 const dictionary = [
@@ -136,6 +188,7 @@ const dictionary = [
 // ESTADOS
 const isPlaying = ref(false);
 const isGameOver = ref(false);
+const isWaitingForOthers = ref(false);
 const score = ref(0);
 const lives = ref(3);
 const timeLeft = ref(60);
@@ -145,6 +198,10 @@ const correctHits = ref(0);
 const incorrectHits = ref(0);
 const isTurbo = ref(false);
 const showTimeBonus = ref(false);
+
+// --- EFECTES MULTIJUGADOR ---
+const isDustStormActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_STORM'));
+const isMagnetActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_MAGNET'));
 
 const currentTarget = ref(dictionary[0]);
 const activeWords = ref([]);
@@ -219,13 +276,31 @@ const spawnWord = () => {
 
     const targetZone = zones[i % zones.length];
     const posX = seededDice() * (targetZone.max - targetZone.min) + targetZone.min;
+    
+    // Direcció aleatòria si hi ha tempesta
+    let direction = 'top-down';
+    let x = posX;
+    let y = -10; // Per defecte fora per dalt
+    
+    if (isDustStormActive.value) {
+        const dRnd = seededDice();
+        if (dRnd < 0.25) { direction = 'left-right'; x = -20; y = seededDice() * 80 + 10; }
+        else if (dRnd < 0.5) { direction = 'right-left'; x = 110; y = seededDice() * 80 + 10; }
+        else if (dRnd < 0.75) { direction = 'bottom-up'; x = posX; y = 110; }
+        else { direction = 'top-down'; x = posX; y = -10; }
+    } else {
+        x = posX;
+        y = -10;
+    }
 
     activeWords.value.push({
       id: wordIdCounter++,
       text: wordText,
       isRhyme: isRhyme,
       status: 'falling', 
-      x: posX,
+      x: x,
+      y: y,
+      direction: direction,
       speed: isTurbo.value ? currentSpeed * 0.75 : currentSpeed
     });
   }
@@ -262,6 +337,15 @@ const catchWord = (word, fromRemote = false) => {
         if (combo.value > maxCombo.value) maxCombo.value = combo.value;
         if (combo.value >= 10 && !isTurbo.value) isTurbo.value = true;
         if (combo.value % 5 === 0) pickNewTarget();
+
+        // Enviar SABOTAGE / BONUS (1 segon per paraula encertada)
+        if (props.isMultiplayer) {
+          if (multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE') {
+            multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 1 });
+          } else {
+            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 1 });
+          }
+        }
     }
   } else {
     word.status = 'incorrect';
@@ -323,7 +407,8 @@ const forceEndGame = () => {
 const endGame = (silent = false) => {
   if (props.isMultiplayer && !silent) {
     isPlaying.value = false;
-    isGameOver.value = false; // No mostrar el overlay de single player
+    isGameOver.value = true;
+    isWaitingForOthers.value = true;
     clearInterval(gameLoopInterval);
     clearInterval(timerInterval);
     activeWords.value = [];
@@ -342,6 +427,11 @@ const emitExit = () => {
     emit('game-over', score.value); 
 };
 
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
+const myTeamId = computed(() => myTeam.value?.id);
+const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+
 onMounted(() => {
   if (props.isMultiplayer) {
     if (multiplayerStore.room?.gameConfig?.seed) {
@@ -357,18 +447,40 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   if (!msg) return;
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    // El Lobby gestiona el tancament del component via watcher de lastMessage
     isPlaying.value = false;
     isGameOver.value = true;
-    emitExit();
   }
 
-  // Sincronización de capturas en modo cooperativo
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'WORD_CAUGHT') {
+  // Sincronización de capturas en modo cooperativo (Solo Compañero)
+  if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION' && msg.action?.type === 'WORD_CAUGHT') {
      const word = activeWords.value.find(w => w.id === msg.action.id);
      if (word) {
         catchWord(word, true);
      }
+  }
+
+  // REBRE SABOTATGE: Restar temps (Dirigit o Global)
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
+    let shouldApply = false;
+    if (isCoop.value) {
+       if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
+    } else {
+       shouldApply = true;
+    }
+
+    if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
+      if(timeLeft.value <= 0 && isPlaying.value) endGame();
+    }
+  }
+  
+  // REBRE BONUS: Sumar temps (Solo Compañero)
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
+    if (isCoop.value && isMyTeammate(msg.from)) {
+      timeLeft.value = Math.min(99, timeLeft.value + (msg.action.amount || 1));
+      triggerTimeBonusVisual();
+    }
   }
 });
 
@@ -444,6 +556,33 @@ const getWordStatusClass = (status) => {
   animation-fill-mode: forwards;
   transition: all 0.2s ease;
   z-index: 10;
+}
+
+/* Direccions */
+.top-down { animation-name: fallAnimation; }
+.bottom-up { animation-name: riseAnimation; }
+.left-right { animation-name: rightAnimation; }
+.right-left { animation-name: leftAnimation; }
+
+@keyframes riseAnimation {
+  0% { top: 110%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { top: -20%; opacity: 0; }
+}
+
+@keyframes rightAnimation {
+  0% { left: -20%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { left: 110%; opacity: 0; }
+}
+
+@keyframes leftAnimation {
+  0% { left: 110%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { left: -20%; opacity: 0; }
 }
 
 .word-falling {
@@ -524,5 +663,61 @@ const getWordStatusClass = (status) => {
 .fade-up-leave-to {
   opacity: 0;
   transform: translateY(-20px);
+}
+/* Efectes Banners */
+.rs-effect-banner {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: white;
+    z-index: 100;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    animation: rs-slideInLeft 0.3s ease-out;
+}
+.storm-banner {
+    background: linear-gradient(90deg, #64748b, #334155);
+    border-left: 4px solid #f1f5f9;
+}
+.magnet-banner {
+    background: linear-gradient(90deg, #ec4899, #be185d);
+    border-left: 4px solid #fbcfe8;
+    bottom: 70px;
+}
+@keyframes rs-slideInLeft {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.magnet-glow {
+    box-shadow: 0 0 20px #ec4899 !important;
+    border-color: #fbcfe8 !important;
+    animation: magnet-pulse 1s infinite alternate;
+}
+@keyframes magnet-pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+.remote-cursor-game {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.05s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cursor-tag-mini {
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 0px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 </style>

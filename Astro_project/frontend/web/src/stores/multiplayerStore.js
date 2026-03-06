@@ -30,7 +30,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
         returnedPlayers: [], // Jugadores que han pulsado "Volver al lobby"
-        remoteCursors: {} // Coordenadas de ratón de otros jugadores: { username: { x, y } }
+        remoteCursors: {}, // Coordenadas de ratón de otros jugadores: { username: { x, y } }
+        activeEffects: {} // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
     }),
 
     actions: {
@@ -191,6 +192,24 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.room = null;
                     this.lastMessage = data;
                     console.log('🚪 Sala tancada pel servidor:', data.reason);
+                    break;
+                case 'PLAYER_EFFECT_ACTIVATED':
+                    console.log('✨ Efecto activado:', data.effect);
+                    this.activeEffects[data.effect.id] = {
+                        type: data.effect.type,
+                        duration: data.effect.duration || 3000,
+                        startTime: Date.now()
+                    };
+                    // Auto-limpieza después de la duración si el servidor no envía desactivación
+                    setTimeout(() => {
+                        if (this.activeEffects[data.effect.id]) {
+                            delete this.activeEffects[data.effect.id];
+                        }
+                    }, (data.effect.duration || 3000) + 500);
+                    break;
+                case 'PLAYER_EFFECT_DEACTIVATED':
+                    console.log('🚫 Efecto desactivado:', data.effectId);
+                    delete this.activeEffects[data.effectId];
                     break;
                 case 'ERROR':
                     this.error = data.message;

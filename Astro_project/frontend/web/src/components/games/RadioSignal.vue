@@ -13,11 +13,14 @@
         <div class="session-hud">
             <div class="hud-pill">Punts: {{ score }}</div>
             <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+            <div class="hud-pill hud-pill-signal">SENYAL: {{ phraseIndex + 1 }} / {{ totalPhrases }}</div>
         </div>
 
         <div class="screen-housing">
             <div class="screen-bezel">
-                <div class="wave-panels">
+                <div class="wave-panels position-relative">
+                    <div v-if="isStaticActive" class="static-noise-overlay"></div>
+                    
                     <div v-if="canSeeTarget" class="wave-screen" :class="{ 'screen-synced': isTuned }">
                         <div class="screen-label">TARGET</div>
                         <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
@@ -109,6 +112,17 @@
             </div>
         </div>
 
+        <!-- Cursores compartis (Només en COOPERATIU) -->
+        <template v-if="remoteCursor">
+             <div 
+               class="remote-cursor-game"
+               :style="{ left: remoteCursor.x + '%', top: remoteCursor.y + '%' }"
+             >
+               <v-icon icon="mdi-cursor-default" color="cyan-accent-2" size="24" class="mouse-icon-shadow"></v-icon>
+               <div class="cursor-tag-mini">{{ remoteCursor.user }}</div>
+             </div>
+        </template>
+
         <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
             ✗ DADES INCORRECTES - TORNA A INTENTAR
         </v-snackbar>
@@ -116,11 +130,17 @@
         <v-snackbar v-model="showSuccess" color="success" timeout="2000" location="top">
             ✓ SENYAL DESXIFRADA! +150 PTS | +15s
         </v-snackbar>
+
+        <!-- Indicador de Mejoras -->
+        <div v-if="isPrecisionActive" class="precision-pill">
+            <v-icon icon="mdi-target-variant" color="cyan-accent-2" size="small"></v-icon>
+            PRECISIÓ AUGMENTADA
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
 
@@ -138,9 +158,29 @@ const emit = defineEmits(['game-over']);
 
 // ---- COOPERATIVO ASIMÉTRICO ----
 const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
-const myTeam = computed(() => {
-    if (!isCoop.value) return null;
-    return multiplayerStore.room.gameConfig.teams.find(t => t.members.includes(astroStore.user.username));
+const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
+const myTeamId = computed(() => myTeam.value?.id);
+const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+
+const remoteCursor = computed(() => {
+  if (!props.isMultiplayer || !isCoop.value) return null;
+  const opp = multiplayerStore.room?.players?.find(p => p !== astroStore.user);
+  if (!opp) return null;
+  const pos = multiplayerStore.remoteCursors[opp];
+  if (!pos) return null;
+  
+  // En RadioSignal el "playArea" es la propia radio-cabinet
+  const playArea = document.querySelector('.radio-cabinet');
+  if (!playArea) return null;
+  const rect = playArea.getBoundingClientRect();
+  const clientX = (pos.x / 100) * window.innerWidth;
+  const clientY = (pos.y / 100) * window.innerHeight;
+  
+  return {
+    x: ((clientX - rect.left) / rect.width) * 100,
+    y: ((clientY - rect.top) / rect.height) * 100,
+    user: opp
+  };
 });
 
 // Role A: Sintonizador (Primer miembro), Role B: Decodificador (Segundo miembro)
@@ -159,7 +199,14 @@ const canHearVoz = computed(() => !isCoop.value || myRole.value === 'A');
 // Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
 const currentFrequency = ref(Math.random() * 20); 
-const tuningThreshold = 2.0;
+const baseTuningThreshold = 2.0;
+
+// --- EFECTES MULTIJUGADOR ---
+const isStaticActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_STATIC'));
+const isPrecisionActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_PRECISION'));
+
+const tuningThreshold = computed(() => isPrecisionActive.value ? baseTuningThreshold * 2.5 : baseTuningThreshold);
+
 const userGuess = ref('');
 const isTuned = ref(false);
 const showError = ref(false);
@@ -185,10 +232,9 @@ const phrases = [
     'BASE LUNAR REPORTA BON ESTAT',
 ];
 // Phrases shuffled at start
-const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
 const phraseIndex = ref(0); // Frase atual
-const currentPhrase = ref(shuffledPhrases[0]);
-const totalPhrases = shuffledPhrases.length;
+const currentPhrase = ref(phrases[0]); // Empezamos por una fija o la sincronizamos
+const totalPhrases = 4;
 let speechRepeatTimer = null;
 
 // ---- DIAL ----
@@ -404,11 +450,20 @@ const checkPhrase = () => {
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
     
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
         score.value += 150;
-        timeLeft.value += 15;
+        timeLeft.value += 10;
         userGuess.value = '';
         showSuccess.value = true;
+        
+        phraseIndex.value++;
+
+        if (phraseIndex.value >= totalPhrases) {
+            // ¡Misión cumplida!
+            setTimeout(() => {
+                finishGame();
+            }, 1000);
+            return;
+        }
         
         // Generamos nueva señal objetivo
         currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
@@ -419,12 +474,13 @@ const checkPhrase = () => {
         stopSpeechLoop();
         updateNoise();
 
-        // Notificar al compañero del éxito
+        // Notificar al compañero del éxito y avance
         if (isCoop.value) {
             multiplayerStore.sendGameAction({
                 type: 'SIGNAL_DECODED',
                 nextPhrase: currentPhrase.value,
-                nextFrequency: targetFrequency.value
+                nextFrequency: targetFrequency.value,
+                nextIndex: phraseIndex.value
             });
         }
     } else { 
@@ -481,6 +537,17 @@ const stopAudio = () => {
 onMounted(() => {
     drawWaves();
     startTimer();
+    
+    // Si somos el host en cooperativo, forzamos la sincronización de la primera señal
+    if (isCoop.value && multiplayerStore.room?.host === astroStore.user) {
+        setTimeout(() => {
+            multiplayerStore.sendGameAction({
+                type: 'SIGNAL_DECODED', // Reutilizamos el evento para setear el inicio
+                nextPhrase: currentPhrase.value,
+                nextFrequency: targetFrequency.value
+            });
+        }, 1000);
+    }
 });
 
 // Listener para eventos multijugador (Mantenemos de HEAD)
@@ -488,13 +555,34 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     if (!msg) return;
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        // Alguien ganó la ronda, cerrar este juego formalmente
-        gameFinished.value = true; 
-        emit('game-over', score.value + timeLeft.value);
+        // El Lobby gestiona el tancament del component via watcher de lastMessage
+        gameFinished.value = true;
     }
 
-    // Lógica COOP: Recibir frecuencia del sintonizador
-    if (isCoop.value && msg.type === 'GAME_ACTION' && msg.from !== astroStore.user.username) {
+    // REBRE SABOTATGE: Restar temps (Dirigit o Global)
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
+        let shouldApply = false;
+        if (isCoop.value) {
+            if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
+        } else {
+            shouldApply = true;
+        }
+
+        if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
+            timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
+            if (timeLeft.value <= 0 && !gameFinished.value) finishGame();
+        }
+    }
+
+    // REBRE BONUS: Sumar temps (Solo Compañero)
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
+        if (isCoop.value && isMyTeammate(msg.from)) {
+            timeLeft.value = Math.min(60, timeLeft.value + (msg.action.amount || 10));
+        }
+    }
+
+    // Lógica COOP: Sincronizar frecuencia y frases (Solo Compañero)
+    if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION') {
         if (msg.action.type === 'FREQ_UPDATE') {
             currentFrequency.value = msg.action.freq;
             checkTuningStatus();
@@ -503,11 +591,17 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
         if (msg.action.type === 'SIGNAL_DECODED') {
             currentPhrase.value = msg.action.nextPhrase;
             targetFrequency.value = msg.action.nextFrequency;
+            phraseIndex.value = msg.action.nextIndex || (phraseIndex.value + 1);
+            
             isTuned.value = false;
             stopSpeechLoop();
             showSuccess.value = true;
             score.value += 150;
-            timeLeft.value += 15;
+            timeLeft.value += 10;
+
+            if (phraseIndex.value >= totalPhrases) {
+                setTimeout(() => finishGame(true), 1000);
+            }
         }
     }
 });
@@ -598,6 +692,12 @@ onUnmounted(() => {
 .hud-pill-alert {
     color: #ff6e6e;
     border-color: #8b2d2d;
+}
+
+.hud-pill-signal {
+    border-color: #00E5FF;
+    color: #00E5FF;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
 }
 
 .screen-housing {
@@ -756,5 +856,69 @@ canvas { display: block; width: 100%; height: auto; }
     height: 70px; gap: 6px;
     font-size: 10px; color: #333; letter-spacing: 2px; font-family: 'Courier New', monospace;
     text-align: center;
+}
+
+/* Efectes */
+.static-noise-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 20;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.15;
+    animation: noise-anim 0.2s infinite;
+}
+
+@keyframes noise-anim {
+    0% { transform: translate(0,0); }
+    10% { transform: translate(-5%,-5%); }
+    20% { transform: translate(5%,5%); }
+    30% { transform: translate(-5%,5%); }
+    40% { transform: translate(5%,-5%); }
+    50% { transform: translate(-2%,3%); }
+    60% { transform: translate(3%,-2%); }
+    70% { transform: translate(-3%,1%); }
+    80% { transform: translate(1%,-3%); }
+    90% { transform: translate(-1%,2%); }
+    100% { transform: translate(0,0); }
+}
+
+.precision-pill {
+    position: absolute;
+    top: -20px;
+    right: 20px;
+    background: #00E5FF;
+    color: #000;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 0 10px rgba(0,229,255,0.5);
+    z-index: 100;
+}
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.remote-cursor-game {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.05s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cursor-tag-mini {
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 0px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 </style>

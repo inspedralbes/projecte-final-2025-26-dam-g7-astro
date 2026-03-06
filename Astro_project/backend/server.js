@@ -103,6 +103,7 @@ registerWsHandlers(wss);
 connectDB()
     .then(async () => {
         await ensureIndexes();
+
         const PORT = Number.parseInt(process.env.PORT, 10) || 3000;
         server.listen(PORT, () => {
             console.log(`🚀 SERVIDOR ASTRO EN PUERTO ${PORT}`);

@@ -10,7 +10,7 @@
 
     <MultiplayerScoreSystem
       ref="multiplayerScoreSystem"
-      :visible="Boolean(activeGameComponent)"
+      :visible="isInMatch"
       :opponent-name="opponentName"
       :get-player-avatar="getPlayerAvatar"
       @match-finished="onMatchFinished"
@@ -23,9 +23,16 @@
         class="game-active-overlay"
         @mousemove.passive="handleMouseMove"
       >
-        <!-- Minimapa (Visible siempre en todos los juegos multijugador) -->
-        <div class="game-minimap-layer">
-          <SpaceRaceMap />
+        <!-- Minimapa (Visible siempre en cooperativo durante el minijuego) -->
+        <div v-if="multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE'" style="z-index: 2000;">
+          <SpaceRaceMap 
+            :teams="multiplayerStore.room?.gameConfig?.teams"
+            :hazard-type="multiplayerStore.room?.gameConfig?.hazard"
+            :hazard-progress="multiplayerStore.room?.gameConfig?.hazardProgress"
+            :time-limit="multiplayerStore.room?.gameConfig?.timeLimit"
+            :start-time="multiplayerStore.room?.gameConfig?.startTime"
+            :mini-mode="true"
+          />
         </div>
 
         <!-- Cursores (Solo en cooperativo) -->
@@ -73,7 +80,9 @@
       @return-to-lobby="returnToLobby"
     />
 
-    <div v-if="!activeGameComponent" class="w-100">
+    <!-- Pantalla Central (Lobby / Habitacions / Amics) -->
+    <!-- Només es mostra si NO estem en partida (ni jugant, ni ruleta, ni resultats) -->
+    <div v-show="!isInMatch && !showMatchResult && !showRoulette" class="w-100">
       <div class="mb-10 text-center">
         <div class="d-flex align-center justify-center mb-6">
           <v-icon icon="mdi-sword-cross" size="x-large" color="orange-accent-2" class="mr-4"></v-icon>
@@ -96,21 +105,9 @@
               </div>
             </div>
             <div class="d-flex gap-2">
-              <v-btn 
-                v-if="isHost" 
-                color="red-accent-2" 
-                variant="elevated" 
-                rounded="pill" 
-                size="small" 
-                @click="multiplayerStore.deleteRoom()" 
-                class="px-6 font-weight-black action-glow-red"
-              >
-                <v-icon icon="mdi-delete" start></v-icon>
-                Cerrar Misión
-              </v-btn>
-              <v-btn color="error" variant="tonal" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-bold">
+              <v-btn color="red-accent-2" variant="elevated" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-black action-glow-red">
                 <v-icon icon="mdi-logout" start></v-icon>
-                Abortar
+                Abortar Missió
               </v-btn>
             </div>
           </div>
@@ -200,15 +197,6 @@
               </v-col>
             </v-row>
 
-              <div v-if="multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE'" class="space-race-section w-100 mt-6">
-                <SpaceRaceMap 
-                  :teams="multiplayerStore.room?.gameConfig?.teams"
-                  :hazard-type="multiplayerStore.room?.gameConfig?.hazard"
-                  :hazard-progress="multiplayerStore.room?.gameConfig?.hazardProgress"
-                  :time-limit="multiplayerStore.room?.gameConfig?.timeLimit"
-                  :start-time="multiplayerStore.room?.gameConfig?.startTime"
-                />
-              </div>
 
               <div class="mt-12 d-flex flex-column align-center">
                 <v-btn 
@@ -217,8 +205,8 @@
                   size="x-large" 
                   class="start-mission-btn rounded-pill px-12 font-weight-black" 
                   elevation="12"
-                  :disabled="!canStartGame"
-                  @click="multiplayerStore.startMatch()"
+                  :disabled="!canStartGame && multiplayerStore.room?.status !== 'GAME_OVER'"
+                  @click="intentStartMatch"
                 >
                   ¡DESPEGAR AHORA!
                 </v-btn>
@@ -259,43 +247,47 @@
                   </div>
                   
 
-                  <div class="mb-6">
-                     <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO DE LA NAVE MÁX.</div>
-                     <v-select
-                        v-model="maxPlayers"
-                        :items="[2, 4, 6, 8, 10, 12, 14, 16]"
-                        variant="solo-filled"
-                        bg-color="rgba(255,255,255,0.05)"
-                        class="player-limit-select"
-                        rounded="pill"
-                        hide-details
-                        density="comfortable"
-                        prepend-inner-icon="mdi-account-group"
-                        :menu-props="{ maxHeight: '300' }"
-                     >
-                        <template v-slot:selection="{ item }">
-                           <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
-                        </template>
-                     </v-select>
-                  </div>
-                  <div class="mb-6">
-                     <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NÚMERO DE RONDAS</div>
-                     <v-select
-                        v-model="pointsToWin"
-                        :items="[1, 2, 3, 4, 5]"
-                        variant="solo-filled"
-                        bg-color="rgba(255,255,255,0.05)"
-                        class="points-limit-select"
-                        rounded="pill"
-                        hide-details
-                        density="comfortable"
-                        prepend-inner-icon="mdi-trophy-outline"
-                     >
-                        <template v-slot:selection="{ item }">
-                           <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
-                        </template>
-                     </v-select>
-                  </div>
+                  <v-row>
+                    <v-col cols="12" sm="6">
+                       <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO MÁXIMO</div>
+                       <v-select
+                          v-model="maxPlayers"
+                          :items="[2, 4, 6, 8, 10, 12, 14, 16]"
+                          variant="solo-filled"
+                          bg-color="rgba(255,255,255,0.05)"
+                          class="player-limit-select"
+                          rounded="pill"
+                          hide-details
+                          density="comfortable"
+                          prepend-inner-icon="mdi-account-group"
+                       >
+                          <template v-slot:selection="{ item }">
+                             <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
+                          </template>
+                       </v-select>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                       <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NÚMERO DE RONDAS</div>
+                       <v-select
+                          v-model="pointsToWin"
+                          :items="[1, 2, 3, 4, 5]"
+                          variant="solo-filled"
+                          bg-color="rgba(255,255,255,0.05)"
+                          class="points-limit-select"
+                          rounded="pill"
+                          hide-details
+                          density="comfortable"
+                          prepend-inner-icon="mdi-trophy-outline"
+                       >
+                          <template v-slot:selection="{ item }">
+                             <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
+                          </template>
+                       </v-select>
+                    </v-col>
+                  </v-row>
+
+                  <!-- Hemos quitado el v-select de aquí para usar las tarjetas de la derecha -->
+                  <div class="mb-4"></div>
 
                   <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan" @click="createRoom">
                     INICIAR SALA
@@ -344,10 +336,10 @@
                 class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg"
                 :class="{ 
                   'active-mode': selectedModality === mode.id, 
-                  'disabled-mode': !mode.active && !isHost,
-                  'cursor-pointer': isHost && mode.active
+                  'disabled-mode': !mode.active && multiplayerStore.room && !isHost,
+                  'cursor-pointer': mode.active && (!multiplayerStore.room || isHost)
                 }"
-                @click="isHost && mode.active ? selectedModality = mode.id : null"
+                @click="mode.active && (!multiplayerStore.room || isHost) ? selectedModality = mode.id : null"
                 variant="flat"
               >
                 <v-icon :icon="mode.icon" :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-darken-1'" size="28" class="mb-2"></v-icon>
@@ -398,9 +390,19 @@
                         <div class="mission-status-led mr-2"></div>
                         <div class="text-body-2 font-weight-black text-white">SECTOR {{ room.id }}</div>
                       </div>
-                      <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
-                        {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
-                      </v-chip>
+                      <div class="d-flex align-center">
+                        <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
+                          {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
+                        </v-chip>
+                        <v-chip 
+                          size="x-small" 
+                          :color="room.gameConfig?.mode === 'COOPERATIVE' ? 'cyan-accent-2' : 'orange-accent-2'" 
+                          variant="tonal" 
+                          class="rounded-pill font-weight-bold ml-2"
+                        >
+                          {{ room.gameConfig?.mode === 'COOPERATIVE' ? 'COOP' : 'VS' }}
+                        </v-chip>
+                      </div>
                     </div>
 
                     <div class="d-flex align-center mb-4">
@@ -446,7 +448,7 @@
         </v-card>
 
         <!-- Reclutamiento (Si está en una sala) -->
-        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4">
+        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4" @vue:mounted="ensureExplorersFetched">
           <div class="pa-4 border-bottom-light">
             <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
               <v-icon icon="mdi-account-group" color="cyan-accent-2" class="mr-2"></v-icon>
@@ -547,10 +549,10 @@ const multiplayerScoreSystem = ref(null);
 const showMatchResult = ref(false);
 const finalScores = ref({});
 const matchWinnerName = ref(null);
-const selectedModality = ref('1vs1');
+const selectedModality = ref('BATTLE');
 const modalities = [
-  { id: '1vs1', name: 'Individual (Batalla)', icon: 'mdi-sword-cross', active: true },
-  { id: 'COOPERATIVE', name: 'Cooperativo (Compartido)', icon: 'mdi-account-group', active: true },
+  { id: 'BATTLE', name: 'Batalla Individual', icon: 'mdi-sword-cross', active: true },
+  { id: 'COOPERATIVE', name: 'Misión Cooperativa', icon: 'mdi-account-group', active: true },
   { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: false },
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
 ];
@@ -572,8 +574,14 @@ watch(() => multiplayerStore.room?.status, (newStatus) => {
     matchWinnerName.value = null;
     finalScores.value = {};
     multiplayerScoreSystem.value?.resetLocalState();
+  } else if (newStatus === 'ROUND_RESULTS') {
+    // Apagar la ruleta entre rondes per forçar que la prop canviï de false->true
+    // quan arribi el proper ROULETTE, activant el watcher de RouletteOverlay
+    showRoulette.value = false;
+    activeGameComponent.value = null;
   }
 });
+
 
 // AÑADIDO: Watcher para asegurar que tenemos los datos de todos los jugadores que entran
 watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
@@ -587,7 +595,7 @@ watch(() => multiplayerStore.room, (newRoom) => {
   if (newRoom && newRoom.gameConfig) {
     maxPlayers.value = newRoom.maxPlayers || 4;
     pointsToWin.value = newRoom.gameConfig.pointsToWin || 3;
-    selectedModality.value = newRoom.gameConfig.mode || '1vs1';
+    selectedModality.value = newRoom.gameConfig.mode || 'BATTLE';
   }
 }, { immediate: true, deep: true });
 
@@ -600,6 +608,33 @@ watch(() => multiplayerStore.error, (newError) => {
 
 const isHost = computed(() => {
   return multiplayerStore.room?.host === astroStore.user;
+});
+
+// El HUD del sistema de puntuació és visible durant tota la partida (no solo quan hi ha joc actiu)
+// Així el watcher de lastMessage sempre està actiu i pot capturar MATCH_FINISHED correctament
+const isInMatch = computed(() => {
+  const s = multiplayerStore.room?.status;
+  // Treiem 'GAME_OVER' per tal que, en tancar els resultats, ja es pugui veure l'espai central del lobby.
+  return s === 'PLAYING' || s === 'ROULETTE' || s === 'ROUND_RESULTS';
+});
+
+// Watcher directe de MATCH_FINISHED al Lobby com a mecanisme de seguretat
+// El MultiplayerScoreSystem ja ho gestiona, però per si el component no és visible en aquell moment
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    activeGameComponent.value = null;
+  }
+  if (msg.type === 'MATCH_FINISHED') {
+    showRoulette.value = false;
+    activeGameComponent.value = null;
+    // Si el MultiplayerScoreSystem ja ho ha gestionat, no fem res
+    if (!showMatchResult.value) {
+      matchWinnerName.value = msg.winner ?? null;
+      finalScores.value = msg.room?.gameConfig?.scores || {};
+      showMatchResult.value = true;
+    }
+  }
 });
 
 const canStartGame = computed(() => {
@@ -724,9 +759,8 @@ const rejectInvitation = (index) => {
 };
 
 const onRouletteFinished = () => {
-  if (isHost.value) {
-    multiplayerStore.setRoomStatus('PLAYING');
-  }
+  // El servidor ara avança automàticament la sala a 'PLAYING' als 4.5s.
+  // Ja no enviem setRoomStatus des del client per evitar duplicats (race conditions)
 };
 
 const onMatchFinished = ({ winner, scores }) => {
@@ -740,6 +774,8 @@ const returnToLobby = () => {
   showMatchResult.value = false;
   activeGameComponent.value = null;
   multiplayerScoreSystem.value?.resetLocalState();
+  // Avisar al servidor que aquest jugador vol tornar al lobby
+  multiplayerStore.returnToLobby();
 };
 
 const requestRematch = () => {
@@ -767,13 +803,33 @@ const handleMouseMove = (e) => {
 };
 
 onMounted(() => {
+  // Connexió WebSocket en nextTick per no bloquejar el render inicial
   if (!multiplayerStore.isConnected) {
     multiplayerStore.connect();
   }
-  astroStore.fetchUserStats();
-  astroStore.fetchAllUsers(); // Cargar todos los exploradores para reclutar
+  // fetchAllUsers es fa lazy: es crida quan l'usuari obre el panell d'exploradors
+  // Evitem carregar-lo aquí per no alentir l'entrada al lobby
   multiplayerStore.fetchAvailableRooms();
 });
+
+// Carregar exploradors de forma lazy la primera vegada que calgui
+let explorersFetched = false;
+
+const intentStartMatch = () => {
+  if (multiplayerStore.room?.status === 'GAME_OVER') {
+    showMessage('No se puede iniciar: Espera a que todos los tripulantes regresen a la sala', 'warning');
+    return;
+  }
+  if (!canStartGame.value) return;
+  multiplayerStore.startMatch();
+};
+
+const ensureExplorersFetched = () => {
+  if (!explorersFetched) {
+    explorersFetched = true;
+    astroStore.fetchAllUsers();
+  }
+};
 </script>
 
 <style scoped>

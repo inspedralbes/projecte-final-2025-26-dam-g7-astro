@@ -8,7 +8,7 @@
             {{ formatTime(remainingTime) }}
          </div>
          <div class="mini-circuit-container">
-            <svg viewBox="0 0 1000 400">
+            <svg viewBox="0 0 400 1000">
                <path :d="circuitPath" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="40" stroke-linecap="round" />
                <path :d="circuitPath" fill="none" stroke="rgba(0, 229, 255, 0.4)" stroke-width="4" stroke-dasharray="10 10" />
                <!-- Amenaza -->
@@ -33,7 +33,7 @@
       <div class="space-bg-minimal"></div>
 
       <!-- Circuito Curvo (SVG Principal con Efecto Silueta) -->
-      <svg class="main-circuit" viewBox="0 0 1000 400">
+      <svg class="main-circuit" viewBox="0 0 400 1000">
         <!-- Glow Intenso del Camino -->
         <path 
           :d="circuitPath" 
@@ -64,7 +64,7 @@
         <!-- Checkpoints Minimalistas (Solo puntos de luz) -->
         <g v-for="(point, i) in checkpointCoords" :key="'cp-'+i">
           <circle :cx="point.x" :cy="point.y" r="8" :class="'checkpoint-dot dp-' + (i+1)" />
-          <text v-if="i > 0 && i < 4" :x="point.x" :y="point.y - 20" text-anchor="middle" class="checkpoint-label-minimal">P{{ i }}</text>
+          <text v-if="i > 0 && i < 4" :x="point.x + 20" :y="point.y" text-anchor="start" class="checkpoint-label-minimal">P{{ i }}</text>
         </g>
 
         <!-- Amenaza (Simplificada) -->
@@ -146,8 +146,8 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   }
 });
 
-// Camino Curvo definido por puntos Bezier
-const circuitPath = "M 50 200 C 150 50, 350 50, 500 200 C 650 350, 850 350, 950 200";
+// Camino Curvo definido por puntos Bezier - Formato Vertical
+const circuitPath = "M 200 950 C 50 850, 50 650, 200 500 C 350 350, 350 150, 200 50";
 
 // Coordenadas de los checkpoints (Planetas) a lo largo del path
 const checkpointPercent = [0, 25, 50, 75, 100];
@@ -161,18 +161,18 @@ const getTeamCoords = (team) => getPointOnPath(team.progress || 0);
 // Simplificada para el ejemplo (en producción se usaría path.getPointAtLength())
 function getPointOnPath(percent) {
   const t = percent / 100;
-  // Implementación simplificada de la curva Bezier cúbica del path
-  // P0=(50,200), P1=(150,50), P2=(350,50), P3=(500,200) - Primera mitad
-  // P3=(500,200), P4=(650,350), P5=(850,350), P6=(950,200) - Segunda mitad
+  // Implementación de la curva Bezier vertical
+  // P0=(200,950), P1=(50,850), P2=(50,650), P3=(200,500) - Primera mitad
+  // P3=(200,500), P4=(350,350), P5=(350,150), P6=(200,50) - Segunda mitad
   if (t <= 0.5) {
     const t2 = t * 2;
-    const x = bezier(50, 150, 350, 500, t2);
-    const y = bezier(200, 50, 50, 200, t2);
+    const x = bezier(200, 50, 50, 200, t2);
+    const y = bezier(950, 850, 650, 500, t2);
     return { x, y };
   } else {
     const t2 = (t - 0.5) * 2;
-    const x = bezier(500, 650, 850, 950, t2);
-    const y = bezier(200, 350, 350, 200, t2);
+    const x = bezier(200, 350, 350, 200, t2);
+    const y = bezier(500, 350, 150, 50, t2);
     return { x, y };
   }
 }
@@ -235,7 +235,7 @@ onUnmounted(() => {
 <style scoped>
 .space-race-map {
   width: 100%;
-  height: 400px;
+  height: 600px; /* Aumentado para formato vertical */
   background: #010409;
   border-radius: 24px;
   position: relative;
@@ -347,8 +347,8 @@ onUnmounted(() => {
   position: fixed !important;
   top: 20px;
   right: 20px;
-  width: 320px !important;
-  height: 140px !important;
+  width: 140px !important;
+  height: 320px !important;
   background: rgba(1, 4, 9, 0.8) !important;
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 229, 255, 0.3) !important;
@@ -360,10 +360,11 @@ onUnmounted(() => {
 
 .mini-timer {
   font-family: 'Roboto Mono', monospace;
-  font-size: 16px;
+  font-size: 14px;
   color: #00e5ff;
   margin-bottom: 8px;
   letter-spacing: 1px;
+  justify-content: center;
 }
 
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }

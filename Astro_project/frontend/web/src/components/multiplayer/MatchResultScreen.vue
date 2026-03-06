@@ -139,7 +139,6 @@
     <!-- Botonera -->
     <div class="d-flex flex-column align-center gap-4">
       <v-btn
-        v-if="!hasMeReturned"
         color="success"
         size="x-large"
         rounded="xl"
@@ -148,10 +147,6 @@
       >
         <v-icon start>mdi-reply</v-icon> VOLVER A LA SALA
       </v-btn>
-      <div v-else class="text-center">
-        <v-progress-circular indeterminate color="cyan-accent-2" size="40" class="mb-2" />
-        <p class="text-cyan-accent-2 font-weight-bold italic">Esperando que el equipo regrese...</p>
-      </div>
     </div>
   </div>
 </template>

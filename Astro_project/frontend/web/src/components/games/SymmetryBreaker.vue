@@ -47,6 +47,16 @@
       {{ roundHintText }}
     </div>
 
+    <!-- Banners d'Efectes -->
+    <div v-if="isGravityActive" class="effect-banner gravity-banner">
+        <v-icon icon="mdi-arrow-down-bold-circle" class="mr-2"></v-icon>
+        GRAVETAT VARIABLE ACTIVADA
+    </div>
+    <div v-if="isMirrorActive" class="effect-banner mirror-banner">
+        <v-icon icon="mdi-mirror" class="mr-2"></v-icon>
+        VISIÓ DE MIRALL ACTIVADA
+    </div>
+
     <!-- Overlays -->
     <v-overlay v-if="!isMultiplayer" v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
@@ -128,6 +138,11 @@ const isFiring = ref(false);
 const holdProgressMs = ref(0);
 const holdRequiredMs = ref(1000);
 
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
+const myTeamId = computed(() => myTeam.value?.id);
+const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+
 const HUD_SAFE_TOP = 170;
 const EDGE_PADDING = 18;
 const BASE_DECOYS = 4;
@@ -140,6 +155,10 @@ const CLASSIC_DECOY_RING = 'rgba(255, 255, 255, 0.25)';
 const CLASSIC_DECOY_FILL = 'rgba(255, 255, 255, 0.06)';
 const PROGRESS_DECAY_OUTSIDE = 950;
 const PROGRESS_DECAY_ON_DECOY = 700;
+
+// --- EFECTES MULTIJUGADOR ---
+const isGravityActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_GRAVITY'));
+const isMirrorActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_MIRROR'));
 
 let animationFrame = null;
 let lastFrameTs = 0;
@@ -167,6 +186,14 @@ function randomVelocity(speed) {
 }
 
 function resolveEntityColors({ isTarget, isUniformMode }) {
+  if (isTarget && isMirrorActive.value) {
+      return {
+          ringColor: '#00e5ff',
+          fillColor: 'rgba(0, 229, 255, 0.4)',
+          glow: true
+      };
+  }
+
   if (isUniformMode) {
     return {
       ringColor: CLASSIC_DECOY_RING,
@@ -316,6 +343,11 @@ function update(dt) {
   }
 
   targets.value.forEach((t) => {
+    // Aplicar gravetat si està activa
+    if (isGravityActive.value) {
+        t.vy += dt * 400; // Accelaració cap a baix
+    }
+
     t.x += t.vx * dt;
     t.y += t.vy * dt;
 
@@ -324,7 +356,8 @@ function update(dt) {
       t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX);
     }
     if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
-      t.vy *= -1;
+      // Rebotar a dalt i a baix
+      t.vy *= isGravityActive.value ? -0.5 : -1; // Rebot amortiguat si hi ha gravetat
       t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY);
     }
   });
@@ -355,13 +388,15 @@ function lockTarget(fromRemote = false) {
   round.value++;
   generateTargets();
 
-  // Sabotatge: -2s al rival en multiplayer solo en 1vs1
-  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode !== 'COOPERATIVE') {
-    multiplayerStore.sendGameAction({
-      type: 'SABOTAGE',
-      subtype: 'REDUCE_TIME',
-      amount: 2
-    });
+  // Efectes Multijugador a la conclusió d'un lock correcte
+  if (props.isMultiplayer) {
+    if (multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE') {
+      // Sumem al company
+      multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 3 });
+    } else {
+      // Sabotatge i restem rival
+      multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 2 });
+    }
   }
 }
 
@@ -404,7 +439,12 @@ function draw() {
     ctx.beginPath();
     ctx.arc(0, 0, t.size / 2, 0, Math.PI * 2);
     ctx.fillStyle = t.fillColor || 'rgba(10, 20, 40, 0.85)';
+    if (t.glow) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#00e5ff';
+    }
     ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.lineWidth = t.isTarget ? 3 : 2;
     ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)');
     ctx.stroke();
@@ -505,20 +545,36 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   if (!msg) return;
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // Aturem el joc; el Lobby gestiona el tancament del component
     isPlaying.value = false;
     isFiring.value = false;
     cancelAnimationFrame(animationFrame);
-    returnToMenu();
   }
 
-  // Rebre sabotatge del rival
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-    timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
-    if (timeLeft.value <= 0 && isPlaying.value) endGame();
+  // REBRE SABOTATGE: Restar temps (Dirigit o Global)
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
+    let shouldApply = false;
+    if (isCoop.value) {
+       if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
+    } else {
+       shouldApply = true;
+    }
+
+    if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
+      if (timeLeft.value <= 0 && isPlaying.value) endGame();
+    }
   }
 
-  // REBRE BLOQUEIG COOPERATIU
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'TARGET_LOCKED') {
+  // REBRE BONUS: Sumar temps (Solo Compañero)
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
+    if (isCoop.value && isMyTeammate(msg.from)) {
+      timeLeft.value = Math.min(99, timeLeft.value + (msg.action.amount || 3));
+    }
+  }
+
+  // REBRE BLOQUEIG COOPERATIU (Solo Compañero)
+  if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION' && msg.action?.type === 'TARGET_LOCKED') {
     lockTarget(true);
   }
 });
@@ -613,4 +669,36 @@ canvas {
 
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 1px solid #00e5ff; }
+
+/* Efectes */
+.effect-banner {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 900;
+    color: white;
+    z-index: 100;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    animation: banner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.gravity-banner {
+    background: linear-gradient(135deg, #f43f5e, #881337);
+    border: 2px solid #fda4af;
+}
+
+.mirror-banner {
+    background: linear-gradient(135deg, #00e5ff, #006064);
+    border: 2px solid #84ffff;
+    bottom: 100px; /* Separar si coinciden */
+}
+
+@keyframes banner-pop {
+    from { transform: translate(-50%, 30px) scale(0.8); opacity: 0; }
+    to { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
 </style>

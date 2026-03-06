@@ -20,12 +20,14 @@ class RoomManager {
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
         this.hazards = ['BLACK_HOLE', 'KRAKEN_SPACE', 'SUPERNOVA'];
         this.hazardInterval = null;
+        this.heartbeatInterval = null; // Interval per actualitzar el lastHeartbeat a la DB
     }
 
     init(getCollections, wss) {
         this.getCollections = getCollections;
         this.wss = wss;
         this.startHazardTicker();
+        this.startHeartbeatTicker();
         console.log("🛠️ RoomManager inicializado con acceso a DB y WSS");
     }
 
@@ -83,6 +85,26 @@ class RoomManager {
                 }
             });
         }, 1000);
+    }
+
+    // Heartbeat: actualitzar el timestamp de les sales actives a la DB cada 30s
+    // Això permet detectar sales "fantasma" d'altres instancies del servidor que han caigut
+    startHeartbeatTicker() {
+        if (this.heartbeatInterval) return;
+        this.heartbeatInterval = setInterval(async () => {
+            if (!this.getCollections || this.rooms.size === 0) return;
+            try {
+                const { rooms } = this.getCollections();
+                const now = new Date();
+                const roomIds = Array.from(this.rooms.keys());
+                await rooms.updateMany(
+                    { id: { $in: roomIds } },
+                    { $set: { lastHeartbeat: now } }
+                );
+            } catch (e) {
+                // Silent: no volem que un error de heartbeat trenqui res
+            }
+        }, 30000); // Cada 30 segons
     }
 
     addSession(user, ws) {
@@ -143,9 +165,12 @@ class RoomManager {
         if (!this.getCollections) return;
         try {
             const { rooms } = this.getCollections();
+            // Filtrar sales "fantasma": només mostrar les que han tingut heartbeat en els últims 2 minuts
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
             const availableRooms = await rooms.find({
                 status: 'LOBBY',
                 isPublic: true,
+                lastHeartbeat: { $gte: twoMinutesAgo },
                 $expr: { $lt: [{ $size: "$players" }, "$maxPlayers"] }
             }).toArray();
             this.broadcastGlobal({
@@ -169,12 +194,14 @@ class RoomManager {
             status: 'LOBBY',
             isPublic,
             createdAt: new Date(),
+            lastHeartbeat: new Date(), // Marca de vida per al sistema anti-fantasma
             gameConfig: {
                 pointsToWin: initialConfig.pointsToWin || 3,
                 totalRounds: initialConfig.pointsToWin || 3,
                 currentRound: 0,
                 scores: { [host]: 0 },
-                currentGame: null
+                currentGame: null,
+                mode: initialConfig.mode || 'BATTLE'
             }
         };
 
@@ -280,15 +307,51 @@ class RoomManager {
                 type: 'ROOM_UPDATE',
                 room: this.getRoom(roomId)
             });
+
+            // Si la sala estava en ROULETTE i surt un jugador, el servidor avança a PLAYING
+            // perquè el jugador restant no quedi encallat esperant que el host (que ha sortit) faci el canvi
+            if (room.status === 'ROULETTE') {
+                console.log(`⚡ [Room ${roomId}] Jugador ${user} ha sortit durant ROULETTE. Avançant a PLAYING automàticament.`);
+                setTimeout(() => this.setRoomStatus(roomId, 'PLAYING'), 1000);
+            }
+
+            // Si la sala estava en PLAYING i queda 1 sol jugador, finalitzar la ronda directament
+            if (room.status === 'PLAYING' && room.players.size === 1) {
+                const winner = Array.from(room.players)[0];
+                console.log(`⚡ [Room ${roomId}] Jugador ${user} ha sortit durant PLAYING. Finalitzant ronda per al guanyador: ${winner}.`);
+                setTimeout(() => this.finalizeRound(roomId, winner), 1500);
+            }
         }
     }
 
     async deleteRoom(roomId, user) {
         const room = this.rooms.get(roomId);
-        if (!room) return { error: 'Sala no encontrada' };
+
+        // Si la sala no està en memòria (després d'un reinici del servidor),
+        // intentar eliminar-la directament de la DB
+        if (!room) {
+            if (this.getCollections) {
+                try {
+                    const { rooms } = this.getCollections();
+                    const dbRoom = await rooms.findOne({ id: roomId });
+                    if (!dbRoom) return { error: 'Sala no encontrada' };
+                    // Permetre eliminar si és el host original o si el servidor ha reiniciat
+                    if (dbRoom.host !== user) return { error: 'Solo el comandante puede cerrar la misión' };
+                    await rooms.deleteOne({ id: roomId });
+                    console.log(`✅ Sala ${roomId} eliminada de DB (post-reinici) per ${user}`);
+                    await this.syncGlobalRooms();
+                    return { success: true };
+                } catch (error) {
+                    console.error('❌ Error eliminando sala de DB (post-reinici):', error);
+                    return { error: 'Error intern' };
+                }
+            }
+            return { error: 'Sala no encontrada' };
+        }
+
         if (room.host !== user) return { error: 'Solo el comandante puede cerrar la misión' };
 
-        console.log(`🧨 Host ${user} cerrando sala ${roomId}.`);
+        console.log(`💨 Host ${user} cerrando sala ${roomId}.`);
 
         this.broadcastToRoom(roomId, {
             type: 'ROOM_CLOSED',
@@ -374,6 +437,15 @@ class RoomManager {
             startTime: room.gameConfig.startTime,
             room: this.getRoom(roomId)
         });
+
+        // El servidor avança a PLAYING automàticament als 4.5s (durada ruleta + marge)
+        // sense dependre que el host cridi SET_ROOM_STATUS des del frontend
+        setTimeout(() => {
+            const r = this.rooms.get(roomId);
+            if (!r || r.status !== 'ROULETTE') return;
+            console.log(`⚡ [Room ${roomId}] Avançant automàticament ROULETTE → PLAYING (primera ronda)`);
+            this.setRoomStatus(roomId, 'PLAYING');
+        }, 4500);
 
         // Si es modo COOPERATIVO, inicializar equipos y amenaza
         if (room.gameConfig.mode === 'COOPERATIVE') {
@@ -664,19 +736,32 @@ class RoomManager {
             // Todavía quedan rondas, pasar a la siguiente (sense repetir joc)
             room.status = 'ROUND_RESULTS';
             const nextGame = this.pickNextGame(roomId);
-            room.gameConfig.currentGame = nextGame; // Use the result of pickNextGame
+            room.gameConfig.currentGame = nextGame;
             room.gameConfig.startTime = Date.now();
-            room.gameConfig.seed = Math.random(); // Añadimos semilla para sincronización
+            room.gameConfig.seed = Math.random();
 
+            // Fase 1 (3s): Mostrar ROUND_RESULTS i enviar MATCH_STARTING amb ROULETTE
             setTimeout(() => {
-                room.status = 'ROULETTE'; // Set status to ROULETTE before broadcasting MATCH_STARTING
+                const r = this.rooms.get(roomId);
+                if (!r) return; // La sala pot haver-se eliminat mentre esperàvem
+                r.status = 'ROULETTE';
                 this.broadcastToRoom(roomId, {
-                    type: 'MATCH_STARTING', // Changed from ROUND_FINISHED
-                    game: room.gameConfig.currentGame,
-                    seed: room.gameConfig.seed,
-                    startTime: room.gameConfig.startTime,
+                    type: 'MATCH_STARTING',
+                    game: r.gameConfig.currentGame,
+                    seed: r.gameConfig.seed,
+                    startTime: r.gameConfig.startTime,
                     room: this.getRoom(roomId)
                 });
+
+                // Fase 2 (3s + 4.5s = 7.5s après de finalizeRound):
+                // El servidor avança a PLAYING automàticament sense dependre del client
+                // La ruleta tarda 3.5s + 0.5s de buffer = 4s. Afegim 0.5s de marge = 4.5s
+                setTimeout(() => {
+                    const r2 = this.rooms.get(roomId);
+                    if (!r2 || r2.status !== 'ROULETTE') return; // Ja és PLAYING o la sala no existeix
+                    console.log(`⚡ [Room ${roomId}] Avançant automàticament ROULETTE → PLAYING`);
+                    this.setRoomStatus(roomId, 'PLAYING');
+                }, 4500);
             }, 3000);
         }
     }
@@ -691,12 +776,25 @@ class RoomManager {
             scores[user] = action.score;
             this.roundGameScores.set(roomId, scores);
 
-            // Broadcast inmediato para que el HUD vea los puntos en vivo
             this.broadcastToRoom(roomId, {
                 type: 'SCORE_UPDATE_LIVE',
                 user,
                 score: action.score
             });
+        }
+
+        // Lógica de sabotaje dirigido en modo cooperativo (Carrera Espacial)
+        if (room.gameConfig?.mode === 'COOPERATIVE' && action.type === 'SABOTAGE') {
+            const myTeam = room.gameConfig.teams?.find(t => t.members.includes(user));
+            if (myTeam) {
+                // Buscar equipos rivales (que no sean el mío)
+                const rivalTeams = room.gameConfig.teams.filter(t => t.id !== myTeam.id);
+                if (rivalTeams.length > 0) {
+                    const targetTeam = rivalTeams[Math.floor(Math.random() * rivalTeams.length)];
+                    action.targetTeamId = targetTeam.id; // Marcamos el objetivo
+                    console.log(`🎯 [Room ${roomId}] Sabotaje de ${user} (Equipo ${myTeam.id}) dirigido a Equipo ${targetTeam.id}`);
+                }
+            }
         }
 
         this.broadcastToRoom(roomId, {
