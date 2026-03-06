@@ -80,14 +80,25 @@
       <!-- Panell de Pregunta i Resposta -->
       <v-col cols="12" md="6" class="px-md-8">
         <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
-          <div class="mb-4">
+          <div v-if="canSeeDefinition" class="mb-4 position-relative">
             <v-chip color="cyan" label class="mb-2 font-weight-bold">Definició</v-chip>
-            <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+            <p class="text-h6 text-white transition-all" :class="{ 'fog-effect': isFogActive }">
+                {{ isFogActive ? scrambledQuestion : currentLetter.question }}
+            </p>
+            <div v-if="isFogActive" class="fog-overlay">
+                <v-icon icon="mdi-cloud-outline" color="white" class="mr-2"></v-icon>
+                BOIRA DE DADES ACTIVADA
+            </div>
+          </div>
+          <div v-else class="mb-4 text-center py-8">
+            <v-icon size="48" color="cyan-darken-2" class="mb-2">mdi-account-voice</v-icon>
+            <p class="text-h6 text-grey-lighten-1">ESCOLTA EL TEU COMPANY</p>
+            <p class="text-caption text-grey">Ell té la definició</p>
           </div>
 
           <v-divider class="mb-6 border-opacity-25"></v-divider>
 
-          <div class="text-center mb-4">
+          <div v-if="canInput" class="text-center mb-4">
             <p class="text-overline text-grey-lighten-1 mb-2">ESCRIU LA PARAULA</p>
             
             <v-text-field
@@ -137,9 +148,23 @@
                 Esborrar tot
               </v-btn>
           </div>
+          <div v-else class="text-center py-4">
+              <v-chip color="orange" variant="outlined" label>MODRE ESCRIU LA RESPOSTA</v-chip>
+          </div>
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Cursores compartis (Només en COOPERATIU) -->
+    <template v-if="remoteCursor">
+         <div 
+           class="remote-cursor-game"
+           :style="{ left: remoteCursor.x + '%', top: remoteCursor.y + '%' }"
+         >
+           <v-icon icon="mdi-cursor-default" color="cyan-accent-2" size="24" class="mouse-icon-shadow"></v-icon>
+           <div class="cursor-tag-mini">{{ remoteCursor.user }}</div>
+         </div>
+    </template>
 
     <!-- Pantalla Final (només en single player) -->
     <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
@@ -168,6 +193,12 @@
        {{ feedbackMessage }}
     </v-snackbar>
 
+    <!-- Efecto Shield Visual -->
+    <div v-if="hasShield" class="shield-indicator">
+        <v-icon icon="mdi-shield-star" color="cyan-accent-2" size="large"></v-icon>
+        <span>IMPULS ESTEL·LAR ACTIU</span>
+    </div>
+
   </v-container>
 </template>
 
@@ -188,6 +219,7 @@ const props = defineProps({
 
 const emit = defineEmits(['game-over']);
 
+// --- DADES DEL JOC (temes variats) ---
 // --- DADES DEL JOC (temes variats) ---
 const allLettersData = [
   // 🌌 Espai
@@ -270,7 +302,7 @@ const allLettersData = [
   { char: 'M', question: "Art de combinar sons de forma agradable.", answer: "MUSICA" },
 ];
 
-// --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
+// --- STAR GEOMETRY ---
 const STAR_CENTER = 200;
 const STAR_RADIUS = 150;
 const INNER_RADIUS = 60; 
@@ -297,13 +329,11 @@ const starSegments = computed(() => {
 });
 
 const tipPolygons = computed(() => {
-  // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
   return letterPositions.map(pos => {
     const pPrev = starPoints[(pos - 1 + 10) % 10];
     const pCurr = starPoints[pos];
     const pNext = starPoints[(pos + 1) % 10];
     const pCenter = { x: STAR_CENTER, y: STAR_CENTER };
-    // Formem un rombe o triangle des del centre per omplir la punta
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`;
   });
 });
@@ -329,6 +359,71 @@ const rocketPos = reactive({ x: 0, y: 0 });
 const trailParticles = ref([]);
 const visitedSegments = ref(new Set());
 
+// --- EFECTES MULTIJUGADOR ---
+const isFogActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_FOG'));
+const hasShield = ref(false);
+
+watch(() => multiplayerStore.activeEffects, (effects) => {
+    if (Object.values(effects).some(e => e.type === 'EFFECT_SHIELD')) {
+        hasShield.value = true;
+    }
+}, { deep: true });
+
+const scrambledQuestion = computed(() => {
+    return currentLetter.value.question.split('').map(c => Math.random() > 0.7 ? '*' : c).join('');
+});
+
+// ---- COOPERATIVO ASIMÈTRIC ----
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
+const myTeamId = computed(() => myTeam.value?.id);
+const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+
+const remoteCursor = computed(() => {
+  if (!props.isMultiplayer || !isCoop.value) return null;
+  const opp = multiplayerStore.room?.players?.find(p => p !== astroStore.user);
+  if (!opp) return null;
+  const pos = multiplayerStore.remoteCursors[opp];
+  if (!pos) return null;
+  
+  // En SpelledRosco el "playArea" es el contenedor principal
+  const playArea = document.querySelector('.game-container');
+  if (!playArea) return null;
+  const rect = playArea.getBoundingClientRect();
+  const clientX = (pos.x / 100) * window.innerWidth;
+  const clientY = (pos.y / 100) * window.innerHeight;
+  
+  return {
+    x: ((clientX - rect.left) / rect.width) * 100,
+    y: ((clientY - rect.top) / rect.height) * 100,
+    user: opp
+  };
+});
+const myTeam = computed(() => {
+    if (!isCoop.value) return null;
+    // astroStore.user és el string del nom d'usuari (no un objecte)
+    return multiplayerStore.room.gameConfig.teams?.find(t => t.members.includes(astroStore.user));
+});
+
+// Role A: Oráculo (Veu definició, NO escriu), Role B: Escriba (NO veu definició, escriu)
+const myRole = computed(() => {
+    if (!myTeam.value) return null;
+    return myTeam.value.members[0] === astroStore.user ? 'A' : 'B';
+});
+
+// En mode COOPERATIU: rol A veu la definició (però no pot escriure), rol B escriu (però no veu)
+// En mode 1vs1 o individual: tots veuen i escriuen
+const canSeeDefinition = computed(() => {
+    if (!props.isMultiplayer) return true;
+    if (isCoop.value) return myRole.value === 'A';
+    return true; // En 1vs1, tots dos veuen la definició i juguen en paral·lel
+});
+const canInput = computed(() => {
+    if (!props.isMultiplayer) return true;
+    if (isCoop.value) return myRole.value === 'B';
+    return true; // En 1vs1, tots dos poden escriure
+});
+
 // Computed
 const currentLetter = computed(() => {
     if (roscoLetters.value.length === 0) return { char: '?', question: '' };
@@ -339,14 +434,24 @@ const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 
 const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
 const finalReward = computed(() => score.value + timeLeft.value);
 
-// Helper: normalize string (remove accents, uppercase, trim spaces)
+// Helper: normalize string
 const normalize = (str) => {
     return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
-// Initialization - pick 5 random
+// Initialization - pick 5 random letters (using shared seed in multiplayer for consistency)
 onMounted(() => {
-    const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
+    const seed = props.isMultiplayer ? (multiplayerStore.room?.gameConfig?.seed ?? Math.random()) : Math.random();
+    // Seeded shuffle: assegura que els dos jugadors veuen les mateixes preguntes
+    const seededRandom = (s) => {
+        let x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+    };
+    const shuffled = [...allLettersData].sort((a, b) => {
+        const idxA = allLettersData.indexOf(a);
+        const idxB = allLettersData.indexOf(b);
+        return seededRandom(seed * (idxA + 1)) - seededRandom(seed * (idxB + 1));
+    });
     roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
     startTimer();
 });
@@ -356,13 +461,46 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     if (!msg) return;
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+        // NO cridem emitExit() aquí: el Lobby ja gestiona el tancament del component
+        // mitjançant el seu propi watcher de lastMessage (activeGameComponent = null)
         gameFinished.value = true;
-        emitExit();
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     }
 
-    // Rebre sabotatge del rival: restar temps
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
+    // Rebre sabotatge: restar temps (Dirigit o Global)
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
+        let shouldApply = false;
+        if (isCoop.value) {
+            if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
+        } else {
+            shouldApply = true;
+        }
+
+        if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
+            timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
+        }
+    }
+
+    // Rebre bonus del company: sumar temps
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
+        if (isCoop.value && isMyTeammate(msg.from)) {
+            timeLeft.value = Math.min(999, timeLeft.value + (msg.action.amount || 15));
+        }
+    }
+
+    // Lógica COOP: Sincronizar avances de turno y respuestas (Solo Compañero)
+    if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION') {
+        if (msg.action.type === 'ADVANCE_TURN') {
+            currentIndex.value = msg.action.nextIndex;
+            if (msg.action.wasCorrect !== undefined) {
+                 roscoLetters.value[msg.action.prevIndex].status = msg.action.wasCorrect ? 'correct' : 'incorrect';
+                 if (msg.action.wasCorrect) score.value += 100;
+            }
+            animateRocket(msg.action.prevIndex, msg.action.nextIndex);
+        }
+        if (msg.action.type === 'FINISH_GAME') {
+            finishGame();
+        }
     }
 });
 
@@ -476,12 +614,39 @@ const checkAnswer = async () => {
         score.value += 100;
         feedbackMessage.value = "Correcte! Molt bé!";
         feedbackColor.value = 'success';
-        // Sabotatge multijugador: +10s per a tu, -15s per al rival
-        if (props.isMultiplayer) {
+        
+        // Notificar al compañero en modo COOP
+        const wasCorrect = true;
+        
+        // Sabotatge/Bonus multijugador
+        if (props.isMultiplayer && !isCoop.value) {
             timeLeft.value = Math.min(timeLeft.value + 10, 999);
             multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
+        } else if (props.isMultiplayer && isCoop.value) {
+            timeLeft.value = Math.min(timeLeft.value + 10, 999);
+            // Com que en coop l'altre està a la mateixa sala i temporitzador teòricament s'arregla,
+            // però per si de cas li sumem al company via BONUS
+            // Note: En SpelledRosco Coop només el 'B' escriu, o podria ser que tots dos tinguin
+            // state del temps, així que enviem el bonus a l'altre de totes maneres
+            multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 10 });
         }
     } else {
+        if (hasShield.value) {
+            hasShield.value = false;
+            // Eliminar el efecto del store si existe localmente para sincronizar
+            const shieldEffectId = Object.keys(multiplayerStore.activeEffects).find(id => multiplayerStore.activeEffects[id].type === 'EFFECT_SHIELD');
+            if (shieldEffectId) delete multiplayerStore.activeEffects[shieldEffectId];
+
+            feedbackMessage.value = "Impuls Estel·lar! Fallada no comptabilitzada.";
+            feedbackColor.value = 'cyan-accent-3';
+            showFeedback.value = true;
+            setTimeout(() => {
+                showFeedback.value = false;
+                rawInput.value = '';
+            }, 1500);
+            return; // No avanza turno ni marca error
+        }
+
         roscoLetters.value[currentIndex.value].status = 'incorrect';
         feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;
         feedbackColor.value = 'error';
@@ -518,10 +683,26 @@ const advanceTurn = async () => {
     }
 
     if (nextIdx !== -1) {
+        const wasCorrect = roscoLetters.value[prevIndex].status === 'correct';
+        const wasIncorrect = roscoLetters.value[prevIndex].status === 'incorrect';
+        
+        // Sincronizar avance en modo COOP antes de animar localmente
+        if (isCoop.value) {
+            multiplayerStore.sendGameAction({
+                type: 'ADVANCE_TURN',
+                prevIndex,
+                nextIndex: nextIdx,
+                wasCorrect: wasCorrect ? true : (wasIncorrect ? false : undefined)
+            });
+        }
+
         visitedSegments.value.add(prevIndex);
         await animateRocket(prevIndex, nextIdx);
         currentIndex.value = nextIdx;
     } else {
+        if (isCoop.value) {
+            multiplayerStore.sendGameAction({ type: 'FINISH_GAME' });
+        }
         finishGame();
     }
 };
@@ -736,5 +917,83 @@ const getChipColor = (letter) => {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 3px;
+}
+
+/* Efectes */
+.fog-effect {
+    filter: blur(8px);
+    user-select: none;
+    opacity: 0.3;
+}
+
+.fog-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 229, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid #00e5ff;
+    backdrop-filter: blur(4px);
+    font-weight: bold;
+    color: white;
+    z-index: 10;
+    white-space: nowrap;
+    animation: pulse-fog 2s infinite;
+}
+
+@keyframes pulse-fog {
+    0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.shield-indicator {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid #00e5ff;
+    padding: 8px 16px;
+    border-radius: 30px;
+    color: #00e5ff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+    z-index: 100;
+}
+
+.transition-all {
+    transition: all 0.5s ease;
+}
+.game-container {
+  position: relative;
+}
+
+.remote-cursor-game {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.05s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cursor-tag-mini {
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 0px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mouse-icon-shadow {
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.5));
 }
 </style>

@@ -114,7 +114,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     2: { id: 2, name: 'Congelar Racha', desc: 'Protege tu racha un día.', icon: 'mdi-snowflake', color: 'cyan-accent-2', cat: 'items', maxQuantity: 99 },
     3: { id: 3, name: 'Doble de Monedas', desc: 'Multiplica x2 las monedas ganadas.', icon: 'mdi-piggy-bank', color: 'yellow-accent-3', cat: 'items', maxQuantity: 99 },
     4: { id: 4, name: 'Doble Puntuación', desc: 'Multiplica x2 los puntos obtenidos.', icon: 'mdi-star-shooting', color: 'orange-accent-3', cat: 'items', maxQuantity: 99 },
-    
+
     // --- NUEVOS SUMINISTROS EN FRONTEND ---
     5: { id: 5, name: 'Cronómetro Lento', desc: 'El tiempo pasa un 20% más lento.', icon: 'mdi-timer-sand-empty', color: 'blue-accent-2', cat: 'items', maxQuantity: 99 },
     6: { id: 6, name: 'Escudo Protector', desc: 'Evita perder vida/racha al fallar.', icon: 'mdi-shield-check', color: 'teal-accent-4', cat: 'items', maxQuantity: 99 },

@@ -12,7 +12,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         error: null,
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
-        returnedPlayers: [] // Jugadores que han pulsado "Volver al lobby"
+        returnedPlayers: [], // Jugadores que han pulsado "Volver al lobby"
+        remoteCursors: {}, // Coordenadas de ratón de otros jugadores: { username: { x, y } }
+        activeEffects: {} // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
     }),
 
     actions: {
@@ -34,6 +36,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         connect() {
             const sessionStore = this.getSession();
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
+            this.error = null;
 
             const wsUrl = buildWebSocketBaseUrl();
             const ws = new WebSocket(wsUrl);
@@ -83,6 +86,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.invitations = [];
         },
 
+        sendMouseUpdate(x, y) {
+            this.sendGameAction({ type: 'MOUSE_UPDATE', x, y });
+        },
+
         handleMessage(data) {
             switch (data.type) {
                 case 'INVITATION_RECEIVED':
@@ -117,7 +124,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.roundScores[data.user] = data.score;
                     break;
                 case 'GAME_ACTION':
-                    this.lastMessage = data; // Para que los componentes reaccionen (sabotaje)
+                    if (data.action?.type === 'MOUSE_UPDATE') {
+                        if (data.from !== this.getSession().user) {
+                            this.remoteCursors[data.from] = { x: data.action.x, y: data.action.y };
+                        }
+                    } else {
+                        this.lastMessage = data; // Para que los componentes reaccionen (sabotaje)
+                    }
                     break;
                 case 'ROUND_FINISHED':
                     this.roundScores = {}; // Limpiar para la siguiente
@@ -136,10 +149,52 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                         this.returnedPlayers.push(data.user);
                     }
                     break;
+                case 'MOUSE_UPDATE':
+                    if (data.user !== this.getSession().user) {
+                        this.remoteCursors[data.user] = { x: data.x, y: data.y };
+                    }
+                    break;
+                case 'HAZARD_UPDATE':
+                    if (this.room) {
+                        this.room.gameConfig.hazardProgress = data.hazardProgress;
+                        if (data.teams) this.room.gameConfig.teams = data.teams;
+                    }
+                    break;
+                case 'TEAM_PROGRESS_UPDATE':
+                    if (this.room) {
+                        this.room.gameConfig.teams = data.teams;
+                    }
+                    break;
+                case 'SPACE_RACE_WIN':
+                    this.lastMessage = data;
+                    console.log('🏆 ¡CARRERA GANADA!', data.winnerTeam);
+                    break;
+                case 'SPACE_RACE_LOSE':
+                    this.lastMessage = data;
+                    console.log('💀 ¡CARRERA PERDIDA!', data.reason);
+                    break;
                 case 'ROOM_CLOSED':
                     this.room = null;
                     this.lastMessage = data;
                     console.log('🚪 Sala tancada pel servidor:', data.reason);
+                    break;
+                case 'PLAYER_EFFECT_ACTIVATED':
+                    console.log('✨ Efecto activado:', data.effect);
+                    this.activeEffects[data.effect.id] = {
+                        type: data.effect.type,
+                        duration: data.effect.duration || 3000,
+                        startTime: Date.now()
+                    };
+                    // Auto-limpieza después de la duración si el servidor no envía desactivación
+                    setTimeout(() => {
+                        if (this.activeEffects[data.effect.id]) {
+                            delete this.activeEffects[data.effect.id];
+                        }
+                    }, (data.effect.duration || 3000) + 500);
+                    break;
+                case 'PLAYER_EFFECT_DEACTIVATED':
+                    console.log('🚫 Efecto desactivado:', data.effectId);
+                    delete this.activeEffects[data.effectId];
                     break;
                 case 'ERROR':
                     this.error = data.message;
@@ -248,6 +303,23 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 user: sessionStore.user
             }));
             this.room = null;
+        },
+
+        deleteRoom(targetRoomId = null) {
+            const sessionStore = this.getSession();
+            const roomId = targetRoomId || (this.room ? this.room.id : null);
+            if (!this.isConnected || !roomId || !this.socket) return;
+
+            this.socket.send(JSON.stringify({
+                type: 'DELETE_ROOM',
+                roomId: roomId,
+                user: sessionStore.user
+            }));
+
+            // Si estem esborrant la sala on estem, la posem a null
+            if (this.room && this.room.id === roomId) {
+                this.room = null;
+            }
         }
     }
 });
