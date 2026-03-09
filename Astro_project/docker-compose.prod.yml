@@ -1,24 +1,28 @@
 services:
- backend:
-   build:
-     context: ./backend
-     dockerfile: Dockerfile.prod
-   container_name: astro_backend_prod
-   restart: unless-stopped
-   env_file:
-     - ./backend/.env  # Cargamos las variables de entorno (como MONGODB_URI)
-   # No exponemos el puerto 3000 hacia afuera por seguridad.
-   # Solo el frontend (Nginx) podrá hablar con él a través de la red interna de Docker.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: astro_backend_prod
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    networks:
+      - astro_network
 
+  frontend:
+    build:
+      context: ./frontend/web
+      dockerfile: Dockerfile.prod
+    container_name: astro_frontend_prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - astro_network
 
- frontend:
-   build:
-     context: ./frontend/web
-     dockerfile: Dockerfile.prod
-   container_name: astro_frontend_prod
-   restart: unless-stopped
-   ports:
-     - "80:80"  # Exponemos el puerto 80 al mundo exterior
-   depends_on:
-     - backend  # Le decimos a Docker que encienda el backend primero
-
+networks:
+  astro_network:
+    driver: bridge
