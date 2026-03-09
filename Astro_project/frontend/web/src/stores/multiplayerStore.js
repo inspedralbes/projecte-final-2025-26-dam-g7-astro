@@ -1,23 +1,6 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
-import { API_BASE_URL, requestJson } from './astroShared';
-
-function buildWsUrl() {
-    const envWsUrl = (import.meta.env.VITE_WS_URL || '').trim();
-    if (envWsUrl) return envWsUrl;
-
-    // Si estamos en desarrollo (localhost), el backend suele estar en el 3000
-    // mientras el frontend (Vite) está en el 3001.
-    let host = window.location.host;
-    if (host.includes('localhost:3001')) {
-        host = 'localhost:3000';
-    } else if (host.includes('127.0.0.1:3001')) {
-        host = '127.0.0.1:3000';
-    }
-
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${wsProtocol}//${host}/ws`;
-}
+import { buildWebSocketBaseUrl, requestJson } from './astroShared';
 
 export const useMultiplayerStore = defineStore('multiplayer', {
     state: () => ({
@@ -29,14 +12,18 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         error: null,
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
-        returnedPlayers: [], // Jugadores que han pulsado "Volver al lobby"
         remoteCursors: {}, // Coordenadas de ratón de otros jugadores: { username: { x, y } }
-        activeEffects: {} // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
+        activeEffects: {}, // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
+        localTimeLeft: null // Temps restant global de la partida local
     }),
 
     actions: {
         getSession() {
             return useSessionStore();
+        },
+
+        setLocalTimeLeft(time) {
+            this.localTimeLeft = time;
         },
 
         async fetchAvailableRooms() {
@@ -55,7 +42,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
             this.error = null;
 
-            const ws = new WebSocket(buildWsUrl());
+            const wsUrl = buildWebSocketBaseUrl();
+            const ws = new WebSocket(wsUrl);
+            console.log(`🔌 Intentando conexión WS: ${wsUrl}`);
 
             ws.onopen = () => {
                 this.isConnected = true;

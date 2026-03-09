@@ -17,7 +17,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { buildApiUrl } from '@/stores/astroShared';
+import { requestJson } from '@/stores/astroShared';
 
 const getSegmentStyle = (index) => {
   const degreePerItem = 360 / items.length;
@@ -65,13 +65,11 @@ async function spin() {
   emit('spin-start');
 
   try {
-    const response = await fetch(buildApiUrl('/api/shop/spin'), {
+    const { response, data } = await requestJson('/api/shop/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: props.user }) 
     });
-    
-    const data = await response.json();
 
     if (!response.ok || !data.success) throw new Error(data.message || "Error al girar");
 

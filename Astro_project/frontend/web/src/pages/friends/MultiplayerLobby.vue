@@ -57,7 +57,6 @@
             <div class="cursor-tag">Tú (Comandante)</div>
           </div>
         </template>
-        
         <div class="game-content">
           <component
             :is="activeGameComponent"
@@ -581,8 +580,6 @@ watch(() => multiplayerStore.room?.status, (newStatus) => {
     activeGameComponent.value = null;
   }
 });
-
-
 // AÑADIDO: Watcher para asegurar que tenemos los datos de todos los jugadores que entran
 watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
   if (newLen > (oldLen || 0)) {

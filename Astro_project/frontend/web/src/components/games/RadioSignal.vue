@@ -11,9 +11,11 @@
         </div>
 
         <div class="session-hud">
-            <div class="hud-pill">Punts: {{ score }}</div>
-            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
-            <div class="hud-pill hud-pill-signal">SENYAL: {{ phraseIndex + 1 }} / {{ totalPhrases }}</div>
+            <template v-if="!props.isMultiplayer">
+                <div class="hud-pill">Punts: {{ score }}</div>
+                <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+            </template>
+            <div class="hud-pill hud-pill-signal" :class="{ 'mx-auto': props.isMultiplayer }">SENYAL: {{ phraseIndex + 1 }} / {{ totalPhrases }}</div>
         </div>
 
         <div class="screen-housing">
@@ -233,9 +235,25 @@ const phrases = [
 ];
 // Phrases shuffled at start
 const phraseIndex = ref(0); // Frase atual
-const currentPhrase = ref(phrases[0]); // Empezamos por una fija o la sincronizamos
+const currentPhrase = ref(''); // Se inicializa en onMounted
 const totalPhrases = 4;
+const shuffledPhrases = ref([]);
 let speechRepeatTimer = null;
+
+let currentSeed = 1;
+const seededDice = () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+};
+
+const shuffleArray = (arr) => {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededDice() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 // ---- DIAL ----
 const knobRotation = ref(0);
@@ -293,7 +311,7 @@ const onRotating = (e) => {
     }
 
     updateNoise();
-    if (isTuned.value) { isTuned.value = false; stopSpeechLoop(); }
+    checkTuningStatus();
 };
 
 const stopRotating = () => {
@@ -305,13 +323,15 @@ const stopRotating = () => {
 
 const checkTuningStatus = () => {
     const distance = Math.abs(currentFrequency.value - targetFrequency.value);
-    if (distance < tuningThreshold) {
+    const wasTuned = isTuned.value;
+
+    if (distance < tuningThreshold.value) {
         isTuned.value = true;
         if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1);
-        if (canHearVoz.value) startSpeechLoop();
+        if (!wasTuned && canHearVoz.value) startSpeechLoop();
     } else {
         isTuned.value = false;
-        stopSpeechLoop();
+        if (wasTuned) stopSpeechLoop();
     }
 };
 
@@ -447,7 +467,7 @@ const speakPhrase = (volume = 1.0) => {
 // LÓGICA CORE CORREGIDA
 const checkPhrase = () => {
     if (gameFinished.value || !canInput.value) return;
-    const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    const norm = (s) => s.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
     
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
         score.value += 150;
@@ -466,7 +486,7 @@ const checkPhrase = () => {
         }
         
         // Generamos nueva señal objetivo
-        currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
+        currentPhrase.value = shuffledPhrases.value[phraseIndex.value];
         targetFrequency.value = Math.random() * 90 + 5;
         
         // Reseteamos el estado para que vuelva a buscar
@@ -497,6 +517,7 @@ const startTimer = () => {
     roundTimer = setInterval(() => {
         if (gameFinished.value) return;
         timeLeft.value = Math.max(0, timeLeft.value - 1);
+        if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(timeLeft.value);
         if (timeLeft.value === 0) {
             finishGame();
         }
@@ -535,6 +556,12 @@ const stopAudio = () => {
 };
 
 onMounted(() => {
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
+       currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
+    }
+    shuffledPhrases.value = shuffleArray(phrases);
+    currentPhrase.value = shuffledPhrases.value[phraseIndex.value];
+
     drawWaves();
     startTimer();
     
@@ -620,6 +647,7 @@ onUnmounted(() => {
     isDragging = false;
     removeDragListeners();
     if (roundTimer) clearInterval(roundTimer);
+    if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(null);
     stopSpeechLoop();
     stopAudio();
     if (animationFrame) cancelAnimationFrame(animationFrame);

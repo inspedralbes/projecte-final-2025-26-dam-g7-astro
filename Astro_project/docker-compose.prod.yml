@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    networks:
+      - astro_network
 
   frontend:
     build:
@@ -18,3 +20,9 @@ services:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - astro_network
+
+networks:
+  astro_network:
+    driver: bridge
