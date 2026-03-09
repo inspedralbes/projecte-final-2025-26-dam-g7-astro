@@ -79,13 +79,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
-import { requestJson } from '@/stores/astroShared';
 
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
-
-// AÑADIDOS LOS IDS 5 Y 6 COMO BOOSTER UTILIZABLES
-const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4, 5, 6]);
+const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
 
 const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
@@ -96,6 +93,7 @@ const categories = [
     { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
 ];
 
+// Usamos SIEMPRE el estado global de Pinia
 const inventoryItems = computed(() => astroStore.inventory || []);
 
 const filteredItems = computed(() => {
@@ -103,6 +101,7 @@ const filteredItems = computed(() => {
     return inventoryItems.value.filter(item => item.cat === activeCategory.value);
 });
 
+// Solo un onMounted para traer los datos al cargar la vista
 onMounted(async () => {
     if (astroStore.user) {
         await astroStore.fetchUserInventory();
@@ -112,8 +111,12 @@ onMounted(async () => {
 async function toggleEquip(item) {
     if (!isEquipable(item)) return;
 
+    // 1. Usamos la variable de entorno. Si no existe, usa localhost como backup.
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
     try {
-        const { response, data } = await requestJson('/api/inventory/toggle-equip', {
+        // 2. Reemplazamos la URL fija por el Template Literal
+        const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -122,11 +125,11 @@ async function toggleEquip(item) {
             })
         });
 
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || 'No se pudo equipar el objeto.');
+        const data = await response.json();
+        if (data.success) {
+            // Actualizamos el estado global con el inventario devuelto por el servidor
+            astroStore.setInventory(data.inventory || []);
         }
-
-        astroStore.setInventory(data.inventory || []);
     } catch (error) {
         console.error("Error al equipar item:", error);
     }
@@ -140,13 +143,10 @@ function isUsableBooster(item) {
     return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id));
 }
 
-// ACTUALIZADO PARA LEER TODOS LOS ESTADOS DE BOOSTER
 function getBoosterGamesLeft(item) {
     const itemId = Number(item?.id);
     if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0;
     if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0;
-    if (itemId === 5) return Number(astroStore.activeBoosters?.slowTimeGamesLeft) || 0; // CRONÓMETRO
-    if (itemId === 6) return Number(astroStore.activeBoosters?.shieldGamesLeft) || 0;   // ESCUDO
     return 0;
 }
 

@@ -140,16 +140,10 @@ function registerInventoryRoutes(app, {
             }
 
             normalizedInventory = serializeInventory(normalizedInventory);
-            
-            // LOGICA DINÁMICA DE DURACIÓN (AÑADIDA)
-            let duration = 3;
-            if (parsedItemId === 5) duration = 2; // Cronómetro Lento: 2 partidas
-            if (parsedItemId === 6) duration = 1; // Escudo Protector: 1 partida
-
             const nextActiveBoosters = addBoosterDuration(
                 normalizeActiveBoosters(currentUser.activeBoosters),
                 boosterField,
-                duration
+                3
             );
 
             const dailyMissions = updateMissionProgress(currentUser.dailyMissions || [], 'item', 1);

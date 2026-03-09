@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
-import { buildWebSocketBaseUrl, requestJson } from './astroShared';
+import { API_BASE_URL, requestJson } from './astroShared';
+
+function buildWsUrl() {
+    return API_BASE_URL.replace(/^http/i, 'ws');
+}
 
 export const useMultiplayerStore = defineStore('multiplayer', {
     state: () => ({
@@ -35,9 +39,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             const sessionStore = this.getSession();
             if (this.socket && this.socket.readyState === WebSocket.OPEN) return;
 
-            const wsUrl = buildWebSocketBaseUrl();
-            const ws = new WebSocket(wsUrl);
-            console.log(`🔌 Intentando conexión WS: ${wsUrl}`);
+            const ws = new WebSocket(buildWsUrl());
 
             ws.onopen = () => {
                 this.isConnected = true;

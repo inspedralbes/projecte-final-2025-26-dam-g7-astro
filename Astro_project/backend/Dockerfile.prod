@@ -1,19 +1,46 @@
-FROM node:20-alpine
+# --- STAGE 1: Base de dependencias ---
+FROM node:24-alpine AS builder
 
-# Definimos variable de entorno para optimizar librerías como Express
-ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package*.json ./
-# Instalamos solo dependencias de producción (omite devDependencies)
-RUN npm ci --only=production
 
+# Copiamos solo archivos de dependencias para aprovechar la caché de capas
+COPY package*.json ./
+
+
+# Instalamos TODAS (incluyendo dev si las hubiera en el futuro) para asegurar integridad
+# Pero usamos 'npm ci' para una instalación limpia y rápida
+RUN npm ci --omit=dev
+
+
+# --- STAGE 2: Imagen Final de Producción ---
+FROM node:24-alpine AS runner
+
+
+# Definimos variables de entorno
+ENV NODE_ENV=production
+WORKDIR /app
+
+
+# Copiamos solo los node_modules desde la etapa anterior
+COPY --from=builder /app/node_modules ./node_modules
+# Copiamos el código fuente (filtrado por el .dockerignore)
 COPY . .
 
-# Usuario no-root por seguridad
+
+# Seguridad: Cambiamos el dueño de la carpeta al usuario 'node'
+RUN chown -R node:node /app
+
+
+# Usuario no-root (viene incluido en la imagen oficial de node)
 USER node
 
+
+# Documentamos el puerto (asegúrate que server.js use el 3000 o la variable PORT)
 EXPOSE 3000
 
+
+# Usamos formato de array para que Node reciba correctamente las señales de apagado (SIGTERM)
 CMD ["node", "server.js"]
+

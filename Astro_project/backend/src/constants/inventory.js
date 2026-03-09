@@ -41,28 +41,6 @@ const INVENTORY_ITEMS = Object.freeze([
         price: 300,
         stackable: true
     },
-    // --- NUEVOS SUMINISTROS BÁSICOS ---
-    {
-        id: 5,
-        name: 'Cronómetro Lento',
-        desc: 'El tiempo pasa un 20% más lento.',
-        icon: 'mdi-timer-sand-empty',
-        color: 'blue-accent-2',
-        cat: 'items',
-        price: 400,
-        stackable: true
-    },
-    {
-        id: 6,
-        name: 'Escudo Protector',
-        desc: 'Evita perder vida/racha al fallar.',
-        icon: 'mdi-shield-check',
-        color: 'teal-accent-4',
-        cat: 'items',
-        price: 600,
-        stackable: true
-    },
-    // -----------------------------------
     {
         id: 101,
         name: 'Pin Comandante',
@@ -136,8 +114,6 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Congelar Racha': 2,
     'Doble de Monedas': 3,
     'Doble Puntuación': 4,
-    'Cronómetro Lento': 5, // AÑADIDO
-    'Escudo Protector': 6, // AÑADIDO
     'Pin Comandante': 101,
     'Skin Cyberpunk': 102,
     'Mascota Dron': 103,

@@ -101,31 +101,103 @@ export function normalizeActiveBoosters(values = {}) {
 
     return {
         doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
-        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft),
-        slowTimeGamesLeft: toNonNegativeInteger(source.slowTimeGamesLeft), // NUEVO
-        shieldGamesLeft: toNonNegativeInteger(source.shieldGamesLeft)      // NUEVO
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
     };
 }
 
 const DEFAULT_INVENTORY_MAX = 99;
 
 export const INVENTORY_CATALOG = Object.freeze({
-    1: { id: 1, name: 'Pack de Vidas', desc: 'Recupera 5 vidas inmediatamente.', icon: 'mdi-heart-multiple', color: 'red-accent-2', cat: 'items', maxQuantity: 99 },
-    2: { id: 2, name: 'Congelar Racha', desc: 'Protege tu racha un día.', icon: 'mdi-snowflake', color: 'cyan-accent-2', cat: 'items', maxQuantity: 99 },
-    3: { id: 3, name: 'Doble de Monedas', desc: 'Multiplica x2 las monedas ganadas.', icon: 'mdi-piggy-bank', color: 'yellow-accent-3', cat: 'items', maxQuantity: 99 },
-    4: { id: 4, name: 'Doble Puntuación', desc: 'Multiplica x2 los puntos obtenidos.', icon: 'mdi-star-shooting', color: 'orange-accent-3', cat: 'items', maxQuantity: 99 },
-    
-    // --- NUEVOS SUMINISTROS EN FRONTEND ---
-    5: { id: 5, name: 'Cronómetro Lento', desc: 'El tiempo pasa un 20% más lento.', icon: 'mdi-timer-sand-empty', color: 'blue-accent-2', cat: 'items', maxQuantity: 99 },
-    6: { id: 6, name: 'Escudo Protector', desc: 'Evita perder vida/racha al fallar.', icon: 'mdi-shield-check', color: 'teal-accent-4', cat: 'items', maxQuantity: 99 },
-    // --------------------------------------
-
-    101: { id: 101, name: 'Pin Comandante', desc: 'Insignia dorada.', icon: 'mdi-medal', color: 'amber-accent-3', cat: 'skin', maxQuantity: 1 },
-    102: { id: 102, name: 'Skin Cyberpunk', desc: 'Aspecto robótico.', icon: 'mdi-robot', color: 'purple-accent-3', cat: 'skin', maxQuantity: 1 },
-    103: { id: 103, name: 'Mascota Dron', desc: 'Un compañero fiel.', icon: 'mdi-quadcopter', color: 'green-accent-3', cat: 'pets', maxQuantity: 1 },
-    104: { id: 104, name: 'Rastro de Neón', desc: 'Efectos visuales.', icon: 'mdi-creation', color: 'pink-accent-3', cat: 'trails', maxQuantity: 1 },
-    201: { id: 201, name: 'Pin Raro', desc: 'Insignia rara obtenida en la ruleta.', icon: 'mdi-decagram', color: 'purple-accent-2', cat: 'collectible', maxQuantity: 99 },
-    202: { id: 202, name: 'Avatar Ninja', desc: 'Aspecto ninja obtenido en la ruleta.', icon: 'mdi-ninja', color: 'blue-accent-2', cat: 'skin', maxQuantity: 1 }
+    1: {
+        id: 1,
+        name: 'Pack de Vidas',
+        desc: 'Recupera 5 vidas inmediatamente.',
+        icon: 'mdi-heart-multiple',
+        color: 'red-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    2: {
+        id: 2,
+        name: 'Congelar Racha',
+        desc: 'Protege tu racha un día.',
+        icon: 'mdi-snowflake',
+        color: 'cyan-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    3: {
+        id: 3,
+        name: 'Doble de Monedas',
+        desc: 'Multiplica x2 las monedas ganadas.',
+        icon: 'mdi-piggy-bank',
+        color: 'yellow-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    4: {
+        id: 4,
+        name: 'Doble Puntuación',
+        desc: 'Multiplica x2 los puntos obtenidos.',
+        icon: 'mdi-star-shooting',
+        color: 'orange-accent-3',
+        cat: 'items',
+        maxQuantity: 99
+    },
+    101: {
+        id: 101,
+        name: 'Pin Comandante',
+        desc: 'Insignia dorada.',
+        icon: 'mdi-medal',
+        color: 'amber-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    102: {
+        id: 102,
+        name: 'Skin Cyberpunk',
+        desc: 'Aspecto robótico.',
+        icon: 'mdi-robot',
+        color: 'purple-accent-3',
+        cat: 'skin',
+        maxQuantity: 1
+    },
+    103: {
+        id: 103,
+        name: 'Mascota Dron',
+        desc: 'Un compañero fiel.',
+        icon: 'mdi-quadcopter',
+        color: 'green-accent-3',
+        cat: 'pets',
+        maxQuantity: 1
+    },
+    104: {
+        id: 104,
+        name: 'Rastro de Neón',
+        desc: 'Efectos visuales.',
+        icon: 'mdi-creation',
+        color: 'pink-accent-3',
+        cat: 'trails',
+        maxQuantity: 1
+    },
+    201: {
+        id: 201,
+        name: 'Pin Raro',
+        desc: 'Insignia rara obtenida en la ruleta.',
+        icon: 'mdi-decagram',
+        color: 'purple-accent-2',
+        cat: 'collectible',
+        maxQuantity: 99
+    },
+    202: {
+        id: 202,
+        name: 'Avatar Ninja',
+        desc: 'Aspecto ninja obtenido en la ruleta.',
+        icon: 'mdi-ninja',
+        color: 'blue-accent-2',
+        cat: 'skin',
+        maxQuantity: 1
+    }
 });
 
 const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
@@ -134,8 +206,6 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Congelar Racha': 2,
     'Doble de Monedas': 3,
     'Doble Puntuación': 4,
-    'Cronómetro Lento': 5, // AÑADIDO
-    'Escudo Protector': 6, // AÑADIDO
     'Pin Comandante': 101,
     'Skin Cyberpunk': 102,
     'Mascota Dron': 103,
@@ -144,7 +214,11 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Avatar Ninja': 202
 });
 
-const LEGACY_WHEEL_REWARD_TO_ITEM = Object.freeze({ 0: 1, 1: 201, 2: 202 });
+const LEGACY_WHEEL_REWARD_TO_ITEM = Object.freeze({
+    0: 1,
+    1: 201,
+    2: 202
+});
 
 function toInteger(value) {
     const parsed = Number.parseInt(value, 10);
@@ -251,77 +325,8 @@ export function normalizeInventoryItems(values = []) {
     return [...mergedById.values()].sort((a, b) => a.id - b.id);
 }
 
-function resolveDefaultApiBaseUrl() {
-    if (typeof window === 'undefined') return 'http://localhost:3000';
-
-    const { hostname, origin } = window.location;
-    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-    if (isLocalHost) return 'http://localhost:3000';
-
-    return origin;
-}
-
-function normalizeRuntimeApiBaseUrl(rawBaseUrl) {
-    const trimmedBaseUrl = String(rawBaseUrl || '').trim();
-    if (!trimmedBaseUrl) return resolveDefaultApiBaseUrl();
-    if (!hasWindow) return trimmedBaseUrl;
-
-    try {
-        const parsedBaseUrl = new URL(trimmedBaseUrl, window.location.origin);
-
-        // Evita mixed-content quan l'app corre sobre HTTPS.
-        if (window.location.protocol === 'https:' && parsedBaseUrl.protocol === 'http:') {
-            parsedBaseUrl.protocol = 'https:';
-        }
-
-        return parsedBaseUrl.toString();
-    } catch (error) {
-        return trimmedBaseUrl;
-    }
-}
-
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || resolveDefaultApiBaseUrl();
-export const API_BASE_URL = normalizeRuntimeApiBaseUrl(rawApiBaseUrl).replace(/\/$/, '');
-
-export function buildWebSocketBaseUrl() {
-    const explicitWsBaseUrl = String(import.meta.env.VITE_WS_BASE_URL || '').trim();
-    const sourceUrl = explicitWsBaseUrl || API_BASE_URL;
-
-    try {
-        const parsedUrl = hasWindow
-            ? new URL(sourceUrl, window.location.origin)
-            : new URL(sourceUrl);
-
-        const mustUseSecureWebSocket = hasWindow
-            ? window.location.protocol === 'https:'
-            : parsedUrl.protocol === 'https:';
-
-        if (parsedUrl.protocol === 'ws:' || parsedUrl.protocol === 'wss:') {
-            if (mustUseSecureWebSocket && parsedUrl.protocol === 'ws:') {
-                parsedUrl.protocol = 'wss:';
-            }
-        } else {
-            parsedUrl.protocol = mustUseSecureWebSocket ? 'wss:' : 'ws:';
-        }
-
-        // Si no hi ha URL WS explícita, usem només host/port de l'API base.
-        if (!explicitWsBaseUrl) {
-            parsedUrl.pathname = '';
-            parsedUrl.search = '';
-            parsedUrl.hash = '';
-        }
-
-        return parsedUrl.toString().replace(/\/$/, '');
-    } catch (error) {
-        if (hasWindow) {
-            const fallbackProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-            return `${fallbackProtocol}://${window.location.host}`;
-        }
-
-        return 'ws://localhost:3000';
-    }
-}
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 
 export function buildApiUrl(path) {
     if (!path.startsWith('/')) {
