@@ -219,10 +219,8 @@ const props = defineProps({
 
 const emit = defineEmits(['game-over']);
 
-// --- DADES DEL JOC (temes variats) ---
-// --- DADES DEL JOC (temes variats) ---
+// --- DADES DEL JOC ---
 const allLettersData = [
-  // 🌌 Espai
   { char: 'A', question: "Cos rocallós que orbita al voltant del Sol.", answer: "ASTEROIDE" },
   { char: 'C', question: "Astre de gel i pols amb una cua lluminosa.", answer: "COMETA" },
   { char: 'E', question: "Esfera de gas que emet llum i calor.", answer: "ESTRELLA" },
@@ -233,7 +231,6 @@ const allLettersData = [
   { char: 'T', question: "Instrument per observar objectes llunyans a l'espai.", answer: "TELESCOPI" },
   { char: 'U', question: "Tot el que existeix: matèria, energia, espai i temps.", answer: "UNIVERS" },
   { char: 'O', question: "Trajectòria corba d'un objecte a l'espai.", answer: "ORBITA" },
-  // 🐾 Animals
   { char: 'G', question: "Felí domèstic molt independent i juganer.", answer: "GAT" },
   { char: 'A', question: "Au rapinyaire de gran envergadura, símbol de llibertat.", answer: "AGUILA" },
   { char: 'D', question: "Mamífer marí molt intel·ligent que viu en grups.", answer: "DOLFI" },
@@ -242,7 +239,6 @@ const allLettersData = [
   { char: 'T', question: "Rèptil amb closca dura que es mou lentament.", answer: "TORTUGA" },
   { char: 'C', question: "Animal amb vuit tentacles que viu al fons del mar.", answer: "CRANC" },
   { char: 'P', question: "Ocell tropical de colors vius que pot imitar sons.", answer: "LLORO" },
-  // 🔬 Ciència
   { char: 'A', question: "La unitat bàsica de la matèria.", answer: "ATOM" },
   { char: 'C', question: "Unitat bàsica dels éssers vius.", answer: "CELULA" },
   { char: 'G', question: "Força que atrau els objectes cap al centre de la Terra.", answer: "GRAVETAT" },
@@ -251,7 +247,6 @@ const allLettersData = [
   { char: 'E', question: "Capacitat per fer un treball o produir un canvi.", answer: "ENERGIA" },
   { char: 'M', question: "Aparell que fa que les coses petites es vegin grans.", answer: "MICROSCOPI" },
   { char: 'V', question: "Rapidesa amb què un objecte canvia de posició.", answer: "VELOCITAT" },
-  // 🌍 Geografia
   { char: 'M', question: "Gran massa d'aigua salada que cobreix la Terra.", answer: "MAR" },
   { char: 'V', question: "Muntanya que pot fer erupció amb lava.", answer: "VOLCA" },
   { char: 'R', question: "Corrent natural d'aigua que desemboca al mar.", answer: "RIU" },
@@ -259,7 +254,6 @@ const allLettersData = [
   { char: 'D', question: "Zona àrida amb molt poques precipitacions.", answer: "DESERT" },
   { char: 'S', question: "Gran extensió de bosc tropical amb molta biodiversitat.", answer: "SELVA" },
   { char: 'L', question: "Massa d'aigua dolça envoltada de terra.", answer: "LLAC" },
-  // 🍎 Aliments
   { char: 'P', question: "Fruita allargada i groga molt energètica.", answer: "PLATAN" },
   { char: 'T', question: "Fruita vermella molt usada en amanides i salses.", answer: "TOMAQUET" },
   { char: 'F', question: "Preparat comestible fet amb llet coagulada.", answer: "FORMATGE" },
@@ -267,7 +261,6 @@ const allLettersData = [
   { char: 'P', question: "Plat italià amb base de massa, tomàquet i formatge.", answer: "PIZZA" },
   { char: 'M', question: "Producte dolç que fan les abelles.", answer: "MEL" },
   { char: 'A', question: "Fruita vermella o verda que creix als arbres.", answer: "POMA" },
-  // ⚽ Esports
   { char: 'F', question: "Esport d'equip amb una pilota rodona i porteries.", answer: "FUTBOL" },
   { char: 'B', question: "Esport on es llança una pilota a una cistella.", answer: "BASQUET" },
   { char: 'N', question: "Esport aquàtic on es fan braçades a la piscina.", answer: "NATACIO" },
@@ -275,14 +268,12 @@ const allLettersData = [
   { char: 'C', question: "Esport on es pedala amb dues rodes.", answer: "CICLISME" },
   { char: 'R', question: "Esport d'equip amb una pilota ovalada.", answer: "RUGBY" },
   { char: 'E', question: "Esport d'hivern on es llisca per la neu.", answer: "ESQUI" },
-  // 💻 Tecnologia
   { char: 'R', question: "Màquina programable que pot fer tasques automàtiques.", answer: "ROBOT" },
   { char: 'I', question: "Xarxa global que connecta ordinadors de tot el món.", answer: "INTERNET" },
   { char: 'P', question: "Acció de crear instruccions perquè un ordinador faci una tasca.", answer: "PROGRAMAR" },
   { char: 'W', question: "Lloc a internet on pots consultar informació.", answer: "WEB" },
   { char: 'D', question: "Informació emmagatzemada en sistemes informàtics.", answer: "DADES" },
   { char: 'S', question: "Dispositiu electrònic de butxaca amb pantalla tàctil.", answer: "SMARTPHONE" },
-  // 🌿 Natura
   { char: 'B', question: "Gran extensió de terreny cobert d'arbres.", answer: "BOSC" },
   { char: 'F', question: "Part de la planta que sol ser de colors i atrau insectes.", answer: "FLOR" },
   { char: 'A', question: "Planta gran amb tronc llenyós i branques.", answer: "ARBRE" },
@@ -290,11 +281,9 @@ const allLettersData = [
   { char: 'N', question: "Massa visible de gotes d'aigua al cel.", answer: "NUVOL" },
   { char: 'L', question: "Font natural de llum que ve del Sol.", answer: "LLUM" },
   { char: 'V', question: "Moviment de l'aire a l'atmosfera.", answer: "VENT" },
-  // 🏛 Història i Cultura
   { char: 'C', question: "Edifici fortificat medieval amb torres i muralles.", answer: "CASTELL" },
   { char: 'M', question: "Lloc on s'exposen obres d'art i objectes històrics.", answer: "MUSEU" },
   { char: 'L', question: "Conjunt de signes escrits que serveix per comunicar-se.", answer: "LLENGUA" },
-  // 🎵 Música
   { char: 'G', question: "Instrument de cordes molt popular en el rock.", answer: "GUITARRA" },
   { char: 'P', question: "Instrument de tecles blanques i negres.", answer: "PIANO" },
   { char: 'B', question: "Instrument de percussió que es toca amb baquetes.", answer: "BATERIA" },
@@ -338,7 +327,7 @@ const tipPolygons = computed(() => {
   });
 });
 
-// Estat del joc
+// --- ESTADO DEL JUEGO ---
 const roscoLetters = ref([]); 
 const currentIndex = ref(0);
 const rawInput = ref('');
@@ -350,34 +339,52 @@ const feedbackColor = ref('info');
 const isChecking = ref(false);
 const totalTime = 90;
 const timeLeft = ref(totalTime);
-const isWaitingForOthers = ref(false);
 let timerInterval = null;
 
-// Rocket animation state
 const rocketAnimating = ref(false);
 const rocketPos = reactive({ x: 0, y: 0 });
 const trailParticles = ref([]);
 const visitedSegments = ref(new Set());
 
-// --- EFECTES MULTIJUGADOR ---
+// --- MULTIJUGADOR Y COOPERATIVO ---
+const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+
+const myTeam = computed(() => {
+    if (!isCoop.value) return null;
+    return multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user));
+});
+
+const myTeamId = computed(() => myTeam.value?.id);
+const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+
+const myRole = computed(() => {
+    if (!myTeam.value) return null;
+    return myTeam.value.members[0] === astroStore.user ? 'A' : 'B';
+});
+
+const currentLetter = computed(() => {
+    if (roscoLetters.value.length === 0) return { char: '?', question: '' };
+    return roscoLetters.value[currentIndex.value];
+});
+
 const isFogActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_FOG'));
 const hasShield = ref(false);
-
-watch(() => multiplayerStore.activeEffects, (effects) => {
-    if (Object.values(effects).some(e => e.type === 'EFFECT_SHIELD')) {
-        hasShield.value = true;
-    }
-}, { deep: true });
 
 const scrambledQuestion = computed(() => {
     return currentLetter.value.question.split('').map(c => Math.random() > 0.7 ? '*' : c).join('');
 });
 
-// ---- COOPERATIVO ASIMÈTRIC ----
-const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
-const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
-const myTeamId = computed(() => myTeam.value?.id);
-const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
+const canSeeDefinition = computed(() => {
+    if (!props.isMultiplayer) return true;
+    if (isCoop.value) return myRole.value === 'A';
+    return true; 
+});
+
+const canInput = computed(() => {
+    if (!props.isMultiplayer) return true;
+    if (isCoop.value) return myRole.value === 'B';
+    return true; 
+});
 
 const remoteCursor = computed(() => {
   if (!props.isMultiplayer || !isCoop.value) return null;
@@ -386,7 +393,6 @@ const remoteCursor = computed(() => {
   const pos = multiplayerStore.remoteCursors[opp];
   if (!pos) return null;
   
-  // En SpelledRosco el "playArea" es el contenedor principal
   const playArea = document.querySelector('.game-container');
   if (!playArea) return null;
   const rect = playArea.getBoundingClientRect();
@@ -399,50 +405,10 @@ const remoteCursor = computed(() => {
     user: opp
   };
 });
-const myTeam = computed(() => {
-    if (!isCoop.value) return null;
-    // astroStore.user és el string del nom d'usuari (no un objecte)
-    return multiplayerStore.room.gameConfig.teams?.find(t => t.members.includes(astroStore.user));
-});
 
-// Role A: Oráculo (Veu definició, NO escriu), Role B: Escriba (NO veu definició, escriu)
-const myRole = computed(() => {
-    if (!myTeam.value) return null;
-    return myTeam.value.members[0] === astroStore.user ? 'A' : 'B';
-});
-
-// En mode COOPERATIU: rol A veu la definició (però no pot escriure), rol B escriu (però no veu)
-// En mode 1vs1 o individual: tots veuen i escriuen
-const canSeeDefinition = computed(() => {
-    if (!props.isMultiplayer) return true;
-    if (isCoop.value) return myRole.value === 'A';
-    return true; // En 1vs1, tots dos veuen la definició i juguen en paral·lel
-});
-const canInput = computed(() => {
-    if (!props.isMultiplayer) return true;
-    if (isCoop.value) return myRole.value === 'B';
-    return true; // En 1vs1, tots dos poden escriure
-});
-
-// Computed
-const currentLetter = computed(() => {
-    if (roscoLetters.value.length === 0) return { char: '?', question: '' };
-    return roscoLetters.value[currentIndex.value];
-});
-
-const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length);
-const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
-const finalReward = computed(() => score.value + timeLeft.value);
-
-// Helper: normalize string
-const normalize = (str) => {
-    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-};
-
-// Initialization - pick 5 random letters (using shared seed in multiplayer for consistency)
+// --- LÓGICA DE INICIO Y RELOJ ---
 onMounted(() => {
     const seed = props.isMultiplayer ? (multiplayerStore.room?.gameConfig?.seed ?? Math.random()) : Math.random();
-    // Seeded shuffle: assegura que els dos jugadors veuen les mateixes preguntes
     const seededRandom = (s) => {
         let x = Math.sin(s) * 10000;
         return x - Math.floor(x);
@@ -456,39 +422,45 @@ onMounted(() => {
     startTimer();
 });
 
-// Listener para eventos multijugador
+onUnmounted(() => { if (timerInterval) clearInterval(timerInterval); });
+
+const startTimer = () => {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (gameFinished.value) return;
+        timeLeft.value = Math.max(0, timeLeft.value - 1);
+        if (timeLeft.value === 0) finishGame();
+    }, 1000);
+};
+
+// --- WATCHERS ---
+watch(() => multiplayerStore.activeEffects, (effects) => {
+    hasShield.value = Object.values(effects).some(e => e.type === 'EFFECT_SHIELD');
+}, { deep: true });
+
+watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore });
+    }
+});
+
 watch(() => multiplayerStore.lastMessage, (msg) => {
     if (!msg) return;
-
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        // NO cridem emitExit() aquí: el Lobby ja gestiona el tancament del component
-        // mitjançant el seu propi watcher de lastMessage (activeGameComponent = null)
         gameFinished.value = true;
         if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     }
-
-    // Rebre sabotatge: restar temps (Dirigit o Global)
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
-        let shouldApply = false;
-        if (isCoop.value) {
-            if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
-        } else {
-            shouldApply = true;
-        }
-
+        let shouldApply = (isCoop.value) ? (msg.action.targetTeamId === myTeamId.value) : true;
         if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
             timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
         }
     }
-
-    // Rebre bonus del company: sumar temps
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
         if (isCoop.value && isMyTeammate(msg.from)) {
             timeLeft.value = Math.min(999, timeLeft.value + (msg.action.amount || 15));
         }
     }
-
-    // Lógica COOP: Sincronizar avances de turno y respuestas (Solo Compañero)
     if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION') {
         if (msg.action.type === 'ADVANCE_TURN') {
             currentIndex.value = msg.action.nextIndex;
@@ -498,113 +470,17 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
             }
             animateRocket(msg.action.prevIndex, msg.action.nextIndex);
         }
-        if (msg.action.type === 'FINISH_GAME') {
-            finishGame();
-        }
+        if (msg.action.type === 'FINISH_GAME') finishGame();
     }
 });
 
-// Notificar puntuación al servidor en modo multijugador
-watch(score, (newScore) => {
-    if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-            type: 'SCORE_UPDATE',
-            score: newScore
-        });
-    }
-});
-
-onUnmounted(() => {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-    }
-});
+// --- ACCIONES DEL JUEGO ---
+const normalize = (str) => str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const clearInput = () => { rawInput.value = ''; };
 
-// Rocket Animation - Following the outline
-const animateRocket = (fromIdx, toIdx) => {
-  return new Promise((resolve) => {
-    // fromIdx i toIdx són índexs de lletres (0..4)
-    // Els convertim a índexs de starPoints (multiplicant per 2)
-    const startPointIdx = letterPositions[fromIdx];
-    const endPointIdx = letterPositions[toIdx];
-    
-    // Determinem el camí més curt pel contorn
-    const path = [];
-    let curr = startPointIdx;
-    while(curr !== endPointIdx) {
-      curr = (curr + 1) % 10;
-      path.push(starPoints[curr]);
-    }
-    
-    rocketAnimating.value = true;
-    trailParticles.value = [];
-    
-    const durationPerStep = 200;
-    const animateStep = (stepIdx) => {
-      if (stepIdx >= path.length) {
-        setTimeout(() => {
-          rocketAnimating.value = false;
-          trailParticles.value = [];
-          resolve();
-        }, 50);
-        return;
-      }
-      
-      const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1];
-      const to = path[stepIdx];
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / durationPerStep, 1);
-        const eased = progress; // Linear per a camins llargs
-        
-        rocketPos.x = from.x + (to.x - from.x) * eased;
-        rocketPos.y = from.y + (to.y - from.y) * eased;
-        
-        if (progress < 1) {
-          trailParticles.value.push({
-            x: rocketPos.x + (Math.random() - 0.5) * 8,
-            y: rocketPos.y + (Math.random() - 0.5) * 8,
-            r: Math.random() * 3 + 1,
-            color: '#00e5ff',
-            opacity: 1,
-          });
-          if (trailParticles.value.length > 20) trailParticles.value.shift();
-          requestAnimationFrame(animate);
-        } else {
-          animateStep(stepIdx + 1);
-        }
-      };
-      requestAnimationFrame(animate);
-    };
-    
-    animateStep(0);
-  });
-};
-
-const isTipGlowing = (tipIdx) => {
-  return roscoLetters.value[tipIdx]?.status === 'correct';
-};
-
-const isSegmentGlowing = (segIdx) => {
-  // Cada lletra i (0..4) està associada als segments (i*2-1) i (i*2)
-  return roscoLetters.value.some((l, i) => {
-    if (l.status !== 'correct') return false;
-    const seg1 = i * 2;
-    const seg0 = (i * 2 - 1 + 10) % 10;
-    return segIdx === seg1 || segIdx === seg0;
-  });
-};
-
-const isSegmentVisited = (segIdx) => false; // Ja no usem visitedSegments per a les línies
-
-// Game Logic
 const checkAnswer = async () => {
     if (rawInput.value.trim() === '' || isChecking.value) return;
-    
     isChecking.value = true;
     const userAnswer = normalize(rawInput.value);
     const correctAnswer = normalize(currentLetter.value.answer);
@@ -614,46 +490,25 @@ const checkAnswer = async () => {
         score.value += 100;
         feedbackMessage.value = "Correcte! Molt bé!";
         feedbackColor.value = 'success';
-        
-        // Notificar al compañero en modo COOP
-        const wasCorrect = true;
-        
-        // Sabotatge/Bonus multijugador
-        if (props.isMultiplayer && !isCoop.value) {
+        if (props.isMultiplayer) {
             timeLeft.value = Math.min(timeLeft.value + 10, 999);
-            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
-        } else if (props.isMultiplayer && isCoop.value) {
-            timeLeft.value = Math.min(timeLeft.value + 10, 999);
-            // Com que en coop l'altre està a la mateixa sala i temporitzador teòricament s'arregla,
-            // però per si de cas li sumem al company via BONUS
-            // Note: En SpelledRosco Coop només el 'B' escriu, o podria ser que tots dos tinguin
-            // state del temps, així que enviem el bonus a l'altre de totes maneres
-            multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 10 });
+            if (!isCoop.value) multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
+            else multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 10 });
         }
     } else {
         if (hasShield.value) {
             hasShield.value = false;
-            // Eliminar el efecto del store si existe localmente para sincronizar
-            const shieldEffectId = Object.keys(multiplayerStore.activeEffects).find(id => multiplayerStore.activeEffects[id].type === 'EFFECT_SHIELD');
-            if (shieldEffectId) delete multiplayerStore.activeEffects[shieldEffectId];
-
             feedbackMessage.value = "Impuls Estel·lar! Fallada no comptabilitzada.";
             feedbackColor.value = 'cyan-accent-3';
             showFeedback.value = true;
-            setTimeout(() => {
-                showFeedback.value = false;
-                rawInput.value = '';
-            }, 1500);
-            return; // No avanza turno ni marca error
+            setTimeout(() => { showFeedback.value = false; rawInput.value = ''; isChecking.value = false; }, 1500);
+            return;
         }
-
         roscoLetters.value[currentIndex.value].status = 'incorrect';
         feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;
         feedbackColor.value = 'error';
     }
-
     showFeedback.value = true;
-    
     setTimeout(async () => {
         showFeedback.value = false;
         rawInput.value = '';
@@ -671,75 +526,93 @@ const pasapalabra = () => {
 const advanceTurn = async () => {
     const prevIndex = currentIndex.value;
     let nextIdx = -1;
-    
     for (let i = currentIndex.value + 1; i < roscoLetters.value.length; i++) {
         if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
     }
-
     if (nextIdx === -1) {
         for (let i = 0; i < currentIndex.value; i++) {
             if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
         }
     }
-
     if (nextIdx !== -1) {
-        const wasCorrect = roscoLetters.value[prevIndex].status === 'correct';
-        const wasIncorrect = roscoLetters.value[prevIndex].status === 'incorrect';
-        
-        // Sincronizar avance en modo COOP antes de animar localmente
         if (isCoop.value) {
+            const status = roscoLetters.value[prevIndex].status;
             multiplayerStore.sendGameAction({
                 type: 'ADVANCE_TURN',
                 prevIndex,
                 nextIndex: nextIdx,
-                wasCorrect: wasCorrect ? true : (wasIncorrect ? false : undefined)
+                wasCorrect: status === 'correct' ? true : (status === 'incorrect' ? false : undefined)
             });
         }
-
-        visitedSegments.value.add(prevIndex);
         await animateRocket(prevIndex, nextIdx);
         currentIndex.value = nextIdx;
     } else {
-        if (isCoop.value) {
-            multiplayerStore.sendGameAction({ type: 'FINISH_GAME' });
-        }
+        if (isCoop.value) multiplayerStore.sendGameAction({ type: 'FINISH_GAME' });
         finishGame();
     }
 };
 
 const finishGame = (silent = false) => {
     if (gameFinished.value) return;
-    
     if (props.isMultiplayer && !silent) {
         if (timerInterval) clearInterval(timerInterval);
         multiplayerStore.submitRoundResult();
         return;
     }
-
     gameFinished.value = true;
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 };
 
-const startTimer = () => {
-    if (timerInterval) {
-        clearInterval(timerInterval);
+const animateRocket = (fromIdx, toIdx) => {
+  return new Promise((resolve) => {
+    const startPointIdx = letterPositions[fromIdx];
+    const endPointIdx = letterPositions[toIdx];
+    const path = [];
+    let curr = startPointIdx;
+    while(curr !== endPointIdx) {
+      curr = (curr + 1) % 10;
+      path.push(starPoints[curr]);
     }
-
-    timerInterval = setInterval(() => {
-        if (gameFinished.value) return;
-        timeLeft.value = Math.max(0, timeLeft.value - 1);
-        if (timeLeft.value === 0) {
-            finishGame();
-        }
-    }, 1000);
+    rocketAnimating.value = true;
+    const durationPerStep = 200;
+    const animateStep = (stepIdx) => {
+      if (stepIdx >= path.length) {
+        setTimeout(() => { rocketAnimating.value = false; trailParticles.value = []; resolve(); }, 50);
+        return;
+      }
+      const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1];
+      const to = path[stepIdx];
+      const startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / durationPerStep, 1);
+        rocketPos.x = from.x + (to.x - from.x) * progress;
+        rocketPos.y = from.y + (to.y - from.y) * progress;
+        if (progress < 1) {
+          trailParticles.value.push({
+            x: rocketPos.x + (Math.random() - 0.5) * 8,
+            y: rocketPos.y + (Math.random() - 0.5) * 8,
+            r: Math.random() * 3 + 1,
+            color: '#00e5ff',
+            opacity: 1,
+          });
+          if (trailParticles.value.length > 20) trailParticles.value.shift();
+          requestAnimationFrame(animate);
+        } else animateStep(stepIdx + 1);
+      };
+      requestAnimationFrame(animate);
+    };
+    animateStep(0);
+  });
 };
 
 const emitExit = () => { emit('game-over', finalReward.value); };
 
-// Visual Helpers
+// --- HELPERS VISUALES ---
+const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length);
+const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
+const finalReward = computed(() => score.value + timeLeft.value);
+
 const getBubbleClass = (letter, index) => {
     if (index === currentIndex.value && !gameFinished.value) return 'node-current';
     if (letter.status === 'correct') return 'node-correct';
@@ -748,18 +621,24 @@ const getBubbleClass = (letter, index) => {
 };
 
 const getStarNodeStyle = (index) => {
-    const pointIdx = letterPositions[index];
-    const point = starPoints[pointIdx];
-    return {
-        left: `${(point.x / 400) * 100}%`,
-        top: `${(point.y / 400) * 100}%`,
-    };
+    const point = starPoints[letterPositions[index]];
+    return { left: `${(point.x / 400) * 100}%`, top: `${(point.y / 400) * 100}%` };
 };
 
 const getChipColor = (letter) => {
     if (letter.status === 'correct') return 'success';
     if (letter.status === 'incorrect') return 'error';
     return 'grey';
+};
+
+const isTipGlowing = (tipIdx) => roscoLetters.value[tipIdx]?.status === 'correct';
+const isSegmentGlowing = (segIdx) => {
+  return roscoLetters.value.some((l, i) => {
+    if (l.status !== 'correct') return false;
+    const seg1 = i * 2;
+    const seg0 = (i * 2 - 1 + 10) % 10;
+    return segIdx === seg1 || segIdx === seg0;
+  });
 };
 </script>
 
