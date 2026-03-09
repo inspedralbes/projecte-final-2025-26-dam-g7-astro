@@ -281,7 +281,7 @@ function normalizeRuntimeApiBaseUrl(rawBaseUrl) {
     }
 }
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || resolveDefaultApiBaseUrl();
+const rawApiBaseUrl = import.meta.env.VITE_API_URL || resolveDefaultApiBaseUrl();
 export const API_BASE_URL = normalizeRuntimeApiBaseUrl(rawApiBaseUrl).replace(/\/$/, '');
 
 export function buildWebSocketBaseUrl() {
