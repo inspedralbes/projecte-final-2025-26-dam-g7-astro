@@ -16,15 +16,8 @@
         </div>
 
         <div class="hud-center-unit mx-8 text-center position-relative">
-          <div class="vs-text" :class="{ 'text-cyan-accent-2': isCooperative }">{{ isCooperative ? 'CO-OP' : 'VS' }}</div>
-          <div class="round-text mb-1">
-            <span v-if="!isCooperative">RONDA {{ currentRound }} / {{ totalRounds }}</span>
-            <span v-else>EXPEDICIÓN COOPERATIVA</span>
-          </div>
-
-          <div v-if="multiplayerStore.localTimeLeft !== null" class="hud-time font-weight-black text-h5" :class="multiplayerStore.localTimeLeft <= 10 ? 'text-error animate-pulse' : 'text-white'">
-            00:{{ multiplayerStore.localTimeLeft < 10 ? '0' + multiplayerStore.localTimeLeft : multiplayerStore.localTimeLeft }}
-          </div>
+          <div class="vs-text">VS</div>
+          <div class="round-text">RONDA {{ currentRound }} / {{ totalRounds }}</div>
 
           <transition-group name="floating-score">
             <div
@@ -106,7 +99,6 @@ let notifCounter = 0;
 const localPlayer = computed(() => astroStore.user || 'Tu');
 const currentRound = computed(() => (multiplayerStore.room?.gameConfig?.currentRound ?? 0) + 1);
 const totalRounds = computed(() => multiplayerStore.room?.gameConfig?.totalRounds ?? '?');
-const isCooperative = computed(() => multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
 
 const resolveAvatar = (username) => {
   return props.getPlayerAvatar?.(username) || '/Astronauta_blanc.jpg';
@@ -129,28 +121,18 @@ const resetLocalState = () => {
   activeNotifications.value = [];
 };
 
-const handleSabotageAndBonusNotification = (data) => {
+const handleSabotageNotification = (data) => {
   const isMe = data.from === astroStore.user;
   const amount = data.action.amount || 0;
 
-  if (data.action.subtype !== 'REDUCE_TIME' && data.action.subtype !== 'ADD_TIME') {
+  if (data.action.subtype !== 'REDUCE_TIME') {
     return;
   }
 
   const id = notifCounter++;
-  
-  let formattedAmount = 0;
-  if (data.action.type === 'SABOTAGE') {
-    // Si és meu visualment vull que surti com que li he tret temps al rival o similar
-    formattedAmount = isMe ? amount : -amount; 
-  } else if (data.action.type === 'BONUS') {
-    // El bonus és positiu per als dos
-    formattedAmount = amount;
-  }
-
   activeNotifications.value.push({
     id,
-    amount: formattedAmount
+    amount: isMe ? 10 : -amount
   });
 
   setTimeout(() => {
@@ -165,11 +147,6 @@ watch(() => multiplayerStore.room?.status, (newStatus) => {
     showRoundResults.value = false;
   } else if (newStatus === 'ROUND_RESULTS') {
     showRoundResults.value = true;
-    // Tancar automàticament la pantalla de resultats al cap de 3s
-    // perquè no bloquegi la ruleta de la ronda següent
-    setTimeout(() => {
-      showRoundResults.value = false;
-    }, 3000);
   } else if (newStatus === 'GAME_OVER') {
     showRoundResults.value = false;
   } else if (newStatus === 'LOBBY') {
@@ -187,8 +164,8 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     isRoundTie.value = Boolean(msg.tie);
   }
 
-  if (msg.type === 'GAME_ACTION' && (msg.action?.type === 'SABOTAGE' || msg.action?.type === 'BONUS')) {
-    handleSabotageAndBonusNotification(msg);
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE') {
+    handleSabotageNotification(msg);
   }
 
   if (msg.type === 'MATCH_FINISHED') {
@@ -273,20 +250,6 @@ defineExpose({
   color: #ffca28;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-}
-
-.hud-time {
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  line-height: 1;
-}
-
-.animate-pulse {
-  animation: pulse-red 1s infinite alternate;
-}
-
-@keyframes pulse-red {
-  0% { transform: scale(1); text-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
-  100% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
 }
 
 .sabotage-notif {

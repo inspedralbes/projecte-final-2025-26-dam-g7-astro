@@ -53,9 +53,10 @@
                 </div>
 
                 <v-list bg-color="transparent" class="pa-0 flex-grow-1 d-flex flex-column justify-center">
-                    <v-list-item v-if="!dailyMissions || dailyMissions.length === 0" class="text-center pa-2">
-                        <v-list-item-title class="text-caption text-grey">No hay misiones disponibles</v-list-item-title>
-                    </v-list-item>
+                    <div v-if="!dailyMissions || dailyMissions.length === 0"
+                        class="text-caption text-grey text-center pa-2">
+                        No hay misiones disponibles
+                    </div>
                     <v-list-item v-for="mission in (dailyMissions || []).slice(0, 3)" :key="mission.id"
                         class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
                         <v-list-item-title
@@ -93,9 +94,10 @@
                 </div>
 
                 <v-list bg-color="transparent" class="pa-0 flex-grow-1 d-flex flex-column justify-center">
-                    <v-list-item v-if="!weeklyMissions || weeklyMissions.length === 0" class="text-center pa-2">
-                        <v-list-item-title class="text-caption text-grey">No hay misiones semanales disponibles</v-list-item-title>
-                    </v-list-item>
+                    <div v-if="!weeklyMissions || weeklyMissions.length === 0"
+                        class="text-caption text-grey text-center pa-2">
+                        No hay misiones semanales disponibles
+                    </div>
                     <v-list-item v-for="mission in (weeklyMissions || []).slice(0, 3)" :key="mission.id"
                         class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
                         <v-list-item-title

@@ -67,10 +67,9 @@ const reelStyle = computed(() => ({
 
 const isSpinning = ref(false);
 
-let spinTimeout1 = null;
-let spinTimeout2 = null;
-
 const startSpin = () => {
+  if (isSpinning.value) return;
+  
   isSpinning.value = true;
   const itemHeight = 100; // Altura de cada slot item
   const targetIndex = props.games.indexOf(props.targetGame);
@@ -80,11 +79,11 @@ const startSpin = () => {
   const totalItems = props.games.length;
   const finalIndex = (extraLaps * totalItems) + targetIndex;
   
-  spinTimeout1 = setTimeout(() => {
+  setTimeout(() => {
     reelPosition.value = finalIndex * itemHeight;
   }, 100);
 
-  spinTimeout2 = setTimeout(() => {
+  setTimeout(() => {
     isSpinning.value = false;
     emit('finished');
   }, duration + 500);
@@ -92,10 +91,6 @@ const startSpin = () => {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    // Limpiar timeouts anteriores para evitar conflictos entre rondas
-    if (spinTimeout1) clearTimeout(spinTimeout1);
-    if (spinTimeout2) clearTimeout(spinTimeout2);
-    isSpinning.value = false;
     reelPosition.value = 0;
     setTimeout(startSpin, 500);
   }

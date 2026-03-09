@@ -2,27 +2,20 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.prod
-    container_name: astro_backend_prod
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
-    networks:
-      - astro_network
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    env_file: ./backend/.env
 
   frontend:
     build:
-      context: ./frontend/web
-      dockerfile: Dockerfile.prod
-    container_name: astro_frontend_prod
-    restart: unless-stopped
+      context: ./frontend
+      target: dev
     ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - astro_network
-
-networks:
-  astro_network:
-    driver: bridge
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

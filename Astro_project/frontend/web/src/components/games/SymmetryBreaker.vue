@@ -42,17 +42,6 @@
 
     <div v-if="roundHintVisible" :key="roundHintToken" class="round-target-hint">{{ roundHintText }}</div>
 
-    <!-- Banners d'Efectes -->
-    <div v-if="isGravityActive" class="effect-banner gravity-banner">
-        <v-icon icon="mdi-arrow-down-bold-circle" class="mr-2"></v-icon>
-        GRAVETAT VARIABLE ACTIVADA
-    </div>
-    <div v-if="isMirrorActive" class="effect-banner mirror-banner">
-        <v-icon icon="mdi-mirror" class="mr-2"></v-icon>
-        VISIÓ DE MIRALL ACTIVADA
-    </div>
-
-    <!-- Overlays -->
     <v-overlay v-if="!isMultiplayer" v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
         <h2 class="text-h4 font-weight-bold text-white mb-4">Symmetry Breaker</h2>
@@ -122,11 +111,6 @@ const isFiring = ref(false);
 const holdProgressMs = ref(0);
 const holdRequiredMs = ref(1000);
 
-const isCoop = computed(() => props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
-const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.find(t => t.members.includes(astroStore.user)));
-const myTeamId = computed(() => myTeam.value?.id);
-const isMyTeammate = (user) => myTeam.value?.members.includes(user) && user !== astroStore.user;
-
 const HUD_SAFE_TOP = 170;
 const EDGE_PADDING = 18;
 const BASE_DECOYS = 4;
@@ -140,10 +124,6 @@ const CLASSIC_DECOY_FILL = 'rgba(255, 255, 255, 0.06)';
 const PROGRESS_DECAY_OUTSIDE = 950;
 const PROGRESS_DECAY_ON_DECOY = 700;
 
-// --- EFECTES MULTIJUGADOR ---
-const isGravityActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_GRAVITY'));
-const isMirrorActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_MIRROR'));
-
 let animationFrame = null;
 let lastFrameTs = 0;
 let roundHintTimeout = null;
@@ -155,45 +135,8 @@ function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 function randomVelocity(speed) { const angle = Math.random() * Math.PI * 2; return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }; }
 
 function resolveEntityColors({ isTarget, isUniformMode }) {
-  if (isTarget && isMirrorActive.value) {
-      return {
-          ringColor: '#00e5ff',
-          fillColor: 'rgba(0, 229, 255, 0.4)',
-          glow: true
-      };
-  }
-
-  if (isUniformMode) {
-    return {
-      ringColor: CLASSIC_DECOY_RING,
-      fillColor: CLASSIC_DECOY_FILL
-    };
-  }
-
-  return {
-    ringColor: isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING,
-    fillColor: isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL
-  };
-}
-
-function getHorizontalMenuOverlap() {
-  if (!gameArea.value) return { left: 0, right: 0 };
-
-  const areaRect = gameArea.value.getBoundingClientRect();
-  const leftMenu = document.querySelector('.left-sidebar');
-  const rightMenu = document.querySelector('.right-sidebar');
-
-  const overlapWith = (menuEl) => {
-    if (!menuEl) return 0;
-    const menuRect = menuEl.getBoundingClientRect();
-    const overlap = Math.min(areaRect.right, menuRect.right) - Math.max(areaRect.left, menuRect.left);
-    return Math.max(0, overlap);
-  };
-
-  return {
-    left: overlapWith(leftMenu),
-    right: overlapWith(rightMenu)
-  };
+  if (isUniformMode) return { ringColor: CLASSIC_DECOY_RING, fillColor: CLASSIC_DECOY_FILL };
+  return { ringColor: isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING, fillColor: isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL };
 }
 
 function getPlayBounds(size) {
@@ -218,16 +161,10 @@ function triggerRoundHint(text) {
   roundHintTimeout = setTimeout(() => { roundHintVisible.value = false; roundHintTimeout = null; }, 1000);
 }
 
-let currentSeed = 1;
-function seededDice() {
-  const x = Math.sin(currentSeed++) * 10000;
-  return x - Math.floor(x);
-}
-
 function generateTargets() {
   if (!gameCanvas.value) return;
   const sourceSet = round.value <= 6 ? wordSets : letterSets;
-  const challenge = sourceSet[Math.floor(seededDice() * sourceSet.length)];
+  const challenge = sourceSet[Math.floor(Math.random() * sourceSet.length)];
   currentChallenge.value = challenge;
   triggerRoundHint(challenge.target);
 
@@ -240,24 +177,11 @@ function generateTargets() {
   const newTargets = [];
   for (let i = 0; i < 1 + decoyCount; i++) {
     const isTarget = i === 0;
-    const text = isTarget
-      ? challenge.target
-      : challenge.decoys[Math.floor(seededDice() * challenge.decoys.length)];
-    const velocity = randomVelocity(currentSpeed * (0.92 + seededDice() * 0.16));
+    const text = isTarget ? challenge.target : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)];
+    const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08));
     const { ringColor, fillColor } = resolveEntityColors({ isTarget, isUniformMode });
 
-    newTargets.push({
-      text,
-      isTarget,
-      size: entitySize,
-      x: bounds.minX + seededDice() * (bounds.maxX - bounds.minX),
-      y: bounds.minY + seededDice() * (bounds.maxY - bounds.minY),
-      vx: velocity.vx,
-      vy: velocity.vy,
-      bounds,
-      ringColor,
-      fillColor
-    });
+    newTargets.push({ text, isTarget, size: entitySize, x: randomBetween(bounds.minX, bounds.maxX), y: randomBetween(bounds.minY, bounds.maxY), vx: velocity.vx, vy: velocity.vy, bounds, ringColor, fillColor });
   }
   targets.value = newTargets;
   holdProgressMs.value = 0;
@@ -295,23 +219,9 @@ function update(dt) {
   if (timeLeft.value <= 0) { endGame(); return; }
 
   targets.value.forEach((t) => {
-    // Aplicar gravetat si està activa
-    if (isGravityActive.value) {
-        t.vy += dt * 400; // Accelaració cap a baix
-    }
-
-    t.x += t.vx * dt;
-    t.y += t.vy * dt;
-
-    if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
-      t.vx *= -1;
-      t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX);
-    }
-    if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
-      // Rebotar a dalt i a baix
-      t.vy *= isGravityActive.value ? -0.5 : -1; // Rebot amortiguat si hi ha gravetat
-      t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY);
-    }
+    t.x += t.vx * dt; t.y += t.vy * dt;
+    if (t.x < t.bounds.minX || t.x > t.bounds.maxX) { t.vx *= -1; t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX); }
+    if (t.y < t.bounds.minY || t.y > t.bounds.maxY) { t.vy *= -1; t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY); }
   });
 
   if (isFiring.value && hoveredTarget && hoveredTarget.isTarget) {
@@ -324,49 +234,18 @@ function update(dt) {
   }
 }
 
-function lockTarget(fromRemote = false) {
-  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' && !fromRemote) {
-    multiplayerStore.sendGameAction({ type: 'TARGET_LOCKED' });
-  }
-
-  const pointsEarned = 100 + (round.value * 22) + (successfulLocks.value * 18);
-  if (!fromRemote) score.value += pointsEarned;
+function lockTarget() {
+  score.value += 100 + (round.value * 22) + (successfulLocks.value * 18);
   successfulLocks.value += 1;
   timeLeft.value = Math.min(99, timeLeft.value + 3);
   round.value++;
   generateTargets();
-
-  // Efectes Multijugador a la conclusió d'un lock correcte
-  if (props.isMultiplayer) {
-    if (multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE') {
-      // Sumem al company
-      multiplayerStore.sendGameAction({ type: 'BONUS', subtype: 'ADD_TIME', amount: 3 });
-    } else {
-      // Sabotatge i restem rival
-      multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 2 });
-    }
-  }
+  if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 2 });
 }
 
 function draw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height);
-
-  // Dibujar lasers remotos
-  if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE') {
-    Object.entries(multiplayerStore.remoteCursors).forEach(([user, pos]) => {
-      // Necesitamos saber si el otro está disparando. Lo asumimos si está en modo cooperativo y se mueve?
-      // O añadimos un estado firing en el store. Para simplificar, si se mueve, mostramos un laser tenue
-      ctx.beginPath();
-      ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height);
-      const rx = (pos.x / 100) * gameCanvas.value.width;
-      const ry = (pos.y / 100) * gameCanvas.value.height;
-      ctx.lineTo(rx, ry);
-      ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-  }
 
   if (isFiring.value) {
     ctx.beginPath(); ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height); ctx.lineTo(mouseX.value, mouseY.value);
@@ -376,30 +255,11 @@ function draw() {
   }
 
   const drawEntity = (t) => {
-    ctx.save();
-    ctx.translate(t.x, t.y);
-
-    ctx.beginPath();
-    ctx.arc(0, 0, t.size / 2, 0, Math.PI * 2);
-    ctx.fillStyle = t.fillColor || 'rgba(10, 20, 40, 0.85)';
-    if (t.glow) {
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#00e5ff';
-    }
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = t.isTarget ? 3 : 2;
-    ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)');
-    ctx.stroke();
-
-    const textLength = String(t.text || '').length;
-    const fontScale = textLength <= 1 ? 0.36 : textLength <= 4 ? 0.30 : 0.25;
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${t.size * fontScale}px 'Roboto Mono'`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(t.text, 0, 0);
-    ctx.restore();
+    ctx.save(); ctx.translate(t.x, t.y); ctx.beginPath(); ctx.arc(0, 0, t.size / 2, 0, Math.PI * 2);
+    ctx.fillStyle = t.fillColor || 'rgba(10, 20, 40, 0.85)'; ctx.fill();
+    ctx.lineWidth = t.isTarget ? 3 : 2; ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)'); ctx.stroke();
+    const textLength = String(t.text || '').length; const fontScale = textLength <= 1 ? 0.36 : textLength <= 4 ? 0.30 : 0.25;
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${t.size * fontScale}px 'Roboto Mono'`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t.text, 0, 0); ctx.restore();
   };
 
   targets.value.filter((t) => !t.isTarget).forEach(drawEntity);
@@ -443,79 +303,10 @@ function endGame(silent = false) {
   cancelAnimationFrame(animationFrame); emit('game-over', score.value);
 }
 
-function returnToMenu() {
-  emit('game-over', score.value);
-}
-
-onMounted(() => {
-  ctx = gameCanvas.value.getContext('2d');
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-  if (props.isMultiplayer) {
-    if (multiplayerStore.room?.gameConfig?.seed) {
-        currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10000);
-    }
-    startGame();
-  }
-});
-
-// Listener para eventos multijugador
-watch(() => multiplayerStore.lastMessage, (msg) => {
-  if (!msg) return;
-
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    // Aturem el joc; el Lobby gestiona el tancament del component
-    isPlaying.value = false;
-    isFiring.value = false;
-    cancelAnimationFrame(animationFrame);
-  }
-
-  // REBRE SABOTATGE: Restar temps (Dirigit o Global)
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.from !== astroStore.user) {
-    let shouldApply = false;
-    if (isCoop.value) {
-       if (msg.action.targetTeamId && msg.action.targetTeamId === myTeamId.value) shouldApply = true;
-    } else {
-       shouldApply = true;
-    }
-
-    if (shouldApply && msg.action.subtype === 'REDUCE_TIME') {
-      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
-      if (timeLeft.value <= 0 && isPlaying.value) endGame();
-    }
-  }
-
-  // REBRE BONUS: Sumar temps (Solo Compañero)
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BONUS' && msg.action?.subtype === 'ADD_TIME') {
-    if (isCoop.value && isMyTeammate(msg.from)) {
-      timeLeft.value = Math.min(99, timeLeft.value + (msg.action.amount || 3));
-    }
-  }
-
-  // REBRE BLOQUEIG COOPERATIU (Solo Compañero)
-  if (isCoop.value && isMyTeammate(msg.from) && msg.type === 'GAME_ACTION' && msg.action?.type === 'TARGET_LOCKED') {
-    lockTarget(true);
-  }
-});
-
-// Notificar puntuación al servidor en modo multijugador
-watch(score, (newScore) => {
-  if (props.isMultiplayer) {
-    multiplayerStore.sendGameAction({
-      type: 'SCORE_UPDATE',
-      score: newScore
-    });
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', resizeCanvas);
-  cancelAnimationFrame(animationFrame);
-  if (roundHintTimeout) {
-    clearTimeout(roundHintTimeout);
-    roundHintTimeout = null;
-  }
-});
+onMounted(() => { ctx = gameCanvas.value.getContext('2d'); window.addEventListener('resize', resizeCanvas); resizeCanvas(); if (props.isMultiplayer) startGame(); });
+watch(() => multiplayerStore.lastMessage, (msg) => { if (!msg) return; if (msg.type === 'ROUND_ENDED_BY_WINNER') { isPlaying.value = false; isFiring.value = false; cancelAnimationFrame(animationFrame); emit('game-over', score.value); } if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') { timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2)); if (timeLeft.value <= 0 && isPlaying.value) endGame(); } });
+watch(score, (newScore) => { if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore }); });
+onBeforeUnmount(() => { window.removeEventListener('resize', resizeCanvas); cancelAnimationFrame(animationFrame); if (roundHintTimeout) clearTimeout(roundHintTimeout); });
 </script>
 
 <style scoped>
@@ -588,36 +379,4 @@ canvas {
 
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 1px solid #00e5ff; }
-
-/* Efectes */
-.effect-banner {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 24px;
-    border-radius: 30px;
-    font-weight: 900;
-    color: white;
-    z-index: 100;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    animation: banner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.gravity-banner {
-    background: linear-gradient(135deg, #f43f5e, #881337);
-    border: 2px solid #fda4af;
-}
-
-.mirror-banner {
-    background: linear-gradient(135deg, #00e5ff, #006064);
-    border: 2px solid #84ffff;
-    bottom: 100px; /* Separar si coinciden */
-}
-
-@keyframes banner-pop {
-    from { transform: translate(-50%, 30px) scale(0.8); opacity: 0; }
-    to { transform: translate(-50%, 0) scale(1); opacity: 1; }
-}
 </style>

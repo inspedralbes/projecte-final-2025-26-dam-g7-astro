@@ -245,7 +245,6 @@ const updateStats = (data) => {
 
 const triggerMultiSpin = async () => {
     if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
-
     try {
         const { response, data } = await requestJson('/api/shop/buy-tickets', {
             method: 'POST',
@@ -261,6 +260,7 @@ const triggerMultiSpin = async () => {
         alert(error.message);
     }
 };
+
 async function fetchUserBalance() {
     const result = await astroStore.fetchUserBalance();
     if (result.success && result.balance) {

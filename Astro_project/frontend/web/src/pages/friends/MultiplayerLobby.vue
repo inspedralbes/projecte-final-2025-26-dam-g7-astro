@@ -10,7 +10,7 @@
 
     <MultiplayerScoreSystem
       ref="multiplayerScoreSystem"
-      :visible="isInMatch"
+      :visible="Boolean(activeGameComponent)"
       :opponent-name="opponentName"
       :get-player-avatar="getPlayerAvatar"
       @match-finished="onMatchFinished"
@@ -18,45 +18,7 @@
 
     <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
-      <div 
-        v-if="activeGameComponent" 
-        class="game-active-overlay"
-        @mousemove.passive="handleMouseMove"
-      >
-        <!-- Minimapa (Visible siempre en cooperativo durante el minijuego) -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE'" style="z-index: 2000;">
-          <SpaceRaceMap 
-            :teams="multiplayerStore.room?.gameConfig?.teams"
-            :hazard-type="multiplayerStore.room?.gameConfig?.hazard"
-            :hazard-progress="multiplayerStore.room?.gameConfig?.hazardProgress"
-            :time-limit="multiplayerStore.room?.gameConfig?.timeLimit"
-            :start-time="multiplayerStore.room?.gameConfig?.startTime"
-            :mini-mode="true"
-          />
-        </div>
-
-        <!-- Cursores (Solo en cooperativo) -->
-        <template v-if="multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE'">
-          <!-- Otros jugadores -->
-          <div 
-            v-for="(pos, user) in multiplayerStore.remoteCursors" 
-            :key="user" 
-            class="remote-cursor ghost-cursor"
-            :style="{ left: pos.x + '%', top: pos.y + '%' }"
-          >
-            <v-icon icon="mdi-cursor-default" color="cyan-accent-2" size="28" class="mouse-icon-shadow"></v-icon>
-            <div class="cursor-tag">{{ user }}</div>
-          </div>
-          
-          <!-- Mi propio cursor (para ver ambos en pantalla compartida) -->
-          <div 
-            class="remote-cursor local-cursor"
-            :style="{ left: localMouse.x + '%', top: localMouse.y + '%' }"
-          >
-            <v-icon icon="mdi-cursor-default-outline" color="orange-accent-2" size="28" class="mouse-icon-shadow"></v-icon>
-            <div class="cursor-tag">Tú (Comandante)</div>
-          </div>
-        </template>
+      <div v-if="activeGameComponent" class="game-active-overlay">
         <div class="game-content">
           <component
             :is="activeGameComponent"
@@ -79,9 +41,7 @@
       @return-to-lobby="returnToLobby"
     />
 
-    <!-- Pantalla Central (Lobby / Habitacions / Amics) -->
-    <!-- Només es mostra si NO estem en partida (ni jugant, ni ruleta, ni resultats) -->
-    <div v-show="!isInMatch && !showMatchResult && !showRoulette" class="w-100">
+    <div v-if="!activeGameComponent" class="w-100">
       <div class="mb-10 text-center">
         <div class="d-flex align-center justify-center mb-6">
           <v-icon icon="mdi-sword-cross" size="x-large" color="orange-accent-2" class="mr-4"></v-icon>
@@ -103,58 +63,16 @@
                 <h2 class="text-h4 font-weight-black text-white tracking-widest">SALA {{ multiplayerStore.room.id }}</h2>
               </div>
             </div>
-            <div class="d-flex gap-2">
-              <v-btn color="red-accent-2" variant="elevated" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-black action-glow-red">
-                <v-icon icon="mdi-logout" start></v-icon>
-                Abortar Missió
-              </v-btn>
-            </div>
+            <v-btn color="error" variant="tonal" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-bold">
+              <v-icon icon="mdi-logout" start></v-icon>
+              Abortar
+            </v-btn>
           </div>
 
           <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
             <div class="d-flex align-center mb-8">
-              <h3 class="text-h6 text-white font-weight-bold mr-4">Tripulación Actual: <span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> de {{ multiplayerStore.room?.maxPlayers || 4 }}</h3>
+              <h3 class="text-h6 text-white font-weight-bold mr-4">Tripulación Actual (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
               <v-divider class="flex-grow-1 border-opacity-25" color="cyan-lighten-4"></v-divider>
-              <div v-if="isHost" class="ml-4 d-flex align-center gap-4">
-                 <div class="d-flex align-center">
-                   <v-icon icon="mdi-account-multiple" size="small" color="cyan-accent-2" class="mr-2"></v-icon>
-                   <v-select
-                     v-model="maxPlayers"
-                     :items="[2, 4, 6, 8, 10, 12, 14, 16]"
-                     variant="plain"
-                     density="compact"
-                     hide-details
-                     class="min-setting-select"
-                   ></v-select>
-                 </div>
-                 <div class="d-flex align-center">
-                   <v-icon icon="mdi-trophy" size="small" color="orange-accent-2" class="mr-2"></v-icon>
-                   <v-select
-                     v-model="pointsToWin"
-                     :items="[1, 2, 3, 4, 5]"
-                     variant="plain"
-                     density="compact"
-                     hide-details
-                     class="min-setting-select"
-                   ></v-select>
-                 </div>
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-rocket-launch" size="small" color="cyan-accent-2" class="mr-2"></v-icon>
-                    <v-select
-                      v-model="selectedModality"
-                      :items="modalities.filter(m => m.active)"
-                      item-title="name"
-                      item-value="id"
-                      variant="plain"
-                      density="compact"
-                      hide-details
-                      class="min-setting-select"
-                    ></v-select>
-                  </div>
-               </div>
-               <v-chip v-else color="cyan-accent-2" variant="tonal" size="small" class="ml-4 font-weight-black">
-                  MODO: {{ multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE' ? 'COOPERATIVO' : 'BATALLA' }} | RONDAS: {{ multiplayerStore.room?.gameConfig?.pointsToWin }}
-               </v-chip>
             </div>
 
             <v-row class="mb-4">
@@ -196,26 +114,25 @@
               </v-col>
             </v-row>
 
-
-              <div class="mt-12 d-flex flex-column align-center">
-                <v-btn 
-                  v-if="isHost" 
-                  color="orange-accent-3" 
-                  size="x-large" 
-                  class="start-mission-btn rounded-pill px-12 font-weight-black" 
-                  elevation="12"
-                  :disabled="!canStartGame && multiplayerStore.room?.status !== 'GAME_OVER'"
-                  @click="intentStartMatch"
-                >
-                  ¡DESPEGAR AHORA!
-                </v-btn>
-                <div v-else class="waiting-broadcast d-flex align-center">
-                  <v-progress-circular indeterminate color="amber-accent-2" size="20" width="2" class="mr-3"></v-progress-circular>
-                  <span class="text-amber-accent-2 font-weight-bold">Esperando órdenes del Comandante...</span>
-                </div>
+            <div class="mt-12 d-flex flex-column align-center">
+              <v-btn 
+                v-if="isHost" 
+                color="orange-accent-3" 
+                size="x-large" 
+                class="start-mission-btn rounded-pill px-12 font-weight-black" 
+                elevation="12"
+                :disabled="(multiplayerStore.room?.players?.length || 0) < 2"
+                @click="multiplayerStore.startMatch()"
+              >
+                ¡DESPEGAR AHORA!
+              </v-btn>
+              <div v-else class="waiting-broadcast d-flex align-center">
+                <v-progress-circular indeterminate color="amber-accent-2" size="20" width="2" class="mr-3"></v-progress-circular>
+                <span class="text-amber-accent-2 font-weight-bold">Esperando órdenes del Comandante...</span>
               </div>
             </div>
-          </v-card>
+          </div>
+        </v-card>
 
         <!-- VISTA: SIN SALA (CREAR O UNIRSE) -->
         <div v-else>
@@ -245,48 +162,44 @@
                     ></v-switch>
                   </div>
                   
-
-                  <v-row>
-                    <v-col cols="12" sm="6">
-                       <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO MÁXIMO</div>
-                       <v-select
-                          v-model="maxPlayers"
-                          :items="[2, 4, 6, 8, 10, 12, 14, 16]"
-                          variant="solo-filled"
-                          bg-color="rgba(255,255,255,0.05)"
-                          class="player-limit-select"
-                          rounded="pill"
-                          hide-details
-                          density="comfortable"
-                          prepend-inner-icon="mdi-account-group"
-                       >
-                          <template v-slot:selection="{ item }">
-                             <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
-                          </template>
-                       </v-select>
-                    </v-col>
-                    <v-col cols="12" sm="6">
-                       <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NÚMERO DE RONDAS</div>
-                       <v-select
-                          v-model="pointsToWin"
-                          :items="[1, 2, 3, 4, 5]"
-                          variant="solo-filled"
-                          bg-color="rgba(255,255,255,0.05)"
-                          class="points-limit-select"
-                          rounded="pill"
-                          hide-details
-                          density="comfortable"
-                          prepend-inner-icon="mdi-trophy-outline"
-                       >
-                          <template v-slot:selection="{ item }">
-                             <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
-                          </template>
-                       </v-select>
-                    </v-col>
-                  </v-row>
-
-                  <!-- Hemos quitado el v-select de aquí para usar las tarjetas de la derecha -->
-                  <div class="mb-4"></div>
+                  <div class="mb-6">
+                     <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO DE LA NAVE MÁX.</div>
+                     <v-select
+                        v-model="maxPlayers"
+                        :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
+                        variant="solo-filled"
+                        bg-color="rgba(255,255,255,0.05)"
+                        class="player-limit-select"
+                        rounded="pill"
+                        hide-details
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account-group"
+                        :menu-props="{ maxHeight: '300' }"
+                     >
+                        <template v-slot:selection="{ item }">
+                           <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
+                        </template>
+                     </v-select>
+                  </div>
+                  
+                  <div class="mb-6">
+                     <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NOMBRE DE RONDES</div>
+                     <v-select
+                        v-model="pointsToWin"
+                        :items="[1, 2, 3, 4, 5]"
+                        variant="solo-filled"
+                        bg-color="rgba(255,255,255,0.05)"
+                        class="points-limit-select"
+                        rounded="pill"
+                        hide-details
+                        density="comfortable"
+                        prepend-inner-icon="mdi-trophy-outline"
+                     >
+                        <template v-slot:selection="{ item }">
+                           <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
+                        </template>
+                     </v-select>
+                  </div>
 
                   <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan" @click="createRoom">
                     INICIAR SALA
@@ -332,13 +245,9 @@
           <v-row dense>
             <v-col v-for="mode in modalities" :key="mode.id" cols="6">
               <v-card
-                class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg"
-                :class="{ 
-                  'active-mode': selectedModality === mode.id, 
-                  'disabled-mode': !mode.active && multiplayerStore.room && !isHost,
-                  'cursor-pointer': mode.active && (!multiplayerStore.room || isHost)
-                }"
-                @click="mode.active && (!multiplayerStore.room || isHost) ? selectedModality = mode.id : null"
+                class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg cursor-pointer"
+                :class="{ 'active-mode': selectedModality === mode.id, 'disabled-mode': !mode.active }"
+                @click="mode.active ? selectedModality = mode.id : null"
                 variant="flat"
               >
                 <v-icon :icon="mode.icon" :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-darken-1'" size="28" class="mb-2"></v-icon>
@@ -389,19 +298,9 @@
                         <div class="mission-status-led mr-2"></div>
                         <div class="text-body-2 font-weight-black text-white">SECTOR {{ room.id }}</div>
                       </div>
-                      <div class="d-flex align-center">
-                        <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
-                          {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
-                        </v-chip>
-                        <v-chip 
-                          size="x-small" 
-                          :color="room.gameConfig?.mode === 'COOPERATIVE' ? 'cyan-accent-2' : 'orange-accent-2'" 
-                          variant="tonal" 
-                          class="rounded-pill font-weight-bold ml-2"
-                        >
-                          {{ room.gameConfig?.mode === 'COOPERATIVE' ? 'COOP' : 'VS' }}
-                        </v-chip>
-                      </div>
+                      <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
+                        {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
+                      </v-chip>
                     </div>
 
                     <div class="d-flex align-center mb-4">
@@ -414,27 +313,16 @@
                       </div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                      <v-btn 
-                        flex-grow-1
-                        color="cyan-accent-2" 
-                        size="small" 
-                        variant="elevated" 
-                        class="rounded-pill font-weight-black text-black action-glow-btn" 
-                        @click="multiplayerStore.joinRoom(room.id)"
-                      >
-                        ESTABLECER ENLACE
-                      </v-btn>
-                      <v-btn
-                        v-if="room.host === astroStore.user"
-                        icon="mdi-delete-outline"
-                        color="red-accent-2"
-                        variant="tonal"
-                        size="small"
-                        class="rounded-circle action-glow-red-small"
-                        @click="multiplayerStore.deleteRoom(room.id)"
-                      ></v-btn>
-                    </div>
+                    <v-btn 
+                      block 
+                      color="cyan-accent-2" 
+                      size="small" 
+                      variant="elevated" 
+                      class="rounded-pill font-weight-black text-black action-glow-btn" 
+                      @click="multiplayerStore.joinRoom(room.id)"
+                    >
+                      ESTABLECER ENLACE
+                    </v-btn>
                   </div>
                 </v-list-item>
               </v-fade-transition>
@@ -447,7 +335,7 @@
         </v-card>
 
         <!-- Reclutamiento (Si está en una sala) -->
-        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4" @vue:mounted="ensureExplorersFetched">
+        <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4">
           <div class="pa-4 border-bottom-light">
             <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
               <v-icon icon="mdi-account-group" color="cyan-accent-2" class="mr-2"></v-icon>
@@ -530,7 +418,6 @@ import { availableGameNames, gameComponents } from '@/components/games/gameRegis
 import MultiplayerScoreSystem from '@/components/games/MultiplayerScoreSystem.vue';
 import RouletteOverlay from '@/components/games/RouletteOverlay.vue';
 import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue';
-import SpaceRaceMap from '@/components/multiplayer/SpaceRaceMap.vue';
 
 const availableGames = availableGameNames;
 
@@ -548,11 +435,12 @@ const multiplayerScoreSystem = ref(null);
 const showMatchResult = ref(false);
 const finalScores = ref({});
 const matchWinnerName = ref(null);
-const selectedModality = ref('BATTLE');
+const selectedModality = ref('1vs1');
 const modalities = [
-  { id: 'BATTLE', name: 'Batalla Individual', icon: 'mdi-sword-cross', active: true },
-  { id: 'COOPERATIVE', name: 'Misión Cooperativa', icon: 'mdi-account-group', active: true },
-  { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: false },
+  { id: '1vs1', name: 'Mode 1vs1', icon: 'mdi-sword-cross', active: true },
+  { id: '2vs2', name: 'Mode 2vs2', icon: 'mdi-account-group', active: false },
+  { id: 'boss', name: 'Mode Boss', icon: 'mdi-skull', active: false },
+  { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: false },
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
 ];
 
@@ -573,13 +461,9 @@ watch(() => multiplayerStore.room?.status, (newStatus) => {
     matchWinnerName.value = null;
     finalScores.value = {};
     multiplayerScoreSystem.value?.resetLocalState();
-  } else if (newStatus === 'ROUND_RESULTS') {
-    // Apagar la ruleta entre rondes per forçar que la prop canviï de false->true
-    // quan arribi el proper ROULETTE, activant el watcher de RouletteOverlay
-    showRoulette.value = false;
-    activeGameComponent.value = null;
   }
 });
+
 // AÑADIDO: Watcher para asegurar que tenemos los datos de todos los jugadores que entran
 watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
   if (newLen > (oldLen || 0)) {
@@ -587,14 +471,6 @@ watch(() => multiplayerStore.room?.players?.length, (newLen, oldLen) => {
     astroStore.fetchAllUsers();
   }
 }, { immediate: true });
-
-watch(() => multiplayerStore.room, (newRoom) => {
-  if (newRoom && newRoom.gameConfig) {
-    maxPlayers.value = newRoom.maxPlayers || 4;
-    pointsToWin.value = newRoom.gameConfig.pointsToWin || 3;
-    selectedModality.value = newRoom.gameConfig.mode || 'BATTLE';
-  }
-}, { immediate: true, deep: true });
 
 watch(() => multiplayerStore.error, (newError) => {
   if (newError) {
@@ -605,50 +481,6 @@ watch(() => multiplayerStore.error, (newError) => {
 
 const isHost = computed(() => {
   return multiplayerStore.room?.host === astroStore.user;
-});
-
-// El HUD del sistema de puntuació és visible durant tota la partida (no solo quan hi ha joc actiu)
-// Així el watcher de lastMessage sempre està actiu i pot capturar MATCH_FINISHED correctament
-const isInMatch = computed(() => {
-  const s = multiplayerStore.room?.status;
-  // Treiem 'GAME_OVER' per tal que, en tancar els resultats, ja es pugui veure l'espai central del lobby.
-  return s === 'PLAYING' || s === 'ROULETTE' || s === 'ROUND_RESULTS';
-});
-
-// Watcher directe de MATCH_FINISHED al Lobby com a mecanisme de seguretat
-// El MultiplayerScoreSystem ja ho gestiona, però per si el component no és visible en aquell moment
-watch(() => multiplayerStore.lastMessage, (msg) => {
-  if (!msg) return;
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    activeGameComponent.value = null;
-  }
-  if (msg.type === 'MATCH_FINISHED') {
-    showRoulette.value = false;
-    activeGameComponent.value = null;
-    // Si el MultiplayerScoreSystem ja ho ha gestionat, no fem res
-    if (!showMatchResult.value) {
-      matchWinnerName.value = msg.winner ?? null;
-      finalScores.value = msg.room?.gameConfig?.scores || {};
-      showMatchResult.value = true;
-    }
-  }
-});
-
-const canStartGame = computed(() => {
-  const players = multiplayerStore.room?.players?.length || 0;
-  if (selectedModality.value === 'COOPERATIVE') {
-    // Para carrera espacial, mínimo 2 (si es impar se rellena con bot en server, pero el usuario pidió num par)
-    // Interpretamos que si son impares no deja empezar según el mensaje del usuario "siempre va a tener que ser num par"
-    return players >= 2 && players % 2 === 0;
-  }
-  return players >= 2;
-});
-
-// Sincronizar modalidad si el host la cambia
-watch(selectedModality, (newVal) => {
-  if (isHost.value && multiplayerStore.room) {
-    multiplayerStore.updateGameConfig({ mode: newVal });
-  }
 });
 
 // AÑADIDO: Lógica de reclutamiento (Amigos y Otros separados)
@@ -677,13 +509,6 @@ const opponentName = computed(() => {
 watch(pointsToWin, (newVal) => {
   if (isHost.value && multiplayerStore.room) {
     multiplayerStore.updateGameConfig({ pointsToWin: newVal });
-  }
-});
-
-// Sincronizar jugadores si el host los cambia
-watch(maxPlayers, (newVal) => {
-  if (isHost.value && multiplayerStore.room) {
-    multiplayerStore.updateGameConfig({ maxPlayers: newVal });
   }
 });
 
@@ -731,10 +556,7 @@ const showMessage = (text, color = 'success') => {
 };
 
 const createRoom = () => {
-  const initialConfig = { 
-    pointsToWin: pointsToWin.value,
-    mode: selectedModality.value
-  };
+  const initialConfig = { pointsToWin: pointsToWin.value };
   multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value, initialConfig);
 };
 
@@ -756,8 +578,9 @@ const rejectInvitation = (index) => {
 };
 
 const onRouletteFinished = () => {
-  // El servidor ara avança automàticament la sala a 'PLAYING' als 4.5s.
-  // Ja no enviem setRoomStatus des del client per evitar duplicats (race conditions)
+  if (isHost.value) {
+    multiplayerStore.setRoomStatus('PLAYING');
+  }
 };
 
 const onMatchFinished = ({ winner, scores }) => {
@@ -771,8 +594,6 @@ const returnToLobby = () => {
   showMatchResult.value = false;
   activeGameComponent.value = null;
   multiplayerScoreSystem.value?.resetLocalState();
-  // Avisar al servidor que aquest jugador vol tornar al lobby
-  multiplayerStore.returnToLobby();
 };
 
 const requestRematch = () => {
@@ -782,51 +603,14 @@ const requestRematch = () => {
   multiplayerStore.startMatch();
 };
 
-const localMouse = ref({ x: 0, y: 0 });
-let lastMouseMove = 0;
-const handleMouseMove = (e) => {
-  if (multiplayerStore.room?.gameConfig?.mode !== 'COOPERATIVE') return;
-  
-  const xPercent = (e.clientX / window.innerWidth) * 100;
-  const yPercent = (e.clientY / window.innerHeight) * 100;
-  
-  localMouse.value = { x: xPercent, y: yPercent };
-
-  const now = Date.now();
-  if (now - lastMouseMove < 40) return; // ~25 FPS
-  lastMouseMove = now;
-
-  multiplayerStore.sendMouseUpdate(xPercent, yPercent);
-};
-
 onMounted(() => {
-  // Connexió WebSocket en nextTick per no bloquejar el render inicial
   if (!multiplayerStore.isConnected) {
     multiplayerStore.connect();
   }
-  // fetchAllUsers es fa lazy: es crida quan l'usuari obre el panell d'exploradors
-  // Evitem carregar-lo aquí per no alentir l'entrada al lobby
+  astroStore.fetchUserStats();
+  astroStore.fetchAllUsers(); // Cargar todos los exploradores para reclutar
   multiplayerStore.fetchAvailableRooms();
 });
-
-// Carregar exploradors de forma lazy la primera vegada que calgui
-let explorersFetched = false;
-
-const intentStartMatch = () => {
-  if (multiplayerStore.room?.status === 'GAME_OVER') {
-    showMessage('No se puede iniciar: Espera a que todos los tripulantes regresen a la sala', 'warning');
-    return;
-  }
-  if (!canStartGame.value) return;
-  multiplayerStore.startMatch();
-};
-
-const ensureExplorersFetched = () => {
-  if (!explorersFetched) {
-    explorersFetched = true;
-    astroStore.fetchAllUsers();
-  }
-};
 </script>
 
 <style scoped>
@@ -1068,163 +852,22 @@ const ensureExplorersFetched = () => {
   z-index: 500;
   display: flex;
   flex-direction: column;
-  cursor: none; /* Amaguem el ratolí real per usar els de joc */
+}
+
+.game-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .game-content {
   flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-  position: relative;
-  width: 100%;
-  height: 100%;
+  justify-content: center;
   padding-top: 80px; /* Espai pel HUD fixat */
-}
-
-.game-hud-container {
-  position: fixed;
-  top: 10px;
-  left: 0;
-  width: 100%;
-  z-index: 2500;
-  pointer-events: none;
-}
-
-.hud-main-bar {
-  background: rgba(10, 25, 41, 0.95);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  border-radius: 50px;
-  height: 64px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 229, 255, 0.15);
-  pointer-events: auto;
-  backdrop-filter: blur(10px);
-}
-
-.hud-item {
-  min-width: 150px;
-}
-
-.hud-text {
-  line-height: 1.1;
-}
-
-.hud-name {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #00e5ff;
-  letter-spacing: 0.05em;
-}
-
-.hud-puntos {
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: white;
-}
-
-.hud-total {
-  font-size: 0.8rem;
-  color: #9e9e9e;
-  font-weight: 500;
-}
-
-.hud-center-unit {
-  min-width: 120px;
-}
-
-.vs-text {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #00e5ff;
-  line-height: 1;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-}
-
-.round-text {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #ffca28;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-/* Cursores remotos */
-.remote-cursor {
-  position: absolute;
-  pointer-events: none;
-  z-index: 9999;
-  transition: all 0.05s linear;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* El hotspot és la punta superior esquerra del icona */
-}
-
-.mouse-icon-shadow {
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
-}
-
-.local-cursor .cursor-tag {
-  color: #ffb74d;
-  border-color: rgba(255, 183, 77, 0.4);
-}
-
-.cursor-tag {
-  background: rgba(10, 25, 41, 0.9);
-  color: #00e5ff;
-  font-size: 10px;
-  font-weight: 900;
-  padding: 2px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 229, 255, 0.4);
-  margin-top: 4px;
-  white-space: nowrap;
-}
-
-/* Configuració mínima a la sala */
-.min-setting-select {
-  width: 100px;
-  font-size: 0.8rem !important;
-  font-weight: 700;
-  color: white;
-}
-.min-setting-select :deep(.v-field__input) {
-  padding-top: 0;
-  padding-bottom: 0;
-  min-height: unset;
-}
-.min-setting-select :deep(.v-select__selection-text) {
-  color: #00e5ff !important;
-}
-
-/* Minimapa flotante durante el juego */
-.game-minimap-layer {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 2000;
-  pointer-events: none;
-}
-.sabotage-notif {
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.5rem;
-  font-weight: 900;
-  text-shadow: 0 0 15px currentColor;
-  z-index: 10;
-}
-
-.floating-score-enter-active {
-  animation: float-up 2s ease-out forwards;
-}
-
-@keyframes float-up {
-  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
-  20% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
-  80% { opacity: 1; transform: translate(-50%, -60px) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -80px) scale(0.8); }
 }
 
 .modality-card {
@@ -1255,27 +898,5 @@ const ensureExplorersFetched = () => {
 .text-7px {
   font-size: 8px;
   height: 16px;
-}
-.action-glow-red {
-  box-shadow: 0 0 15px rgba(255, 82, 82, 0.4) !important;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 82, 82, 0.5) !important;
-}
-
-.action-glow-red:hover {
-  box-shadow: 0 0 25px rgba(255, 82, 82, 0.7) !important;
-  transform: translateY(-2px);
-  background-color: #FF5252 !important;
-  color: white !important;
-}
-
-.action-glow-red-small {
-  transition: all 0.3s ease;
-}
-
-.action-glow-red-small:hover {
-  background-color: rgba(255, 82, 82, 0.15) !important;
-  color: #FF5252 !important;
-  box-shadow: 0 0 10px rgba(255, 82, 82, 0.3) !important;
 }
 </style>
