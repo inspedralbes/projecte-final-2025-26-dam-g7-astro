@@ -2,14 +2,16 @@
   <v-container class="fill-height d-flex flex-column align-center justify-center game-container">
     
     <!-- Capçalera -->
-    <v-card width="100%" max-width="800" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
+    <v-card width="100%" max-width="800" class="mb-2 pa-2 bg-deep-purple-darken-4 elevation-10" rounded="xl">
       <div class="d-flex justify-space-between align-center">
         <div>
-          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar</h2>
+          <h2 class="text-h6 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar</h2>
           <div class="text-caption text-grey-lighten-2">
-            <span>Puntuació: {{ score }}</span>
-            <span class="mx-2">|</span>
-            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+            <template v-if="!isMultiplayer">
+              <span>Puntuació: {{ score }}</span>
+              <span class="mx-2">|</span>
+              <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+            </template>
           </div>
         </div>
         <div class="d-flex align-center gap-4">
@@ -25,7 +27,7 @@
     <v-row v-if="!gameFinished" class="w-100 d-flex justify-center align-center" no-gutters>
       
       <!-- Estrella -->
-      <v-col cols="12" md="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-md-0">
+      <v-col cols="12" md="6" class="d-flex justify-center align-center position-relative star-col mb-4 mb-md-0">
         <div class="star-wrapper">
           <svg class="star-svg" viewBox="0 0 400 400">
             <!-- Polígons d'il·luminació interior (Puntes) -->
@@ -96,7 +98,7 @@
             <p class="text-caption text-grey">Ell té la definició</p>
           </div>
 
-          <v-divider class="mb-6 border-opacity-25"></v-divider>
+          <v-divider class="mb-4 border-opacity-25"></v-divider>
 
           <div v-if="canInput" class="text-center mb-4">
             <p class="text-overline text-grey-lighten-1 mb-2">ESCRIU LA PARAULA</p>
@@ -149,7 +151,7 @@
               </v-btn>
           </div>
           <div v-else class="text-center py-4">
-              <v-chip color="orange" variant="outlined" label>MODRE ESCRIU LA RESPOSTA</v-chip>
+              <v-chip color="orange" variant="outlined" label>EL COMPANY ESCRIU LA RESPOSTA</v-chip>
           </div>
         </v-card>
       </v-col>
@@ -167,7 +169,7 @@
     </template>
 
     <!-- Pantalla Final (només en single player) -->
-    <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <v-card v-if="gameFinished && !isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">Rosco Completat!</h2>
       <div class="d-flex justify-space-around my-6">
@@ -422,13 +424,17 @@ onMounted(() => {
     startTimer();
 });
 
-onUnmounted(() => { if (timerInterval) clearInterval(timerInterval); });
+onUnmounted(() => { 
+    if (timerInterval) clearInterval(timerInterval); 
+    if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(null);
+});
 
 const startTimer = () => {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         if (gameFinished.value) return;
         timeLeft.value = Math.max(0, timeLeft.value - 1);
+        if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(timeLeft.value);
         if (timeLeft.value === 0) finishGame();
     }, 1000);
 };
@@ -648,13 +654,13 @@ const isSegmentGlowing = (segIdx) => {
 }
 
 .star-col {
-    min-height: 420px;
+    min-height: 340px;
 }
 
 .star-wrapper {
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 340px;
+    height: 340px;
 }
 
 .star-svg {
@@ -697,7 +703,7 @@ const isSegmentGlowing = (segIdx) => {
 
 .star-node {
     position: absolute;
-    width: 60px; height: 60px;
+    width: 50px; height: 50px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -709,7 +715,7 @@ const isSegmentGlowing = (segIdx) => {
 }
 
 .node-letter {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 900;
     color: white;
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
@@ -727,7 +733,7 @@ const isSegmentGlowing = (segIdx) => {
     box-shadow: 0 0 30px rgba(0, 229, 255, 0.6), 0 0 60px rgba(0, 229, 255, 0.2);
     border-color: #80DEEA;
     animation: node-float 2s ease-in-out infinite;
-    width: 70px; height: 70px;
+    width: 60px; height: 60px;
 }
 
 .node-current .node-letter { color: #0b0f19; }
@@ -767,7 +773,7 @@ const isSegmentGlowing = (segIdx) => {
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 100px; height: 100px;
+    width: 80px; height: 80px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -783,7 +789,7 @@ const isSegmentGlowing = (segIdx) => {
     color: #00e5ff;
     text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
     line-height: 1;
-    font-size: 2rem !important;
+    font-size: 1.8rem !important;
 }
 
 .rocket-trail-group circle {

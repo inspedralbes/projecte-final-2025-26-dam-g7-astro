@@ -1,15 +1,17 @@
 <template>
   <v-container class="fill-height d-flex flex-column align-center justify-center">
     
-    <v-card width="100%" max-width="600" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
+    <v-card width="100%" max-width="900" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">Nivell {{ level }}</h2>
           <div class="text-caption text-grey-lighten-2 d-flex align-center">
-            <span>Puntuació: {{ score }}</span>
-            <span class="mx-2">|</span>
-            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
-            <v-icon v-if="isSlowTimeActive" size="small" color="blue-accent-2" class="ml-1">mdi-timer-sand-empty</v-icon>
+            <template v-if="!props.isMultiplayer">
+              <span>Puntuació: {{ score }}</span>
+              <span class="mx-2">|</span>
+              <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
+            </template>
+            <v-icon v-if="isSlowTimeActive" size="small" color="blue-accent-2" :class="props.isMultiplayer ? '' : 'ml-1'">mdi-timer-sand-empty</v-icon>
             <v-icon v-if="isShieldActive" size="small" color="teal-accent-4" class="ml-2">mdi-shield-check</v-icon>
           </div>
         </div>
@@ -28,7 +30,7 @@
     </v-card>
 
     <!-- Àrea de Joc -->
-    <v-card v-if="!gameFinished" width="100%" max-width="600" class="pa-6 text-center bg-grey-darken-4 position-relative overflow-hidden game-board" rounded="xl">
+    <v-card v-if="!gameFinished" width="100%" max-width="900" class="pa-6 text-center bg-grey-darken-4 position-relative overflow-hidden game-board" rounded="xl">
         <!-- Overlay Meteoritos -->
         <div v-if="isMeteorActive" class="meteor-shower-container">
             <div v-for="n in 12" :key="n" class="meteor" :style="getMeteorStyle(n)"></div>
@@ -287,6 +289,7 @@ const startTimer = () => {
   timerInterval = setInterval(() => {
     if (gameFinished.value) return;
     timeLeft.value = Math.max(0, timeLeft.value - 1);
+    if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(timeLeft.value);
     if (timeLeft.value === 0) finishGame();
   }, tickTime);
 };
@@ -350,7 +353,10 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   }
 });
 watch(score, (newScore) => { if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore }); });
-onUnmounted(() => { if (timerInterval) clearInterval(timerInterval); });
+onUnmounted(() => { 
+  if (timerInterval) clearInterval(timerInterval); 
+  if (props.isMultiplayer) multiplayerStore.setLocalTimeLeft(null);
+});
 </script>
 
 

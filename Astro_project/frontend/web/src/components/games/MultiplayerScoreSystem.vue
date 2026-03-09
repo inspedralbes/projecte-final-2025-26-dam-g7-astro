@@ -17,9 +17,13 @@
 
         <div class="hud-center-unit mx-8 text-center position-relative">
           <div class="vs-text" :class="{ 'text-cyan-accent-2': isCooperative }">{{ isCooperative ? 'CO-OP' : 'VS' }}</div>
-          <div class="round-text">
+          <div class="round-text mb-1">
             <span v-if="!isCooperative">RONDA {{ currentRound }} / {{ totalRounds }}</span>
             <span v-else>EXPEDICIÓN COOPERATIVA</span>
+          </div>
+
+          <div v-if="multiplayerStore.localTimeLeft !== null" class="hud-time font-weight-black text-h5" :class="multiplayerStore.localTimeLeft <= 10 ? 'text-error animate-pulse' : 'text-white'">
+            00:{{ multiplayerStore.localTimeLeft < 10 ? '0' + multiplayerStore.localTimeLeft : multiplayerStore.localTimeLeft }}
           </div>
 
           <transition-group name="floating-score">
@@ -269,6 +273,20 @@ defineExpose({
   color: #ffca28;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+.hud-time {
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+  line-height: 1;
+}
+
+.animate-pulse {
+  animation: pulse-red 1s infinite alternate;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(1); text-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+  100% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
 }
 
 .sabotage-notif {

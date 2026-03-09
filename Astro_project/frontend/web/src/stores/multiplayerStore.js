@@ -12,14 +12,18 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         error: null,
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
-        returnedPlayers: [], // Jugadores que han pulsado "Volver al lobby"
         remoteCursors: {}, // Coordenadas de ratón de otros jugadores: { username: { x, y } }
-        activeEffects: {} // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
+        activeEffects: {}, // Efectos activos para el jugador local: { effectId: { type, duration, startTime } }
+        localTimeLeft: null // Temps restant global de la partida local
     }),
 
     actions: {
         getSession() {
             return useSessionStore();
+        },
+
+        setLocalTimeLeft(time) {
+            this.localTimeLeft = time;
         },
 
         async fetchAvailableRooms() {
