@@ -22,7 +22,7 @@ L'agent ha de respectar les següents tecnologies per evitar "al·lucinacions" d
 
 ### 🌐 Backend
 - **Core:** Node.js + Express.
-- **Base de Dades:** MongoDB (Mongoose).
+- **Base de Dades:** MongoDB Atlas.
 - **Comunicació:** WebSockets per a funcionalitats en temps real.
 - **Funcions:** Lògica centralitzada de XP, monedes, raches i inventari.
 
