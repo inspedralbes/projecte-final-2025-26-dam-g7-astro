@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    # No necesita "ports" porque Nginx hablará con él internamente
 
   frontend:
     build:
@@ -15,6 +16,12 @@ services:
     container_name: astro_frontend_prod
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "80:80"   # Redirección
+      - "443:443" # El candadito
+    volumes:
+      # 1. Tu archivo de configuración de Nginx retocado
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # 2. Los certificados de Let's Encrypt del servidor real
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend

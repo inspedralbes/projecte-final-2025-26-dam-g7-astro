@@ -1,32 +1,25 @@
 # --- ETAPA 1: Construcción (Build) ---
 FROM node:24-alpine AS build-stage
 
-
 WORKDIR /app
-
 
 COPY package*.json ./
 RUN npm ci
 
-
 COPY . .
 RUN npm run build
 
-
-# --- ETAPA 2: Servidor Web Ligero (Nginx) ---
+# --- ETAPA 2: Servidor Web (Nginx) ---
 FROM nginx:stable-alpine AS production-stage
 
-
-# Copiamos los archivos de Vue compilados
+# Copiamos los archivos compilados (Asegúrate de que Astro/Vue genere la carpeta /dist)
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-
-# Inyectamos nuestra configuración HTTP
+# Inyectamos nuestra configuración (La que incluye el bloque SSL y Proxy Inverso)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-
-# Exponemos solo el puerto HTTP
-EXPOSE 80
-
+# EXPOSICIÓN DE PUERTOS
+# Exponemos el 80 (para la redirección) y el 443 (para el candadito)
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
