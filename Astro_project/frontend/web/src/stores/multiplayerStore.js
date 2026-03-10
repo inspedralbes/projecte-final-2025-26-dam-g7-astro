@@ -3,7 +3,14 @@ import { useSessionStore } from './sessionStore';
 import { API_BASE_URL, requestJson } from './astroShared';
 
 function buildWsUrl() {
-    return API_BASE_URL.replace(/^http/i, 'ws');
+    // 1. Reemplazamos 'http' o 'https' por 'ws'
+    let wsUrl = API_BASE_URL.replace(/^http/i, 'ws');
+    
+    // 2. Nos aseguramos de que no termine en barra /
+    wsUrl = wsUrl.replace(/\/$/, '');
+    
+    // 3. Añadimos el endpoint '/ws' que espera Nginx
+    return `${wsUrl}/ws`;
 }
 
 export const useMultiplayerStore = defineStore('multiplayer', {
