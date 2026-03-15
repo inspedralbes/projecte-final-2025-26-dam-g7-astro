@@ -84,13 +84,14 @@
         <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
           <div v-if="canSeeDefinition" class="mb-4 position-relative">
             <v-chip color="cyan" label class="mb-2 font-weight-bold">Definició</v-chip>
-            <p class="text-h6 text-white transition-all" :class="{ 'fog-effect': isFogActive }">
+            <p class="text-h6 text-white transition-all">
                 {{ isFogActive ? scrambledQuestion : currentLetter.question }}
             </p>
-            <div v-if="isFogActive" class="fog-overlay">
-                <v-icon icon="mdi-cloud-outline" color="white" class="mr-2"></v-icon>
-                BOIRA DE DADES ACTIVADA
+            <!-- Fog Effect Over Definition -->
+            <div v-if="isFogActive" class="fog-effect">
+                <div v-for="n in 5" :key="n" class="fog-overlay" :style="{ animationDelay: (n * 0.5) + 's' }"></div>
             </div>
+
           </div>
           <div v-else class="mb-4 text-center py-8">
             <v-icon size="48" color="cyan-darken-2" class="mb-2">mdi-account-voice</v-icon>
@@ -369,11 +370,15 @@ const currentLetter = computed(() => {
     return roscoLetters.value[currentIndex.value];
 });
 
-const isFogActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_FOG'));
-const hasShield = ref(false);
+// --- EFECTES MULTIJUGADOR ---
+const isFogActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_FOG_ROSCO'));
 
 const scrambledQuestion = computed(() => {
-    return currentLetter.value.question.split('').map(c => Math.random() > 0.7 ? '*' : c).join('');
+  if (!currentLetter.value?.question) return '';
+  return currentLetter.value.question.split('').map(char => {
+    if (char === ' ') return ' ';
+    return Math.random() > 0.4 ? char : (['#','*','@','%','&'][Math.floor(Math.random()*5)]);
+  }).join('');
 });
 
 const canSeeDefinition = computed(() => {
@@ -806,32 +811,25 @@ const isSegmentGlowing = (segIdx) => {
 
 /* Efectes */
 .fog-effect {
-    filter: blur(8px);
-    user-select: none;
-    opacity: 0.3;
-}
-
-.fog-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 229, 255, 0.2);
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 1px solid #00e5ff;
-    backdrop-filter: blur(4px);
-    font-weight: bold;
-    color: white;
-    z-index: 10;
-    white-space: nowrap;
-    animation: pulse-fog 2s infinite;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10; pointer-events: none;
+    overflow: hidden; border-radius: 12px;
+}
+.fog-overlay {
+    position: absolute; width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    top: -50%; left: -50%;
+    animation: fog-drift 4s linear infinite;
+}
+@keyframes fog-drift {
+    0% { transform: translate(0, 0); }
+    33% { transform: translate(150px, 100px); }
+    66% { transform: translate(50px, 200px); }
+    100% { transform: translate(0, 0); }
 }
 
-@keyframes pulse-fog {
-    0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-}
+
 
 .shield-indicator {
     position: fixed;

@@ -58,6 +58,7 @@
             :key="word.id"
             class="falling-word"
             :class="[getWordStatusClass(word.status), word.direction || 'top-down', { 'magnet-glow': isMagnetActive && word.isRhyme }]"
+
             :style="{ 
                 left: word.x + '%', 
                 top: word.y + '%',
@@ -83,6 +84,9 @@
             <v-icon icon="mdi-magnet" class="mr-2"></v-icon>
             IMANT DE RIMES
         </div>
+
+
+
 
         <!-- Cursores compartis (Només en COOPERATIU) -->
         <template v-if="remoteCursor">
@@ -203,6 +207,7 @@ const showTimeBonus = ref(false);
 const isDustStormActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_STORM'));
 const isMagnetActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_MAGNET'));
 
+
 const currentTarget = ref(dictionary[0]);
 const activeWords = ref([]);
 
@@ -292,6 +297,7 @@ const spawnWord = () => {
         x = posX;
         y = -10;
     }
+
 
     activeWords.value.push({
       id: wordIdCounter++,
@@ -700,6 +706,8 @@ const getWordStatusClass = (status) => {
     from { transform: scale(1); }
     to { transform: scale(1.1); }
 }
+
+
 
 .remote-cursor-game {
   position: absolute;

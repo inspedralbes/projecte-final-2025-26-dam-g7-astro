@@ -15,6 +15,7 @@ class RoomManager {
         ];
         this.roundTimers = new Map();
         this.roundGameScores = new Map();
+        this.roundPlayerTimes = new Map(); // Temps o duració per a cada jugador en la ronda actual
         this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadors que han acabat
         this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
@@ -360,6 +361,7 @@ class RoomManager {
 
         this.rooms.delete(roomId);
         this.roundGameScores.delete(roomId);
+        this.roundPlayerTimes.delete(roomId);
         this.roundFinishedPlayers.delete(roomId);
         this.roundTimers.delete(roomId);
 
@@ -523,6 +525,7 @@ class RoomManager {
 
         if (status === 'PLAYING') {
             this.roundGameScores.set(roomId, {}); // Resetear puntos de la ronda
+            this.roundPlayerTimes.set(roomId, {}); // Resetear temps
             this.roundFinishedPlayers.set(roomId, new Set()); // Resetear finalizados
             this.startRoundTimer(roomId);
         }
@@ -576,6 +579,14 @@ class RoomManager {
             this.roundFinishedPlayers.set(roomId, finished);
         }
         finished.add(user);
+
+        // Guardar el temps real de finalització per al gràfic
+        if (room.gameConfig && room.gameConfig.startTime) {
+            const times = this.roundPlayerTimes.get(roomId) || {};
+            if (!times[user]) times[user] = (Date.now() - room.gameConfig.startTime) / 1000;
+            this.roundPlayerTimes.set(roomId, times);
+        }
+
         console.log(`👤 [Room ${roomId}] Jugador ${user} ha acabat. (${finished.size}/${room.players.size})`);
 
         // Avisar a tots que algú ha acabat (per si el rival vol saber)
@@ -660,11 +671,14 @@ class RoomManager {
         // AÑADIDO: Guardar en el historial
         if (!room.gameConfig.roundHistory) room.gameConfig.roundHistory = [];
 
+        const playerTimes = this.roundPlayerTimes.get(roomId) || {};
+
         const historyItem = {
             round: room.gameConfig.currentRound + 1,
             game: room.gameConfig.currentGame,
             winner: winner,
-            scores: { ...roundScores }
+            scores: { ...roundScores },
+            times: { ...playerTimes }
         };
 
         // Si es cooperativo, guardamos también el progreso de los equipos
@@ -775,6 +789,12 @@ class RoomManager {
             const scores = this.roundGameScores.get(roomId) || {};
             scores[user] = action.score;
             this.roundGameScores.set(roomId, scores);
+
+            if (room.gameConfig && room.gameConfig.startTime) {
+                const times = this.roundPlayerTimes.get(roomId) || {};
+                times[user] = (Date.now() - room.gameConfig.startTime) / 1000;
+                this.roundPlayerTimes.set(roomId, times);
+            }
 
             this.broadcastToRoom(roomId, {
                 type: 'SCORE_UPDATE_LIVE',

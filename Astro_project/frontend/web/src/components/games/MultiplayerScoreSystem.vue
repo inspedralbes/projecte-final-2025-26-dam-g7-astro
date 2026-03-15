@@ -16,7 +16,9 @@
         </div>
 
         <div class="hud-center-unit mx-8 text-center position-relative">
-          <div class="vs-text" :class="{ 'text-cyan-accent-2': isCooperative }">{{ isCooperative ? 'CO-OP' : 'VS' }}</div>
+          <div v-if="!shouldHideOpponent" class="vs-text" :class="{ 'text-cyan-accent-2': isCooperative }">{{ isCooperative ? 'CO-OP' : 'VS' }}</div>
+          <div v-else class="text-overline text-cyan-accent-2 mb-n1">PUNTUACIÓ ACTUAL</div>
+
           <div class="round-text mb-1">
             <span v-if="!isCooperative">RONDA {{ currentRound }} / {{ totalRounds }}</span>
             <span v-else>EXPEDICIÓN COOPERATIVA</span>
@@ -38,7 +40,7 @@
           </transition-group>
         </div>
 
-        <div class="hud-item d-flex align-center flex-row-reverse gap-3 text-right">
+        <div v-if="!shouldHideOpponent" class="hud-item d-flex align-center flex-row-reverse gap-3 text-right">
           <v-avatar size="36" class="border-cyan">
             <v-img :src="resolveAvatar(opponentName)"></v-img>
           </v-avatar>
@@ -50,6 +52,8 @@
             </div>
           </div>
         </div>
+        <div v-else style="min-width: 150px;"></div>
+
       </div>
     </div>
 
@@ -107,6 +111,11 @@ const localPlayer = computed(() => astroStore.user || 'Tu');
 const currentRound = computed(() => (multiplayerStore.room?.gameConfig?.currentRound ?? 0) + 1);
 const totalRounds = computed(() => multiplayerStore.room?.gameConfig?.totalRounds ?? '?');
 const isCooperative = computed(() => multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE');
+const shouldHideOpponent = computed(() => {
+  // Ocultamos si hay más de 1 jugador, a petición del usuario
+  return !isCooperative.value && (multiplayerStore.room?.players?.length || 0) > 1;
+});
+
 
 const resolveAvatar = (username) => {
   return props.getPlayerAvatar?.(username) || '/Astronauta_blanc.jpg';

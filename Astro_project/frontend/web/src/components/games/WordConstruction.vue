@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height d-flex flex-column align-center justify-center">
     
-    <v-card width="100%" max-width="900" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
+    <v-card width="100%" max-width="600" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">Nivell {{ level }}</h2>
@@ -30,18 +30,8 @@
     </v-card>
 
     <!-- Àrea de Joc -->
-    <v-card v-if="!gameFinished" width="100%" max-width="900" class="pa-6 text-center bg-grey-darken-4 position-relative overflow-hidden game-board" rounded="xl">
-        <!-- Overlay Meteoritos -->
-        <div v-if="isMeteorActive" class="meteor-shower-container">
-            <div v-for="n in 12" :key="n" class="meteor" :style="getMeteorStyle(n)"></div>
-            <div class="meteor-banner-text">¡AVISO: LLUVIA DE METEORITOS!</div>
-        </div>
+    <v-card v-if="!gameFinished" width="100%" max-width="600" class="pa-6 text-center bg-grey-darken-4 position-relative overflow-hidden game-board" rounded="xl">
 
-        <!-- Overlay Boira (Niebla) -->
-        <div v-if="isFogActive" class="fog-overlay-full">
-            <div class="fog-particle" v-for="n in 10" :key="'f-'+n"></div>
-            <div class="fog-text">SISTEMA INTERFERIDO: ERROR DE VISIÓN</div>
-        </div>
       
       <p class="text-h6 mb-2 text-grey-lighten-1">Arrossega les lletres per construir l'estructura!</p>
       <div class="d-flex justify-center align-center gap-4 mb-4">
@@ -62,11 +52,10 @@
         <template #item="{ element }">
           <v-chip
             class="ma-1 text-h4 font-weight-black pa-6 transition-all drag-item-chip"
-            :color="isQuantumActive && element.letter === currentWordObj.word[0] ? 'yellow-accent-4' : 'cyan-accent-3'"
+            color="cyan-accent-3"
             variant="outlined"
             label
             :class="{ 
-              'quantum-glow': isQuantumActive && element.letter === currentWordObj.word[0],
               'dragging': drag 
             }"
           >
@@ -74,6 +63,19 @@
           </v-chip>
         </template>
       </draggable>
+
+      <div class="word-card-container position-relative">
+        <!-- Efectos de Sabotaje -->
+        <div v-if="isMeteorActive" class="meteor-shower-container">
+            <div v-for="n in 6" :key="'meteor-'+n" class="meteor" :style="getMeteorStyle(n)"></div>
+            <div class="meteor-banner-text">¡LLUVIA DE METEORITOS!</div>
+        </div>
+
+        <div v-if="isFogActive" class="fog-overlay-full">
+            <div v-for="n in 8" :key="'fog-'+n" class="fog-particle" :style="{ '--d': n }"></div>
+            <div class="fog-text">NIEBLA ESPACIAL</div>
+        </div>
+      </div>
 
       <!-- Cursores compartis (Només en COOPERATIU) -->
       <template v-if="remoteCursor">
@@ -165,16 +167,20 @@ const timeLeft = ref(totalTime);
 let timerInterval = null;
 const drag = ref(false); // Estado para controlar si se está arrastrando
 
-// --- EFECTES MULTIJUGADOR ---
-const isMeteorActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_METEORS'));
+// --- EFECTOS MULTIJUGADOR ---
+const isMeteorActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_METEOR'));
 const isQuantumActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_QUANTUM'));
 const isFogActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_FOG'));
 
-const getMeteorStyle = (n) => ({
-    left: (n * 12) + '%',
-    animationDelay: (n * 0.4) + 's',
-    animationDuration: (1.5 + Math.random()) + 's'
-});
+const getMeteorStyle = (n) => {
+    return {
+        left: (n * 15) + '%',
+        top: '-10%',
+        animationDelay: (n * 0.4) + 's'
+    };
+};
+// (Netejat)
+
 
 const currentStep = ref(0);
 const totalSteps = ref(5);
@@ -375,121 +381,53 @@ onUnmounted(() => {
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
 }
 
-/* Efectes */
+/* Efectes Multijugador */
 .meteor-shower-container {
     position: absolute;
-    inset: 0;
-    z-index: 50;
-    pointer-events: none;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 100; pointer-events: none;
     overflow: hidden;
+    background: rgba(255, 87, 34, 0.1);
 }
-
 .meteor {
-    position: absolute;
-    top: -50px;
-    width: 40px;
-    height: 100px;
-    background: linear-gradient(to bottom, transparent, #ff5722, #f44336);
-    filter: blur(2px);
-    border-radius: 50% 50% 10px 10px;
-    opacity: 0.8;
-    animation: meteor-fall linear infinite;
+    position: absolute; width: 4px; height: 60px;
+    background: linear-gradient(to bottom, transparent, #ff5722, #ffee58);
+    opacity: 0.8; filter: blur(1px);
+    animation: meteor-fall 1.5s linear infinite;
 }
-
 @keyframes meteor-fall {
-    from { transform: translateY(-100px) rotate(45deg); }
-    to { transform: translateY(800px) rotate(45deg); }
+    from { transform: translateY(-100px) rotate(25deg); }
+    to { transform: translateY(600px) rotate(25deg); }
 }
-
 .meteor-banner-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #ff5722;
-    font-weight: 900;
-    font-size: 2rem;
-    text-shadow: 0 0 10px #000;
-    z-index: 60;
-    animation: blink 1s infinite;
+    position: absolute; top: 20%; width: 100%; text-align: center;
+    color: #ff5722; font-weight: 900; font-size: 2rem;
+    text-shadow: 0 0 20px #ff5722; animation: pulse 1s infinite alternate;
 }
 
-.error-shake {
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-}
-@keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-}
-.quantum-glow {
-    border: 3px solid #ffea00 !important;
-    box-shadow: 0 0 15px #ffea00 !important;
-    animation: pulse-quantum 1.5s infinite;
-}
-
-@keyframes pulse-quantum {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.transition-all { transition: all 0.3s ease; }
-
-.remote-cursor-game {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1000;
-  transition: all 0.05s linear;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.cursor-tag-mini {
-  background: rgba(0, 229, 255, 0.8);
-  color: black;
-  font-size: 8px;
-  font-weight: 900;
-  padding: 0px 4px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
 .fog-overlay-full {
-    position: absolute;
-    inset: 0;
-    z-index: 150;
-    background: rgba(255, 255, 255, 0.2);
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    z-index: 100; pointer-events: none;
+    background: rgba(255,255,255,0.1);
     backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
 }
-
-.fog-text {
-    color: white;
-    font-weight: 900;
-    font-size: 1.5rem;
-    text-shadow: 0 0 10px #000;
-    background: rgba(0,0,0,0.5);
-    padding: 10px 20px;
-    border-radius: 10px;
-}
-
 .fog-particle {
-    position: absolute;
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: fog-float 10s infinite alternate;
+    position: absolute; width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    animation: fog-move 10s linear infinite;
+    animation-delay: calc(var(--d) * -1.2s);
 }
-
-@keyframes fog-float {
-    from { transform: translate(-20%, -20%); }
-    to { transform: translate(20%, 20%); }
+@keyframes fog-move {
+    0% { transform: translate(-150%, -150%); }
+    25% { transform: translate(50%, -120%); }
+    50% { transform: translate(120%, 50%); }
+    75% { transform: translate(-80%, 130%); }
+    100% { transform: translate(-150%, -150%); }
+}
+.fog-text {
+    position: absolute; bottom: 10%; width: 100%; text-align: center;
+    color: white; font-weight: 800; font-size: 1.5rem; letter-spacing: 15px;
+    opacity: 0.6;
 }
 </style>

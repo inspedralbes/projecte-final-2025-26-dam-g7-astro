@@ -376,7 +376,7 @@
         <v-card v-if="!multiplayerStore.room" class="side-panel-card rounded-xl pa-0 mb-6 overflow-hidden" elevation="8">
           <div class="side-panel-header pa-4 d-flex align-center">
             <v-icon icon="mdi-map-search" color="cyan-accent-2" class="mr-3"></v-icon>
-            <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">RED DE MISIONES</h3>
+            <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">EXPLORACIÓN DE SECTORES</h3>
           </div>
           
           <div class="pa-4">
@@ -550,7 +550,7 @@ const finalScores = ref({});
 const matchWinnerName = ref(null);
 const selectedModality = ref('BATTLE');
 const modalities = [
-  { id: 'BATTLE', name: 'Batalla Individual', icon: 'mdi-sword-cross', active: true },
+  { id: 'BATTLE', name: 'Todos contra todos', icon: 'mdi-sword-cross', active: true },
   { id: 'COOPERATIVE', name: 'Misión Cooperativa', icon: 'mdi-account-group', active: true },
   { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: false },
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
@@ -831,7 +831,8 @@ const ensureExplorersFetched = () => {
 
 <style scoped>
 .lobby-container {
-  min-height: 100%;
+  min-height: 100vh;
+  position: relative; /* Para que el overlay absoluto se base aquí */
 }
 
 /* Mission Control Panel */
@@ -1059,16 +1060,16 @@ const ensureExplorersFetched = () => {
 }
 
 .game-active-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: #0b1421;
-  z-index: 500;
+  z-index: 1000; /* Tapamos el contenido central, pero dejamos los sidebars visibles como walls */
   display: flex;
   flex-direction: column;
-  cursor: none; /* Amaguem el ratolí real per usar els de joc */
+  cursor: auto !important;
 }
 
 .game-content {
@@ -1079,7 +1080,6 @@ const ensureExplorersFetched = () => {
   position: relative;
   width: 100%;
   height: 100%;
-  padding-top: 80px; /* Espai pel HUD fixat */
 }
 
 .game-hud-container {

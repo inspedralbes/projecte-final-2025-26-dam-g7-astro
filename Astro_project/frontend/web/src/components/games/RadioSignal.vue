@@ -23,6 +23,7 @@
                 <div class="wave-panels position-relative">
                     <div v-if="isStaticActive" class="static-noise-overlay"></div>
                     
+
                     <div v-if="canSeeTarget" class="wave-screen" :class="{ 'screen-synced': isTuned }">
                         <div class="screen-label">TARGET</div>
                         <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
@@ -208,6 +209,7 @@ const isStaticActive = computed(() => Object.values(multiplayerStore.activeEffec
 const isPrecisionActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_PRECISION'));
 
 const tuningThreshold = computed(() => isPrecisionActive.value ? baseTuningThreshold * 2.5 : baseTuningThreshold);
+
 
 const userGuess = ref('');
 const isTuned = ref(false);
@@ -927,6 +929,8 @@ canvas { display: block; width: 100%; height: auto; }
     box-shadow: 0 0 10px rgba(0,229,255,0.5);
     z-index: 100;
 }
+
+
 
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 

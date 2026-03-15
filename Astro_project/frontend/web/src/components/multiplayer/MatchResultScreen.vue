@@ -136,6 +136,35 @@
       </div>
     </div>
 
+    <!-- Historial de Rondas -->
+    <div v-if="!isCooperative && multiplayerStore.room?.gameConfig?.roundHistory?.length" class="round-history-section w-100 max-width-600 mb-10">
+      <div class="text-overline text-grey-darken-1 mb-4 text-center">DETALLES POR RONDA</div>
+      <div class="d-flex flex-column gap-3">
+        <div v-for="h in multiplayerStore.room?.gameConfig?.roundHistory" :key="'rh-'+h.round" 
+             class="round-history-item d-flex justify-space-between align-center px-6 py-3 rounded-xl border-light">
+          <div class="d-flex align-center">
+            <div class="text-h5 font-weight-black text-cyan-accent-2 mr-4">R{{ h.round }}</div>
+            <div class="d-flex flex-column text-left">
+              <span class="text-body-1 font-weight-bold text-white">{{ h.game }}</span>
+              <span class="text-caption text-grey-lighten-1">Tú: {{ h.scores[myName] || 0 }} pts | {{ opponentName }}: {{ h.scores[opponentName] || 0 }} pts</span>
+            </div>
+          </div>
+          <div class="d-flex align-center text-right">
+            <div class="d-flex flex-column mr-3">
+               <span class="text-caption text-grey" v-if="h.winner">Vencedor</span>
+               <span class="text-body-1 font-weight-black tracking-wide" :class="h.winner === myName ? 'text-amber' : (h.winner ? 'text-pink-accent-2' : 'text-grey')">
+                 {{ h.winner === myName ? 'TÚ' : (h.winner || 'EMPATE') }}
+               </span>
+            </div>
+            <v-avatar size="40" :class="h.winner === myName ? 'border-gold' : 'border-cyan'" v-if="h.winner">
+              <v-img :src="getPlayerAvatar(h.winner)"></v-img>
+            </v-avatar>
+            <v-icon v-else icon="mdi-handshake" color="grey-lighten-1" size="40"></v-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Botonera -->
     <div class="d-flex flex-column align-center gap-4">
       <v-btn
@@ -221,11 +250,24 @@ const getChartPoints = (player) => {
   const history = multiplayerStore.room?.gameConfig?.roundHistory || [];
   if (!history.length) return [];
   const points = [{ x: 0, y: 180 }];
+  
   let accumulated = 0;
+  let maxScore = 1;
+
+  // Encontramos la máxima puntuación acumulada posible final para normalizar la Y
+  let sumMe = 0;
+  let sumOpp = 0;
+  history.forEach((h) => {
+      sumMe += h.scores[myName.value] || 0;
+      sumOpp += h.scores[props.opponentName] || 0;
+  });
+  maxScore = Math.max(sumMe, sumOpp, 1);
+
   const widthStep = 500 / history.length;
   history.forEach((h, idx) => {
     accumulated += h.scores[player] || 0;
-    const y = 180 - (Math.min(accumulated, history.length) / history.length) * 160;
+    // La Y va desde 180 (abajo, 0 puntos) hasta 20 (arriba, maxScore puntos, para dejar margen al techo)
+    const y = 180 - (accumulated / maxScore) * 160;
     points.push({ x: (idx + 1) * widthStep, y });
   });
   return points;
@@ -337,4 +379,12 @@ const getTeamChartPath = (teamId) => {
 .legend-color { width: 12px; height: 12px; border-radius: 3px; }
 .me-bg { background: #00E5FF; box-shadow: 0 0 10px #00E5FF; }
 .opp-bg { background: #FF4081; box-shadow: 0 0 10px #FF4081; }
+
+.round-history-item {
+  background: rgba(11, 20, 33, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.border-light { border: 1px solid rgba(255,255,255,0.05); }
+.tracking-wide { letter-spacing: 0.1em; }
 </style>

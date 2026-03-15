@@ -29,8 +29,7 @@
         class="letter-cell d-flex justify-center align-center text-h4 font-weight-bold cursor-pointer"
         :style="{ width: cellSize + 'px', height: cellSize + 'px' }"
         :class="{ 
-          'letter-correct': correctClicked && index === targetIndex,
-          'letter-decoy': decoyIndex === index && correctClicked
+          'letter-correct': correctClicked && index === targetIndex
         }"
         @click="checkLetter(index)"
       >
@@ -44,9 +43,18 @@
       :class="{ 
         'flashlight-off': isTransitioning, 
         'flashlight-full-dark': isChangingLevel,
-        'sweep-active': isSweepActive 
+        'sweep-active': isSweepActive
       }"
     >
+      <div v-if="isSweepActive" class="rs-effect-banner sweep-banner">
+          <v-icon icon="mdi-radar" class="mr-2"></v-icon>
+          BARRIDO DE RADAR AMPLIADO
+      </div>
+      <div v-if="isDecoyActive" class="rs-effect-banner decoy-banner">
+          <v-icon icon="mdi-ghost" class="mr-2"></v-icon>
+          SEÑUELOS DETECTADOS
+      </div>
+
       <defs>
         <radialGradient id="holeGradient">
            <stop offset="0%" stop-color="black" />
@@ -56,10 +64,18 @@
         <mask id="radarHolesMask">
            <!-- Fons totalment blanc (invisible/opac al rect) -->
            <rect width="100%" height="100%" fill="white" />
-           <!-- Forat pel jugador local (negre transparenta) -->
-           <circle :cx="mouseX" :cy="mouseY" :r="isSweepActive ? currentTunnelSize * 2.5 : currentTunnelSize" fill="url(#holeGradient)" />
-           <!-- Forat pel jugador remot (negre transparenta) -->
-           <circle v-if="remoteCursor" :cx="remoteCursor.x" :cy="remoteCursor.y" :r="isSweepActive ? currentTunnelSize * 2.5 : currentTunnelSize" fill="url(#holeGradient)" />
+            <!-- Forat pel jugador local (negre transparenta) -->
+            <circle :cx="mouseX" :cy="mouseY" :r="currentTunnelSize * (isSweepActive ? 2.5 : 1.0)" fill="url(#holeGradient)" />
+            <!-- Forat pel jugador remot (negre transparenta) -->
+            <circle v-if="remoteCursor" :cx="remoteCursor.x" :cy="remoteCursor.y" :r="currentTunnelSize * (isSweepActive ? 2.5 : 1.0)" fill="url(#holeGradient)" />
+            <circle v-for="n in 5" :key="n"
+                :r="currentTunnelSize * 0.8"
+                :cx="((n * 20) % 100) + '%'"
+                :cy="((n * 15) % 100) + '%'"
+                fill="url(#holeGradient)"
+                v-if="isDecoyActive"
+            />
+
         </mask>
       </defs>
       
@@ -67,14 +83,7 @@
       <rect width="100%" height="100%" fill="#0b1120" :mask="isChangingLevel ? null : 'url(#radarHolesMask)'" />
     </svg>
 
-    <div v-if="isSweepActive" class="sweep-banner">
-        <v-icon icon="mdi-radar" class="mr-2"></v-icon>
-        BARRER D'ALTA ENERGIA ACTIU
-    </div>
-    <div v-if="isDecoyActive" class="decoy-banner">
-        <v-icon icon="mdi-drone" class="mr-2"></v-icon>
-        DRONS ESQUERS DETECTATS
-    </div>
+
 
     <!-- Cursors compartits (Visibles per sobre de la flashlight) -->
     <template v-if="props.isMultiplayer && multiplayerStore.room?.gameConfig?.mode === 'COOPERATIVE'">
@@ -147,6 +156,7 @@ const targetChar = ref('');
 const isSweepActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_SWEEP'));
 const isDecoyActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_DECOY'));
 
+
 const levels = [
   { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
   { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
@@ -200,18 +210,6 @@ const generateBoard = () => {
   // Usar semilla para que el objetivo sea el mismo
   targetIndex.value = Math.floor(seededDice() * totalCells);
   newBoard[targetIndex.value] = config.target;
-  
-  // Si hay drones esquers, añadir otro objetivo falso
-  if (isDecoyActive.value) {
-    let dIndex;
-    do {
-      dIndex = Math.floor(seededDice() * totalCells);
-    } while (dIndex === targetIndex.value);
-    decoyIndex.value = dIndex;
-    newBoard[decoyIndex.value] = config.target;
-  } else {
-    decoyIndex.value = -1;
-  }
   
   board.value = newBoard;
 };
@@ -439,45 +437,26 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(4px);
 }
 
-/* Efectes */
+/* Efectes Multijugador */
 .sweep-active {
-    background: rgba(11, 17, 32, 0.95) !important;
+    transition: all 0.5s ease;
 }
+.rs-effect-banner {
+    position: absolute; bottom: 20px; left: 20px;
+    padding: 8px 16px; border-radius: 12px;
+    font-weight: bold; color: white; z-index: 100;
+    font-size: 0.9rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    animation: rs-slideInLeft 0.3s ease-out;
+}
+.sweep-banner { background: linear-gradient(90deg, #00C853, #1B5E20); border-left: 4px solid #B9F6CA; }
+.decoy-banner { background: linear-gradient(90deg, #D50000, #B71C1C); border-left: 4px solid #FF8A80; bottom: 70px; }
 
-.sweep-banner, .decoy-banner {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-weight: bold;
-    color: white;
-    z-index: 100;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    animation: slideInUp 0.5s ease-out;
+@keyframes rs-slideInLeft {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
+.letter-decoy { opacity: 0.2; filter: blur(2px); pointer-events: none; }
 
-.sweep-banner {
-    background: linear-gradient(90deg, #00e5ff, #0097a7);
-    border: 1px solid #e0f7fa;
-}
-
-.decoy-banner {
-    background: linear-gradient(90deg, #f43f5e, #be123c);
-    border: 1px solid #ffe4e6;
-}
-
-@keyframes slideInUp {
-    from { transform: translate(-50%, 20px); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
-}
-
-.letter-decoy {
-    color: #f43f5e !important;
-    text-shadow: 0 0 15px rgba(244, 63, 94, 0.8);
-    transform: scale(1.3);
-}
 
 .remote-cursor-game {
   position: absolute;

@@ -73,7 +73,7 @@ function resolveDefaultApiBaseUrl() {
     if (!hasWindow) return 'http://localhost:3000';
     const { hostname } = window.location;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-    
+
     // En producción, usamos la ruta relativa para que Nginx haga el proxy correctamente
     return isLocalHost ? 'http://localhost:3000' : '/api';
 }
@@ -86,11 +86,11 @@ export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '');
 
 export function buildApiUrl(path) {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    
+
     // Si el path que viene del store ya trae '/api' y la base también es '/api',
     // evitamos que se genere '/api/api/...'
     if (cleanPath.startsWith('/api') && API_BASE_URL === '/api') {
-        return cleanPath; 
+        return cleanPath;
     }
 
     return `${API_BASE_URL}${cleanPath}`;
@@ -112,14 +112,21 @@ export async function requestJson(path, options = {}) {
 
 export function buildWebSocketBaseUrl() {
     const explicitWsBaseUrl = String(import.meta.env.VITE_WS_BASE_URL || '').trim();
-    
-    // Si hay una URL explícita, la usamos, si no, calculamos una basada en la URL actual
+
     if (explicitWsBaseUrl) return explicitWsBaseUrl.replace(/\/$/, '');
 
     if (hasWindow) {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // Apuntamos al host actual. Nginx se encargará del path /ws según tu nginx.conf
-        return `${protocol}//${window.location.host}/ws`;
+        const { hostname, protocol, host } = window.location;
+        const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+        // En local, forzamos conectar al puerto 3000 del backend ya que Vite (3001) no hace proxy de WS
+        if (isLocalHost) {
+            return `ws://${hostname}:3000/ws`;
+        }
+
+        // En producción, usamos el host actual (que Nginx gestionará)
+        const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProtocol}//${host}/ws`;
     }
 
     return 'ws://localhost:3000/ws';
@@ -190,7 +197,7 @@ export function toPositiveInteger(value) {
 
 function resolveInventoryItemId(rawItem) {
     const candidate = rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
-            ? rawItem.itemId ?? rawItem.id ?? rawItem.name ?? rawItem.label : rawItem;
+        ? rawItem.itemId ?? rawItem.id ?? rawItem.name ?? rawItem.label : rawItem;
 
     if (typeof candidate === 'number' && Number.isInteger(candidate)) return candidate;
     if (typeof candidate !== 'string') return null;
@@ -220,7 +227,7 @@ export function normalizeInventoryItems(values = []) {
         const isObj = rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem);
         const maxQuantity = (isObj ? toPositiveInteger(rawItem.maxQuantity) : null) || catalogItem.maxQuantity || 99;
         const parsedQuantity = (isObj ? toPositiveInteger(rawItem.quantity ?? rawItem.qty ?? rawItem.units) : 1) || 1;
-        
+
         const previous = mergedById.get(itemId);
         const nextQuantity = Math.min(maxQuantity, (previous?.quantity || 0) + Math.min(maxQuantity, parsedQuantity));
         const itemCat = (isObj ? rawItem.cat : null) || catalogItem.cat;

@@ -2,7 +2,6 @@
   <div
     ref="gameArea"
     class="game-container"
-    :class="{ 'hide-cursor': isPlaying }"
     @mousemove="handlePointerMove"
     @mousedown.left.prevent="beginFiring"
     @mouseup.left="stopFiring"
@@ -41,16 +40,19 @@
     <canvas ref="gameCanvas"></canvas>
 
     <div v-if="roundHintVisible" :key="roundHintToken" class="round-target-hint">{{ roundHintText }}</div>
-
+    
     <!-- Banners d'Efectes -->
-    <div v-if="isGravityActive" class="effect-banner gravity-banner">
-        <v-icon icon="mdi-arrow-down-bold-circle" class="mr-2"></v-icon>
-        GRAVETAT VARIABLE ACTIVADA
+    <div v-if="isGravityActive" class="rs-effect-banner gravity-banner">
+        <v-icon icon="mdi-weight" class="mr-2"></v-icon>
+        GRAVETAT AUGMENTADA
     </div>
-    <div v-if="isMirrorActive" class="effect-banner mirror-banner">
+    <div v-if="isMirrorActive" class="rs-effect-banner mirror-banner">
         <v-icon icon="mdi-mirror" class="mr-2"></v-icon>
-        VISIÓ DE MIRALL ACTIVADA
+        VISIÓ DE MIRALL
     </div>
+
+
+
 
     <!-- Overlays -->
     <v-overlay v-if="!isMultiplayer" v-model="showStartOverlay" class="align-center justify-center" persistent>
@@ -144,6 +146,25 @@ const PROGRESS_DECAY_ON_DECOY = 700;
 const isGravityActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_GRAVITY'));
 const isMirrorActive = computed(() => Object.values(multiplayerStore.activeEffects).some(e => e.type === 'EFFECT_MIRROR'));
 
+function resolveEntityColors({ isTarget, isUniformMode }) {
+  let ringColor = isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING;
+  let fillColor = isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL;
+
+  if (isUniformMode) {
+    ringColor = CLASSIC_DECOY_RING;
+    fillColor = CLASSIC_DECOY_FILL;
+  }
+
+  if (isMirrorActive.value) {
+    // Si hay espejo, el color correcto se ve como decoy y viceversa
+    ringColor = isTarget ? CLASSIC_DECOY_RING : CLASSIC_TARGET_RING;
+    fillColor = isTarget ? CLASSIC_DECOY_FILL : CLASSIC_TARGET_FILL;
+  }
+
+  return { ringColor, fillColor };
+}
+
+
 let animationFrame = null;
 let lastFrameTs = 0;
 let roundHintTimeout = null;
@@ -154,27 +175,6 @@ function randomBetween(min, max) { return max <= min ? min : Math.random() * (ma
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 function randomVelocity(speed) { const angle = Math.random() * Math.PI * 2; return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }; }
 
-function resolveEntityColors({ isTarget, isUniformMode }) {
-  if (isTarget && isMirrorActive.value) {
-      return {
-          ringColor: '#00e5ff',
-          fillColor: 'rgba(0, 229, 255, 0.4)',
-          glow: true
-      };
-  }
-
-  if (isUniformMode) {
-    return {
-      ringColor: CLASSIC_DECOY_RING,
-      fillColor: CLASSIC_DECOY_FILL
-    };
-  }
-
-  return {
-    ringColor: isTarget ? CLASSIC_TARGET_RING : CLASSIC_DECOY_RING,
-    fillColor: isTarget ? CLASSIC_TARGET_FILL : CLASSIC_DECOY_FILL
-  };
-}
 
 function getHorizontalMenuOverlap() {
   if (!gameArea.value) return { left: 0, right: 0 };
@@ -295,10 +295,10 @@ function update(dt) {
   if (timeLeft.value <= 0) { endGame(); return; }
 
   targets.value.forEach((t) => {
-    // Aplicar gravetat si està activa
     if (isGravityActive.value) {
-        t.vy += dt * 400; // Accelaració cap a baix
+      t.vy += dt * 400; // Aplicar gravedad
     }
+
 
     t.x += t.vx * dt;
     t.y += t.vy * dt;
@@ -309,9 +309,10 @@ function update(dt) {
     }
     if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
       // Rebotar a dalt i a baix
-      t.vy *= isGravityActive.value ? -0.5 : -1; // Rebot amortiguat si hi ha gravetat
+      t.vy *= isGravityActive.value ? -0.5 : -1; 
       t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY);
     }
+
   });
 
   if (isFiring.value && hoveredTarget && hoveredTarget.isTarget) {
@@ -540,7 +541,7 @@ canvas {
   height: 100%;
 }
 
-.hide-cursor { cursor: none; }
+.hide-cursor { cursor: auto; }
 
 .hud-pill {
   background: rgba(15, 23, 42, 0.9);
@@ -589,35 +590,21 @@ canvas {
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 1px solid #00e5ff; }
 
-/* Efectes */
-.effect-banner {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 24px;
-    border-radius: 30px;
-    font-weight: 900;
-    color: white;
-    z-index: 100;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    animation: banner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* Efectes Banners */
+.rs-effect-banner {
+    position: absolute; bottom: 20px; left: 20px;
+    padding: 8px 16px; border-radius: 12px;
+    font-weight: bold; color: white; z-index: 100;
+    font-size: 0.9rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    animation: rs-slideInLeft 0.3s ease-out;
+}
+.gravity-banner { background: linear-gradient(90deg, #7c4dff, #311b92); border-left: 4px solid #b39ddb; }
+.mirror-banner { background: linear-gradient(90deg, #00acc1, #006064); border-left: 4px solid #80deea; bottom: 70px; }
+
+@keyframes rs-slideInLeft {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
-.gravity-banner {
-    background: linear-gradient(135deg, #f43f5e, #881337);
-    border: 2px solid #fda4af;
-}
 
-.mirror-banner {
-    background: linear-gradient(135deg, #00e5ff, #006064);
-    border: 2px solid #84ffff;
-    bottom: 100px; /* Separar si coinciden */
-}
-
-@keyframes banner-pop {
-    from { transform: translate(-50%, 30px) scale(0.8); opacity: 0; }
-    to { transform: translate(-50%, 0) scale(1); opacity: 1; }
-}
 </style>
