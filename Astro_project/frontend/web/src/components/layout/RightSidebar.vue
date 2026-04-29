@@ -29,10 +29,10 @@
                     <span class="text-caption text-grey-lighten-1">{{ userXp }} / {{ xpRequired }} XP</span>
                 </div>
                 <v-progress-linear :model-value="(userXp / Math.max(1, xpRequired)) * 100" color="primary"
-                    height="6" rounded bg-color="rgba(255,255,255,0.05)" class="mb-2 glow-bar"></v-progress-linear>
+                    height="8" rounded bg-color="rgba(0, 242, 255, 0.15)" bg-opacity="1" class="mb-2 glow-bar"></v-progress-linear>
             </v-card>
 
-            <!-- Missions Section -->
+            <!-- Daily Missions Section -->
             <div class="d-flex align-center justify-space-between mb-4">
                 <div class="section-label">MISIONES DIARIAS</div>
                 <v-btn icon="mdi-refresh" variant="text" color="primary" density="compact" @click="refreshMissions" :loading="isRefreshing"></v-btn>
@@ -64,16 +64,52 @@
                 </v-card>
             </div>
 
-            <v-btn block variant="outlined" color="primary" class="mt-4" @click="dialogDiarias = true">
-                VER TODAS LAS MISIONES
+            <v-btn block variant="text" color="primary" class="mt-2 mb-4 text-caption font-weight-bold" @click="dialogDiarias = true">
+                VER TODAS LAS DIARIAS
+            </v-btn>
+
+            <!-- Weekly Missions Section -->
+            <div class="d-flex align-center justify-space-between mb-4 mt-2">
+                <div class="section-label">MISIONES SEMANALES</div>
+                <v-icon icon="mdi-calendar-clock" color="secondary" size="small"></v-icon>
+            </div>
+
+            <div class="missions-container overflow-y-auto pr-2" style="max-height: 200px;">
+                <div v-if="!weeklyMissions || weeklyMissions.length === 0" class="text-caption text-grey text-center py-4">
+                    No hay misiones semanales...
+                </div>
+                
+                <v-card v-for="mission in (weeklyMissions || []).slice(0, 2)" :key="mission.id"
+                    class="mission-card mb-3 pa-3 border-secondary" :class="{ 'mission-claimed': mission.claimed }">
+                    <div class="d-flex justify-space-between align-start mb-1">
+                        <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
+                            {{ mission.text }}
+                        </div>
+                        <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="secondary" size="small"></v-icon>
+                    </div>
+                    
+                    <div class="d-flex justify-space-between align-center mt-2">
+                        <div class="text-caption text-secondary">
+                            {{ mission.progress }} / {{ mission.goal }}
+                        </div>
+                        <v-btn v-if="mission.completed && !mission.claimed" color="secondary" variant="flat"
+                            density="compact" size="small" class="px-3" @click.stop="claimReward(mission.id, 'weekly')">
+                            RECLAMAR
+                        </v-btn>
+                    </div>
+                </v-card>
+            </div>
+
+            <v-btn block variant="text" color="secondary" class="mt-2 text-caption font-weight-bold" @click="dialogMisiones = true">
+                VER TODAS LAS SEMANALES
             </v-btn>
         </div>
 
-        <!-- Popups (Unchanged logic, just simplified classes) -->
+        <!-- Popups -->
         <v-dialog v-model="dialogDiarias" max-width="450">
             <v-card class="glass-panel pa-6">
                 <div class="d-flex align-center justify-space-between mb-6">
-                    <h2 class="text-h5 text-white">CENTRO DE MISIONES</h2>
+                    <h2 class="text-h5 text-white">MISIONES DIARIAS</h2>
                     <v-btn icon="mdi-close" variant="text" @click="dialogDiarias = false"></v-btn>
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
@@ -82,6 +118,24 @@
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
                             <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">COBRAR</v-btn>
+                        </div>
+                    </v-card>
+                </v-list>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogMisiones" max-width="450">
+            <v-card class="glass-panel pa-6">
+                <div class="d-flex align-center justify-space-between mb-6">
+                    <h2 class="text-h5 text-white">MISIONES SEMANALES</h2>
+                    <v-btn icon="mdi-close" variant="text" @click="dialogMisiones = false"></v-btn>
+                </div>
+                <v-list bg-color="transparent" class="pa-0">
+                    <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.text }}</div>
+                        <div class="d-flex justify-space-between align-center">
+                            <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
+                            <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">COBRAR</v-btn>
                         </div>
                     </v-card>
                 </v-list>
@@ -119,6 +173,7 @@ onMounted(async () => {
 
 const xpRequired = computed(() => 100 + (userLevel.value - 1) * 50)
 const dialogDiarias = ref(false)
+const dialogMisiones = ref(false)
 const isRefreshing = ref(false)
 
 const refreshMissions = async () => {
@@ -166,6 +221,10 @@ const claimReward = async (missionId, type = 'daily') => {
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(255, 255, 255, 0.05) !important;
     border-radius: 8px;
+}
+
+.border-secondary {
+    border-color: rgba(112, 0, 255, 0.2) !important;
 }
 
 .mission-claimed {
