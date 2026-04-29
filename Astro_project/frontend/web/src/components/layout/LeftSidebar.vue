@@ -52,9 +52,10 @@ const menuItems = ref([
 
 <style scoped>
 .sidebar {
-    background: rgba(5, 5, 10, 0.4) !important;
+    background: linear-gradient(180deg, rgba(13, 25, 48, 0.7) 0%, rgba(5, 10, 20, 0.8) 100%) !important;
     backdrop-filter: blur(25px);
-    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-right: 1px solid rgba(0, 242, 255, 0.1) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
 }
 
 .letter-spacing-2 {

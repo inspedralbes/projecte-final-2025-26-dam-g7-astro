@@ -118,5 +118,65 @@ export const ACHIEVEMENTS = [
         metric: 'xp',
         goal: 500,
         metricLabel: 'XP'
+    },
+    {
+        id: 13,
+        title: 'Estratega Galáctico',
+        description: 'Completa 10 misiones.',
+        icon: 'mdi-brain',
+        type: 'silver',
+        metric: 'games',
+        goal: 10,
+        metricLabel: 'Partidas'
+    },
+    {
+        id: 14,
+        title: 'Mercader de Estrellas',
+        description: 'Acumula 2.000 monedas.',
+        icon: 'mdi-hand-coin',
+        type: 'silver',
+        metric: 'coins',
+        goal: 2000,
+        metricLabel: 'Monedas'
+    },
+    {
+        id: 15,
+        title: 'Héroe del Cosmos',
+        description: 'Completa 50 misiones.',
+        icon: 'mdi-trophy-award',
+        type: 'gold',
+        metric: 'games',
+        goal: 50,
+        metricLabel: 'Partidas'
+    },
+    {
+        id: 16,
+        title: 'Magnate de la Nebulosa',
+        description: 'Acumula 5.000 monedas.',
+        icon: 'mdi-bank',
+        type: 'gold',
+        metric: 'coins',
+        goal: 5000,
+        metricLabel: 'Monedas'
+    },
+    {
+        id: 17,
+        title: 'Soberano del Vacío',
+        description: 'Alcanza el nivel 10.',
+        icon: 'mdi-weather-night',
+        type: 'platinum',
+        metric: 'level',
+        goal: 10,
+        metricLabel: 'Nivel'
+    },
+    {
+        id: 18,
+        title: 'Conquistador de Galaxias',
+        description: 'Consigue 1.000 XP.',
+        icon: 'mdi-orbit',
+        type: 'platinum',
+        metric: 'xp',
+        goal: 1000,
+        metricLabel: 'XP'
     }
 ];
