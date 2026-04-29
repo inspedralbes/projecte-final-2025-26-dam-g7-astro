@@ -54,6 +54,10 @@ export const useAchievementsStore = defineStore('achievements', {
                 const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/achievements`);
 
                 if (!response.ok) {
+                    if (response.status === 404 && (data.message === 'Usuario no encontrado.' || data.message === 'Usuario no encontrado')) {
+                        const sessionStore = useSessionStore();
+                        sessionStore.clearSession();
+                    }
                     throw new Error(data.message || 'No se pudieron obtener los logros.');
                 }
 

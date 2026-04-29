@@ -14,14 +14,24 @@ function registerFriendRoutes(app, { getCollections }) {
             }
 
             // Verificar que el amigo existe
-            const friendExists = await users.findOne({ user: friendName });
+            const friendExists = await users.findOne({ 
+                $or: [
+                    { user: friendName },
+                    { user: isNaN(Number(friendName)) ? null : Number(friendName) }
+                ]
+            });
             if (!friendExists) {
                 return res.status(404).json({ message: "Ese explorador no existe" });
             }
 
             // Usamos $addToSet para no duplicar si ya son amigos (Añadir a tu lista)
             await users.updateOne(
-                { user: user },
+                { 
+                    $or: [
+                        { user: user },
+                        { user: isNaN(Number(user)) ? null : Number(user) }
+                    ]
+                },
                 { $addToSet: { friends: friendName } }
             );
 

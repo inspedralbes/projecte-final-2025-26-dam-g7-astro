@@ -86,7 +86,12 @@ function registerInventoryRoutes(app, {
         try {
             const { users } = getCollections();
             const userDoc = await users.findOne(
-                { user: username },
+                { 
+                    $or: [
+                        { user: username },
+                        { user: isNaN(Number(username)) ? null : Number(username) }
+                    ]
+                },
                 { projection: { inventory: 1, streakFreezes: 1, activeBoosters: 1 } }
             );
 

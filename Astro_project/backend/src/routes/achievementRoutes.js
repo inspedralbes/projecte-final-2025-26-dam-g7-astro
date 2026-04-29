@@ -8,7 +8,12 @@ function registerAchievementRoutes(app, { getCollections, getDB, normalizeAchiev
         try {
             const { users } = getCollections();
             const userDoc = await users.findOne(
-                { user: username },
+                { 
+                    $or: [
+                        { user: username },
+                        { user: isNaN(Number(username)) ? null : Number(username) }
+                    ]
+                },
                 { projection: { selectedAchievements: 1, unlockedAchievements: 1 } }
             );
 
