@@ -17,7 +17,7 @@ describe('Multiplayer Store', () => {
         expect(store.isConnected).toBe(false);
         expect(store.room).toBeNull();
     });
-    //Modificar mas adelante
+
     it('debe limpiar el estado de la sala al desconectar', () => {
         const store = useMultiplayerStore();
         store.room = { id: 'ABCDE' };
