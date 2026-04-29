@@ -7,7 +7,16 @@
             
             <v-card class="glass-card mb-4 pa-4" elevation="0">
                 <div class="d-flex justify-space-around align-center">
-                    <div class="text-center">
+                    <div class="text-center streak-container">
+                        <div class="streak-icon-wrapper mb-1">
+                            <v-icon 
+                                :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'" 
+                                :class="['streak-fire-icon', { 'active-fire': isStreakActiveToday }]"
+                                :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'"
+                                size="32"
+                            ></v-icon>
+                            <div v-if="isStreakActiveToday" class="fire-glow"></div>
+                        </div>
                         <div class="stat-value text-h5 font-weight-bold" :class="isStreakActiveToday ? 'text-orange-accent-3' : 'text-grey'">
                             {{ userStreak }}
                         </div>
@@ -216,6 +225,51 @@ const claimReward = async (missionId, type = 'daily') => {
 
 .glow-bar {
     filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.4));
+}
+
+/* Streak Flame Styles */
+.streak-container {
+    position: relative;
+    z-index: 1;
+}
+
+.streak-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.streak-fire-icon {
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.active-fire {
+    filter: drop-shadow(0 0 5px rgba(255, 111, 0, 0.8));
+    animation: flicker 1.5s infinite ease-in-out;
+}
+
+.fire-glow {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background: radial-gradient(circle, rgba(255, 87, 34, 0.6) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 1;
+    animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes flicker {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    25% { transform: scale(1.1) rotate(-2deg); opacity: 0.9; }
+    50% { transform: scale(1.05) rotate(3deg); opacity: 1; }
+    75% { transform: scale(1.15) rotate(-1deg); opacity: 0.8; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.8); opacity: 0.8; }
 }
 
 .mission-card {
