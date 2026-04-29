@@ -3,6 +3,14 @@ name: Deploy Production PI
 on:
   push:
     branches: [ "main" ]
+  # Se activa automáticamente tras el merge exitoso de la rama integracio
+  workflow_run:
+    workflows: ["Auto Merge Integracio to Main"]
+    branches: [ "main" ]
+    types:
+      - completed
+  # Permite lanzar el despliegue manualmente desde la interfaz de GitHub
+  workflow_dispatch:
 
 jobs:
   # --- BLOQUE 1: VALIDACIÓN ---
