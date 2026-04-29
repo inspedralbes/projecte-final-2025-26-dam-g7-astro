@@ -1,0 +1,97 @@
+name: Deploy Production PI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # --- BLOQUE 1: VALIDACIÓN ---
+  build-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        working-directory: [Astro_project/backend, Astro_project/frontend/web]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: '${{ matrix.working-directory }}/package-lock.json'
+        
+    - name: Install dependencies
+      working-directory: ${{ matrix.working-directory }}
+      run: npm ci
+      
+    - name: Build Check & Tests
+      working-directory: ${{ matrix.working-directory }}
+      run: |
+        if [ "${{ matrix.working-directory }}" = "Astro_project/frontend/web" ]; then
+          npm run build
+        else
+          # Si el backend tiene tests, los ejecutamos. Si no, saltamos para evitar errores.
+          if grep -q "\"test\":" package.json; then
+            npm test
+          else
+            echo "No tests found in package.json, skipping."
+          fi
+        fi
+
+  # --- BLOQUE 2: DESPLIEGUE PRODUCCIÓN ---
+  deploy-production:
+    needs: build-check 
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }} 
+        username: ${{ secrets.SERVER_USER }}
+        password: ${{ secrets.SERVER_PASSWORD }} 
+        port: ${{ secrets.SERVER_PORT || 22 }}
+        script: |
+          # 1. Navegar a la carpeta de Astro y sincronizar
+          cd /var/www/Astro/projecte-final-2025-26-dam-g7-astro
+          
+          # 2. Configuración de Git y Sincronización
+          git config --global --add safe.directory $(pwd)
+          git fetch origin
+          git reset --hard origin/main
+          
+          # 3. Despliegue de Astro con Docker Compose
+          cd Astro_project
+          
+          # Levantamos los servicios reconstruyendo las imágenes si hay cambios
+          docker compose -f docker-compose.prod.yml up -d --build
+          
+          # 4. Reiniciar proyecto PI (necesario si comparten red/proxy Nginx)
+          echo "Reiniciando proyecto PI para asegurar sincronización de red..."
+          cd /var/www/PI/tr2-reptes-tr2-g4/Incorporacio_PI
+          docker compose -f docker-compose.prod.yml up -d
+
+          # 5. Asegurar que el modelo de IA esté descargado (solo si el contenedor ollama existe)
+          if docker ps -a --format '{{.Names}}' | grep -q "ollama"; then
+            if ! docker exec ollama ollama list | grep -q "llama3.1:8b"; then
+              echo "Descargando modelo llama3.1:8b..."
+              docker exec ollama ollama run llama3.1:8b
+            else
+              echo "Modelo llama3.1:8b ya está presente."
+            fi
+          fi
+          
+          # 6. Limpieza de imágenes huérfanas
+          docker image prune -f
+
+          # 7. VERIFICACIÓN FINAL
+          echo "Esperando 10s a que los servicios se estabilicen..."
+          sleep 10
+          cd /var/www/Astro/projecte-final-2025-26-dam-g7-astro/Astro_project
+          if [ -f "backend/scripts/checkAI.js" ]; then
+            echo "Ejecutando test de generación de IA..."
+            docker exec astro_backend_prod node scripts/checkAI.js
+          else
+            echo "Script de verificación 'backend/scripts/checkAI.js' no encontrado, saltando."
+          fi
