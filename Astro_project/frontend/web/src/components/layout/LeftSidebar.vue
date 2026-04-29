@@ -1,22 +1,29 @@
 <template>
-    <v-navigation-drawer app permanent width="260" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
-        <div class="menu-header d-flex justify-center align-center py-10">
-            <h1 class="text-h3 font-weight-bold text-white tracking-wide">ASTRO</h1>
+    <v-navigation-drawer app permanent width="280" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
+        <div class="menu-header d-flex flex-column justify-center align-center py-12">
+            <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
+            <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
         </div>
 
-        <v-divider class="mx-6 border-opacity-25 mb-4" color="white"></v-divider>
-
-        <v-list class="pa-0 bg-transparent">
+        <v-list class="pa-2 bg-transparent" nav>
             <v-list-item v-for="(item, index) in menuItems" :key="index" :to="item.to" link
-                class="menu-item py-6 px-8 mb-2 mx-4 rounded-xl" active-class="active-menu-item">
+                class="menu-item mb-2 rounded-lg px-4" active-class="active-menu-item" min-height="56">
                 <template v-slot:prepend>
-                    <v-icon :icon="item.icon" color="cyan-accent-2" class="mr-4"></v-icon>
+                    <v-icon :icon="item.icon" size="22" class="mr-4 item-icon"></v-icon>
                 </template>
-                <v-list-item-title class="text-h6 text-white font-weight-medium">
+                <v-list-item-title class="text-subtitle-1 font-weight-bold">
                     {{ item.title }}
                 </v-list-item-title>
             </v-list-item>
         </v-list>
+
+        <template v-slot:append>
+            <div class="pa-4">
+                <v-btn block variant="text" color="grey-lighten-1" @click="handleLogout" prepend-icon="mdi-logout" class="logout-btn">
+                    Desconectarse
+                </v-btn>
+            </div>
+        </template>
     </v-navigation-drawer>
 </template>
 
@@ -45,36 +52,52 @@ const menuItems = ref([
 
 <style scoped>
 .sidebar {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(10px);
-    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(5, 5, 10, 0.4) !important;
+    backdrop-filter: blur(25px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-.tracking-wide {
-    letter-spacing: 0.15em;
-    background: linear-gradient(to right, #00e5ff, #2979ff);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+.letter-spacing-2 {
+    letter-spacing: 4px;
+    font-size: 0.65rem !important;
+    opacity: 0.7;
 }
 
 .menu-item {
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.item-icon {
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
 }
 
 .menu-item:hover {
-    background: rgba(0, 229, 255, 0.05) !important;
-    border: 1px solid rgba(0, 229, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+}
+
+.menu-item:hover .item-icon {
+    color: #00f2ff;
 }
 
 .active-menu-item {
-    background: linear-gradient(90deg, rgba(0, 229, 255, 0.15) 0%, rgba(41, 121, 255, 0.1) 100%) !important;
-    border: 1px solid rgba(0, 229, 255, 0.4) !important;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+    background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%) !important;
+    color: #00f2ff !important;
+    border-left: 3px solid #00f2ff !important;
 }
 
-.border-color-white-alpha {
-    border-color: rgba(255, 255, 255, 0.1) !important;
+.active-menu-item .item-icon {
+    color: #00f2ff !important;
+}
+
+.logout-btn {
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.tracking-tighter {
+    letter-spacing: -2px;
 }
 </style>

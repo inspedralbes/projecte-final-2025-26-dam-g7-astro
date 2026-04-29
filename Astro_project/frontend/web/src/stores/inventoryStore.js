@@ -40,6 +40,10 @@ export const useInventoryStore = defineStore('inventory', {
                 const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/inventory`);
 
                 if (!response.ok) {
+                    if (response.status === 404 && (data.message === 'Usuario no encontrado' || data.message === 'Usuario no encontrado.')) {
+                        const sessionStore = useSessionStore();
+                        sessionStore.clearSession();
+                    }
                     throw new Error(data.message || 'No se pudo obtener el inventario.');
                 }
 

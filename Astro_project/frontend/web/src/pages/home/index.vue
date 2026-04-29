@@ -1,89 +1,184 @@
 <template>
-  <v-container fluid class="pa-0 main-scroll-container">
-    <!-- Navbar -->
-    <v-app-bar flat color="transparent" class="px-6">
+  <v-container fluid class="pa-0 main-container">
+    <!-- Navbar (Simplified & Professional) -->
+    <v-app-bar flat color="transparent" class="px-8 mt-4">
+        <div class="d-flex align-center">
+            <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
+        </div>
       <v-spacer></v-spacer>
-      <v-btn variant="text" to="/login" class="text-white mx-2">
-        Iniciar sesión
+      <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
+        LOGIN
       </v-btn>
-      <v-btn variant="outlined" to="/register" color="primary" class="mx-2">
-        Registrarse
+      <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
+        UNIRSE
       </v-btn>
     </v-app-bar>
 
     <!-- Hero Section -->
-    <section class="hero-section d-flex align-center justify-center text-center px-4">
-      <div class="content-wrapper">
-        <h1 class="text-h2 font-weight-bold mb-4 primary-gradient-text">
-          PROYECTO ASTRO
+    <section class="hero-section d-flex align-center justify-center text-center">
+      <!-- Background Elements for Depth -->
+      <div class="background-glow"></div>
+      
+      <div class="content-wrapper px-4">
+        <div class="system-status mb-6">
+            <span class="pulse-dot"></span>
+            SYSTEM ONLINE: NEURAL TRAINING INTERFACE
+        </div>
+        
+        <h1 class="hero-title mb-4">
+          PROYECTO <span class="primary-gradient-text">ASTRO</span>
         </h1>
-        <p class="text-h5 mb-6 text-grey-lighten-1 mx-auto" style="max-width: 800px;">
-          Plataforma de entrenamiento visual y neurocognitivo de alto rendimiento.
-          Agilidad lectora y decodificación sin límites.
+        
+        <p class="hero-subtitle mb-10 mx-auto">
+          Plataforma de entrenamiento neurocognitivo de alto rendimiento.<br>
+          Optimiza tu capacidad de procesamiento visual y agilidad mental.
         </p>
-        <v-btn size="x-large" color="primary" variant="elevated" class="start-button px-10 mt-4"
-          :to="isLoggedIn ? '/singleplayer' : '/register'">
-          {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR MISIÓN' }}
-          <v-icon end :icon="isLoggedIn ? 'mdi-rocket' : 'mdi-rocket-launch-outline'" class="ms-2"></v-icon>
-        </v-btn>
+
+        <div class="d-flex flex-column flex-sm-row justify-center align-center gap-4">
+            <v-btn size="x-large" color="primary" variant="flat" class="action-button px-12 py-6 rounded-lg"
+              :to="isLoggedIn ? '/singleplayer' : '/register'">
+              {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
+              <v-icon end icon="mdi-chevron-right" class="ms-2"></v-icon>
+            </v-btn>
+            
+            <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg ml-sm-4 mt-4 mt-sm-0">
+                SABER MÁS
+            </v-btn>
+        </div>
       </div>
     </section>
+
+    <!-- Visual Footer Decoration -->
+    <div class="footer-decoration">
+        <div class="line"></div>
+        <div class="status-codes d-flex justify-space-between px-10">
+            <span>TX_READY: 0x44FF2</span>
+            <span>OS_ASTRO_KERNEL: LOADED</span>
+            <span>NEURAL_LINK: ACTIVE</span>
+        </div>
+    </div>
   </v-container>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 
-// Verificamos si existe el token en el localStorage
 const isLoggedIn = computed(() => {
   return !!localStorage.getItem('user-session');
 });
 </script>
 
 <style scoped>
-.main-scroll-container {
-  background: #000000;
+.main-container {
+  background: #05050a;
   min-height: 100vh;
-}
-
-.hero-section {
-  min-height: 90vh;
   position: relative;
   overflow: hidden;
 }
 
+.hero-section {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.background-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, rgba(112, 0, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.system-status {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: #00f2ff;
+    font-weight: 700;
+    display: flex;
+    align-center: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #00f2ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00f2ff;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+}
+
+.hero-title {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  color: white;
+}
+
 .primary-gradient-text {
-  background: linear-gradient(45deg, #00f2ff, #7000ff);
+  background: linear-gradient(to right, #00f2ff, #7000ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.3));
 }
 
-.start-button {
-  border-radius: 4px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  transition: all 0.4s ease;
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 700px;
+  line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.start-button:hover {
-  filter: brightness(1.2);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.4) !important;
+.action-button {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 800;
+    letter-spacing: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 242, 255, 0.2);
 }
 
-.hero-section .content-wrapper {
-  animation: fadeIn 1.5s ease-out;
+.footer-decoration {
+    position: absolute;
+    bottom: 30px;
+    width: 100%;
+}
+
+.footer-decoration .line {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+    margin-bottom: 15px;
+}
+
+.status-codes {
+    font-family: 'monospace';
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 2px;
+}
+
+.tracking-tighter {
+    letter-spacing: -2px;
 }
 </style>

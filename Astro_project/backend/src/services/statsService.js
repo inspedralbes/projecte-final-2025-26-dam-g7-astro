@@ -44,7 +44,12 @@ function createGetUserStats({
 }) {
     return async function getUserStats(username) {
         const { users, partides } = getCollections();
-        let userDoc = await users.findOne({ user: username });
+        let userDoc = await users.findOne({ 
+            $or: [
+                { user: username },
+                { user: isNaN(Number(username)) ? null : Number(username) }
+            ]
+        });
 
         if (!userDoc) return null;
 

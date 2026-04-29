@@ -161,6 +161,12 @@ export const useProgressStore = defineStore('progress', {
             try {
                 const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/stats`);
                 if (!response.ok) {
+                    if (response.status === 404 && (data.message === 'Usuario no encontrado.' || data.message === 'Usuario no encontrado')) {
+                        console.warn('⚠️ Usuario no encontrado en el servidor. Limpiando sesión local...');
+                        const sessionStore = useSessionStore();
+                        sessionStore.clearSession();
+                        this.clearProgress();
+                    }
                     throw new Error(data.message || 'No se pudieron obtener las estadísticas.');
                 }
 
@@ -205,6 +211,11 @@ export const useProgressStore = defineStore('progress', {
             try {
                 const { response, data } = await requestJson(`/api/shop/balance/${encodeURIComponent(user)}`);
                 if (!response.ok) {
+                    if (response.status === 404 && (data.message === 'Usuario no encontrado.' || data.message === 'Usuario no encontrado')) {
+                        const sessionStore = useSessionStore();
+                        sessionStore.clearSession();
+                        this.clearProgress();
+                    }
                     throw new Error(data.message || 'No se pudo obtener el saldo.');
                 }
 
