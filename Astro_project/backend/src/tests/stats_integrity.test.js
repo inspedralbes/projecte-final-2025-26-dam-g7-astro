@@ -1,4 +1,3 @@
-
 const { registerStatsService } = require('../services/statsService');
 
 // Mock de la base de datos para el test
@@ -56,7 +55,6 @@ describe('Integridad de Estadísticas (Stats Integrity)', () => {
         expect(stats.friends).toContain('amigo1');
         expect(Array.isArray(stats.selectedAchievements)).toBe(true);
         expect(Array.isArray(stats.dailyMissions)).toBe(true);
-
         // 4. Verificación de metadatos técnicos
         expect(stats._id).toBe('mock_id_121');
     });
