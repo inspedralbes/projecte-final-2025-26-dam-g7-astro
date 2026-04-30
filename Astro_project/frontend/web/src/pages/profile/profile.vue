@@ -383,6 +383,7 @@ const mascotOptions = [
 const playerMetrics = computed(() => ({
     coins: Number(coins.value) || 0,
     games: Number(partides.value) || 0,
+    missions: Number(astroStore.missionsCompleted) || 0,
     inventory: Number(astroStore.inventoryUnits) || 0,
     level: Number(level.value) || 1,
     xp: Number(xp.value) || 0

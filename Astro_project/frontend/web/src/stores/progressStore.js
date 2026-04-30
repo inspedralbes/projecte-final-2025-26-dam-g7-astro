@@ -40,6 +40,7 @@ export const useProgressStore = defineStore('progress', {
         maxScores: {},
         totalGamesPlayed: 0,
         totalPoints: 0,
+        missionsCompleted: 0,
         mapLevel: Number(storageGetItem('astro_mapLevel')) || 1,
         selectedAchievements: [],
         error: null
@@ -123,6 +124,10 @@ export const useProgressStore = defineStore('progress', {
             this.weeklyMissions = Array.isArray(missions) ? missions : [];
         },
 
+        setMissionsCompleted(count) {
+            this.missionsCompleted = Number(count) || 0;
+        },
+
         applyProfile(profile = {}) {
             this.setCoins(profile.coins ?? this.coins);
             this.setPartides(profile.gamesPlayed ?? this.partides);
@@ -194,6 +199,11 @@ export const useProgressStore = defineStore('progress', {
                 this.maxScores = userData.maxScores || {};
                 this.totalGamesPlayed = userData.totalGamesPlayed || 0;
                 this.totalPoints = userData.totalPoints || 0;
+                this.missionsCompleted = userData.missionsCompleted || 0;
+
+                // Sincronización crucial para logros
+                this.partides = this.totalGamesPlayed;
+
                 this.selectedAchievements = userData.selectedAchievements || [];
 
                 // Sincronizar con otros stores

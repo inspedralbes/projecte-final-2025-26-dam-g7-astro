@@ -25,12 +25,15 @@ function registerMissionRoutes(app, { getCollections }) {
             if (mission.claimed) return res.status(400).json({ message: "Esta recompensa ya ha sido reclamada" });
 
             // 3. Aplicamos los cambios en MongoDB
-            // Marcamos como reclamada y sumamos las monedas al balance del usuario
+            // Marcamos como reclamada, sumamos las monedas y aumentamos el contador de misiones completadas
             await users.updateOne(
                 { user, [`${missionKey}.id`]: missionId }, 
                 { 
                     $set: { [`${missionKey}.$.claimed`]: true },
-                    $inc: { coins: mission.reward || 0 }
+                    $inc: { 
+                        coins: mission.reward || 0,
+                        missionsCompleted: 1
+                    }
                 }
             );
 
