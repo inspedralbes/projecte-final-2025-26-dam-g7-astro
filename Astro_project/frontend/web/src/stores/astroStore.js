@@ -200,7 +200,7 @@ export const useAstroStore = defineStore('astro', () => {
     const topGames = computed(() => progressStore.topGames);
     const maxScores = computed(() => progressStore.maxScores);
     const totalGamesPlayed = computed(() => progressStore.totalGamesPlayed);
-    const totalPoints = computed(() => progressStore.totalPoints);
+
 
     return {
         user, plan, rank, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
@@ -213,7 +213,7 @@ export const useAstroStore = defineStore('astro', () => {
 
         mapLevel, // EXPORTADO
 
-        gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints, error,
+        gameHistory, topGames, maxScores, totalGamesPlayed, error,
         isStreakActiveToday, inventoryUnits,
         registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
         buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
