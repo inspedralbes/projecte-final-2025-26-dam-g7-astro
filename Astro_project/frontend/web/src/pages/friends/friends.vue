@@ -33,14 +33,10 @@
           <v-col v-for="friend in myFriendsList" :key="friend.user" cols="12" xl="3" lg="4" md="6">
             <v-card class="friend-card detailed-card h-100" variant="flat">
               <!-- Top Banner / Header -->
-              <div class="card-header-gradient" :class="getRankClass(friend.level)">
-                <v-chip size="x-small" color="white" variant="tonal" class="rank-badge font-weight-black">
-                  {{ getRankName(friend.level) }}
-                </v-chip>
-              </div>
+              <div class="card-header-gradient" :class="getRankClass(friend.level)"></div>
 
               <div class="card-body pa-5 pt-2">
-                <div class="d-flex align-start justify-space-between mb-4">
+                <div class="d-flex align-start justify-space-between mb-2">
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(friend.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
@@ -61,7 +57,12 @@
                   </div>
                 </div>
 
-                <h2 class="text-h5 font-weight-black text-white mb-4 name-title">{{ friend.user }}</h2>
+                <div class="mb-4">
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.user }}</h2>
+                  <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(friend.level)]" size="x-small">
+                    {{ getRankName(friend.level) }}
+                  </v-chip>
+                </div>
 
                 <!-- Achievements Mini Showcase -->
                 <div class="section-label-mini mb-2">CONDECORACIONES</div>
@@ -134,7 +135,7 @@
                <div class="card-header-gradient" :class="getRankClass(explorer.level)"></div>
 
                <div class="card-body pa-5 pt-2">
-                <div class="d-flex align-start justify-space-between mb-4">
+                <div class="d-flex align-start justify-space-between mb-2">
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(explorer.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
@@ -150,7 +151,12 @@
                   </div>
                 </div>
 
-                <h2 class="text-h5 font-weight-black text-white mb-6 name-title">{{ explorer.user }}</h2>
+                <div class="mb-6">
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
+                  <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
+                    {{ getRankName(explorer.level) }}
+                  </v-chip>
+                </div>
 
                 <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
 
@@ -195,8 +201,15 @@
                   </div>
                 </div>
 
-                <h2 class="text-h5 font-weight-black text-white mb-2 name-title">{{ requester.user }}</h2>
-                <p class="text-caption text-cyan-accent-1 mb-6 font-weight-bold">SOLICITUD DE RECLUTAMIENTO</p>
+                <div class="mb-6">
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.user }}</h2>
+                  <div class="d-flex align-center gap-2">
+                    <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(requester.level)]" size="x-small">
+                      {{ getRankName(requester.level) }}
+                    </v-chip>
+                    <span class="text-caption text-cyan-accent-1 font-weight-bold">· LVL {{ requester.level || 1 }}</span>
+                  </div>
+                </div>
 
                 <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
 
@@ -246,8 +259,11 @@
           </div>
 
           <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
-          <div class="text-cyan-accent-2 font-weight-bold text-h6 mb-6 tracking-widest text-uppercase">
-            {{ getRankName(profileDialog.user?.level) }}
+          <div class="mb-6">
+            <v-chip :class="['rank-chip font-weight-black px-6', getRankClass(profileDialog.user?.level)]" size="large">
+              {{ getRankName(profileDialog.user?.level) }}
+            </v-chip>
+            <div class="mt-2 text-overline text-grey-lighten-1">NIVEL {{ profileDialog.user?.level || 1 }}</div>
           </div>
           
           <v-row class="bg-black-semi pa-4 rounded-lg mb-8" no-gutters>
@@ -564,6 +580,15 @@ const rejectRequest = async (requesterName) => {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+.rank-chip-mini {
+  font-size: 0.65rem !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px !important;
 }
 
 .avatar-container {
