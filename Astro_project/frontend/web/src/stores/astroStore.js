@@ -87,7 +87,13 @@ export const useAstroStore = defineStore('astro', () => {
     async function fetchUserStats() {
         const result = await progressStore.fetchUserStats();
         if (result.success && result.stats) {
-            // Sincronizar también al actualizar estadísticas
+            // Sincronizar también datos de perfil en el sessionStore
+            if (result.stats.rank) sessionStore.setRank(result.stats.rank);
+            if (result.stats.plan) sessionStore.setPlan(result.stats.plan);
+            if (result.stats.avatar) sessionStore.setAvatar(result.stats.avatar);
+            if (result.stats.mascot) sessionStore.setMascot(result.stats.mascot);
+
+            // Sincronizar también listas sociales
             socialStore.setFriends(result.stats.friends || []);
             socialStore.setFriendRequests(result.stats.friendRequests || []);
         }
