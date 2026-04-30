@@ -1,7 +1,7 @@
 <template>
     <v-container fluid class="space-map pa-0">
 
-        <div v-if="!activeGameComponent" class="map-scroll-container">
+        <div v-if="!activeGameComponent" class="map-scroll-container" @click="activePreviewIndex = null">
 
             <div class="start-spacer"></div>
 
@@ -57,7 +57,7 @@
                             <button class="node-btn" :class="[
                                 `state-${getLevelState(index)}`,
                                 { 'is-interactive': index + 1 <= astroStore.mapLevel }
-                            ]" @click="handleLevelClick(index)" v-ripple>
+                            ]" @click.stop="handleLevelClick(index)" v-ripple>
                                 <div class="icon-layer">
                                     <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
                                         class="icon-completed" />
@@ -74,6 +74,33 @@
                                     <span>✦</span><span>✦</span>
                                 </div>
                             </button>
+
+                            <!-- Viñeta de Previsualización -->
+                            <transition name="pop-in">
+                                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
+                                    <div class="preview-gif-container">
+                                        <img :src="level.previewGif || '/previews/placeholder.gif'" alt="Preview" class="preview-gif">
+                                        <div class="preview-overlay">
+                                            <div class="preview-badge">{{ level.minScore }} pts</div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-content">
+                                        <h3 class="preview-title">{{ level.name }}</h3>
+                                        <v-btn
+                                            color="cyan-accent-3"
+                                            class="play-btn-preview font-weight-black"
+                                            block
+                                            rounded="lg"
+                                            elevation="8"
+                                            @click.stop="startGame(index)"
+                                        >
+                                            <v-icon icon="mdi-play" start></v-icon>
+                                            ¡JUGAR!
+                                        </v-btn>
+                                    </div>
+                                    <div class="preview-arrow"></div>
+                                </div>
+                            </transition>
 
                         </div>
                     </div>
@@ -166,6 +193,7 @@ import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
 const currentPlayingIndex = ref(null); 
+const activePreviewIndex = ref(null);
 
 const showLevelUpDialog = ref(false);
 const showFailDialog = ref(false);
@@ -180,14 +208,14 @@ const newLevelData = ref({
 });
 
 const levelSequence = [
-    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth' },
-    { name: '¡Despegue!', component: RadarScan, minScore: 200 },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350 },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500 },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system' },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000 },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250 },
-    { name: 'Reparación Express', component: RadarScan, minScore: 1500 },
+    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { name: '¡Despegue!', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
+    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
+    { name: 'Reparación Express', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
 ];
 
 const getLevelState = (index) => {
@@ -201,9 +229,18 @@ const getLevelState = (index) => {
 const handleLevelClick = (index) => {
     const state = getLevelState(index);
     if (state !== 'locked') {
-        currentPlayingIndex.value = index;
-        activeGameComponent.value = levelSequence[index].component;
+        if (activePreviewIndex.value === index) {
+            activePreviewIndex.value = null;
+        } else {
+            activePreviewIndex.value = index;
+        }
     }
+};
+
+const startGame = (index) => {
+    activePreviewIndex.value = null;
+    currentPlayingIndex.value = index;
+    activeGameComponent.value = levelSequence[index].component;
 };
 
 const handleGameOver = async (finalScore) => {
@@ -521,5 +558,119 @@ svg {
 
 .v-divider {
     opacity: 0.2 !important;
+}
+
+/* --- ESTILOS DE LA VIÑETA DE PREVISUALIZACIÓN --- */
+
+.level-preview-card {
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border: 2px solid rgba(0, 229, 255, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1);
+    z-index: 100;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-gif-container {
+    width: 100%;
+    height: 120px;
+    position: relative;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    background: #000;
+}
+
+.preview-gif {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.level-preview-card:hover .preview-gif {
+    transform: scale(1.05);
+}
+
+.preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
+}
+
+.preview-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 229, 255, 0.2);
+    border: 1px solid rgba(0, 229, 255, 0.5);
+    color: #00e5ff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.preview-content {
+    padding: 12px;
+    text-align: center;
+}
+
+.preview-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.play-btn-preview {
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.play-btn-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+}
+
+.preview-arrow {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid rgba(15, 23, 42, 0.85);
+}
+
+/* ANIMACIÓN POP-IN */
+.pop-in-enter-active {
+    animation: pop-in-kf 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pop-in-leave-active {
+    animation: pop-in-kf 0.2s reverse ease-in;
+}
+
+@keyframes pop-in-kf {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.5) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1) translateY(0);
+    }
 }
 </style>
