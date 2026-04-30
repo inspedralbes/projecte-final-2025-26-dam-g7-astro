@@ -51,8 +51,9 @@ function createGetUserStats({
 
         const generateMissions = (templates, count) => {
             const shuffled = [...templates].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, count).map(t => ({
+            return shuffled.slice(0, count).map((t, index) => ({
                 ...t,
+                id: `${t.type}_${Date.now()}_${index}`,
                 progress: 0,
                 completed: false,
                 claimed: false
@@ -117,6 +118,12 @@ function createGetUserStats({
             .limit(50)
             .toArray();
 
+        // Top 3 partidas por puntuación
+        const topGames = await partides.find({ user: username })
+            .sort({ score: -1 })
+            .limit(3)
+            .toArray();
+
         // --- RETORNO DE DATOS COMPLETOS ---
         return {
             _id: userDoc._id,
@@ -140,7 +147,7 @@ function createGetUserStats({
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
             gameHistory: realGameHistory,
-            topGames: userDoc.topGames || [],
+            topGames: topGames,
             maxScores: userDoc.maxScores || {},
             selectedAchievements: userDoc.selectedAchievements || [],
             totalGamesPlayed: totalGamesPlayed,
