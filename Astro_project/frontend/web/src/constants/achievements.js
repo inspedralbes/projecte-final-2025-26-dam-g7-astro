@@ -5,9 +5,9 @@ export const ACHIEVEMENTS = [
         description: 'Completa 1 misión.',
         icon: 'mdi-rocket-launch',
         type: 'bronze',
-        metric: 'games',
+        metric: 'missions',
         goal: 1,
-        metricLabel: 'Partidas'
+        metricLabel: 'Misiones'
     },
     {
         id: 2,
@@ -15,9 +15,9 @@ export const ACHIEVEMENTS = [
         description: 'Completa 5 misiones.',
         icon: 'mdi-gamepad-variant',
         type: 'bronze',
-        metric: 'games',
+        metric: 'missions',
         goal: 5,
-        metricLabel: 'Partidas'
+        metricLabel: 'Misiones'
     },
     {
         id: 3,
@@ -25,9 +25,9 @@ export const ACHIEVEMENTS = [
         description: 'Completa 20 misiones.',
         icon: 'mdi-star-four-points',
         type: 'silver',
-        metric: 'games',
+        metric: 'missions',
         goal: 20,
-        metricLabel: 'Partidas'
+        metricLabel: 'Misiones'
     },
     {
         id: 4,
@@ -125,9 +125,9 @@ export const ACHIEVEMENTS = [
         description: 'Completa 10 misiones.',
         icon: 'mdi-brain',
         type: 'silver',
-        metric: 'games',
+        metric: 'missions',
         goal: 10,
-        metricLabel: 'Partidas'
+        metricLabel: 'Misiones'
     },
     {
         id: 14,
@@ -145,9 +145,9 @@ export const ACHIEVEMENTS = [
         description: 'Completa 50 misiones.',
         icon: 'mdi-trophy-award',
         type: 'gold',
-        metric: 'games',
+        metric: 'missions',
         goal: 50,
-        metricLabel: 'Partidas'
+        metricLabel: 'Misiones'
     },
     {
         id: 16,

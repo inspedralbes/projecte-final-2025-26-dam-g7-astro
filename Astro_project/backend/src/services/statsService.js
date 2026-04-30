@@ -190,6 +190,7 @@ function createGetUserStats({
             selectedAchievements: userDoc.selectedAchievements || [],
             totalGamesPlayed: totalGamesPlayed,
             totalPoints: totalPoints,
+            missionsCompleted: userDoc.missionsCompleted || 0,
             friends: userDoc.friends || [],
             friendRequests: userDoc.friendRequests || []
         };
