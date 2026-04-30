@@ -53,7 +53,7 @@ function createGetUserStats({
             const shuffled = [...templates].sort(() => 0.5 - Math.random());
             return shuffled.slice(0, count).map((t, index) => ({
                 ...t,
-                id: `${t.type}_${Date.now()}_${index}`,
+                id: t.id || `${t.type}_${Date.now()}_${index}`,
                 text: t.label, // Compatibilidad con versiones antiguas
                 progress: 0,
                 completed: false,
@@ -62,46 +62,68 @@ function createGetUserStats({
         };
 
         // --- SANEAR MISIONES EXISTENTES (MIGRACIÓN EN CALIENTE) ---
-        // Si el usuario ya tiene misiones hoy pero sin el campo 'label', lo recuperamos de 'text'
+        // Si el usuario ya tiene misiones hoy pero sin el campo 'label' o 'id', lo arreglamos
         const healMissions = (missions) => {
-            if (!Array.isArray(missions)) return [];
-            return missions.map(m => {
-                if (!m.label && m.text) m.label = m.text;
-                if (!m.text && m.label) m.text = m.label;
-                return m;
+            if (!Array.isArray(missions)) return { missions: [], changed: false };
+            let changed = false;
+            const healed = missions.map((m, index) => {
+                const newM = { ...m };
+                if (!newM.label && newM.text) { newM.label = newM.text; changed = true; }
+                if (!newM.text && newM.label) { newM.text = newM.label; changed = true; }
+                if (!newM.id) { 
+                    newM.id = `${newM.type}_${index}_fixed`; 
+                    changed = true; 
+                }
+                // Asegurar que tengan recompensa si les falta
+                if (newM.reward === undefined) {
+                    newM.reward = newM.type === 'streak' ? 200 : 100;
+                    changed = true;
+                }
+                return newM;
             });
+            return { missions: healed, changed };
         };
 
         // Diarias
         if (userDoc.lastDailyMissionDate !== today) {
             const DAILY_TEMPLATES = [
-                { type: 'games', goal: 3, label: 'Juega 3 partidas' },
-                { type: 'coins', goal: 500, label: 'Gana 500 créditos' },
-                { type: 'xp', goal: 200, label: 'Consigue 200 XP' },
-                { type: 'streak', goal: 1, label: 'Mantén tu racha' },
-                { type: 'item', goal: 1, label: 'Usa un objeto' }
+                { type: 'games', goal: 3, label: 'Juega 3 partidas', reward: 150 },
+                { type: 'coins', goal: 500, label: 'Gana 500 créditos', reward: 100 },
+                { type: 'xp', goal: 200, label: 'Consigue 200 XP', reward: 120 },
+                { type: 'streak', goal: 1, label: 'Mantén tu racha', reward: 200 },
+                { type: 'item', goal: 1, label: 'Usa un objeto', reward: 80 }
             ];
             updates.dailyMissions = generateMissions(DAILY_TEMPLATES, 3);
             updates.lastDailyMissionDate = today;
             needsUpdate = true;
         } else {
-            userDoc.dailyMissions = healMissions(userDoc.dailyMissions);
+            const healed = healMissions(userDoc.dailyMissions);
+            if (healed.changed) {
+                updates.dailyMissions = healed.missions;
+                userDoc.dailyMissions = healed.missions;
+                needsUpdate = true;
+            }
         }
 
         // Semanales
         if (userDoc.lastWeeklyMissionKey !== currentWeekKey) {
             const WEEKLY_TEMPLATES = [
-                { type: 'games', goal: 20, label: 'Juega 20 partidas' },
-                { type: 'coins', goal: 3000, label: 'Gana 3000 créditos' },
-                { type: 'xp', goal: 1500, label: 'Consigue 1500 XP' },
-                { type: 'streak', goal: 5, label: 'Llega a racha de 5 días' },
-                { type: 'item', goal: 10, label: 'Usa 10 objetos' }
+                { type: 'games', goal: 20, label: 'Juega 20 partidas', reward: 1000 },
+                { type: 'coins', goal: 3000, label: 'Gana 3000 créditos', reward: 800 },
+                { type: 'xp', goal: 1500, label: 'Consigue 1500 XP', reward: 1200 },
+                { type: 'streak', goal: 5, label: 'Llega a racha de 5 días', reward: 2000 },
+                { type: 'item', goal: 10, label: 'Usa 10 objetos', reward: 500 }
             ];
             updates.weeklyMissions = generateMissions(WEEKLY_TEMPLATES, 2);
             updates.lastWeeklyMissionKey = currentWeekKey;
             needsUpdate = true;
         } else {
-            userDoc.weeklyMissions = healMissions(userDoc.weeklyMissions);
+            const healed = healMissions(userDoc.weeklyMissions);
+            if (healed.changed) {
+                updates.weeklyMissions = healed.missions;
+                userDoc.weeklyMissions = healed.missions;
+                needsUpdate = true;
+            }
         }
 
         if (needsUpdate) {
