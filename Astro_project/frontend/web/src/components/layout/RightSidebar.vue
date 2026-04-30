@@ -5,25 +5,32 @@
             <!-- Stats Section -->
             <div class="section-label mb-4">ESTADO DEL PILOTO</div>
             
-            <v-card class="glass-card mb-4 pa-4" elevation="0">
+            <v-card class="glass-card mb-4 pt-5 px-4 pb-6" elevation="0" style="overflow: visible !important;">
                 <div class="d-flex justify-space-around align-center">
-                    <div class="text-center streak-container">
-                        <div class="streak-icon-wrapper mb-1">
+                    <div class="text-center streak-container d-flex flex-column align-center">
+                        <div class="streak-icon-wrapper">
                             <v-icon 
                                 :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'" 
                                 :class="['streak-fire-icon', { 'active-fire': isStreakActiveToday }]"
                                 :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'"
-                                size="32"
+                                size="28"
                             ></v-icon>
                             <div v-if="isStreakActiveToday" class="fire-glow"></div>
                         </div>
                         <div class="stat-value text-h5 font-weight-bold" :class="isStreakActiveToday ? 'text-orange-accent-3' : 'text-grey'">
                             {{ userStreak }}
                         </div>
-                        <div class="stat-label">RACHA</div>
+                        <div class="stat-label" :class="{ 'active-label': isStreakActiveToday }">RACHA</div>
                     </div>
                     <v-divider vertical class="mx-2 border-opacity-25" color="white"></v-divider>
-                    <div class="text-center">
+                    <div class="text-center d-flex flex-column align-center">
+                        <div class="streak-icon-wrapper">
+                            <v-icon 
+                                icon="mdi-database" 
+                                color="yellow-accent-3"
+                                size="28"
+                            ></v-icon>
+                        </div>
                         <div class="stat-value text-h5 font-weight-bold text-yellow-accent-3">
                             {{ userCoins }}
                         </div>
@@ -47,7 +54,7 @@
                 <v-btn icon="mdi-refresh" variant="text" color="primary" density="compact" @click="refreshMissions" :loading="isRefreshing"></v-btn>
             </div>
 
-            <div class="missions-container flex-grow-1 overflow-y-auto pr-2">
+            <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
                 <div v-if="!dailyMissions || dailyMissions.length === 0" class="text-caption text-grey text-center py-4">
                     Sincronizando con la base...
                 </div>
@@ -73,7 +80,7 @@
                 </v-card>
             </div>
 
-            <v-btn block variant="text" color="primary" class="mt-2 mb-4 text-caption font-weight-bold" @click="dialogDiarias = true">
+            <v-btn block variant="text" color="primary" class="mt-1 mb-2 text-caption font-weight-bold" @click="dialogDiarias = true">
                 VER TODAS LAS DIARIAS
             </v-btn>
 
@@ -83,7 +90,7 @@
                 <v-icon icon="mdi-calendar-clock" color="secondary" size="small"></v-icon>
             </div>
 
-            <div class="missions-container overflow-y-auto pr-2" style="max-height: 200px;">
+            <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
                 <div v-if="!weeklyMissions || weeklyMissions.length === 0" class="text-caption text-grey text-center py-4">
                     No hay misiones semanales...
                 </div>
@@ -243,10 +250,19 @@ const claimReward = async (missionId, type = 'daily') => {
 }
 
 .stat-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 800;
-    opacity: 0.5;
-    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    line-height: 1;
+    margin-top: -2px;
+}
+
+.active-label {
+    color: rgba(255, 160, 0, 0.8);
+    text-shadow: 0 0 8px rgba(255, 87, 34, 0.3);
 }
 
 .glow-bar {
