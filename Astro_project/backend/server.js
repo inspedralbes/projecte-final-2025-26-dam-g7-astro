@@ -11,6 +11,14 @@ const { createEnsureIndexes } = require('./src/services/indexes');
 const inventoryService = require('./src/services/inventoryService');
 const { createGetUserStats } = require('./src/services/statsService');
 const { createUpdateStreak } = require('./src/services/streakService');
+const GameService = require('./src/services/gameService');
+const AuthService = require('./src/services/authService');
+const ShopService = require('./src/services/shopService');
+const AchievementService = require('./src/services/achievementService');
+const SocialService = require('./src/services/socialService');
+const MissionService = require('./src/services/missionService');
+const UserService = require('./src/services/userService');
+const MultiplayerService = require('./src/services/multiplayerService');
 const { normalizeAchievementIds } = require('./src/utils/achievements');
 const boosterUtils = require('./src/utils/boosters');
 
@@ -27,6 +35,11 @@ const { registerMultiplayerRoutes } = require('./src/routes/multiplayerRoutes');
 const { registerWsHandlers } = require('./src/ws/registerWsHandlers');
 const roomManager = require('./src/ws/RoomManager');
 
+// REPOSITORIS
+const MongoUserRepository = require('./src/repositories/MongoUserRepository');
+const MongoPartidaRepository = require('./src/repositories/MongoPartidaRepository');
+const MongoRoomRepository = require('./src/repositories/MongoRoomRepository');
+
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -35,25 +48,32 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const getCollections = createGetCollections(getDB);
+
+// Inicialització de repositoris (patró injecció de dependències amb lazy loading)
+const userRepository = new MongoUserRepository(() => getCollections().users);
+const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
+const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
+
 roomManager.init(getCollections, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
 
 const getUserStats = createGetUserStats({
-    getCollections,
+    userRepository,
+    partidaRepository,
     normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
     getInventoryQuantity: inventoryService.getInventoryQuantity,
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
 });
 
 const updateStreak = createUpdateStreak({
-    getCollections,
+    userRepository,
     normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
     getInventoryQuantity: inventoryService.getInventoryQuantity
 });
 
-registerStatsRoutes(app, { getUserStats });
-registerGameRoutes(app, {
-    getCollections,
+const gameService = new GameService({
+    userRepository,
+    partidaRepository,
     updateStreak,
     JERARQUIA,
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
@@ -61,42 +81,64 @@ registerGameRoutes(app, {
     getScoreMultiplier: boosterUtils.getScoreMultiplier,
     getCoinsMultiplier: boosterUtils.getCoinsMultiplier
 });
-registerAuthRoutes(app, {
-    getDB,
-    updateStreak,
-    normalizeAchievementIds,
-    normalizeAndPersistInventory: inventoryService.normalizeAndPersistInventory,
-    getInventoryQuantity: inventoryService.getInventoryQuantity,
-    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
-});
-registerShopRoutes(app, {
-    getCollections,
-    normalizeAndPersistInventory: inventoryService.normalizeAndPersistInventory,
-    toPositiveInteger: inventoryService.toPositiveInteger,
-    getItemMaxQuantity: inventoryService.getItemMaxQuantity,
-    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem,
-    serializeInventory: inventoryService.serializeInventory,
-    getInventoryQuantity: inventoryService.getInventoryQuantity,
-    enrichInventory: inventoryService.enrichInventory
-});
-registerAchievementRoutes(app, { getCollections, getDB, normalizeAchievementIds });
-registerPlanRoutes(app, { getDB });
-registerInventoryRoutes(app, {
-    getCollections,
-    normalizeAndPersistInventory: inventoryService.normalizeAndPersistInventory,
-    getInventoryQuantity: inventoryService.getInventoryQuantity,
-    serializeInventory: inventoryService.serializeInventory,
-    enrichInventory: inventoryService.enrichInventory,
-    toPositiveInteger: inventoryService.toPositiveInteger,
-    getInventoryCatalogItem: inventoryService.getInventoryCatalogItem,
+
+const inventoryServiceInstance = new inventoryService.InventoryService({
+    userRepository,
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
     getBoosterFieldByItemId: boosterUtils.getBoosterFieldByItemId,
     addBoosterDuration: boosterUtils.addBoosterDuration
 });
 
-registerMissionRoutes(app, { getCollections });
-registerFriendRoutes(app, { getCollections });
-registerMultiplayerRoutes(app, { getCollections });
+const authService = new AuthService({
+    userRepository,
+    updateStreak,
+    normalizeAndPersistInventory: inventoryServiceInstance.normalizeAndPersistInventory.bind(inventoryServiceInstance),
+    getInventoryQuantity: inventoryServiceInstance.getInventoryQuantity.bind(inventoryServiceInstance),
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
+});
+
+const shopService = new ShopService({
+    userRepository,
+    inventoryService: inventoryServiceInstance
+});
+
+const achievementService = new AchievementService({
+    userRepository,
+    normalizeAchievementIds
+});
+
+const socialService = new SocialService({
+    userRepository
+});
+
+const missionService = new MissionService({
+    userRepository
+});
+
+const userServiceInstance = new UserService({
+    userRepository
+});
+
+const multiplayerService = new MultiplayerService({
+    roomRepository
+});
+
+registerStatsRoutes(app, { getUserStats });
+registerGameRoutes(app, { gameService });
+registerAuthRoutes(app, {
+    authService,
+    normalizeAchievementIds,
+    getInventoryQuantity: inventoryServiceInstance.getInventoryQuantity.bind(inventoryServiceInstance),
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
+});
+registerShopRoutes(app, { shopService });
+registerAchievementRoutes(app, { achievementService });
+registerPlanRoutes(app, { userService: userServiceInstance });
+registerInventoryRoutes(app, { inventoryService: inventoryServiceInstance });
+
+registerMissionRoutes(app, { missionService });
+registerFriendRoutes(app, { socialService });
+registerMultiplayerRoutes(app, { multiplayerService });
 
 // Pasar getDB como getter lazy (mismo patrón que otros servicios)
 registerWsHandlers(wss, getDB);
@@ -113,30 +155,11 @@ connectDB()
         console.error('Error arrancando servidor:', error);
         process.exit(1);
     });
-// --- NUEVA RUTA PARA AMIGOS (EXPLORADORES) ---
+
+// --- RUTES D'USUARI EXTRES ---
 app.get('/api/users', async (req, res) => {
     try {
-        const { users } = getCollections();
-        // Traemos a todos los usuarios pero solo los campos necesarios para la lista
-        const allUsers = await users.find({}, {
-            projection: {
-                user: 1,
-                level: 1,
-                rank: 1,
-                mascot: 1,
-                avatar: 1,
-                streak: 1,
-                selectedAchievements: 1,
-                friendRequests: 1
-            }
-        }).toArray();
-
-        // Asegurar que todos tienen un avatar por defecto si falta en la DB
-        const processedUsers = allUsers.map(u => ({
-            ...u,
-            avatar: u.avatar || 'Astronauta_blanc.jpg'
-        }));
-
+        const processedUsers = await userServiceInstance.getAllExplorers();
         res.json(processedUsers);
     } catch (error) {
         console.error("❌ Error al obtener exploradores:", error);
@@ -151,12 +174,11 @@ app.put('/api/user/avatar', async (req, res) => {
     }
 
     try {
-        const { users } = getCollections();
-        await users.updateOne({ user }, { $set: { avatar } });
+        await userServiceInstance.updateAvatar(user, avatar);
         console.log(`👤 Avatar actualizado en DB para ${user}: ${avatar}`);
         res.json({ success: true, avatar });
     } catch (error) {
         console.error("❌ Error al actualizar avatar en DB:", error);
-        res.status(500).json({ message: "Error interno al actualizar avatar" });
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
     }
 });
