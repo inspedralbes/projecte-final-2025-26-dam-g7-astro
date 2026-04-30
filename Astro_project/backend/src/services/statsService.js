@@ -9,15 +9,17 @@ const {
     normalizeActiveBoosters
 } = require('../utils/boosters');
 
-function registerStatsService(app, {
+function createGetUserStats({
     getCollections,
-    JERARQUIA
+    normalizeInventoryEntries,
+    getInventoryQuantity,
+    normalizeActiveBoosters
 }) {
     /**
      * Recupera todas las estadísticas de un usuario, procesa misiones diarias/semanales
      * y normaliza el inventario.
      */
-    async function getUserStats(username) {
+    return async function getUserStats(username) {
         const { users, partides } = getCollections();
 
         // Búsqueda EXACTA (Case Sensitive) a petición del usuario
@@ -131,13 +133,10 @@ function registerStatsService(app, {
             friends: userDoc.friends || [],
             friendRequests: userDoc.friendRequests || []
         };
-    }
-
-    return {
-        getUserStats
     };
 }
 
 module.exports = {
-    registerStatsService
+    createGetUserStats
 };
+

@@ -1,4 +1,4 @@
-const { registerStatsService } = require('../services/statsService');
+const { createGetUserStats } = require('../services/statsService');
 const { 
     normalizeAndPersistInventory, 
     toPositiveInteger,
@@ -33,9 +33,11 @@ describe('Data Integrity Tests', () => {
             partides: mockPartidesCollection
         });
 
-        statsService = registerStatsService({}, {
+        statsService = createGetUserStats({
             getCollections: mockGetCollections,
-            JERARQUIA
+            normalizeInventoryEntries: (inv) => inv, // Mock simple
+            getInventoryQuantity: () => 0,
+            normalizeActiveBoosters: (b) => b
         });
     });
 
@@ -49,7 +51,7 @@ describe('Data Integrity Tests', () => {
 
         mockUsersCollection.findOne.mockResolvedValue(minimalistUser);
 
-        const stats = await statsService.getUserStats('testuser');
+        const stats = await statsService('testuser');
 
         expect(stats.level).toBe(1);
         expect(stats.coins).toBe(1000);
@@ -67,7 +69,7 @@ describe('Data Integrity Tests', () => {
 
         mockUsersCollection.findOne.mockResolvedValue(corruptedUser);
 
-        const stats = await statsService.getUserStats('corrupted');
+        const stats = await statsService('corrupted');
 
         // Aunque el DB tenga basura, el servicio debe devolver valores seguros o el DB
         // En la implementación actual, devuelve el valor del doc. 
@@ -80,11 +82,11 @@ describe('Data Integrity Tests', () => {
 
     test('getUserStats debe respetar la racha si existe, o poner 0 si no', async () => {
         mockUsersCollection.findOne.mockResolvedValue({ user: 'testuser', streak: 5 });
-        let stats = await statsService.getUserStats('testuser');
+        let stats = await statsService('testuser');
         expect(stats.streak).toBe(5);
 
         mockUsersCollection.findOne.mockResolvedValue({ user: 'testuser' }); // Sin streak
-        stats = await statsService.getUserStats('testuser');
+        stats = await statsService('testuser');
         expect(stats.streak).toBe(0);
     });
 
@@ -94,7 +96,7 @@ describe('Data Integrity Tests', () => {
         // MongoDB findOne con { user: 'User' } no encontrará 'user' si el índice/colación es case-sensitive.
         // Aquí probamos que el servicio llama a findOne con el string exacto.
         
-        await statsService.getUserStats('AlphaCentauri');
+        await statsService('AlphaCentauri');
         
         expect(mockUsersCollection.findOne).toHaveBeenCalledWith({
             $or: [
@@ -169,7 +171,7 @@ describe('Data Integrity Tests', () => {
         // Si el nivel es 25, el rango debería ser 'Omnisciente del Cosmos' (el último de nuestro mock)
         mockUsersCollection.findOne.mockResolvedValue({ user: 'highlevel', level: 25, rank: 'Cadete' });
         
-        const stats = await statsService.getUserStats('highlevel');
+        const stats = await statsService('highlevel');
         
         // El servicio actualmente NO corrige el rango al leer, solo devuelve lo que hay
         // pero garantiza que si no hay, devuelve el default.
@@ -189,7 +191,7 @@ describe('Data Integrity Tests', () => {
 
         mockUsersCollection.findOne.mockResolvedValue(userWithOldMissions);
 
-        await statsService.getUserStats('missiontest');
+        await statsService('missiontest');
 
         // Debe haber llamado a updateOne para resetear las misiones
         expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
