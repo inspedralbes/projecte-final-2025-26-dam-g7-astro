@@ -15,8 +15,13 @@ let database = null;
 async function connectDB() {
     try {
         await client.connect();
-        console.log(' Connectat a MongoDB Atlas');
         database = client.db('Astro');
+
+        // LOG DE DIAGNÓSTICO: Verificamos la conexión real
+        const dbName = database.databaseName;
+        const host = client.options.srvHost || 'localhost';
+        console.log(`📡 Conectado a MongoDB: ${dbName} en ${host}`);
+
         return database;
     } catch (error) {
         console.error(' Error connectant a MongoDB:', error);
