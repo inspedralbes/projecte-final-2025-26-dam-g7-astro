@@ -44,6 +44,7 @@ function createGetUserStats({
 }) {
     return async function getUserStats(username) {
         const { users, partides } = getCollections();
+
         let userDoc = await users.findOne({ 
             $or: [
                 { user: username },
@@ -60,9 +61,8 @@ function createGetUserStats({
         if (!userDoc) return null;
 
         // --- LÓGICA DE GENERACIÓN DE MISIONES ---
-        const today = new Date().toDateString(); // Ej: "Tue Feb 24 2026"
+        const today = new Date().toDateString(); 
 
-        // Calculamos el número de semana actual para las semanales
         const currentDate = new Date();
         const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
         const days = Math.floor((currentDate - startOfYear) / (24 * 60 * 60 * 1000));
@@ -72,58 +72,29 @@ function createGetUserStats({
         let updates = {};
         let needsUpdate = false;
 
-        // A) Comprobar Misiones Diarias
         if (userDoc.lastDailyMissionDate !== today) {
-            console.log(`🔄 Generando nuevas misiones diarias para ${username}...`);
-            const newDailies = generateMissions(DAILY_TEMPLATES, 3);
-            updates.dailyMissions = newDailies;
+            updates.dailyMissions = generateMissions(DAILY_TEMPLATES, 3);
             updates.lastDailyMissionDate = today;
-            userDoc.dailyMissions = newDailies; // Actualizamos memoria local
             needsUpdate = true;
         }
 
-        // B) Comprobar Misiones Semanales
         if (userDoc.lastWeeklyMissionKey !== currentWeekKey) {
-            console.log(`📅 Generando nuevas misiones semanales para ${username}...`);
-            const newWeeklies = generateMissions(WEEKLY_TEMPLATES, 2);
-            updates.weeklyMissions = newWeeklies;
+            updates.weeklyMissions = generateMissions(WEEKLY_TEMPLATES, 2);
             updates.lastWeeklyMissionKey = currentWeekKey;
-            userDoc.weeklyMissions = newWeeklies; // Actualizamos memoria local
             needsUpdate = true;
         }
 
-        // C) Guardar cambios en DB si es necesario
         if (needsUpdate) {
             await users.updateOne({ user: username }, { $set: updates });
+            Object.assign(userDoc, updates);
         }
-
-        // --- FIN LÓGICA MISIONES ---
 
         const normalizedInventory = normalizeInventoryEntries(userDoc.inventory || []);
         const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        const freezeUnits = getInventoryQuantity(normalizedInventory, 2);
 
-        const [gamesPlayed, gamesByTypeRaw, recentGames, top5Games] = await Promise.all([
-            partides.countDocuments({ user: username }),
-            partides
-                .aggregate([
-                    { $match: { user: username } },
-                    { $group: { _id: '$game', total: { $sum: 1 } } }
-                ])
-                .toArray(),
-            partides.find({ user: username }).sort({ createdAt: -1 }).limit(20).toArray(),
-            partides.find({ user: username }).sort({ score: -1, timeSeconds: 1 }).limit(5).toArray()
-        ]);
-
-        const gamesByType = {};
-        for (const item of gamesByTypeRaw) {
-            gamesByType[item._id || 'UNKNOWN'] = item.total;
-        }
-
-        // Calcular puntos totales de todas las partidas
         const totalPointsResult = await partides.aggregate([
             { $match: { user: username } },
-            { $group: { _id: null, total: { $sum: "$score" } } }
+            { $group: { _id: null, total: { $sum: '$score' } } }
         ]).toArray();
         const totalPoints = totalPointsResult[0]?.total || 0;
 
@@ -139,22 +110,16 @@ function createGetUserStats({
             activeBoosters: normalizeActiveBoosters(userDoc.activeBoosters),
             inventoryCount: normalizedInventory.length,
             inventoryUnits,
-            gamesPlayed,
-            gamesByType,
             streak: userDoc.streak || 0,
-            streakFreezes: Math.max(userDoc.streakFreezes || 0, freezeUnits),
+            streakFreezes: userDoc.streakFreezes || 0,
             lastActivity: userDoc.lastActivity,
             lastGame: userDoc.lastGame,
-
-            // Aquí devolvemos las misiones (recién generadas o existentes)
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
-            friends: userDoc.friends || [],
-            // NUEVOS CAMPOS PARA EL HISTORIAL
-            gameHistory: recentGames,
-            topGames: top5Games,
+            gameHistory: userDoc.gameHistory || [],
+            topGames: userDoc.topGames || [],
             maxScores: userDoc.maxScores || {},
-            totalGamesPlayed: gamesPlayed,
+            totalGamesPlayed: userDoc.totalGamesPlayed || 0,
             totalPoints: totalPoints,
             friendRequests: userDoc.friendRequests || []
         };

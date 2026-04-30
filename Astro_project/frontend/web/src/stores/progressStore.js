@@ -170,30 +170,32 @@ export const useProgressStore = defineStore('progress', {
                     throw new Error(data.message || 'No se pudieron obtener las estadísticas.');
                 }
 
-                this.setCoins(data.coins ?? this.coins);
-                this.setLevel(data.level ?? this.level);
-                this.setXp(data.xp ?? this.xp);
-                this.setPartides(data.gamesPlayed ?? this.partides);
-                this.setStreak(data.streak ?? this.streak);
-                this.setStreakFreezes(data.streakFreezes ?? this.streakFreezes);
-                this.setActiveBoosters(data.activeBoosters ?? this.activeBoosters);
-                this.setLastActivity(data.lastActivity ?? this.lastActivity);
-                this.setLastGame(data.lastGame ?? this.lastGame);
-                this.setDailyMissions(data.dailyMissions || []);
-                this.setWeeklyMissions(data.weeklyMissions || []);
+                const userData = data.stats || {};
+                this.setCoins(userData.coins ?? this.coins);
+                this.setLevel(userData.level ?? this.level);
+                this.setXp(userData.xp ?? this.xp);
+                this.setPartides(userData.gamesPlayed ?? userData.partides ?? this.partides);
+                this.setStreak(userData.streak ?? this.streak);
+                this.setStreakFreezes(userData.streakFreezes ?? this.streakFreezes);
+                this.setActiveBoosters(userData.activeBoosters ?? this.activeBoosters);
+                this.setLastActivity(userData.lastActivity ?? this.lastActivity);
+                this.setLastGame(userData.lastGame ?? this.lastGame);
+                this.setDailyMissions(userData.dailyMissions || []);
+                this.setWeeklyMissions(userData.weeklyMissions || []);
 
-                // NUEVO: Actualizar el mapa al recargar stats
-                if (data.mapLevel !== undefined) {
-                    this.setMapLevel(data.mapLevel);
+                if (userData.mapLevel !== undefined) {
+                    this.setMapLevel(userData.mapLevel);
                 }
 
-                this.gameHistory = data.gameHistory || [];
-                this.topGames = data.topGames || [];
-                this.maxScores = data.maxScores || {};
-                this.totalGamesPlayed = data.totalGamesPlayed || 0;
-                this.totalPoints = data.totalPoints || 0;
+                this.gameHistory = userData.gameHistory || [];
+                this.topGames = userData.topGames || [];
+                this.maxScores = userData.maxScores || {};
+                this.totalGamesPlayed = userData.totalGamesPlayed || 0;
+                this.totalPoints = userData.totalPoints || 0;
 
-                return { success: true, stats: data };
+                return { success: true, stats: userData, data };
+
+
             } catch (error) {
                 console.error('❌ Error obteniendo estadísticas:', error);
                 this.error = error.message;
