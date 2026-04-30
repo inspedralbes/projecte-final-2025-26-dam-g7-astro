@@ -1,12 +1,11 @@
 
-const assert = require('assert');
 const { registerStatsService } = require('../services/statsService');
 
-// Mock de la base de datos
+// Mock de la base de datos para el test
 const mockCollections = {
     users: {
-        findOne: async (query) => {
-            if (query.$or[0].user === 'kim') {
+        findOne: jest.fn(async (query) => {
+            if (query.$or && query.$or[0].user === 'kim') {
                 return {
                     _id: 'mock_id_121',
                     user: 'kim',
@@ -17,17 +16,18 @@ const mockCollections = {
                     dailyMissions: [],
                     weeklyMissions: [],
                     gameHistory: [],
-                    selectedAchievements: ['logro1']
+                    selectedAchievements: ['logro1'],
+                    inventory: []
                 };
             }
             return null;
-        },
-        updateOne: async () => ({ modifiedCount: 1 })
+        }),
+        updateOne: jest.fn(async () => ({ modifiedCount: 1 }))
     },
     partides: {
-        aggregate: () => ({
+        aggregate: jest.fn(() => ({
             toArray: async () => [{ total: 1000000 }]
-        })
+        }))
     }
 };
 
@@ -37,38 +37,33 @@ const mockDependencies = {
     JERARQUIA: ['Cadete', 'Arquitecto de Realidades']
 };
 
-async function testStatsIntegrity() {
-    console.log('🧪 Ejecutando Test de Integridad de Estadísticas...');
-    
-    const service = registerStatsService(mockApp, mockDependencies);
-    const stats = await service.getUserStats('kim');
+describe('Integridad de Estadísticas (Stats Integrity)', () => {
+    test('Debe recuperar correctamente todos los campos críticos de un usuario de alto nivel', async () => {
+        const service = registerStatsService(mockApp, mockDependencies);
+        const stats = await service.getUserStats('kim');
 
-    // 1. Verificar que el usuario no sea nulo
-    assert.ok(stats, 'El servicio debería encontrar al usuario "kim"');
+        // 1. Verificación de existencia
+        expect(stats).toBeDefined();
+        expect(stats.user).toBe('kim');
 
-    // 2. Verificar Campos Críticos (Lo que fallaba antes)
-    assert.strictEqual(stats.level, 121, 'El nivel debería ser 121');
-    assert.strictEqual(stats.coins, 569400, 'Los créditos deberían ser 569400');
-    assert.strictEqual(stats.rank, 'Arquitecto de Realidades', 'El rango debería ser correcto');
-    
-    // 3. Verificar Estructura Social y Progresión
-    assert.ok(Array.isArray(stats.friends), 'El campo friends debe ser un Array');
-    assert.strictEqual(stats.friends.length, 1, 'Debería tener 1 amigo');
-    assert.ok(Array.isArray(stats.selectedAchievements), 'El campo selectedAchievements debe ser un Array');
-    assert.ok(Array.isArray(stats.dailyMissions), 'El campo dailyMissions debe ser un Array');
+        // 2. Verificación de progreso (Lo que causaba el bug del Nivel 1)
+        expect(stats.level).toBe(121);
+        expect(stats.coins).toBe(569400);
+        expect(stats.rank).toBe('Arquitecto de Realidades');
 
-    // 4. Verificar que el _id esté presente (Para depuración)
-    assert.ok(stats._id, 'El _id debe estar presente en la respuesta');
+        // 3. Verificación de estructura de Arrays (Social y Logros)
+        expect(Array.isArray(stats.friends)).toBe(true);
+        expect(stats.friends).toContain('amigo1');
+        expect(Array.isArray(stats.selectedAchievements)).toBe(true);
+        expect(Array.isArray(stats.dailyMissions)).toBe(true);
 
-    console.log('✅ Test de Integridad pasado con éxito: Todos los campos están "bien conectados".');
-}
-
-// Ejecutar si se llama directamente
-if (require.main === module) {
-    testStatsIntegrity().catch(err => {
-        console.error('❌ TEST FALLIDO:', err.message);
-        process.exit(1);
+        // 4. Verificación de metadatos técnicos
+        expect(stats._id).toBe('mock_id_121');
     });
-}
 
-module.exports = { testStatsIntegrity };
+    test('Debe devolver null si el usuario no existe (exact match)', async () => {
+        const service = registerStatsService(mockApp, mockDependencies);
+        const stats = await service.getUserStats('usuario_inexistente');
+        expect(stats).toBeNull();
+    });
+});
