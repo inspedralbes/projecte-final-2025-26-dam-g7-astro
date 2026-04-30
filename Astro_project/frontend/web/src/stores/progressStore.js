@@ -158,6 +158,7 @@ export const useProgressStore = defineStore('progress', {
             this.maxScores = profile.maxScores || {};
             this.totalGamesPlayed = profile.totalGamesPlayed || 0;
             this.totalPoints = profile.totalPoints || 0;
+            this.setMissionsCompleted(profile.missionsCompleted ?? this.missionsCompleted);
         },
 
         async fetchUserStats() {

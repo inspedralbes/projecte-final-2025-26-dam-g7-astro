@@ -44,6 +44,10 @@ export const useAstroStore = defineStore('astro', () => {
     // NUEVO: Estado para las solicitudes de amistad
     const friendRequests = computed({ get: () => socialStore.friendRequests, set: (value) => socialStore.setFriendRequests(value) });
 
+    // NUEVO: Sincronización de misiones completadas
+    const missionsCompleted = computed({ get: () => progressStore.missionsCompleted, set: (value) => progressStore.setMissionsCompleted(value) });
+    const totalPoints = computed({ get: () => progressStore.totalPoints, set: (value) => { progressStore.totalPoints = value; } });
+
     // NUEVO: Propiedad reactiva para el nivel del mapa (desvinculado de la XP de cuenta)
     const mapLevel = computed({
         get: () => progressStore.mapLevel,
@@ -204,6 +208,8 @@ export const useAstroStore = defineStore('astro', () => {
         dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
         
         friendRequests, // EXPORTADO
+        missionsCompleted, // EXPORTADO
+        totalPoints, // EXPORTADO
 
         mapLevel, // EXPORTADO
 
