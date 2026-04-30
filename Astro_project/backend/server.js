@@ -98,7 +98,8 @@ registerMissionRoutes(app, { getCollections });
 registerFriendRoutes(app, { getCollections });
 registerMultiplayerRoutes(app, { getCollections });
 
-registerWsHandlers(wss);
+// Pasar getDB como getter lazy (mismo patrón que otros servicios)
+registerWsHandlers(wss, getDB);
 
 connectDB()
     .then(async () => {

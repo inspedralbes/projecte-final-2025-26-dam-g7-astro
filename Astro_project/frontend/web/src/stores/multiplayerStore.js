@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
 import { API_BASE_URL, requestJson } from './astroShared';
+import { useChatStore } from './chatStore';
 
 function buildWsUrl() {
     // 1. Reemplazamos 'http' o 'https' por 'ws'
@@ -153,6 +154,18 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 case 'ERROR':
                     this.error = data.message;
                     break;
+
+                // ── CHAT EN TIEMPO REAL ──────────────────────────────
+                case 'CHAT_MESSAGE':
+                    useChatStore().handleIncomingMessage(data);
+                    break;
+                case 'CHAT_HISTORY':
+                    useChatStore().handleHistory(data);
+                    break;
+                case 'CHAT_UNREAD_COUNTS':
+                    useChatStore().handleUnreadCounts(data);
+                    break;
+
                 default:
                     break;
             }

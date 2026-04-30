@@ -6,16 +6,31 @@
     <v-main class="main-content">
       <router-view />
     </v-main>
+
+    <!-- Chat drawer global: persiste entre rutas -->
+    <ChatDrawer />
   </v-app>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
+import ChatDrawer from '@/components/layout/ChatDrawer.vue'
+import { useMultiplayerStore } from '@/stores/multiplayerStore'
+import { useSessionStore } from '@/stores/sessionStore'
 
 const route = useRoute()
+const sessionStore = useSessionStore()
+const multiplayerStore = useMultiplayerStore()
+
+// Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
+onMounted(() => {
+  if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+    multiplayerStore.connect()
+  }
+})
 
 // Define routes where sidebars should be hidden
 const showLayoutElements = computed(() => {
