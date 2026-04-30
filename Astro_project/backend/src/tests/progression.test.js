@@ -11,6 +11,6 @@ describe('Progression Constants', () => {
 
     test('debe contener los rangos esperados en orden', () => {
         expect(JERARQUIA[0]).toBe('Cadete de Vuelo');
-        expect(JERARQUIA[JERARQUIA.length - 1]).toBe('Almirante del Universo');
+        expect(JERARQUIA[JERARQUIA.length - 1]).toBe('Omnisciente del Cosmos');
     });
 });
