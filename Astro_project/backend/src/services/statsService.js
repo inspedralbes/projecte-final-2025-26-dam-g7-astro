@@ -54,10 +54,22 @@ function createGetUserStats({
             return shuffled.slice(0, count).map((t, index) => ({
                 ...t,
                 id: `${t.type}_${Date.now()}_${index}`,
+                text: t.label, // Compatibilidad con versiones antiguas
                 progress: 0,
                 completed: false,
                 claimed: false
             }));
+        };
+
+        // --- SANEAR MISIONES EXISTENTES (MIGRACIÓN EN CALIENTE) ---
+        // Si el usuario ya tiene misiones hoy pero sin el campo 'label', lo recuperamos de 'text'
+        const healMissions = (missions) => {
+            if (!Array.isArray(missions)) return [];
+            return missions.map(m => {
+                if (!m.label && m.text) m.label = m.text;
+                if (!m.text && m.label) m.text = m.label;
+                return m;
+            });
         };
 
         // Diarias
@@ -72,6 +84,8 @@ function createGetUserStats({
             updates.dailyMissions = generateMissions(DAILY_TEMPLATES, 3);
             updates.lastDailyMissionDate = today;
             needsUpdate = true;
+        } else {
+            userDoc.dailyMissions = healMissions(userDoc.dailyMissions);
         }
 
         // Semanales
@@ -86,6 +100,8 @@ function createGetUserStats({
             updates.weeklyMissions = generateMissions(WEEKLY_TEMPLATES, 2);
             updates.lastWeeklyMissionKey = currentWeekKey;
             needsUpdate = true;
+        } else {
+            userDoc.weeklyMissions = healMissions(userDoc.weeklyMissions);
         }
 
         if (needsUpdate) {
