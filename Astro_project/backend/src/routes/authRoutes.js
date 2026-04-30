@@ -55,12 +55,16 @@ function registerAuthRoutes(app, {
         try {
             const db = getDB();
             const usersCollection = db.collection('users');
-            const foundUser = await usersCollection.findOne({ 
+            const query = { 
                 $or: [
-                    { user: username, pass: password },
-                    { user: isNaN(Number(username)) ? null : Number(username), pass: password }
+                    { user: username, pass: password }
                 ]
-            });
+            };
+            if (!isNaN(Number(username))) {
+                query.$or.push({ user: Number(username), pass: password });
+            }
+
+            const foundUser = await usersCollection.findOne(query);
 
             if (!foundUser) {
                 return res.status(401).json({ status: 'Error', message: 'Credenciales no reconocidas' });

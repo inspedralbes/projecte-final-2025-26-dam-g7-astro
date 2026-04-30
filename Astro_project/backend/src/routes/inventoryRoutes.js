@@ -85,15 +85,14 @@ function registerInventoryRoutes(app, {
         const username = req.params.username;
         try {
             const { users } = getCollections();
-            const userDoc = await users.findOne(
-                { 
-                    $or: [
-                        { user: username },
-                        { user: isNaN(Number(username)) ? null : Number(username) }
-                    ]
-                },
-                { projection: { inventory: 1, streakFreezes: 1, activeBoosters: 1 } }
-            );
+            const query = { $or: [{ user: username }] };
+            if (!isNaN(Number(username))) {
+                query.$or.push({ user: Number(username) });
+            }
+
+            const userDoc = await users.findOne(query, { 
+                projection: { inventory: 1, streakFreezes: 1, activeBoosters: 1 } 
+            });
 
             if (!userDoc) return res.status(404).json({ message: 'Usuario no encontrado' });
 

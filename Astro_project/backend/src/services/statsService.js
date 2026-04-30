@@ -23,12 +23,12 @@ function createGetUserStats({
         const { users, partides } = getCollections();
 
         // Búsqueda EXACTA (Case Sensitive) a petición del usuario
-        let userDoc = await users.findOne({ 
-            $or: [
-                { user: username },
-                { user: isNaN(Number(username)) ? null : Number(username) }
-            ]
-        });
+        const query = { $or: [{ user: username }] };
+        if (!isNaN(Number(username))) {
+            query.$or.push({ user: Number(username) });
+        }
+
+        let userDoc = await users.findOne(query);
 
         if (userDoc) {
             console.log(`🔍 [DEBUG] Usuario encontrado: ${username} | _id: ${userDoc._id} | Nivel: ${userDoc.level}`);
@@ -96,11 +96,26 @@ function createGetUserStats({
         const normalizedInventory = await normalizeAndPersistInventory(userDoc, users);
         const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-        const totalPointsResult = await partides.aggregate([
+        // Agregamos estadísticas desde la colección de partidas para asegurar integridad
+        const statsAggregation = await partides.aggregate([
             { $match: { user: username } },
-            { $group: { _id: null, total: { $sum: '$score' } } }
+            { 
+                $group: { 
+                    _id: null, 
+                    totalPoints: { $sum: '$score' },
+                    totalGames: { $sum: 1 }
+                } 
+            }
         ]).toArray();
-        const totalPoints = totalPointsResult[0]?.total || 0;
+
+        const totalPoints = statsAggregation[0]?.totalPoints || 0;
+        const totalGamesPlayed = statsAggregation[0]?.totalGames || 0;
+
+        // Recuperamos el historial real de las últimas 50 partidas
+        const realGameHistory = await partides.find({ user: username })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .toArray();
 
         // --- RETORNO DE DATOS COMPLETOS ---
         return {
@@ -124,11 +139,11 @@ function createGetUserStats({
             lastGame: userDoc.lastGame,
             dailyMissions: userDoc.dailyMissions || [],
             weeklyMissions: userDoc.weeklyMissions || [],
-            gameHistory: userDoc.gameHistory || [],
+            gameHistory: realGameHistory,
             topGames: userDoc.topGames || [],
             maxScores: userDoc.maxScores || {},
             selectedAchievements: userDoc.selectedAchievements || [],
-            totalGamesPlayed: userDoc.totalGamesPlayed || 0,
+            totalGamesPlayed: totalGamesPlayed,
             totalPoints: totalPoints,
             friends: userDoc.friends || [],
             friendRequests: userDoc.friendRequests || []

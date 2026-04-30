@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
+import { useSocialStore } from './socialStore';
+import { useAchievementsStore } from './achievementsStore';
 import {
     STORAGE_KEYS,
     normalizeActiveBoosters,
@@ -193,6 +195,15 @@ export const useProgressStore = defineStore('progress', {
                 this.totalGamesPlayed = userData.totalGamesPlayed || 0;
                 this.totalPoints = userData.totalPoints || 0;
                 this.selectedAchievements = userData.selectedAchievements || [];
+
+                // Sincronizar con otros stores
+                const socialStore = useSocialStore();
+                socialStore.setFriends(userData.friends || []);
+                socialStore.setFriendRequests(userData.friendRequests || []);
+
+                const achievementsStore = useAchievementsStore();
+                achievementsStore.setSelectedAchievements(userData.selectedAchievements || []);
+                achievementsStore.setUnlockedAchievements(userData.unlockedAchievements || []);
 
                 return { success: true, stats: userData, data };
 
