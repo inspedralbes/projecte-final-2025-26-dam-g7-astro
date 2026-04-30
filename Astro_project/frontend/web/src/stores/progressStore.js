@@ -38,8 +38,8 @@ export const useProgressStore = defineStore('progress', {
         maxScores: {},
         totalGamesPlayed: 0,
         totalPoints: 0,
-        // NUEVA VARIABLE: Nivel del mapa independiente
         mapLevel: Number(storageGetItem('astro_mapLevel')) || 1,
+        selectedAchievements: [],
         error: null
     }),
 
@@ -192,6 +192,7 @@ export const useProgressStore = defineStore('progress', {
                 this.maxScores = userData.maxScores || {};
                 this.totalGamesPlayed = userData.totalGamesPlayed || 0;
                 this.totalPoints = userData.totalPoints || 0;
+                this.selectedAchievements = userData.selectedAchievements || [];
 
                 return { success: true, stats: userData, data };
 
