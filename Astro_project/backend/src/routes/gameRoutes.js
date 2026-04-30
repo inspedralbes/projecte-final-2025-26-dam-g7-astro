@@ -65,7 +65,7 @@ function registerGameRoutes(app, {
                 leveledUp = true;
             }
 
-            const rankIndex = Math.min(Math.floor((currentLevel - 1) / 2), JERARQUIA.length - 1);
+            const rankIndex = Math.min(Math.floor((currentLevel - 1) / 10), JERARQUIA.length - 1);
             const currentRank = JERARQUIA[rankIndex];
 
             let dailyMissions = currentUser.dailyMissions || [];

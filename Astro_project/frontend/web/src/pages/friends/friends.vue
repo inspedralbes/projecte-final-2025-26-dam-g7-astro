@@ -83,10 +83,18 @@
                     DESAFIAR
                   </v-btn>
                   <div class="d-flex gap-2">
-                    <v-btn color="cyan-accent-2" variant="tonal" class="action-btn font-weight-bold flex-grow-1" @click="startChat(friend)">
-                      <v-icon start icon="mdi-message-text-outline" size="18"></v-icon>
-                      MENSAJE
-                    </v-btn>
+                    <v-badge
+                      :model-value="!!chatStore.unreadCounts[friend.user]"
+                      color="error"
+                      :content="chatStore.unreadCounts[friend.user] > 9 ? '9+' : chatStore.unreadCounts[friend.user]"
+                      floating
+                      class="flex-grow-1 msg-badge"
+                    >
+                      <v-btn color="cyan-accent-2" variant="tonal" class="action-btn font-weight-bold w-100" @click="startChat(friend)">
+                        <v-icon start icon="mdi-message-text-outline" size="18"></v-icon>
+                        MENSAJE
+                      </v-btn>
+                    </v-badge>
                     <v-btn color="error" variant="tonal" class="action-btn px-0" style="min-width: 48px" @click="removeFriend(friend.user)">
                       <v-icon icon="mdi-account-minus-outline" size="20"></v-icon>
                     </v-btn>
@@ -342,20 +350,25 @@ const isFriend = (username) => {
   return Array.isArray(friends.value) && friends.value.includes(username);
 };
 
-// Rangos dinámicos
+// Rangos dinámicos (Cada 10 niveles)
+const RANKS = [
+  'Cadete', 'Explorador', 'Navegante', 'Capitán', 'Comandante', 
+  'Almirante', 'Centinela', 'Guardián', 'Forjador', 'Maestro',
+  'Arconte', 'Soberano', 'Arquitecto', 'Deidad', 'Omnisciente'
+];
+
 const getRankName = (level = 1) => {
-  if (level < 3) return 'Cadete';
-  if (level < 5) return 'Explorador';
-  if (level < 8) return 'Navegante';
-  if (level < 10) return 'Capitán';
-  return 'Comandante';
+  const index = Math.min(Math.floor((level - 1) / 10), RANKS.length - 1);
+  return RANKS[index];
 };
 
 const getRankClass = (level = 1) => {
-  if (level < 3) return 'rank-bronze';
-  if (level < 5) return 'rank-silver';
-  if (level < 8) return 'rank-gold';
-  return 'rank-platinum';
+  if (level <= 10) return 'rank-tier-1'; // Cadete
+  if (level <= 30) return 'rank-tier-2'; // Explorador/Navegante
+  if (level <= 60) return 'rank-tier-3'; // Capitán/Comandante/Almirante
+  if (level <= 100) return 'rank-tier-4'; // Centinela/Guardián/Forjador/Maestro
+  if (level <= 130) return 'rank-tier-5'; // Arconte/Soberano/Arquitecto
+  return 'rank-tier-6'; // Deidad/Omnisciente
 };
 
 const myFriendsList = computed(() => {
@@ -492,11 +505,66 @@ const rejectRequest = async (requesterName) => {
   width: 100%;
 }
 
-.rank-bronze { background: linear-gradient(to right, #4e342e, #795548); }
-.rank-silver { background: linear-gradient(to right, #37474f, #607d8b); }
-.rank-gold { background: linear-gradient(to right, #bf360c, #f4511e); }
-.rank-platinum { background: linear-gradient(to right, #1a237e, #3f51b5); }
-.bg-requests { background: linear-gradient(to right, #2e7d32, #1b5e20); }
+/* Estilos de Rangos Dinámicos */
+.rank-chip {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Tier 1: Básico */
+.rank-tier-1 { background: linear-gradient(135deg, #78909c, #455a64) !important; color: white !important; }
+
+/* Tier 2: Avanzado (Cyan) */
+.rank-tier-2 { 
+  background: linear-gradient(135deg, #00acc1, #006064) !important; 
+  color: white !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+}
+
+/* Tier 3: Superior (Púrpura) */
+.rank-tier-3 { 
+  background: linear-gradient(135deg, #8e24aa, #4a148c) !important; 
+  color: white !important;
+  border: 1px solid rgba(255, 0, 255, 0.4) !important;
+  box-shadow: 0 0 10px rgba(142, 36, 170, 0.3);
+}
+
+/* Tier 4: Élite (Dorado/Naranja) */
+.rank-tier-4 { 
+  background: linear-gradient(135deg, #ff9800, #e65100) !important; 
+  color: white !important;
+  border: 2px solid rgba(255, 255, 0, 0.5) !important;
+  box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);
+  font-weight: 900 !important;
+}
+
+/* Tier 5: Maestro (Carmesí/Oscuro) */
+.rank-tier-5 { 
+  background: linear-gradient(135deg, #c62828, #1a237e) !important; 
+  color: white !important;
+  border: 2px solid #ff1744 !important;
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* Tier 6: Legendario (Cósmico animado) */
+.rank-tier-6 { 
+  background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important;
+  background-size: 400% 400% !important;
+  animation: cosmic-bg 10s ease infinite !important;
+  color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 25px rgba(213, 0, 249, 0.6), inset 0 0 10px rgba(255,255,255,0.3);
+  font-weight: 900 !important;
+}
+
+@keyframes cosmic-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
 .avatar-container {
   position: relative;
@@ -644,5 +712,22 @@ const rejectRequest = async (requesterName) => {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Badge de mensajes no leídos */
+.msg-badge :deep(.v-badge__badge) {
+  font-size: 0.6rem !important;
+  font-weight: 900 !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 4px !important;
+  animation: badge-pulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+}
+
+@keyframes badge-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  60%  { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 </style>
