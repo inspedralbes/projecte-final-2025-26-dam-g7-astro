@@ -330,9 +330,8 @@ export const useProgressStore = defineStore('progress', {
                     throw new Error(data.message || 'Error al reclamar recompensa.');
                 }
 
-                this.setCoins(data.newBalance);
-                this.setDailyMissions(data.dailyMissions || this.dailyMissions);
-                this.setWeeklyMissions(data.weeklyMissions || this.weeklyMissions);
+                // Refrescamos todo el estado (incluyendo el "healing" de misiones y el nuevo balance)
+                await this.fetchUserStats();
 
                 return { success: true, message: data.message };
             } catch (error) {

@@ -150,6 +150,14 @@
                 </v-list>
             </v-card>
         </v-dialog>
+
+        <!-- Feedback de reclamación -->
+        <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" elevation="24">
+            <div class="d-flex align-center">
+                <v-icon :icon="snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'" class="mr-3"></v-icon>
+                <span class="font-weight-bold">{{ snackbar.text }}</span>
+            </div>
+        </v-snackbar>
     </v-navigation-drawer>
 </template>
 
@@ -184,6 +192,11 @@ const xpRequired = computed(() => 100 + (userLevel.value - 1) * 50)
 const dialogDiarias = ref(false)
 const dialogMisiones = ref(false)
 const isRefreshing = ref(false)
+const snackbar = ref({
+    show: false,
+    text: '',
+    color: 'success'
+})
 
 const refreshMissions = async () => {
     isRefreshing.value = true
@@ -191,7 +204,20 @@ const refreshMissions = async () => {
 }
 
 const claimReward = async (missionId, type = 'daily') => {
-    await astroStore.claimMissionReward(missionId, type)
+    const result = await astroStore.claimMissionReward(missionId, type)
+    if (result.success) {
+        snackbar.value = {
+            show: true,
+            text: result.message || '¡Recompensa reclamada!',
+            color: 'success'
+        }
+    } else {
+        snackbar.value = {
+            show: true,
+            text: result.message || 'Error al reclamar la misión',
+            color: 'error'
+        }
+    }
 }
 </script>
 
