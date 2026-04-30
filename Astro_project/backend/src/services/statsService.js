@@ -51,6 +51,12 @@ function createGetUserStats({
             ]
         });
 
+        if (userDoc) {
+            console.log(`🔍 [DEBUG] Usuario encontrado: ${username} | _id: ${userDoc._id} | Nivel: ${userDoc.level}`);
+        } else {
+            console.warn(`⚠️ [DEBUG] Usuario NO encontrado: ${username}`);
+        }
+
         if (!userDoc) return null;
 
         // --- LÓGICA DE GENERACIÓN DE MISIONES ---
@@ -122,12 +128,14 @@ function createGetUserStats({
         const totalPoints = totalPointsResult[0]?.total || 0;
 
         return {
+            _id: userDoc._id,
             user: userDoc.user,
             plan: userDoc.plan || 'INDIVIDUAL_FREE',
             rank: userDoc.rank || 'Cadete de Vuelo',
-            level: userDoc.level || 1,
-            xp: userDoc.xp || 0,
-            coins: userDoc.coins !== undefined ? userDoc.coins : 1000,
+            level: (userDoc.level !== undefined && userDoc.level !== null) ? userDoc.level : 1,
+            xp: (userDoc.xp !== undefined && userDoc.xp !== null) ? userDoc.xp : 0,
+            coins: (userDoc.coins !== undefined && userDoc.coins !== null) ? userDoc.coins : 1000,
+            mapLevel: (userDoc.mapLevel !== undefined && userDoc.mapLevel !== null) ? userDoc.mapLevel : 1,
             activeBoosters: normalizeActiveBoosters(userDoc.activeBoosters),
             inventoryCount: normalizedInventory.length,
             inventoryUnits,
