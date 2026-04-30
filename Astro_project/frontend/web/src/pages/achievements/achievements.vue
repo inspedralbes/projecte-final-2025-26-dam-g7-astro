@@ -137,7 +137,8 @@ const playerMetrics = computed(() => ({
     games: Number(astroStore.partides) || 0,
     inventory: Number(astroStore.inventoryUnits) || 0,
     level: Number(astroStore.level) || 1,
-    xp: Number(astroStore.xp) || 0
+    xp: Number(astroStore.xp) || 0,
+    missions: Number(astroStore.missionsCompleted) || 0
 }))
 
 onMounted(async () => {

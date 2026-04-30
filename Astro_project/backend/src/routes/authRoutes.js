@@ -37,6 +37,7 @@ function registerAuthRoutes(app, {
                 streakFreezes: 0,
                 activeBoosters: normalizeActiveBoosters(),
                 avatar: 'Astronauta_blanc.jpg',
+                missionsCompleted: 0,
                 lastActivity: new Date(),
                 createdAt: new Date()
             };
@@ -102,7 +103,8 @@ function registerAuthRoutes(app, {
                     gameHistory: foundUser.gameHistory || [],
                     maxScores: foundUser.maxScores || {},
                     totalGamesPlayed: foundUser.totalGamesPlayed || 0,
-                    totalPoints: foundUser.totalPoints || 0
+                    totalPoints: foundUser.totalPoints || 0,
+                    missionsCompleted: foundUser.missionsCompleted || 0
                 }
             });
         } catch (error) {
