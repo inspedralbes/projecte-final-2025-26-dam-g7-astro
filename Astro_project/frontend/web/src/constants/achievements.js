@@ -83,7 +83,7 @@ export const ACHIEVEMENTS = [
         id: 9,
         title: 'Subiendo de Rango',
         description: 'Alcanza el nivel 3.',
-        icon: 'mdi-shield-chevron-up',
+        icon: 'mdi-chevron-triple-up',
         type: 'bronze',
         metric: 'level',
         goal: 3,

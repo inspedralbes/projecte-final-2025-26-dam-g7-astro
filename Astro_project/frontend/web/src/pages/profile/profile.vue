@@ -42,8 +42,8 @@
                                         {{ user || 'Explorador' }}
                                     </h1>
                                     <div class="d-flex align-center ga-3">
-                                        <v-chip color="cyan-accent-3" size="small" variant="flat" class="rank-chip font-weight-black">
-                                            {{ rank || 'Cadete Estelar' }}
+                                        <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat">
+                                            {{ rank || 'Cadete de Vuelo' }}
                                         </v-chip>
                                         <span class="text-overline text-grey-lighten-1">NIVEL {{ level || 1 }}</span>
                                         <div class="status-indicator d-flex align-center ga-1">
@@ -323,6 +323,15 @@ const {
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
+const getRankClass = (lvl = 1) => {
+    if (lvl <= 10) return 'rank-tier-1';
+    if (lvl <= 30) return 'rank-tier-2';
+    if (lvl <= 60) return 'rank-tier-3';
+    if (lvl <= 100) return 'rank-tier-4';
+    if (lvl <= 130) return 'rank-tier-5';
+    return 'rank-tier-6';
+};
+
 const paginatedHistory = computed(() => {
     const start = (currentPage.value - 1) * pageSize
     const end = start + pageSize
@@ -571,6 +580,62 @@ watch(historyDialog, async (isOpen) => {
 
 .rank-chip {
     letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Tier 1: Básico */
+.rank-tier-1 { background: linear-gradient(135deg, #78909c, #455a64) !important; color: white !important; }
+
+/* Tier 2: Avanzado (Cyan) */
+.rank-tier-2 { 
+  background: linear-gradient(135deg, #00acc1, #006064) !important; 
+  color: white !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+}
+
+/* Tier 3: Superior (Púrpura) */
+.rank-tier-3 { 
+  background: linear-gradient(135deg, #8e24aa, #4a148c) !important; 
+  color: white !important;
+  border: 1px solid rgba(255, 0, 255, 0.4) !important;
+  box-shadow: 0 0 10px rgba(142, 36, 170, 0.3);
+}
+
+/* Tier 4: Élite (Dorado/Naranja) */
+.rank-tier-4 { 
+  background: linear-gradient(135deg, #ff9800, #e65100) !important; 
+  color: white !important;
+  border: 2px solid rgba(255, 255, 0, 0.5) !important;
+  box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);
+  font-weight: 900 !important;
+}
+
+/* Tier 5: Maestro (Carmesí/Oscuro) */
+.rank-tier-5 { 
+  background: linear-gradient(135deg, #c62828, #1a237e) !important; 
+  color: white !important;
+  border: 2px solid #ff1744 !important;
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* Tier 6: Legendario (Cósmico animado) */
+.rank-tier-6 { 
+  background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important;
+  background-size: 400% 400% !important;
+  animation: cosmic-bg 10s ease infinite !important;
+  color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 25px rgba(213, 0, 249, 0.6), inset 0 0 10px rgba(255,255,255,0.3);
+  font-weight: 900 !important;
+}
+
+@keyframes cosmic-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .status-dot {

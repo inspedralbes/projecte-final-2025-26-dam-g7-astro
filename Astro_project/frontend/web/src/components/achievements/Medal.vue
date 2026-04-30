@@ -21,6 +21,7 @@
         <v-icon 
           :icon="locked ? 'mdi-lock' : icon" 
           :size="iconSize"
+          :color="locked ? 'grey-darken-1' : 'white'"
           :class="['medal-icon', { 'icon-unlocked': !locked }]"
         ></v-icon>
       </div>
