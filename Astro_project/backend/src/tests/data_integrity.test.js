@@ -23,6 +23,11 @@ describe('Data Integrity Tests', () => {
         };
 
         mockPartidesCollection = {
+            find: jest.fn().mockReturnValue({
+                sort: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockReturnThis(),
+                toArray: jest.fn().mockResolvedValue([])
+            }),
             aggregate: jest.fn().mockReturnValue({
                 toArray: jest.fn().mockResolvedValue([{ total: 500 }])
             })
@@ -100,8 +105,7 @@ describe('Data Integrity Tests', () => {
         
         expect(mockUsersCollection.findOne).toHaveBeenCalledWith({
             $or: [
-                { user: 'AlphaCentauri' },
-                { user: null } // Porque no es un número
+                { user: 'AlphaCentauri' }
             ]
         });
     });

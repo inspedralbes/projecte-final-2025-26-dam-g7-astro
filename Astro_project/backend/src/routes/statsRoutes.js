@@ -11,7 +11,7 @@ function registerStatsRoutes(app, { getUserStats }) {
                 return res.status(404).json({ message: 'Usuario no encontrado.' });
             }
 
-            res.json(stats);
+            res.json({ stats: stats });
         } catch (error) {
             console.error('Error obteniendo estadísticas:', error);
             res.status(500).json({ message: 'No se pudieron obtener las estadísticas.' });

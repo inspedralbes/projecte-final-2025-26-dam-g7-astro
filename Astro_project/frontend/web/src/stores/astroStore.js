@@ -80,6 +80,9 @@ export const useAstroStore = defineStore('astro', () => {
             progressStore.setActiveBoosters(inventoryResult.data.activeBoosters);
         }
 
+        // Cargar stats completas (misiones, amigos, logros, historial) inmediatamente tras login
+        await progressStore.fetchUserStats();
+
         multiplayerStore.connect();
         return { success: true };
     }

@@ -7,15 +7,14 @@ function registerAchievementRoutes(app, { getCollections, getDB, normalizeAchiev
 
         try {
             const { users } = getCollections();
-            const userDoc = await users.findOne(
-                { 
-                    $or: [
-                        { user: username },
-                        { user: isNaN(Number(username)) ? null : Number(username) }
-                    ]
-                },
-                { projection: { selectedAchievements: 1, unlockedAchievements: 1 } }
-            );
+            const query = { $or: [{ user: username }] };
+            if (!isNaN(Number(username))) {
+                query.$or.push({ user: Number(username) });
+            }
+
+            const userDoc = await users.findOne(query, { 
+                projection: { selectedAchievements: 1, unlockedAchievements: 1 } 
+            });
 
             if (!userDoc) {
                 return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });

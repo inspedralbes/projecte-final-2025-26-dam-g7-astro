@@ -56,7 +56,7 @@
                     class="mission-card mb-3 pa-3" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.text }}
+                            {{ mission.label }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="success" size="small"></v-icon>
                     </div>
@@ -92,7 +92,7 @@
                     class="mission-card mb-3 pa-3 border-secondary" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.text }}
+                            {{ mission.label }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="secondary" size="small"></v-icon>
                     </div>
@@ -123,7 +123,7 @@
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in dailyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.text }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
                             <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">COBRAR</v-btn>
@@ -141,7 +141,7 @@
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.text }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
                             <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">COBRAR</v-btn>
