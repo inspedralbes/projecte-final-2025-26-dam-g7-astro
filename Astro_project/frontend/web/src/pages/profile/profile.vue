@@ -3,7 +3,7 @@
         <div class="profile-layout-wrapper py-8 px-4 px-md-8">
             <div class="profile-main-content" :class="{ 'history-open': historyDialog }">
                 <!-- TARJETA DE PERFIL -->
-                <v-card class="profile-card" elevation="24">
+                <v-card class="profile-card" :class="{ 'card-narrow': historyDialog }" elevation="24">
                     <!-- BANNER SUPERIOR -->
                     <div class="banner-section">
                         <v-img src="/fondo3.jpg" cover height="200" class="banner-image">
@@ -37,18 +37,21 @@
 
                         <div class="user-meta mt-4">
                             <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
-                                <div>
-                                    <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-1">
+                                <div class="flex-grow-1">
+                                    <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2">
                                         {{ user || 'Explorador' }}
                                     </h1>
-                                    <div class="d-flex align-center ga-3">
+                                    <div class="d-flex flex-wrap align-center ga-3">
                                         <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat">
                                             {{ rank || 'Cadete de Vuelo' }}
                                         </v-chip>
-                                        <span class="text-overline text-grey-lighten-1">NIVEL {{ level || 1 }}</span>
-                                        <div class="status-indicator d-flex align-center ga-1">
-                                            <div class="status-dot online"></div>
-                                            <span class="text-caption text-grey">EN ÓRBITA</span>
+                                        <div class="d-flex align-center ga-3 text-grey-lighten-1">
+                                            <span class="text-overline">NIVEL {{ level || 1 }}</span>
+                                            <v-divider vertical class="mx-1 my-1 border-opacity-25" color="white"></v-divider>
+                                            <div class="status-indicator d-flex align-center ga-2">
+                                                <div class="status-dot online"></div>
+                                                <span class="text-caption font-weight-bold">EN ÓRBITA</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -577,6 +580,17 @@ watch(historyDialog, async (isOpen) => {
 
 .user-name {
     letter-spacing: -1px !important;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.card-narrow .user-meta > .d-flex {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+.card-narrow .history-toggle-btn {
+    width: 100%;
+    margin-top: 8px;
 }
 
 .rank-chip {
@@ -657,8 +671,21 @@ watch(historyDialog, async (isOpen) => {
 /* ESTADÍSTICAS */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 20px;
+}
+
+.card-narrow .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.card-narrow .stat-item:nth-child(3) {
+    grid-column: span 2;
+    text-align: center;
+}
+
+.card-narrow .user-name {
+    font-size: 2.25rem !important;
 }
 
 .stat-item {
