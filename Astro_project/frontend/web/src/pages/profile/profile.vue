@@ -1,250 +1,226 @@
 <template>
-    <v-container fluid class="profile-container d-flex justify-center" style="overflow-x: auto;">
-        <div class="profile-wrapper" style="display: flex !important; flex-wrap: nowrap; align-items: stretch; justify-content: center;">
-            <v-card width="620" class="profile-card" :class="{ 'history-open': historyDialog }" elevation="24">
-
-                <!-- BANNER SUPERIOR -->
-                <div class="banner-section">
-                    <v-img src="/fondo3.jpg" cover height="180" class="banner-image">
-                        <template v-slot:placeholder>
-                            <div class="d-flex align-center justify-center fill-height">
-                                <v-progress-circular indeterminate color="cyan"></v-progress-circular>
-                            </div>
-                        </template>
-                    </v-img>
-                </div>
-
-                <!-- CONTENIDO DE CABECERA -->
-                <div class="profile-header-wrap px-8">
-                    <div class="avatar-overlap-container">
-                        <div class="main-avatar-box">
-                            <v-avatar size="180" class="avatar-circle">
-                                <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
-                            </v-avatar>
-                            <v-btn icon="mdi-camera" size="small" color="cyan-accent-3" class="btn-edit-avatar"
-                                elevation="4" @click="avatarDialog = true"></v-btn>
-                        </div>
-                        <div class="mascot-overlap-box">
-                            <v-avatar v-if="mascot" size="85" class="mascot-badge-big" @click="mascotDialog = true">
-                                <v-img :src="`/${mascot}`" cover></v-img>
-                            </v-avatar>
-                            <v-btn v-else icon="mdi-paw-plus" size="large" color="purple-accent-1" class="btn-add-mascot"
-                                @click="mascotDialog = true"></v-btn>
-                        </div>
+    <v-container fluid class="profile-container pa-0">
+        <div class="profile-layout-wrapper py-8 px-4 px-md-8">
+            <div class="profile-main-content" :class="{ 'history-open': historyDialog }">
+                <!-- TARJETA DE PERFIL -->
+                <v-card class="profile-card" elevation="24">
+                    <!-- BANNER SUPERIOR -->
+                    <div class="banner-section">
+                        <v-img src="/fondo3.jpg" cover height="200" class="banner-image">
+                            <template v-slot:placeholder>
+                                <div class="d-flex align-center justify-center fill-height">
+                                    <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
+                                </div>
+                            </template>
+                            <div class="banner-overlay"></div>
+                        </v-img>
                     </div>
 
-                    <!-- Datos del Usuario -->
-                    <div class="user-info-section text-left mt-4">
-                        <div class="d-flex align-center justify-space-between w-100">
-                            <div class="flex-grow-1 pr-6">
-                                <h1 class="text-h3 font-weight-black text-white mb-0 capitalize">
-                                    {{ user || 'Explorador' }}
-                                </h1>
-                                <div class="d-flex align-center ga-2 mt-1">
-                                    <v-chip color="cyan-accent-3" size="small" variant="flat"
-                                        class="text-black font-weight-bold">
-                                        {{ rank || 'Cadete Estelar' }}
-                                    </v-chip>
-                                    <span class="text-grey-lighten-1 text-body-2">• Nivel {{ level || 1 }}</span>
-                                    <div class="d-flex align-center ga-1 ml-3">
-                                        <div class="status-dot-large" :class="user ? 'online' : 'offline'"></div>
-                                        <span class="text-caption text-grey">{{ user ? 'En órbita' : 'En base' }}</span>
+                    <!-- CABECERA: AVATAR Y DATOS BÁSICOS -->
+                    <div class="profile-header px-6 px-md-10">
+                        <div class="avatar-container">
+                            <div class="main-avatar-wrapper">
+                                <v-avatar size="160" class="avatar-circle">
+                                    <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
+                                </v-avatar>
+                                <v-btn icon="mdi-camera-outline" size="small" color="cyan-accent-3" class="edit-avatar-btn"
+                                    elevation="8" @click="avatarDialog = true"></v-btn>
+                            </div>
+                            <div class="mascot-wrapper">
+                                <v-avatar v-if="mascot" size="80" class="mascot-badge" @click="mascotDialog = true">
+                                    <v-img :src="`/${mascot}`" cover></v-img>
+                                </v-avatar>
+                                <v-btn v-else icon="mdi-paw" size="large" color="purple-accent-2" class="add-mascot-btn"
+                                    @click="mascotDialog = true"></v-btn>
+                            </div>
+                        </div>
+
+                        <div class="user-meta mt-4">
+                            <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
+                                <div>
+                                    <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-1">
+                                        {{ user || 'Explorador' }}
+                                    </h1>
+                                    <div class="d-flex align-center ga-3">
+                                        <v-chip color="cyan-accent-3" size="small" variant="flat" class="rank-chip font-weight-black">
+                                            {{ rank || 'Cadete Estelar' }}
+                                        </v-chip>
+                                        <span class="text-overline text-grey-lighten-1">NIVEL {{ level || 1 }}</span>
+                                        <div class="status-indicator d-flex align-center ga-1">
+                                            <div class="status-dot online"></div>
+                                            <span class="text-caption text-grey">EN ÓRBITA</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- BOTÓN HISTORIAL PEGADO -->
-                            <div class="history-action-header">
                                 <v-btn
                                     color="cyan-accent-4"
-                                    variant="outlined"
-                                    class="btn-modern-history px-6"
-                                    rounded="pill"
+                                    variant="tonal"
+                                    class="history-toggle-btn px-6"
+                                    rounded="lg"
                                     prepend-icon="mdi-history"
                                     @click="historyDialog = !historyDialog"
                                 >
-                                    {{ historyDialog ? 'CERRAR' : 'HISTORIAL' }}
+                                    {{ historyDialog ? 'CERRAR PANEL' : 'HISTORIAL' }}
                                 </v-btn>
+                            </div>
+
+                            <!-- Barra de Progreso XP -->
+                            <div class="xp-progress-wrapper mt-6">
+                                <div class="d-flex justify-space-between align-center mb-1 px-1">
+                                    <span class="text-caption font-weight-bold text-cyan-accent-3">PROGRESO DE MISIÓN</span>
+                                    <span class="text-caption font-weight-black text-white">{{ xp }} / {{ xpRequired }} XP</span>
+                                </div>
+                                <v-progress-linear
+                                    :model-value="(xp / xpRequired) * 100"
+                                    color="cyan-accent-3"
+                                    height="10"
+                                    rounded
+                                    bg-color="rgba(255,255,255,0.05)"
+                                    bg-opacity="1"
+                                    class="xp-bar shadow-cyan"
+                                ></v-progress-linear>
                             </div>
                         </div>
 
-                        <div class="d-flex align-center w-100 mt-4">
-                            <v-progress-linear
-                                :model-value="(xp / xpRequired) * 100"
-                                color="cyan-accent-3"
-                                height="8"
-                                rounded
-                                bg-color="rgba(255,255,255,0.1)"
-                                class="mr-3 shadow-cyan"
-                            ></v-progress-linear>
-                            <span class="text-caption text-cyan-accent-3 font-weight-bold" style="white-space: nowrap;">
-                                {{ xp }} / {{ xpRequired }} XP
-                            </span>
-                        </div>
-                    </div>
+                        <v-divider class="my-8 border-opacity-10"></v-divider>
 
-                    <v-divider class="my-6 border-opacity-10"></v-divider>
-
-                    <!-- Plan y Estadísticas Rápidas -->
-                    <div class="quick-stats d-flex justify-space-between mb-8">
-                        <div class="stat-card">
-                            <span class="label">PLAN ACTUAL</span>
-                            <span class="value text-cyan-accent-3">{{ plan || 'INDIVIDUAL_FREE' }}</span>
+                        <!-- ESTADÍSTICAS RÁPIDAS -->
+                        <div class="stats-grid mb-10">
+                            <div class="stat-item">
+                                <span class="stat-label">PLAN ACTUAL</span>
+                                <span class="stat-value text-cyan-accent-2">{{ plan || 'INDIVIDUAL' }}</span>
+                            </div>
+                            <div class="stat-item text-center">
+                                <span class="stat-label">MISIÓN ACTUAL</span>
+                                <span class="stat-value text-amber-accent-2">{{ currentMissionName }}</span>
+                            </div>
+                            <div class="stat-item text-right">
+                                <span class="stat-label">SISTEMA</span>
+                                <span class="stat-value">ASTRO-V2.0</span>
+                            </div>
                         </div>
-                        <div class="stat-card text-center">
-                            <span class="label">MISIÓN</span>
-                            <span class="value text-amber-accent-3">{{ currentMissionName }}</span>
-                        </div>
-                        <div class="stat-card text-right">
-                            <span class="label">SISTEMA</span>
-                            <span class="value">ASTRO-V1</span>
-                        </div>
-                    </div>
 
-                    <!-- Logros Seleccionados -->
-                    <div class="achievements-section mb-8">
-                        <div class="d-flex align-center justify-space-between mb-4">
-                            <h3 class="text-overline font-weight-black text-grey-lighten-1">LOGROS ACTIVOS</h3>
-                        </div>
-                        <v-row dense>
-                            <v-col v-for="i in 3" :key="i" cols="4">
-                                <v-card variant="flat" color="#1a1d26" class="achievement-display-box"
-                                    @click="openSelection(i - 1)">
-                                    <Medal v-if="getAchievement(selectedAchievements[i - 1])"
-                                        :type="getAchievement(selectedAchievements[i - 1]).type"
-                                        :icon="getAchievement(selectedAchievements[i - 1]).icon" :scale="0.65"
-                                        :icon-size="48" />
-                                    <v-icon v-else icon="mdi-plus" color="grey-darken-3" size="36"></v-icon>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </div>
-
-                    <!-- Botonera Final -->
-                    <div class="actions-grid ga-3 mb-8">
-                        <v-row dense>
-                            <v-col cols="6">
-                                <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="goToInventory"
-                                    class="font-weight-bold">
-                                    INVENTARIO
-                                </v-btn>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-btn block color="grey-darken-4" height="48" rounded="lg" @click="changePlan"
-                                    class="font-weight-bold">
-                                    CAMBIAR PLAN
-                                </v-btn>
-                            </v-col>
-                        </v-row>
-                        <v-btn block color="#c62828" height="48" rounded="lg" @click="handleLogout"
-                            class="font-weight-bold mt-2">
-                            CERRAR SESSIÓN Y SALIR
-                        </v-btn>
-                    </div>
-                </div>
-            </v-card>
-
-            <!-- PANEL DE HISTORIAL INTEGRADO (DERECHA) -->
-            <div v-show="historyDialog" class="history-panel-inline" style="display: block !important;">
-                <div class="history-content pa-6">
-                    <div class="mb-10">
-                        <h3 class="text-overline cyan--text mb-4 d-flex align-center">
-                            <v-icon size="18" color="amber-accent-2" class="mr-2">mdi-trophy-variant</v-icon>
-                            MEJORES MISIONES (TOP 5)
-                        </h3>
-                        <v-row v-if="topGames.length > 0">
-                            <v-col v-for="(match, idx) in topGames" :key="'top-'+idx" cols="12">
-                                <v-card class="top-match-card pa-4" variant="flat">
-                                    <div class="d-flex align-center justify-space-between w-100">
-                                        <div class="d-flex align-center">
-                                            <div class="top-rank mr-4">{{ idx + 1 }}</div>
-                                            <div>
-                                                <div class="text-h6 font-weight-bold text-white text-capitalize">{{ match.game }}</div>
-                                                <div class="text-caption text-grey">
-                                                    {{ new Date(match.createdAt).toLocaleDateString() }}
-                                                    <v-chip size="x-small" color="grey-darken-3" class="ml-1" v-if="match.timeSeconds">
-                                                        {{ (match.timeSeconds / 60).toFixed(1) }} min
-                                                    </v-chip>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-h5 font-weight-black text-amber-accent-2">{{ match.score }} Pts</div>
-                                            <div class="text-tiny grey--text">+{{ match.xpEarned }} XP</div>
+                        <!-- SECCIÓN DE LOGROS -->
+                        <div class="achievements-section mb-10">
+                            <div class="section-header d-flex align-center justify-space-between mb-4">
+                                <h3 class="text-overline font-weight-black text-grey-lighten-2">LOGROS DESTACADOS</h3>
+                            </div>
+                            <v-row dense>
+                                <v-col v-for="i in 3" :key="i" cols="4">
+                                    <div class="achievement-slot" @click="openSelection(i - 1)">
+                                        <div class="slot-glow" v-if="getAchievement(selectedAchievements[i - 1])"></div>
+                                        <Medal v-if="getAchievement(selectedAchievements[i - 1])"
+                                            :type="getAchievement(selectedAchievements[i - 1]).type"
+                                            :icon="getAchievement(selectedAchievements[i - 1]).icon" 
+                                            :scale="0.7"
+                                            :icon-size="52" />
+                                        <div v-else class="empty-slot">
+                                            <v-icon icon="mdi-plus" color="rgba(255,255,255,0.1)" size="32"></v-icon>
                                         </div>
                                     </div>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                        <div v-else class="text-center py-6 glass-box rounded-lg">
-                            <v-icon icon="mdi-star-outline" color="grey" class="mb-2"></v-icon>
-                            <p class="text-body-2 text-grey">Aún no has establecido ningún récord legendario.</p>
+                                </v-col>
+                            </v-row>
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="actions-container ga-3 mb-10">
+                            <v-row dense>
+                                <v-col cols="12" sm="6">
+                                    <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="goToInventory"
+                                        class="action-btn font-weight-black">
+                                        <v-icon start icon="mdi-cube-outline" class="mr-2"></v-icon>
+                                        INVENTARIO
+                                    </v-btn>
+                                </v-col>
+                                <v-col cols="12" sm="6">
+                                    <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="changePlan"
+                                        class="action-btn font-weight-black">
+                                        <v-icon start icon="mdi-rocket-launch-outline" class="mr-2"></v-icon>
+                                        CAMBIAR PLAN
+                                    </v-btn>
+                                </v-col>
+                            </v-row>
+                            <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="handleLogout"
+                                class="logout-btn font-weight-black mt-4">
+                                FINALIZAR CONEXIÓN Y SALIR
+                            </v-btn>
                         </div>
                     </div>
+                </v-card>
 
-                    <div>
-                        <h3 class="text-overline grey--text mb-4">INCURSIONES RECIENTES</h3>
-                        <v-list bg-color="transparent" class="pa-0">
-                            <v-list-item
-                                v-for="(match, idx) in paginatedHistory"
-                                :key="'hist-'+idx"
-                                class="recent-match-item mb-2"
-                                rounded="lg"
-                            >
-                                <template v-slot:prepend>
-                                    <v-avatar color="cyan-darken-4" size="40" class="mr-3">
-                                        <v-icon color="cyan-accent-2" size="20">mdi-sword-cross</v-icon>
-                                    </v-avatar>
-                                </template>
-                                <v-list-item-title class="text-capitalize text-white font-weight-medium">
-                                    {{ match.game }}
-                                </v-list-item-title>
-                                <v-list-item-subtitle class="text-caption grey--text">
-                                    {{ new Date(match.createdAt).toLocaleDateString() }}
-                                </v-list-item-subtitle>
-                                <template v-slot:append>
-                                    <div class="text-right">
-                                        <div class="text-body-1 font-weight-bold text-cyan-accent-3">{{ match.score }}</div>
+                <!-- PANEL DE HISTORIAL (DERECHA/INFERIOR) -->
+                <div v-if="historyDialog" class="history-panel">
+                    <div class="history-header pa-6">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <h3 class="text-h6 font-weight-black text-white">HISTORIAL DE VUELO</h3>
+                            <v-icon icon="mdi-chart-line" color="cyan-accent-3"></v-icon>
+                        </div>
+                        <p class="text-caption text-grey">Tus últimos registros de misión en el espacio profundo.</p>
+                    </div>
+
+                    <div class="history-scroll-area pa-6 pt-0">
+                        <!-- TOP MISIONES -->
+                        <div class="mb-8">
+                            <h4 class="text-overline text-amber-accent-3 font-weight-black mb-4 d-flex align-center">
+                                <v-icon size="16" class="mr-2">mdi-star</v-icon> RECORDS PERSONALES
+                            </h4>
+                            <div v-if="topGames.length > 0" class="top-games-list ga-3 d-flex flex-column">
+                                <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card">
+                                    <div class="rank-num">{{ idx + 1 }}</div>
+                                    <div class="game-info">
+                                        <span class="game-name text-capitalize">{{ match.game }}</span>
+                                        <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
-                                </template>
-                            </v-list-item>
-                        </v-list>
-
-                        <!-- Botones de Paginación -->
-                        <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-4 mt-6">
-                            <v-btn
-                                density="comfortable"
-                                variant="text"
-                                color="cyan-accent-3"
-                                icon="mdi-chevron-double-left"
-                                :disabled="currentPage === 1"
-                                @click="currentPage--"
-                            ></v-btn>
-                            <span class="text-caption font-weight-bold text-grey">PÁGINA {{ currentPage }} DE {{ totalPages }}</span>
-                            <v-btn
-                                density="comfortable"
-                                variant="text"
-                                color="cyan-accent-3"
-                                icon="mdi-chevron-double-right"
-                                :disabled="currentPage >= totalPages"
-                                @click="currentPage++"
-                            ></v-btn>
+                                    <div class="game-stats">
+                                        <span class="game-score">{{ match.score }}</span>
+                                        <span class="game-xp">+{{ match.xpEarned }} XP</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="empty-state">
+                                <span class="text-caption">Sin registros de élite</span>
+                            </div>
                         </div>
 
-                        <div v-if="gameHistory.length === 0" class="text-center py-6 glass-box rounded-lg mt-2">
-                            <v-icon icon="mdi-history" color="grey" class="mb-2"></v-icon>
-                            <p class="text-body-2 text-grey">No hay registros de expediciones recientes.</p>
+                        <!-- RECIENTES -->
+                        <div>
+                            <h4 class="text-overline text-grey font-weight-black mb-4">INCURSIONES RECIENTES</h4>
+                            <div v-if="gameHistory.length > 0" class="recent-list ga-2 d-flex flex-column">
+                                <div v-for="(match, idx) in paginatedHistory" :key="`hist-${idx}`" class="recent-item">
+                                    <div class="recent-icon">
+                                        <v-icon size="16" color="cyan-accent-2">mdi-sword-cross</v-icon>
+                                    </div>
+                                    <div class="game-info">
+                                        <span class="game-name text-capitalize">{{ match.game }}</span>
+                                        <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                                    </div>
+                                    <div class="game-score-small">{{ match.score }}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Paginación -->
+                            <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-4 mt-6">
+                                <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-left"
+                                    :disabled="currentPage === 1" @click="currentPage--"></v-btn>
+                                <span class="text-caption font-weight-black text-grey">{{ currentPage }} / {{ totalPages }}</span>
+                                <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-right"
+                                    :disabled="currentPage >= totalPages" @click="currentPage++"></v-btn>
+                            </div>
+
+                            <div v-if="gameHistory.length === 0" class="empty-state">
+                                <span class="text-caption">No hay misiones recientes</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Diálogo de Selección de Logros -->
+        <!-- DIÁLOGOS (Sin cambios significativos en lógica, solo diseño glass) -->
         <v-dialog v-model="selectionDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    Seleccionar Logro
+                    SELECCIONAR LOGRO
                     <v-btn icon="mdi-close" variant="text" color="white" @click="selectionDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
@@ -272,11 +248,11 @@
             </v-card>
         </v-dialog>
 
-        <!-- Diálogo de Selección de Avatar -->
+        <!-- Diálogo Avatar -->
         <v-dialog v-model="avatarDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    Traje de Astronauta
+                    TRAJE DE ASTRONAUTA
                     <v-btn icon="mdi-close" variant="text" color="white" @click="avatarDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
@@ -286,18 +262,18 @@
                                 @click="selectAvatar(opt.file)">
                                 <v-img :src="`/${opt.file}`"></v-img>
                             </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-1">{{ opt.label }}</div>
+                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">{{ opt.label }}</div>
                         </v-col>
                     </v-row>
                 </v-card-text>
             </v-card>
         </v-dialog>
 
-        <!-- Diálogo de Selección de Mascota -->
+        <!-- Diálogo Mascota -->
         <v-dialog v-model="mascotDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    Compañero de Misión
+                    COMPAÑERO DE MISIÓN
                     <v-btn icon="mdi-close" variant="text" color="white" @click="mascotDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
@@ -307,14 +283,14 @@
                                 @click="selectMascot(m.file)">
                                 <v-img :src="`/${m.file}`"></v-img>
                             </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-1">{{ m.label }}</div>
+                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">{{ m.label }}</div>
                         </v-col>
                         <v-col cols="4" sm="3" class="pa-2">
-                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center"
-                                @click="selectMascot(null)" style="border: 1px dashed rgba(255,255,255,0.3)">
+                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center no-mascot"
+                                @click="selectMascot(null)">
                                 <v-icon color="grey">mdi-close</v-icon>
                             </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-1">Ninguno</div>
+                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">NINGUNO</div>
                         </v-col>
                     </v-row>
                 </v-card-text>
@@ -326,8 +302,8 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAstroStore } from '@/stores/astroStore' // Importamos el store
-import { storeToRefs } from 'pinia' // Para mantener la reactividad
+import { useAstroStore } from '@/stores/astroStore' 
+import { storeToRefs } from 'pinia' 
 import { ACHIEVEMENTS } from '@/constants/achievements'
 import Medal from '@/components/achievements/Medal.vue'
 
@@ -438,38 +414,19 @@ function openSelection(index) {
 
 async function selectAchievement(achievementId) {
     if (!user.value) {
-        console.error("❌ No se puede guardar: Usuario no identificado");
-        alert("Debes iniciar sesión para guardar tus logros.");
         return;
     }
-
-    // Cerramos el diálogo inmediatamente para mejor UX
     selectionDialog.value = false;
-
-    // Convertimos a número si no es null
     const targetId = achievementId !== null ? Number(achievementId) : null;
-
-    // Clonamos la selección actual
     let newSelection = [...selectedAchievements.value];
-
-    // Si el logro ya estaba en otro slot, lo quitamos de ahí para evitar duplicados
     if (targetId !== null) {
         const existingIndex = newSelection.findIndex(id => id !== null && Number(id) === targetId);
         if (existingIndex !== -1) {
             newSelection[existingIndex] = null;
         }
     }
-
-    // Ponemos el nuevo logro en el slot actual
     newSelection[currentSlotIndex.value] = targetId;
-
-    // Guardamos la selección completa (la store se encarga de la actualización optimista)
-    console.log(`🎯 Seleccionando logro ${targetId} para slot ${currentSlotIndex.value}`);
-    const result = await astroStore.updateAchievements(newSelection);
-
-    if (!result.success) {
-        console.error("❌ Error al sincronizar con el servidor:", result.message);
-    }
+    await astroStore.updateAchievements(newSelection);
 }
 
 function handleLogout() {
@@ -494,303 +451,392 @@ function selectMascot(file) {
     astroStore.updateMascot(file)
     mascotDialog.value = false
 }
-// Observar apertura de historial para refrescar datos
+
 watch(historyDialog, async (isOpen) => {
     if (isOpen && user.value) {
-        console.log("🔄 Refrescando estadísticas para el historial...");
         await astroStore.fetchUserStats();
     }
 });
 </script>
 
-
 <style scoped>
-
-.shadow-cyan { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4)); }
-.tracking-wider { letter-spacing: 1px; }
-
-/* Estilo Base */
 .profile-container {
-    background: #000000 !important;
+    background: transparent !important;
     min-height: 100vh;
-    padding-top: 40px;
-    padding-bottom: 120px;
-    /* Aumentado para mejor scroll */
 }
 
-/* Tarjeta Principal (Sólida, no Glassmorphism) */
+.profile-layout-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.profile-main-content {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 700px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 0;
+}
+
+.profile-main-content.history-open {
+    max-width: 1100px; /* Ajustado para caber entre sidebars */
+}
+
+/* TARJETA DE PERFIL */
 .profile-card {
-    background: #0d0f14 !important;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
+    flex: 1 1 600px;
+    background: #0a0c10 !important;
+    border: 1px solid rgba(0, 242, 255, 0.1);
+    border-radius: 20px !important;
     overflow: hidden;
-    transition: all 0.3s;
+    position: relative;
+    z-index: 2;
 }
 
-.profile-card.history-open {
-    border-radius: 16px 0 0 16px !important;
-    border-right: none !important;
+.history-open .profile-card {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
 }
 
-/* Banner superior */
 .banner-section {
     position: relative;
-    background: #1a1d26;
 }
 
 .banner-image {
-    filter: brightness(0.7);
+    filter: brightness(0.8);
 }
 
-/* Contenedor de Avatar con Overlap */
-.profile-header-wrap {
-    position: relative;
-    z-index: 1;
+.banner-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(to top, #0a0c10, transparent);
 }
 
-.avatar-overlap-container {
+.profile-header {
+    margin-top: -80px;
     position: relative;
-    margin-top: -70px;
-    /* LinkedIn Style Overlap */
-    margin-bottom: 20px;
+    z-index: 3;
+}
+
+.avatar-container {
     display: flex;
     align-items: flex-end;
-    gap: 15px;
+    gap: 16px;
 }
 
-.main-avatar-box {
+.main-avatar-wrapper {
     position: relative;
 }
 
 .avatar-circle {
-    border: 6px solid #0d0f14;
-    background: white;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 5px solid #0a0c10;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 .avatar-circle :deep(.v-img__img) {
-    border-radius: 50%;
-    transform: scale(1.4);
-    transform-origin: center center;
-    object-position: center center;
+    transform: scale(1.1);
 }
 
-.btn-edit-avatar {
+.edit-avatar-btn {
     position: absolute;
     bottom: 5px;
     right: 5px;
-    border: 4px solid #0d0f14 !important;
-    z-index: 2;
+    border: 3px solid #0a0c10 !important;
 }
 
-/* Mascota Integrada en la Cabecera */
-.mascot-overlap-box {
-    margin-bottom: 5px;
-}
-
-.mascot-badge-big {
-    border: 5px solid #0d0f14;
-    background: white;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+.mascot-badge {
+    border: 4px solid #0a0c10;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: transform 0.3s;
 }
 
-.mascot-badge-big :deep(.v-img__img) {
-    border-radius: 50%;
-    transform: scale(1.4);
-    transform-origin: center center;
-    object-position: center center;
-}
-
-.mascot-badge-big:hover {
+.mascot-badge:hover {
     transform: scale(1.1) rotate(5deg);
 }
 
-.btn-add-mascot {
-    border: 3px solid #0d0f14 !important;
+.add-mascot-btn {
+    border: 3px solid #0a0c10 !important;
+    margin-bottom: 5px;
 }
 
-/* Datos de Usuario */
-.capitalize {
-    text-transform: capitalize;
+.user-name {
+    letter-spacing: -1px !important;
 }
 
-.status-dot-large {
-    width: 10px;
-    height: 10px;
+.rank-chip {
+    letter-spacing: 1px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
 }
 
-.status-dot-large.online {
-    background: #4caf50;
-    box-shadow: 0 0 10px #4caf50;
+.status-dot.online {
+    background: #00e676;
+    box-shadow: 0 0 10px #00e676;
 }
 
-.status-dot-large.offline {
-    background: #f44336;
+.xp-bar {
+    filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.3));
 }
 
-/* Tarjetas de Estadísticas */
-.quick-stats {
-    gap: 10px;
+/* ESTADÍSTICAS */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
 }
 
-.stat-card {
-    flex: 1;
+.stat-item {
     display: flex;
     flex-direction: column;
 }
 
-.stat-card .label {
-    font-size: 10px;
-    font-weight: 900;
-    color: #616161;
-    letter-spacing: 1px;
+.stat-label {
+    font-family: \'Rajdhani\', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
 }
 
-.stat-card .value {
-    font-size: 14px;
+.stat-value {
+    font-family: \'Orbitron\', sans-serif;
+    font-size: 0.9rem;
     font-weight: 700;
-    color: #e0e0e0;
 }
 
-/* Logros */
-.achievement-display-box {
-    height: 150px;
-    /* Tamaño fijo para todos los huecos */
+/* LOGROS */
+.achievement-slot {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    position: relative;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s;
 }
 
-.achievement-display-box:hover {
-    background: #242835 !important;
-    border-color: rgba(0, 229, 255, 0.3);
-    transform: translateY(-4px);
+.achievement-slot:hover {
+    background: rgba(0, 242, 255, 0.05);
+    border-color: rgba(0, 242, 255, 0.2);
+    transform: translateY(-5px);
 }
 
-/* Diálogos (Sí mantenemos un poco de glass para los popups) */
+.slot-glow {
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    background: radial-gradient(circle, rgba(0, 242, 255, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* PANEL HISTORIAL */
+.history-panel {
+    flex: 1 1 400px;
+    max-width: 450px;
+    background: rgba(13, 15, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 242, 255, 0.1);
+    border-left: none;
+    border-radius: 0 20px 20px 0;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.4s ease-out;
+    z-index: 1;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.history-scroll-area {
+    overflow-y: auto;
+    max-height: 700px;
+}
+
+.top-game-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 193, 7, 0.05);
+    border: 1px solid rgba(255, 193, 7, 0.1);
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.top-game-card:hover {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.rank-num {
+    width: 24px;
+    height: 24px;
+    background: #ffc107;
+    color: #000;
+    font-size: 0.75rem;
+    font-weight: 900;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.game-date {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+}
+
+.game-stats {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-score {
+    color: #ffc107;
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.game-xp {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.3);
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+
+.recent-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 242, 255, 0.05);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-score-small {
+    font-family: \'Orbitron\', sans-serif;
+    color: #00e5ff;
+    font-weight: 700;
+}
+
+.empty-state {
+    padding: 20px;
+    text-align: center;
+    background: rgba(255,255,255,0.01);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.3);
+}
+
+/* DIÁLOGOS */
 .glass-popup {
-    background: rgba(15, 17, 23, 0.95) !important;
+    background: rgba(10, 12, 16, 0.95) !important;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 20px !important;
 }
 
 .achievement-list-item {
     border-radius: 12px;
-    margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.achievement-list-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255,255,255,0.02) !important;
 }
 
 .achievement-list-item.selected {
-    background: rgba(0, 229, 255, 0.1);
-    border: 1px solid rgba(0, 229, 255, 0.3);
+    border: 1px solid #00e5ff;
+    background: rgba(0, 229, 255, 0.1) !important;
 }
 
 .avatar-option {
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.2s;
     border: 2px solid transparent;
 }
 
 .avatar-option:hover {
     transform: scale(1.1);
-    border-color: #00e5ff;
 }
 
 .active-avatar {
     border-color: #00e5ff !important;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
-.locked-item {
-    opacity: 0.4;
-    filter: grayscale(1);
+.no-mascot {
+    border: 2px dashed rgba(255,255,255,0.2) !important;
 }
 
-/* HISTORIAL V2 STYLES */
-.profile-wrapper {
-    transition: all 0.4s ease;
-    width: auto;
-    min-width: fit-content;
+/* RESPONSIVIDAD */
+@media (max-width: 1200px) {
+    .profile-main-content.history-open {
+        flex-direction: column;
+        max-width: 600px;
+    }
+    
+    .history-panel {
+        border-radius: 0 0 20px 20px;
+        border-left: 1px solid rgba(0, 242, 255, 0.1);
+        border-top: none;
+    }
+    
+    .history-open .profile-card {
+        border-radius: 20px 20px 0 0 !important;
+        border-bottom: none;
+    }
 }
 
-.history-panel-inline {
-    width: 420px !important;
-    min-width: 420px !important;
-    background: #0d0f14 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-left: 2px solid rgba(0, 229, 255, 0.6) !important;
-    border-radius: 0 16px 16px 0 !important;
-    min-height: 100%;
-    overflow-y: auto;
-    box-shadow: 15px 0 35px rgba(0,0,0,0.6);
-    z-index: 100 !important;
-    animation: slideInRight 0.4s ease-out;
-}
-
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(-20px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-.top-match-card {
-    background: linear-gradient(90deg, rgba(255, 215, 0, 0.05) 0%, rgba(255, 215, 0, 0.02) 100%);
-    border: 1px solid rgba(255, 215, 0, 0.15);
-    border-radius: 16px;
-    transition: all 0.3s;
-}
-
-.top-match-card:hover {
-    border-color: rgba(255, 215, 0, 0.4);
-    background: rgba(255, 215, 0, 0.08);
-}
-
-.top-rank {
-    width: 32px;
-    height: 32px;
-    background: #ffc107;
-    color: #000;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 18px;
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
-}
-
-.recent-match-item {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.2s;
-}
-
-.recent-match-item:hover {
-    background: rgba(0, 229, 255, 0.05) !important;
-    border-color: rgba(0, 229, 255, 0.15);
-}
-
-.glass-box {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.text-tiny {
-    font-size: 10px;
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        text-align: left !important;
+    }
+    
+    .user-name {
+        font-size: 2rem !important;
+    }
+    
+    .avatar-circle {
+        size: 120px !important;
+    }
 }
 </style>

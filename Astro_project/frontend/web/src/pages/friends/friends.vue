@@ -287,10 +287,12 @@
 import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
+import { useChatStore } from '@/stores/chatStore';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import Medal from '@/components/achievements/Medal.vue';
 
 const astroStore = useAstroStore();
+const chatStore = useChatStore();
 const { explorers, friends, friendRequests } = storeToRefs(astroStore);
 
 const loading = ref(true);
@@ -426,7 +428,7 @@ const sendRequest = async (friendName) => {
 };
 
 const startChat = (friendObj) => {
-  showMessage(`Sistema de comunicación con ${friendObj.user} próximamente`, 'info');
+  chatStore.openChat(friendObj);
 };
 
 const acceptRequest = async (requesterName) => {
