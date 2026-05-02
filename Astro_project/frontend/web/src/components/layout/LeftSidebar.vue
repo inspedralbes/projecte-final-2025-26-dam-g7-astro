@@ -19,11 +19,30 @@
 
         <template v-slot:append>
             <div class="pa-4">
-                <v-btn block variant="text" color="grey-lighten-1" @click="handleLogout" prepend-icon="mdi-logout" class="logout-btn">
+                <v-btn block variant="text" color="grey-lighten-1" @click="showLogoutDialog = true" prepend-icon="mdi-logout" class="logout-btn">
                     Desconectarse
                 </v-btn>
             </div>
         </template>
+
+        <!-- Logout Confirmation Dialog -->
+        <v-dialog v-model="showLogoutDialog" max-width="400">
+            <v-card class="glass-panel pa-6 text-center shadow-xl">
+                <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
+                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">¿CERRAR SESIÓN?</h2>
+                <p class="text-body-2 text-grey-lighten-1 mb-8">
+                    Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?
+                </p>
+                <div class="d-flex justify-center mt-4">
+                    <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
+                        CANCELAR
+                    </v-btn>
+                    <v-btn variant="flat" color="error" @click="handleLogout" class="rounded-lg flex-grow-1 ml-2" height="48">
+                        DESCONECTAR
+                    </v-btn>
+                </div>
+            </v-card>
+        </v-dialog>
     </v-navigation-drawer>
 </template>
 
@@ -35,7 +54,10 @@ import { useAstroStore } from '@/stores/astroStore'
 const router = useRouter()
 const store = useAstroStore()
 
+const showLogoutDialog = ref(false)
+
 const handleLogout = () => {
+    showLogoutDialog.value = false
     store.logout()
     router.push('/')
 }
@@ -96,9 +118,32 @@ const menuItems = ref([
 .logout-btn {
     font-size: 0.8rem;
     letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    color: #ff5252 !important;
+    background: rgba(255, 82, 82, 0.05) !important;
+}
+
+.pulse-error {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 82, 82, 0.5)); }
+    100% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
 }
 
 .tracking-tighter {
     letter-spacing: -2px;
+}
+
+.glass-panel {
+    background: rgba(15, 15, 25, 0.9) !important;
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
 }
 </style>

@@ -34,14 +34,14 @@
           Optimiza tu capacidad de procesamiento visual y agilidad mental.
         </p>
 
-        <div class="d-flex flex-column flex-sm-row justify-center align-center gap-4">
+        <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
             <v-btn size="x-large" color="primary" variant="flat" class="action-button px-12 py-6 rounded-lg"
               :to="isLoggedIn ? '/singleplayer' : '/register'">
               {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
               <v-icon end icon="mdi-chevron-right" class="ms-2"></v-icon>
             </v-btn>
-            
-            <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg ml-sm-4 mt-4 mt-sm-0">
+
+            <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg">
                 SABER MÁS
             </v-btn>
         </div>
@@ -101,7 +101,7 @@ const isLoggedIn = computed(() => {
     color: #00f2ff;
     font-weight: 700;
     display: flex;
-    align-center: center;
+    align-items: center;
     justify-content: center;
     gap: 10px;
 }
