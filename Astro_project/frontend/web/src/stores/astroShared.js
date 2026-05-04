@@ -23,6 +23,9 @@ export const STORAGE_KEYS = Object.freeze({
     lastGame: 'astro_last_game'
 });
 
+export const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos en milisegundos
+
+
 export function storageGetItem(key) {
     const storage = getStorage();
     return storage ? storage.getItem(key) : null;

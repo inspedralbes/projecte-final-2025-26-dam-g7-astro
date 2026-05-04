@@ -37,6 +37,43 @@ watch(() => sessionStore.user, (newUser) => {
   }
 }, { immediate: true });
 
+// Control de inactividad
+const handleActivity = () => {
+  if (sessionStore.token) {
+    sessionStore.updateLastActivity();
+  }
+}
+
+onMounted(() => {
+  // Comprobar si la sesión ha expirado al cargar
+  const expired = sessionStore.checkSessionExpiration();
+  if (expired) {
+    window.location.href = '/login';
+    return;
+  }
+
+  // Escuchar eventos de usuario para mantener la sesión viva
+  window.addEventListener('mousemove', handleActivity);
+  window.addEventListener('keydown', handleActivity);
+  window.addEventListener('click', handleActivity);
+  window.addEventListener('scroll', handleActivity);
+
+  // Comprobación periódica cada minuto
+  const interval = setInterval(() => {
+    if (sessionStore.checkSessionExpiration()) {
+      window.location.href = '/login';
+    }
+  }, 60000);
+
+  return () => {
+    window.removeEventListener('mousemove', handleActivity);
+    window.removeEventListener('keydown', handleActivity);
+    window.removeEventListener('click', handleActivity);
+    window.removeEventListener('scroll', handleActivity);
+    clearInterval(interval);
+  }
+})
+
 // Define routes where sidebars should be hidden
 const showLayoutElements = computed(() => {
   const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import {
     STORAGE_KEYS,
+    SESSION_TIMEOUT_MS,
     requestJson,
     storageGetItem,
     storageRemoveItem,
@@ -23,6 +24,7 @@ export const useSessionStore = defineStore('session', {
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
         mascot: storageGetItem(STORAGE_KEYS.mascot) || null,
         token: storageGetItem(STORAGE_KEYS.token) || null,
+        lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
         error: null
     }),
 
@@ -45,6 +47,26 @@ export const useSessionStore = defineStore('session', {
         setToken(token) {
             this.token = token || null;
             persistNullable(STORAGE_KEYS.token, this.token);
+            this.updateLastActivity();
+        },
+
+        updateLastActivity() {
+            this.lastActivity = Date.now();
+            storageSetItem(STORAGE_KEYS.lastActivity, this.lastActivity);
+        },
+
+        checkSessionExpiration() {
+            if (!this.token) return false;
+
+            const lastActivity = Number(storageGetItem(STORAGE_KEYS.lastActivity));
+            const now = Date.now();
+
+            if (lastActivity && (now - lastActivity > SESSION_TIMEOUT_MS)) {
+                console.warn('⚠️ Sesión expirada por inactividad.');
+                this.clearSession();
+                return true;
+            }
+            return false;
         },
 
         setAvatar(avatar) {
@@ -111,6 +133,7 @@ export const useSessionStore = defineStore('session', {
                 }
 
                 this.applyLoginPayload(data);
+                this.updateLastActivity();
                 return { success: true, data };
             } catch (error) {
                 console.error('❌ Error en login:', error);
@@ -200,6 +223,7 @@ export const useSessionStore = defineStore('session', {
             storageRemoveItem(STORAGE_KEYS.plan);
             storageRemoveItem(STORAGE_KEYS.avatar);
             storageRemoveItem(STORAGE_KEYS.mascot);
+            storageRemoveItem(STORAGE_KEYS.lastActivity);
         }
     }
 });
