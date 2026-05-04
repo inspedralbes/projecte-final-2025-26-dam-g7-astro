@@ -79,9 +79,11 @@
                 <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
-                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold" @click="challengeFriend(friend.user)">
-                    <v-icon start icon="mdi-sword-cross" size="18"></v-icon>
-                    DESAFIAR
+                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold" 
+                    :disabled="challengeCooldowns[friend.user]"
+                    @click="challengeFriend(friend.user)">
+                    <v-icon start :icon="challengeCooldowns[friend.user] ? 'mdi-timer-sand' : 'mdi-sword-cross'" size="18"></v-icon>
+                    {{ challengeCooldowns[friend.user] ? 'ESPERA...' : 'DESAFIAR' }}
                   </v-btn>
                   <div class="d-flex gap-2">
                     <v-badge
@@ -328,6 +330,7 @@ const searchExploreQuery = ref('');
 const tab = ref('friends');
 const randomExplorers = ref([]);
 const sentRequests = ref([]);
+const challengeCooldowns = ref({}); // Cooldowns por amigo
 
 const profileDialog = ref({
   show: false,
@@ -463,14 +466,26 @@ const startChat = (friendObj) => {
 };
 
 const challengeFriend = async (friendName) => {
+  if (challengeCooldowns.value[friendName]) return;
+
   showMessage(`Conectando con la flota para desafiar a ${friendName}...`, 'info');
+  
+  // Activar cooldown
+  challengeCooldowns.value[friendName] = true;
+  
   const success = await multiplayerStore.sendChallenge(friendName);
   
   if (success) {
     showMessage(`¡Desafío enviado a ${friendName}! Prepárate.`);
   } else {
     showMessage(`Error: No se pudo enviar el desafío a ${friendName}. Verifica tu conexión.`, 'error');
+    // Si falla, podrías quitar el cooldown, pero mejor dejarlo un poco para evitar spam
   }
+
+  // Desactivar cooldown tras 3 segundos
+  setTimeout(() => {
+    challengeCooldowns.value[friendName] = false;
+  }, 3000);
 };
 
 const acceptRequest = async (requesterName) => {

@@ -99,6 +99,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         },
 
         handleMessage(data) {
+            const sessionStore = this.getSession();
             switch (data.type) {
                 case 'INVITATION_RECEIVED':
                     this.invitations.push({ from: data.from, roomId: data.roomId });
@@ -118,9 +119,15 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     // Ambos usuarios reciben esto. Redirigir al lobby de la nueva sala.
                     this.joinRoom(data.roomId);
                     this.lastMessage = data; // Para que el componente global reaccione y redirija
+                    
+                    // Actualizar estado en el chat si está abierto
+                    useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'accepted');
                     break;
                 case 'CHALLENGE_REJECTED':
                     this.lastMessage = data; // Para mostrar notificación de rechazo
+                    
+                    // Actualizar estado en el chat
+                    useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'rejected');
                     break;
                 case 'GLOBAL_ROOMS_UPDATE':
                     console.log('🛰️ [WS] Salas públicas actualizadas:', data.rooms);
@@ -341,6 +348,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 to: challengerName,
                 accepted
             }));
+            
+            // Actualizar chat localmente para feedback inmediato
+            useChatStore().setChallengeStatus(challengerName, accepted ? 'accepted' : 'rejected');
             
             this.challengeRequests = this.challengeRequests.filter(r => r.from !== challengerName);
         },
