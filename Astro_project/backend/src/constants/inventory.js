@@ -88,7 +88,7 @@ const INVENTORY_ITEMS = Object.freeze([
     {
         id: 201,
         name: 'Pin Raro',
-        desc: 'Insignia rara obtenida en la ruleta.',
+        desc: 'Insignia rara de edición limitada.',
         icon: 'mdi-decagram',
         color: 'purple-accent-2',
         cat: 'collectible',
@@ -98,7 +98,7 @@ const INVENTORY_ITEMS = Object.freeze([
     {
         id: 202,
         name: 'Avatar Ninja',
-        desc: 'Aspecto ninja obtenido en la ruleta.',
+        desc: 'Aspecto ninja exclusivo.',
         icon: 'mdi-ninja',
         color: 'blue-accent-2',
         cat: 'skin',
@@ -128,18 +128,9 @@ const LEGACY_WHEEL_REWARD_ID_TO_ITEM_ID = Object.freeze({
     2: 202
 });
 
-const WHEEL_ITEMS = [
-    { id: 0, label: 'Vida Extra', icon: 'mdi-heart', color: '#FF5252', weight: 20, inventoryItemId: 1 },
-    { id: 1, label: 'Pin Raro', icon: 'mdi-decagram', color: '#9C27B0', weight: 5, inventoryItemId: 201 },
-    { id: 2, label: 'Avatar Ninja', icon: 'mdi-ninja', color: '#2196F3', weight: 5, inventoryItemId: 202 },
-    { id: 3, label: 'Monedas', icon: 'mdi-currency-usd', color: '#FFC107', weight: 30, coinsReward: 100 },
-    { id: 4, label: 'Nada', icon: 'mdi-emoticon-sad', color: '#795548', weight: 40 }
-];
-
 module.exports = {
     MAX_INVENTORY_UNITS,
     INVENTORY_ITEMS,
     LEGACY_ITEM_NAME_TO_ID,
-    LEGACY_WHEEL_REWARD_ID_TO_ITEM_ID,
-    WHEEL_ITEMS
+    LEGACY_WHEEL_REWARD_ID_TO_ITEM_ID
 };

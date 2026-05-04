@@ -183,7 +183,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     201: {
         id: 201,
         name: 'Pin Raro',
-        desc: 'Insignia rara obtenida en la ruleta.',
+        desc: 'Insignia rara de edición limitada.',
         icon: 'mdi-decagram',
         color: 'purple-accent-2',
         cat: 'collectible',
@@ -192,7 +192,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     202: {
         id: 202,
         name: 'Avatar Ninja',
-        desc: 'Aspecto ninja obtenido en la ruleta.',
+        desc: 'Aspecto ninja exclusivo.',
         icon: 'mdi-ninja',
         color: 'blue-accent-2',
         cat: 'skin',
