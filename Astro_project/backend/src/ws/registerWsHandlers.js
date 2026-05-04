@@ -9,7 +9,7 @@ const chatService = require('../services/chatService');
 function registerWsHandlers(wss, getDB) {
     wss.on('connection', (ws) => {
         let currentUser = null;
-        console.log('📡 Nueva conexión WS establecida');
+        console.log('Nueva conexión WS establecida');
 
         ws.on('message', async (data) => {
             try {
@@ -19,7 +19,7 @@ function registerWsHandlers(wss, getDB) {
                     case 'IDENTIFY':
                         currentUser = msg.user;
                         roomManager.addSession(currentUser, ws);
-                        console.log(`👤 Usuario identificado en WS: ${currentUser}`);
+                        console.log(`Usuario identificado en WS: ${currentUser}`);
                         // Enviar lista de salas disponibles de inmediato
                         await roomManager.syncGlobalRooms();
 
@@ -33,7 +33,7 @@ function registerWsHandlers(wss, getDB) {
 
                     case 'INVITE':
                         // { type: 'INVITE', from: 'UserA', to: 'UserB', roomId: 'XYZ' }
-                        console.log(`✉️ Invitación de ${msg.from} para ${msg.to}`);
+                        console.log(`Invitación de ${msg.from} para ${msg.to}`);
                         roomManager.sendToUser(msg.to, {
                             type: 'INVITATION_RECEIVED',
                             from: msg.from,
@@ -135,7 +135,7 @@ function registerWsHandlers(wss, getDB) {
                         // Confirmar al emisor (para actualizar su UI)
                         ws.send(JSON.stringify(chatMsg));
 
-                        console.log(`💬 Mensaje de ${msg.from} → ${msg.to}`);
+                        console.log(`Mensaje de ${msg.from} → ${msg.to}`);
                         break;
                     }
 
@@ -164,7 +164,7 @@ function registerWsHandlers(wss, getDB) {
                     }
                 }
             } catch (e) {
-                console.error('❌ Error procesando mensaje WS:', e);
+                console.error('Error procesando mensaje WS:', e);
             }
         });
 
@@ -172,7 +172,7 @@ function registerWsHandlers(wss, getDB) {
             if (currentUser) {
                 roomManager.removeSession(currentUser);
             }
-            console.log('📡 Conexión WS cerrada');
+            console.log('Conexión WS cerrada');
         });
     });
 }

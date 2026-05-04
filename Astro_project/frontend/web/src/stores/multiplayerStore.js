@@ -6,10 +6,10 @@ import { useChatStore } from './chatStore';
 function buildWsUrl() {
     // 1. Reemplazamos 'http' o 'https' por 'ws'
     let wsUrl = API_BASE_URL.replace(/^http/i, 'ws');
-    
+
     // 2. Nos aseguramos de que no termine en barra /
     wsUrl = wsUrl.replace(/\/$/, '');
-    
+
     // 3. Añadimos el endpoint '/ws' que espera Nginx
     return `${wsUrl}/ws`;
 }
@@ -24,7 +24,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         error: null,
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
-        returnedPlayers: [] // Jugadores que han pulsado "Volver al lobby"
+        returnedPlayers: [], // Jugadores que han pulsado "Volver al lobby"
+        reconnectAttempts: 0,
+        maxReconnectAttempts: 5
     }),
 
     actions: {
@@ -39,7 +41,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.availableRooms = data;
                 }
             } catch (error) {
-                console.error('❌ Error cargando salas:', error);
+                console.error('Error cargando salas:', error);
             }
         },
 
@@ -52,7 +54,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             ws.onopen = () => {
                 this.isConnected = true;
                 this.socket = ws;
-                console.log('🚀 Conexión Multijugador establecida');
+                this.reconnectAttempts = 0; // Resetear intentos al conectar
+                console.log('Conexión Multijugador establecida');
 
                 ws.send(JSON.stringify({
                     type: 'IDENTIFY',
@@ -64,7 +67,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log(`📩 Mensaje WS recibido: ${data.type}`, data);
+                    console.log(`Mensaje WS recibido: ${data.type}`, data);
                     this.handleMessage(data);
                 } catch (e) {
                     console.error('Error procesando mensaje:', e);
@@ -75,7 +78,14 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 this.isConnected = false;
                 this.socket = null;
                 this.room = null;
-                console.warn('⚠️ Conexión Multijugador cerrada');
+                console.warn('Conexión Multijugador cerrada');
+
+                // Intentar reconectar si no nos hemos desconectado manualmente
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    console.log(`Intentando reconectar... (Intento ${this.reconnectAttempts})`);
+                    setTimeout(() => this.connect(), 2000 * this.reconnectAttempts); // Exponential backoff
+                }
             };
 
             ws.onerror = () => {
@@ -88,6 +98,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 this.socket.close();
             }
             this.socket = null;
+            this.reconnectAttempts = this.maxReconnectAttempts; // Prevenir reconexión automática
             this.isConnected = false;
             this.room = null;
             this.invitations = [];
@@ -99,7 +110,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     this.invitations.push({ from: data.from, roomId: data.roomId });
                     break;
                 case 'GLOBAL_ROOMS_UPDATE':
-                    console.log('🛰️ [WS] Salas públicas actualizadas:', data.rooms);
+                    console.log('[WS] Salas públicas actualizadas:', data.rooms);
                     this.availableRooms = data.rooms;
                     break;
                 case 'ROOM_CREATED':
@@ -114,10 +125,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 case 'MATCH_STARTING':
                     this.roundScores = {}; // Reset puntuacions en viu al començar nova partida
                     this.room = data.room;
-                    console.log('🏁 ¡LA PARTIDA COMIENZA!', data.room.gameConfig.currentGame);
+                    console.log('¡LA PARTIDA COMIENZA!', data.room.gameConfig.currentGame);
                     break;
                 case 'ROUND_ENDED_BY_WINNER':
-                    console.log('🏁 Ronda terminada instantáneamente por:', data.winner);
+                    console.log('Ronda terminada instantáneamente por:', data.winner);
                     if (this.room) {
                         this.room.gameConfig.scores = data.scores;
                     }
@@ -132,13 +143,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 case 'ROUND_FINISHED':
                     this.roundScores = {}; // Limpiar para la siguiente
                     this.room = data.room;
-                    console.log('🏆 Ronda terminada. Ganador:', data.winner);
+                    console.log('Ronda terminada. Ganador:', data.winner);
                     break;
                 case 'MATCH_FINISHED':
                     this.returnedPlayers = []; // Reset al acabar partida
                     this.room = data.room;
                     this.lastMessage = data; // Para que el lobby muestre el overlay de resultados
-                    console.log('👑 ¡PARTIDA TERMINADA! Ganador absoluto:', data.winner);
+                    console.log('¡PARTIDA TERMINADA! Ganador absoluto:', data.winner);
                     break;
                 case 'PLAYER_RETURNED':
                     this.lastMessage = data;
@@ -149,7 +160,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 case 'ROOM_CLOSED':
                     this.room = null;
                     this.lastMessage = data;
-                    console.log('🚪 Sala tancada pel servidor:', data.reason);
+                    console.log('Sala tancada pel servidor:', data.reason);
                     break;
                 case 'ERROR':
                     this.error = data.message;
