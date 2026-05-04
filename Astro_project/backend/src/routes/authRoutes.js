@@ -1,8 +1,8 @@
+// Astro_project/backend/src/routes/authRoutes.js
+
 function registerAuthRoutes(app, {
-    getDB,
-    updateStreak,
+    authService,
     normalizeAchievementIds,
-    normalizeAndPersistInventory,
     getInventoryQuantity,
     normalizeActiveBoosters
 }) {
@@ -14,38 +14,12 @@ function registerAuthRoutes(app, {
         }
 
         try {
-            const db = getDB();
-            const existingUser = await db.collection('users').findOne({ user: username });
-
-            if (existingUser) return res.status(409).json({ message: 'El ID de tripulante ya existe.' });
-
-            const newUser = {
-                user: username,
-                pass: password,
-                rank: rank || 'Cadete de Vuelo',
-                plan: 'INDIVIDUAL_FREE',
-                coins: 1000,
-                level: 1,
-                xp: 0,
-                // --- AÑADIDO: Inicialización del mapa ---
-                mapLevel: 1, 
-                // ----------------------------------------
-                inventory: [],
-                selectedAchievements: [null, null, null],
-                unlockedAchievements: [],
-                streak: 0,
-                streakFreezes: 0,
-                activeBoosters: normalizeActiveBoosters(),
-                avatar: 'Astronauta_blanc.jpg',
-                missionsCompleted: 0,
-                lastActivity: new Date(),
-                createdAt: new Date()
-            };
-
-            await db.collection('users').insertOne(newUser);
+            await authService.register(username, password, rank);
             res.status(201).json({ message: 'Reclutamiento completado exitosamente.' });
         } catch (error) {
-            res.status(500).json({ message: 'Error en el sistema de registro.' });
+            console.error('❌ Error en registro:', error);
+            res.status(error.message === 'El ID de tripulante ya existe.' ? 409 : 500)
+               .json({ message: error.message || 'Error en el sistema de registro.' });
         }
     });
 
@@ -54,61 +28,43 @@ function registerAuthRoutes(app, {
         const password = req.body.password || req.body.pass;
 
         try {
-            const db = getDB();
-            const usersCollection = db.collection('users');
-            const query = { 
-                $or: [
-                    { user: username, pass: password }
-                ]
-            };
-            if (!isNaN(Number(username))) {
-                query.$or.push({ user: Number(username), pass: password });
-            }
+            const { user, streakResult, freezeUnits, normalizedInventory } = await authService.login(username, password);
 
-            const foundUser = await usersCollection.findOne(query);
-
-            if (!foundUser) {
-                return res.status(401).json({ status: 'Error', message: 'Credenciales no reconocidas' });
-            }
-
-            console.log(`🚀 Sesión iniciada: ${foundUser.user}`);
-            const normalizedInventory = await normalizeAndPersistInventory(foundUser, usersCollection);
-            const freezeUnits = getInventoryQuantity(normalizedInventory, 2);
-            const streakResult = await updateStreak(foundUser.user, false);
-            const activeBoosters = normalizeActiveBoosters(foundUser.activeBoosters);
-
+            console.log(`🚀 Sesión iniciada: ${user.username}`);
+            
             res.json({
                 status: 'Sincronización completada',
                 token: 'session_token_' + Math.random().toString(36).substr(2),
                 profile: {
-                    name: foundUser.user,
-                    plan: foundUser.plan || 'INDIVIDUAL_FREE',
-                    rank: foundUser.rank || 'Cadete de Vuelo',
-                    coins: foundUser.coins !== undefined ? foundUser.coins : 1000,
-                    level: foundUser.level || 1,
-                    xp: foundUser.xp || 0,
-                    // --- CORRECCIÓN: Sincronización del nivel del mapa ---
-                    mapLevel: foundUser.mapLevel || 1, 
-                    // ----------------------------------------------------
-                    selectedAchievements: foundUser.selectedAchievements || [null, null, null],
-                    unlockedAchievements: normalizeAchievementIds(foundUser.unlockedAchievements || []),
+                    name: user.username,
+                    plan: user.plan,
+                    rank: user.rank,
+                    coins: user.coins,
+                    level: user.level,
+                    xp: user.xp,
+                    mapLevel: user.mapLevel,
+                    selectedAchievements: user.selectedAchievements || [null, null, null],
+                    unlockedAchievements: normalizeAchievementIds(user.unlockedAchievements || []),
                     streak: streakResult.streak,
-                    streakFreezes: Math.max(foundUser.streakFreezes || 0, freezeUnits),
-                    activeBoosters,
-                    avatar: foundUser.avatar || 'Astronauta_blanc.jpg',
+                    streakFreezes: Math.max(user.streakFreezes || 0, freezeUnits),
+                    activeBoosters: normalizeActiveBoosters(user.activeBoosters),
+                    avatar: user.avatar || 'Astronauta_blanc.jpg',
                     needsFreeze: streakResult.needsFreeze,
-                    lastActivity: foundUser.lastActivity,
+                    lastActivity: user.lastActivity,
                     lastGame: streakResult.lastGame,
-                    // Opcional: Añade estos para que las estadísticas no aparezcan vacías al loguear
-                    gameHistory: foundUser.gameHistory || [],
-                    maxScores: foundUser.maxScores || {},
-                    totalGamesPlayed: foundUser.totalGamesPlayed || 0,
-                    totalPoints: foundUser.totalPoints || 0,
-                    missionsCompleted: foundUser.missionsCompleted || 0
+                    gameHistory: user.gameHistory || [],
+                    maxScores: user.maxScores || {},
+                    totalGamesPlayed: user.totalGamesPlayed || 0,
+                    totalPoints: user.totalPoints || 0,
+                    missionsCompleted: user.missionsCompleted || 0,
+                    dailyMissions: user.dailyMissions || [],
+                    weeklyMissions: user.weeklyMissions || []
                 }
             });
         } catch (error) {
-            res.status(500).json({ message: 'Error interno del servidor' });
+            console.error('❌ Error en login:', error);
+            res.status(error.message === 'Credenciales no reconocidas' ? 401 : 500)
+               .json({ status: 'Error', message: error.message || 'Error interno en el login' });
         }
     });
 }

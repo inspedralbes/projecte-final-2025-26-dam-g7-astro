@@ -1,44 +1,110 @@
+// Astro_project/backend/src/services/statsService.js
 
-const {
-    normalizeAndPersistInventory,
-    enrichInventory,
-    normalizeInventoryEntries
-} = require('./inventoryService');
+const DAILY_TEMPLATES = [
+    { text: "Juega 3 partidas", goal: 3, reward: 150, type: "games" },
+    { text: "Gana 500 créditos", goal: 500, reward: 100, type: "coins" },
+    { text: "Consigue 200 XP", goal: 200, reward: 120, type: "xp" },
+    { text: "Usa un objeto", goal: 1, reward: 80, type: "item" },
+    { text: "Mantén tu racha", goal: 1, reward: 200, type: "streak" }
+];
 
-const {
-    normalizeActiveBoosters
-} = require('../utils/boosters');
+const WEEKLY_TEMPLATES = [
+    { text: "Maestro de Juegos (20 partidas)", goal: 20, reward: 1000, type: "games" },
+    { text: "Buscador de Oro (3000 créditos)", goal: 3000, reward: 800, type: "coins" },
+    { text: "Ascensión Lunar (Consigue 1500 XP)", goal: 1500, reward: 1200, type: "xp" },
+    { text: "Superviviente Espacial (Racha 5 días)", goal: 5, reward: 2000, type: "streak" },
+    { text: "Interacción de Objetos (10 objetos)", goal: 10, reward: 500, type: "item" }
+];
 
-function createGetUserStats({
-    getCollections,
-    normalizeInventoryEntries,
-    getInventoryQuantity,
-    normalizeActiveBoosters
-}) {
-    /**
-     * Recupera todas las estadísticas de un usuario, procesa misiones diarias/semanales
-     * y normaliza el inventario.
-     */
-    return async function getUserStats(username) {
-        const { users, partides } = getCollections();
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
-        // Búsqueda EXACTA (Case Sensitive) a petición del usuario
-        const query = { $or: [{ user: username }] };
-        if (!isNaN(Number(username))) {
-            query.$or.push({ user: Number(username) });
-        }
+function generateMissions(templates, count) {
+    const shuffled = [...templates].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count).map(t => ({
+        id: generateId(),
+        text: t.text,
+        label: t.text, // Compatibilidad
+        goal: t.goal,
+        progress: 0,
+        reward: t.reward,
+        completed: false,
+        claimed: false,
+        type: t.type
+    }));
+}
 
-        let userDoc = await users.findOne(query);
+class StatsService {
+    constructor({
+        userRepository,
+        partidaRepository,
+        normalizeInventoryEntries,
+        getInventoryQuantity,
+        normalizeActiveBoosters
+    }) {
+        this.userRepo = userRepository;
+        this.partidaRepo = partidaRepository;
+        this.normalizeInventoryEntries = normalizeInventoryEntries;
+        this.getInventoryQuantity = getInventoryQuantity;
+        this.normalizeActiveBoosters = normalizeActiveBoosters;
+    }
 
-        if (userDoc) {
-            console.log(`🔍 [DEBUG] Usuario encontrado: ${username} | _id: ${userDoc._id} | Nivel: ${userDoc.level}`);
-        } else {
-            console.warn(`⚠️ [DEBUG] Usuario NO encontrado: ${username}`);
-        }
+    async getUserStats(username) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) return null;
 
-        if (!userDoc) return null;
+        await this._refreshMissionsIfNeeded(user);
 
-        // --- LÓGICA DE MISIONES ---
+        const normalizedInventory = this.normalizeInventoryEntries(user.inventory || []);
+        const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const freezeUnits = this.getInventoryQuantity(normalizedInventory, 2);
+
+        const [
+            gamesPlayed,
+            gamesByType,
+            recentGames,
+            top5Games,
+            totalPoints
+        ] = await Promise.all([
+            this.partidaRepo.countByUser(user.username),
+            this.partidaRepo.getGamesByType(user.username),
+            this.partidaRepo.findRecentByUser(user.username, 20),
+            this.partidaRepo.findTopByUser(user.username, 5),
+            this.partidaRepo.getTotalPointsByUser(user.username)
+        ]);
+
+        return {
+            user: user.username,
+            plan: user.plan,
+            rank: user.rank,
+            level: user.level,
+            xp: user.xp,
+            coins: user.coins,
+            mapLevel: user.mapLevel || 1,
+            activeBoosters: this.normalizeActiveBoosters(user.activeBoosters),
+            inventoryCount: normalizedInventory.length,
+            inventoryUnits,
+            gamesPlayed,
+            gamesByType,
+            streak: user.streak,
+            streakFreezes: Math.max(user.streakFreezes || 0, freezeUnits),
+            lastActivity: user.lastActivity,
+            lastGame: user.lastGame,
+            dailyMissions: user.dailyMissions || [],
+            weeklyMissions: user.weeklyMissions || [],
+            friends: user.friends || [],
+            gameHistory: recentGames,
+            topGames: top5Games,
+            maxScores: user.maxScores || {},
+            totalGamesPlayed: gamesPlayed,
+            totalPoints: totalPoints,
+            missionsCompleted: user.missionsCompleted || 0,
+            selectedAchievements: user.selectedAchievements || [null, null, null],
+            unlockedAchievements: user.unlockedAchievements || [],
+            friendRequests: user.friendRequests || []
+        };
+    }
+
+    async _refreshMissionsIfNeeded(user) {
         const today = new Date().toDateString();
         const currentDate = new Date();
         const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
@@ -46,158 +112,33 @@ function createGetUserStats({
         const weekNumber = Math.ceil(days / 7);
         const currentWeekKey = `${currentDate.getFullYear()}-W${weekNumber}`;
 
-        let updates = {};
         let needsUpdate = false;
 
-        const generateMissions = (templates, count) => {
-            const shuffled = [...templates].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, count).map((t, index) => ({
-                ...t,
-                id: t.id || `${t.type}_${Date.now()}_${index}`,
-                text: t.label, // Compatibilidad con versiones antiguas
-                progress: 0,
-                completed: false,
-                claimed: false
-            }));
-        };
-
-        // --- SANEAR MISIONES EXISTENTES (MIGRACIÓN EN CALIENTE) ---
-        // Si el usuario ya tiene misiones hoy pero sin el campo 'label' o 'id', lo arreglamos
-        const healMissions = (missions) => {
-            if (!Array.isArray(missions)) return { missions: [], changed: false };
-            let changed = false;
-            const healed = missions.map((m, index) => {
-                const newM = { ...m };
-                if (!newM.label && newM.text) { newM.label = newM.text; changed = true; }
-                if (!newM.text && newM.label) { newM.text = newM.label; changed = true; }
-                if (!newM.id) { 
-                    newM.id = `${newM.type}_${index}_fixed`; 
-                    changed = true; 
-                }
-                // Asegurar que tengan recompensa si les falta
-                if (newM.reward === undefined) {
-                    newM.reward = newM.type === 'streak' ? 200 : 100;
-                    changed = true;
-                }
-                return newM;
-            });
-            return { missions: healed, changed };
-        };
-
-        // Diarias
-        if (userDoc.lastDailyMissionDate !== today) {
-            const DAILY_TEMPLATES = [
-                { type: 'games', goal: 3, label: 'Juega 3 partidas', reward: 150 },
-                { type: 'coins', goal: 500, label: 'Gana 500 créditos', reward: 100 },
-                { type: 'xp', goal: 200, label: 'Consigue 200 XP', reward: 120 },
-                { type: 'streak', goal: 1, label: 'Mantén tu racha', reward: 200 },
-                { type: 'item', goal: 1, label: 'Usa un objeto', reward: 80 }
-            ];
-            updates.dailyMissions = generateMissions(DAILY_TEMPLATES, 3);
-            updates.lastDailyMissionDate = today;
+        if (user.lastDailyMissionDate !== today) {
+            user.dailyMissions = generateMissions(DAILY_TEMPLATES, 3);
+            user.lastDailyMissionDate = today;
             needsUpdate = true;
-        } else {
-            const healed = healMissions(userDoc.dailyMissions);
-            if (healed.changed) {
-                updates.dailyMissions = healed.missions;
-                userDoc.dailyMissions = healed.missions;
-                needsUpdate = true;
-            }
         }
 
-        // Semanales
-        if (userDoc.lastWeeklyMissionKey !== currentWeekKey) {
-            const WEEKLY_TEMPLATES = [
-                { type: 'games', goal: 20, label: 'Juega 20 partidas', reward: 1000 },
-                { type: 'coins', goal: 3000, label: 'Gana 3000 créditos', reward: 800 },
-                { type: 'xp', goal: 1500, label: 'Consigue 1500 XP', reward: 1200 },
-                { type: 'streak', goal: 5, label: 'Llega a racha de 5 días', reward: 2000 },
-                { type: 'item', goal: 10, label: 'Usa 10 objetos', reward: 500 }
-            ];
-            updates.weeklyMissions = generateMissions(WEEKLY_TEMPLATES, 2);
-            updates.lastWeeklyMissionKey = currentWeekKey;
+        if (user.lastWeeklyMissionKey !== currentWeekKey) {
+            user.weeklyMissions = generateMissions(WEEKLY_TEMPLATES, 2);
+            user.lastWeeklyMissionKey = currentWeekKey;
             needsUpdate = true;
-        } else {
-            const healed = healMissions(userDoc.weeklyMissions);
-            if (healed.changed) {
-                updates.weeklyMissions = healed.missions;
-                userDoc.weeklyMissions = healed.missions;
-                needsUpdate = true;
-            }
         }
 
         if (needsUpdate) {
-            await users.updateOne({ user: username }, { $set: updates });
-            Object.assign(userDoc, updates);
+            await this.userRepo.update(user);
         }
+    }
+}
 
-        // --- PROCESAMIENTO DE INVENTARIO Y PUNTOS ---
-        const normalizedInventory = await normalizeAndPersistInventory(userDoc, users);
-        const inventoryUnits = normalizedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-
-        // Agregamos estadísticas desde la colección de partidas para asegurar integridad
-        const statsAggregation = await partides.aggregate([
-            { $match: { user: username } },
-            { 
-                $group: { 
-                    _id: null, 
-                    totalPoints: { $sum: '$score' },
-                    totalGames: { $sum: 1 }
-                } 
-            }
-        ]).toArray();
-
-        const totalPoints = statsAggregation[0]?.totalPoints || 0;
-        const totalGamesPlayed = statsAggregation[0]?.totalGames || 0;
-
-        // Recuperamos el historial real de las últimas 50 partidas
-        const realGameHistory = await partides.find({ user: username })
-            .sort({ createdAt: -1 })
-            .limit(50)
-            .toArray();
-
-        // Top 3 partidas por puntuación
-        const topGames = await partides.find({ user: username })
-            .sort({ score: -1 })
-            .limit(3)
-            .toArray();
-
-        // --- RETORNO DE DATOS COMPLETOS ---
-        return {
-            _id: userDoc._id,
-            user: userDoc.user,
-            plan: userDoc.plan || 'INDIVIDUAL_FREE',
-            rank: userDoc.rank || 'Cadete de Vuelo',
-            avatar: userDoc.avatar || null,
-            mascot: userDoc.mascot || null,
-            level: (userDoc.level !== undefined && userDoc.level !== null) ? userDoc.level : 1,
-            xp: (userDoc.xp !== undefined && userDoc.xp !== null) ? userDoc.xp : 0,
-            coins: (userDoc.coins !== undefined && userDoc.coins !== null) ? userDoc.coins : 1000,
-            mapLevel: (userDoc.mapLevel !== undefined && userDoc.mapLevel !== null) ? userDoc.mapLevel : 1,
-            activeBoosters: normalizeActiveBoosters(userDoc.activeBoosters),
-            inventoryCount: normalizedInventory.length,
-            inventoryUnits,
-            inventory: enrichInventory(normalizedInventory),
-            streak: userDoc.streak || 0,
-            streakFreezes: userDoc.streakFreezes || 0,
-            lastActivity: userDoc.lastActivity,
-            lastGame: userDoc.lastGame,
-            dailyMissions: userDoc.dailyMissions || [],
-            weeklyMissions: userDoc.weeklyMissions || [],
-            gameHistory: realGameHistory,
-            topGames: topGames,
-            maxScores: userDoc.maxScores || {},
-            selectedAchievements: userDoc.selectedAchievements || [],
-            totalGamesPlayed: totalGamesPlayed,
-            totalPoints: totalPoints,
-            missionsCompleted: userDoc.missionsCompleted || 0,
-            friends: userDoc.friends || [],
-            friendRequests: userDoc.friendRequests || []
-        };
-    };
+// Per mantenir compatibilitat temporal amb el codi que usa createGetUserStats
+function createGetUserStats(dependencies) {
+    const service = new StatsService(dependencies);
+    return (username) => service.getUserStats(username);
 }
 
 module.exports = {
+    StatsService,
     createGetUserStats
 };
-

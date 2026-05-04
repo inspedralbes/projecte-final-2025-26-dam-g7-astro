@@ -3,15 +3,10 @@ name: Deploy Production PI
 on:
   push:
     branches: [ "main" ]
-  workflow_run:
-    workflows: ["Auto Merge Integracio to Main"]
-    types:
-      - completed
 
 jobs:
   # --- BLOQUE 1: VALIDACIÓN ---
   build-check:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -47,7 +42,6 @@ jobs:
 
   # --- BLOQUE 2: DESPLIEGUE PRODUCCIÓN ---
   deploy-production:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     needs: build-check 
     runs-on: ubuntu-latest
     steps:

@@ -1,22 +1,31 @@
-function createUpdateStreak({
-    getCollections,
-    normalizeInventoryEntries,
-    getInventoryQuantity
-}) {
-    return async function updateStreak(username, isGame = false) {
-        const { users } = getCollections();
-        const userDoc = await users.findOne({ user: username });
-        if (!userDoc) return null;
+// Astro_project/backend/src/services/streakService.js
+
+class StreakService {
+    constructor({
+        userRepository,
+        normalizeInventoryEntries,
+        getInventoryQuantity
+    }) {
+        this.userRepo = userRepository;
+        this.normalizeInventoryEntries = normalizeInventoryEntries;
+        this.getInventoryQuantity = getInventoryQuantity;
+    }
+
+    async updateStreak(username, isGame = false) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) return null;
 
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const lastActivity = userDoc.lastActivity ? new Date(userDoc.lastActivity) : null;
-        const lastGame = userDoc.lastGame ? new Date(userDoc.lastGame) : null;
-        const normalizedInventory = normalizeInventoryEntries(userDoc.inventory || []);
-        const availableFreezes = Math.max(userDoc.streakFreezes || 0, getInventoryQuantity(normalizedInventory, 2));
+        const lastActivity = user.lastActivity ? new Date(user.lastActivity) : null;
+        const lastGame = user.lastGame ? new Date(user.lastGame) : null;
+        const normalizedInventory = this.normalizeInventoryEntries(user.inventory || []);
+        
+        // Utilitzar el camp de l'objecte de domini User o el càlcul de l'inventari
+        const availableFreezes = Math.max(user.streakFreezes || 0, this.getInventoryQuantity(normalizedInventory, 2));
 
-        let newStreak = userDoc.streak || 0;
+        let newStreak = user.streak || 0;
         let needsFreeze = false;
 
         if (lastActivity) {
@@ -36,6 +45,8 @@ function createUpdateStreak({
             if (needsFreeze) {
                 newStreak = 1;
                 needsFreeze = false;
+                // Si usem un freeze, hauríem de restar-lo de l'inventari? 
+                // La lògica original sembla que només els "compta", però no els resta aquí.
             } else if (newStreak === 0) {
                 newStreak = 1;
             } else if (lastGame) {
@@ -50,23 +61,35 @@ function createUpdateStreak({
             }
         }
 
-        const updateData = { $set: { streak: newStreak } };
-        if ((userDoc.streakFreezes || 0) !== availableFreezes) {
-            updateData.$set.streakFreezes = availableFreezes;
+        // Actualitzar l'objecte User
+        user.streak = newStreak;
+        user.streakFreezes = availableFreezes;
+        user.lastActivity = now;
+        if (isGame) {
+            user.lastGame = now;
         }
 
-        if (!isGame) {
-            updateData.$set.lastActivity = now;
-        } else {
-            updateData.$set.lastActivity = now;
-            updateData.$set.lastGame = now;
-        }
+        await this.userRepo.update(user);
 
-        await users.updateOne({ user: username }, updateData);
-        return { streak: newStreak, needsFreeze, lastGame: isGame ? now : userDoc.lastGame };
-    };
+        return { 
+            streak: newStreak, 
+            needsFreeze, 
+            lastGame: isGame ? now : user.lastGame 
+        };
+    }
+}
+
+// Compatibilitat temporal
+function createUpdateStreak(dependencies) {
+    const service = new StreakService({
+        userRepository: dependencies.userRepository,
+        normalizeInventoryEntries: dependencies.normalizeInventoryEntries,
+        getInventoryQuantity: dependencies.getInventoryQuantity
+    });
+    return (username, isGame) => service.updateStreak(username, isGame);
 }
 
 module.exports = {
+    StreakService,
     createUpdateStreak
 };
