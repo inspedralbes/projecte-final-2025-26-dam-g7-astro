@@ -1,13 +1,13 @@
+// Astro_project/backend/src/routes/multiplayerRoutes.js
+
 const express = require('express');
 
-function registerMultiplayerRoutes(app, { getCollections }) {
+function registerMultiplayerRoutes(app, { multiplayerService }) {
     const router = express.Router();
 
-    // Obtener todas las salas disponibles (estado LOBBY)
     router.get('/rooms', async (req, res) => {
         try {
-            const { rooms } = getCollections();
-            const availableRooms = await rooms.find({ status: 'LOBBY', isPublic: true }).toArray();
+            const availableRooms = await multiplayerService.getPublicLobbies();
             res.json(availableRooms);
         } catch (error) {
             console.error("❌ Error obteniendo salas:", error);

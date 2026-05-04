@@ -141,8 +141,8 @@
       </v-col>
     </v-row>
 
-    <!-- Pantalla Final -->
-    <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <!-- Pantalla Final (només en single player) -->
+    <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') }}</h2>
       <div class="d-flex justify-space-around my-6">
@@ -173,10 +173,18 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { roscoData } from '@/data/roscoGamesData';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
 
-const { locale, t } = useI18n();
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const emit = defineEmits(['game-over']);
 
@@ -235,6 +243,7 @@ const feedbackColor = ref('info');
 const isChecking = ref(false);
 const totalTime = 90;
 const timeLeft = ref(totalTime);
+const isWaitingForOthers = ref(false);
 let timerInterval = null;
 
 // Rocket animation state
@@ -263,6 +272,31 @@ onMounted(() => {
     const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
     roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
     startTimer();
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+    if (!msg) return;
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+        gameFinished.value = true;
+        emitExit();
+    }
+
+    // Rebre sabotatge del rival: restar temps
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
+    }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+            type: 'SCORE_UPDATE',
+            score: newScore
+        });
+    }
 });
 
 onUnmounted(() => {
@@ -365,6 +399,11 @@ const checkAnswer = async () => {
         score.value += 100;
         feedbackMessage.value = t('spelledRosco.msgCorrect');
         feedbackColor.value = 'success';
+        // Sabotatge multijugador: +10s per a tu, -15s per al rival
+        if (props.isMultiplayer) {
+            timeLeft.value = Math.min(timeLeft.value + 10, 999);
+            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
+        }
     } else {
         roscoLetters.value[currentIndex.value].status = 'incorrect';
         feedbackMessage.value = t('spelledRosco.msgIncorrect', { answer: currentLetter.value.answer });
@@ -410,10 +449,16 @@ const advanceTurn = async () => {
     }
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
     if (gameFinished.value) return;
-    gameFinished.value = true;
+    
+    if (props.isMultiplayer && !silent) {
+        if (timerInterval) clearInterval(timerInterval);
+        multiplayerStore.submitRoundResult();
+        return;
+    }
 
+    gameFinished.value = true;
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;

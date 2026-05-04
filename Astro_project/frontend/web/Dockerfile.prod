@@ -1,18 +1,25 @@
-# Etapa 1: Build
-FROM node:20-alpine AS build-stage
+# --- ETAPA 1: Construcción (Build) ---
+FROM node:24-alpine AS build-stage
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
 COPY . .
 RUN npm run build
 
-# Etapa 2: Servidor Web ligero (Nginx)
+# --- ETAPA 2: Servidor Web (Nginx) ---
 FROM nginx:stable-alpine AS production-stage
 
-# Copiamos los archivos estáticos generados en la etapa anterior
+# Copiamos los archivos compilados (Asegúrate de que Astro/Vue genere la carpeta /dist)
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Exponemos el puerto estándar web
-EXPOSE 80
+# Inyectamos nuestra configuración (La que incluye el bloque SSL y Proxy Inverso)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# EXPOSICIÓN DE PUERTOS
+# Exponemos el 80 (para la redirección) y el 443 (para el candadito)
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]

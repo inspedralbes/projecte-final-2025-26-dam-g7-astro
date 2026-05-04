@@ -4,7 +4,7 @@
     
     <v-card
       elevation="24"
-      max-width="500"
+      max-width="580"
       width="100%"
       class="pa-8 register-card glass-panel"
     >
@@ -48,9 +48,6 @@
               :rules="[v => !!v || $t('auth.idReq')]"
               hide-details="auto"
             ></v-text-field>
-            <div class="text-caption text-grey-lighten-1 mt-1 ml-1 font-italic">
-              {{ $t('auth.visibleNameNote') }}
-            </div>
           </v-col>
 
           <v-col cols="12" sm="6" class="mt-4">
@@ -73,7 +70,7 @@
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.verif') }}</div>
             <v-text-field
               v-model="formData.confirmPassword"
-              :placeholder="$t('auth.confirmPwd')"
+              placeholder="CONFIRMAR"
               type="password"
               variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
@@ -88,7 +85,7 @@
 
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
           <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
-          <span class="text-red-lighten-1 font-weight-bold">{{ errorMessage }}</span>
+          <span class="text-red-lighten-1 font-weight-bold uppercase">{{ errorMessage }}</span>
         </div>
 
         <v-btn
@@ -108,8 +105,7 @@
 
       <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
         <div class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="router.push('/login')">
-          <v-icon size="small" class="mr-1">mdi-login</v-icon> 
-          {{ $t('auth.alreadyHaveId') }}
+          ¿YA TIENES ID? ACCEDER
         </div>
         <div class="coordinate-display text-body-2 font-weight-bold text-cyan-lighten-4 font-weight-mono">
           {{ $t('auth.coordinates') }} <span class="text-cyan-accent-2 glow-text">{{ $t('auth.sector') }}</span>
@@ -148,7 +144,7 @@ const passwordMatchError = computed(() => {
 const handleRegister = async () => {
     if (passwordMatchError.value) return;
     if (!formData.value.username || !formData.value.password) {
-        errorMessage.value = t('auth.allReqs');
+        errorMessage.value = "Datos incompletos";
         return;
     }
     
@@ -156,21 +152,18 @@ const handleRegister = async () => {
     errorMessage.value = '';
 
     try {
-        const tripulanteData = {
+        const result = await astroStore.registerTripulante({
             username: formData.value.username,
             password: formData.value.password,
-        };
-
-        const result = await astroStore.registerTripulante(tripulanteData);
+        });
         
         if (result.success) {
             router.push('/login'); 
         } else {
-            errorMessage.value = result.message || t('auth.signUpErr');
+            errorMessage.value = result.message || "Error en el alta";
         }
-        
     } catch (err) {
-        errorMessage.value = t('auth.serverConnErr');
+        errorMessage.value = "Error de conexión";
     } finally {
         loading.value = false;
     }
@@ -178,7 +171,6 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-/* Container & Background */
 .register-container {
   background: radial-gradient(circle at center, #0b1021 0%, #000000 100%);
   position: relative;
@@ -205,7 +197,6 @@ const handleRegister = async () => {
   to { transform: translateY(-1000px); }
 }
 
-/* Glass Card */
 .glass-panel {
   background: rgba(10, 25, 41, 0.75) !important;
   backdrop-filter: blur(12px);
@@ -216,10 +207,9 @@ const handleRegister = async () => {
   overflow: hidden;
 }
 
-/* Header Elements */
 .neon-text {
   text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Orbitron', sans-serif !important;
   letter-spacing: 0.15em !important;
 }
 
@@ -239,7 +229,6 @@ const handleRegister = async () => {
   100% { text-shadow: 0 0 0 rgba(0, 242, 255, 0.4); }
 }
 
-/* Inputs */
 .future-input :deep(.v-field) {
   border-radius: 0;
   border: 1px solid rgba(0, 242, 255, 0.2);
@@ -252,12 +241,12 @@ const handleRegister = async () => {
 }
 
 .future-input :deep(input) {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600;
   letter-spacing: 1px;
   color: white !important;
 }
 
-/* Button */
 .register-btn {
   border-radius: 2px;
   position: relative;
@@ -265,6 +254,7 @@ const handleRegister = async () => {
   transition: all 0.3s;
   letter-spacing: 2px;
   background: linear-gradient(90deg, rgba(0,242,255,0.8) 0%, rgba(0,180,255,0.8) 100%) !important;
+  font-family: 'Rajdhani', sans-serif !important;
 }
 
 .register-btn:hover {
@@ -288,20 +278,18 @@ const handleRegister = async () => {
   100% { transform: translateX(150%) rotate(45deg); }
 }
 
-/* Error Display */
 .error-display {
   background: rgba(255, 0, 0, 0.1);
   border: 1px solid rgba(255, 0, 0, 0.3);
   border-left: 4px solid #ff4081;
 }
 
-/* Footer Tech Details */
 .border-top-tech {
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 .font-weight-mono {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Rajdhani', sans-serif;
 }
 
 .glow-text {
@@ -313,6 +301,10 @@ const handleRegister = async () => {
 }
 .hover-bright:hover {
   color: white !important;
+}
+
+.uppercase {
+  text-transform: uppercase;
 }
 
 :deep(.v-field__input) {

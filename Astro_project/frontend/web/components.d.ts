@@ -12,13 +12,16 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
+    ChatDrawer: typeof import('./src/components/layout/ChatDrawer.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
+    MatchResultScreen: typeof import('./src/components/multiplayer/MatchResultScreen.vue')['default']
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
     RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']
     RhymeSquad: typeof import('./src/components/games/RhymeSquad.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
+    RouletteOverlay: typeof import('./src/components/games/RouletteOverlay.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']

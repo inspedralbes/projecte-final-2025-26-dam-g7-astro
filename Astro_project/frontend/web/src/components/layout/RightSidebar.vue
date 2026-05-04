@@ -1,201 +1,170 @@
 <template>
-    <v-navigation-drawer app permanent location="right" width="240" class="sidebar right-sidebar" elevation="0"
+    <v-navigation-drawer app permanent location="right" width="280" class="sidebar right-sidebar" elevation="0"
         mobile-breakpoint="lg">
-        <div class="d-flex flex-column h-100 pa-3">
-            <!-- Stats Card -->
-            <v-card class="glass-card mb-3 pa-3" elevation="0">
+        <div class="d-flex flex-column h-100 pa-4">
+            <!-- Stats Section -->
+            <div class="section-label mb-4">ESTADO DEL PILOTO</div>
+            
+            <v-card class="glass-card mb-4 pt-5 px-4 pb-6" elevation="0" style="overflow: visible !important;">
+                <div class="d-flex justify-space-around align-center">
+                    <div class="text-center streak-container d-flex flex-column align-center">
+                        <div class="streak-icon-wrapper">
+                            <v-icon 
+                                :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'" 
+                                :class="['streak-fire-icon', { 'active-fire': isStreakActiveToday }]"
+                                :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'"
+                                size="28"
+                            ></v-icon>
+                            <div v-if="isStreakActiveToday" class="fire-glow"></div>
+                        </div>
+                        <div class="stat-value text-h5 font-weight-bold" :class="isStreakActiveToday ? 'text-orange-accent-3' : 'text-grey'">
+                            {{ userStreak }}
+                        </div>
+                        <div class="stat-label" :class="{ 'active-label': isStreakActiveToday }">RACHA</div>
+                    </div>
+                    <v-divider vertical class="mx-2 border-opacity-25" color="white"></v-divider>
+                    <div class="text-center d-flex flex-column align-center">
+                        <div class="streak-icon-wrapper">
+                            <v-icon 
+                                icon="mdi-database" 
+                                color="yellow-accent-3"
+                                size="28"
+                            ></v-icon>
+                        </div>
+                        <div class="stat-value text-h5 font-weight-bold text-yellow-accent-3">
+                            {{ userCoins }}
+                        </div>
+                        <div class="stat-label">CRÉDITOS</div>
+                    </div>
+                </div>
+            </v-card>
+
+            <v-card class="glass-card mb-6 pa-4" elevation="0">
                 <div class="d-flex justify-space-between align-center mb-2">
-                    <div class="text-caption text-grey-lighten-1 font-weight-bold">{{ $t('rightSidebar.progress') }}</div>
-                    <v-icon icon="mdi-chart-timeline-variant" color="cyan-accent-2" size="small"></v-icon>
+                    <span class="text-caption font-weight-black text-primary">NIVEL {{ userLevel }}</span>
+                    <span class="text-caption text-grey-lighten-1">{{ userXp }} / {{ xpRequired }} XP</span>
                 </div>
-                <div class="d-flex justify-space-around">
-                    <div class="text-center">
-                        <v-icon :icon="isStreakActiveToday ? 'mdi-fire' : 'mdi-fire-off'"
-                            :color="isStreakActiveToday ? 'orange-accent-3' : 'grey-darken-1'" size="large"
-                            class="mb-0 glow-icon" :style="{ opacity: isStreakActiveToday ? 1 : 0.5 }"></v-icon>
-                        <div class="text-h6 font-weight-bold text-white">{{ userStreak }}</div>
-                        <div class="text-caption text-grey" style="font-size: 0.7rem !important;">{{ $t('rightSidebar.streak') }}</div>
-                    </div>
-                    <div class="text-center">
-                        <v-icon icon="mdi-circle-multiple-outline" color="yellow-accent-3" size="large"
-                            class="mb-0 glow-icon"></v-icon>
-                        <div class="text-h6 font-weight-bold text-white">{{ userCoins }}</div>
-                        <div class="text-caption text-grey" style="font-size: 0.7rem !important;">{{ $t('rightSidebar.coins') }}</div>
-                    </div>
-                </div>
-            </v-card>
-            <v-card class="glass-card mb-3 pa-4" elevation="0">
-                <div class="d-flex justify-space-between align-center mb-1">
-                    <span class="text-subtitle-2 text-white font-weight-black">{{ $t('rightSidebar.level', { level: userLevel }) }}</span>
-                    <span class="text-caption text-cyan-accent-3 font-weight-bold">{{ userXp }} / {{ xpRequired }}
-                        XP</span>
-                </div>
-                <v-progress-linear :model-value="(userXp / Math.max(1, xpRequired)) * 100" color="cyan-accent-3"
-                    height="10" rounded bg-color="rgba(255,255,255,0.1)" class="my-2 shadow-cyan"></v-progress-linear>
-                <div class="text-caption text-grey text-center" style="font-size: 0.7rem !important; line-height: 1;">
-                    {{ $t('rightSidebar.xpRemaining', { xp: Math.max(0, xpRequired - userXp) }) }}
-                </div>
+                <v-progress-linear :model-value="(userXp / Math.max(1, xpRequired)) * 100" color="primary"
+                    height="8" rounded bg-color="rgba(0, 242, 255, 0.15)" bg-opacity="1" class="mb-2 glow-bar"></v-progress-linear>
             </v-card>
 
-            <!-- Daily Missions -->
-            <v-card class="glass-card pa-3 mb-3 flex-grow-1 d-flex flex-column" elevation="0">
-                <div class="d-flex align-center justify-space-between mb-2">
-                    <div class="d-flex align-center">
-                        <v-icon icon="mdi-target" color="purple-accent-2" class="mr-2" size="small"></v-icon>
-                        <span class="text-subtitle-2 text-white font-weight-bold">{{ $t('rightSidebar.dailyMissions') }}</span>
-                    </div>
-                    <div class="d-flex align-center">
-                        <v-btn icon="mdi-refresh" variant="text" color="purple-accent-2" density="compact"
-                            @click="refreshMissions" :loading="isRefreshing"></v-btn>
-                        <v-btn icon="mdi-menu" variant="text" color="purple-accent-2" density="compact"
-                            @click="dialogDiarias = true"></v-btn>
-                    </div>
+            <!-- Daily Missions Section -->
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div class="section-label">MISIONES DIARIAS</div>
+                <v-btn icon="mdi-refresh" variant="text" color="primary" density="compact" @click="refreshMissions" :loading="isRefreshing"></v-btn>
+            </div>
+
+            <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
+                <div v-if="!dailyMissions || dailyMissions.length === 0" class="text-caption text-grey text-center py-4">
+                    Sincronizando con la base...
                 </div>
-
-                <v-list bg-color="transparent" class="pa-0 flex-grow-1 d-flex flex-column justify-center">
-                    <div v-if="!dailyMissions || dailyMissions.length === 0"
-                        class="text-caption text-grey text-center pa-2">
-                        {{ $t('rightSidebar.noDailyMissions') }}
+                
+                <v-card v-for="mission in (dailyMissions || []).slice(0, 3)" :key="mission.id"
+                    class="mission-card mb-3 pa-3" :class="{ 'mission-claimed': mission.claimed }">
+                    <div class="d-flex justify-space-between align-start mb-1">
+                        <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
+                            {{ mission.label || mission.text || 'Misión Especial' }}
+                        </div>
+                        <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="success" size="small"></v-icon>
                     </div>
-                    <v-list-item v-for="mission in (dailyMissions || []).slice(0, 3)" :key="mission.id"
-                        class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
-                        <v-list-item-title
-                            :class="['text-body-2 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ $te('missionsList.daily.' + mission.type) ? $t('missionsList.daily.' + mission.type, { goal: mission.goal }) : mission.text }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle
-                            :class="['text-caption mt-1', mission.claimed ? 'text-grey' : 'text-cyan-accent-1']"
-                            style="font-size: 0.70rem !important;">
-                            {{ $t('rightSidebar.progressSub', { current: mission.progress, goal: mission.goal }) }}
-                            <span class="ml-1 text-yellow-accent-3 font-weight-bold">+{{ mission.reward }}</span>
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="cyan-accent-2" variant="elevated"
-                                density="compact" size="small" class="text-caption font-weight-bold rounded-pill"
-                                @click.stop="claimReward(mission.id, 'daily')">
-                                {{ $t('rightSidebar.claim') }}
-                            </v-btn>
-                            <v-icon v-else-if="mission.claimed" icon="mdi-check-circle" color="cyan-accent-2"
-                                size="small"></v-icon>
-                        </template>
-                    </v-list-item>
-                </v-list>
-            </v-card>
-
-            <!-- Weekly Missions -->
-            <v-card class="glass-card pa-3 flex-grow-1 d-flex flex-column" elevation="0">
-                <div class="d-flex align-center justify-space-between mb-2">
-                    <div class="d-flex align-center">
-                        <v-icon icon="mdi-calendar-check" color="blue-accent-2" class="mr-2" size="small"></v-icon>
-                        <span class="text-subtitle-2 text-white font-weight-bold">{{ $t('rightSidebar.weeklyMissions') }}</span>
+                    
+                    <div class="d-flex justify-space-between align-center mt-2">
+                        <div class="text-caption text-primary">
+                            {{ mission.progress }} / {{ mission.goal }}
+                        </div>
+                        <v-btn v-if="mission.completed && !mission.claimed" color="primary" variant="flat"
+                            density="compact" size="small" class="px-3" @click.stop="claimReward(mission.id, 'daily')">
+                            RECLAMAR
+                        </v-btn>
                     </div>
-                    <v-btn icon="mdi-menu" variant="text" color="blue-accent-2" density="compact"
-                        @click="dialogMisiones = true"></v-btn>
+                </v-card>
+            </div>
+
+            <v-btn block variant="text" color="primary" class="mt-1 mb-2 text-caption font-weight-bold" @click="dialogDiarias = true">
+                VER TODAS LAS DIARIAS
+            </v-btn>
+
+            <!-- Weekly Missions Section -->
+            <div class="d-flex align-center justify-space-between mb-4 mt-2">
+                <div class="section-label">MISIONES SEMANALES</div>
+                <v-icon icon="mdi-calendar-clock" color="secondary" size="small"></v-icon>
+            </div>
+
+            <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
+                <div v-if="!weeklyMissions || weeklyMissions.length === 0" class="text-caption text-grey text-center py-4">
+                    No hay misiones semanales...
                 </div>
-
-                <v-list bg-color="transparent" class="pa-0 flex-grow-1 d-flex flex-column justify-center">
-                    <div v-if="!weeklyMissions || weeklyMissions.length === 0"
-                        class="text-caption text-grey text-center pa-2">
-                        {{ $t('rightSidebar.noWeeklyMissions') }}
+                
+                <v-card v-for="mission in (weeklyMissions || []).slice(0, 2)" :key="mission.id"
+                    class="mission-card mb-3 pa-3 border-secondary" :class="{ 'mission-claimed': mission.claimed }">
+                    <div class="d-flex justify-space-between align-start mb-1">
+                        <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
+                            {{ mission.label || mission.text || 'Misión Semanal' }}
+                        </div>
+                        <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="secondary" size="small"></v-icon>
                     </div>
-                    <v-list-item v-for="mission in (weeklyMissions || []).slice(0, 3)" :key="mission.id"
-                        class="mission-item mb-2 pa-3 rounded-lg" density="comfortable">
-                        <v-list-item-title
-                            :class="['text-body-2 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ $te('missionsList.weekly.' + mission.type) ? $t('missionsList.weekly.' + mission.type, { goal: mission.goal }) : mission.text }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle
-                            :class="['text-caption mt-1', mission.claimed ? 'text-grey' : 'text-blue-accent-1']"
-                            style="font-size: 0.70rem !important;">
-                            {{ $t('rightSidebar.progressSub', { current: mission.progress, goal: mission.goal }) }}
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="blue-accent-2" variant="elevated"
-                                density="compact" size="small" class="text-caption font-weight-bold rounded-pill"
-                                @click.stop="claimReward(mission.id, 'weekly')">
-                                {{ $t('rightSidebar.claim') }}
-                            </v-btn>
-                            <v-icon v-else-if="mission.claimed" icon="mdi-check-circle" color="blue-accent-2"
-                                size="small"></v-icon>
-                        </template>
-                    </v-list-item>
-                </v-list>
-            </v-card>
+                    
+                    <div class="d-flex justify-space-between align-center mt-2">
+                        <div class="text-caption text-secondary">
+                            {{ mission.progress }} / {{ mission.goal }}
+                        </div>
+                        <v-btn v-if="mission.completed && !mission.claimed" color="secondary" variant="flat"
+                            density="compact" size="small" class="px-3" @click.stop="claimReward(mission.id, 'weekly')">
+                            RECLAMAR
+                        </v-btn>
+                    </div>
+                </v-card>
+            </div>
+
+            <v-btn block variant="text" color="secondary" class="mt-2 text-caption font-weight-bold" @click="dialogMisiones = true">
+                VER TODAS LAS SEMANALES
+            </v-btn>
         </div>
 
-        <!-- Daily Missions Dialog -->
-        <v-dialog v-model="dialogDiarias" max-width="450" scrim="rgba(0,0,0,0.5)">
-            <v-card class="glass-popup pa-5 shadow-xl">
-                <div class="d-flex align-center justify-space-between mb-5">
-                    <div class="d-flex align-center">
-                        <v-icon icon="mdi-target" color="purple-accent-2" class="mr-2"></v-icon>
-                        <span class="text-h5 text-white font-weight-bold">{{ $t('rightSidebar.dailyMissions') }}</span>
-                    </div>
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="dialogDiarias = false"></v-btn>
+        <!-- Popups -->
+        <v-dialog v-model="dialogDiarias" max-width="450">
+            <v-card class="glass-panel pa-6">
+                <div class="d-flex align-center justify-space-between mb-6">
+                    <h2 class="text-h5 text-white">MISIONES DIARIAS</h2>
+                    <v-btn icon="mdi-close" variant="text" @click="dialogDiarias = false"></v-btn>
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
-                    <v-list-item v-for="mission in dailyMissions" :key="mission.id"
-                        class="mission-item mb-3 pa-4 rounded-xl">
-                        <v-list-item-title
-                            :class="['text-h6 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ $te('missionsList.daily.' + mission.type) ? $t('missionsList.daily.' + mission.type, { goal: mission.goal }) : mission.text }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle
-                            :class="['text-body-2 mt-1', mission.claimed ? 'text-grey' : 'text-cyan-accent-1']">
-                            {{ $t('rightSidebar.progressSub', { current: mission.progress, goal: mission.goal }) }}
-                            <span class="ml-2 text-yellow-accent-3 font-weight-bold">+{{ mission.reward }}
-                                {{ $t('rightSidebar.coinsSuffix') }}</span>
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="purple-accent-2"
-                                variant="elevated" class="font-weight-bold rounded-pill px-6"
-                                @click="claimReward(mission.id, 'daily')">
-                                {{ $t('rightSidebar.claimCaps') }}
-                            </v-btn>
-                            <v-icon v-else-if="mission.claimed" icon="mdi-check-circle" color="purple-accent-2"
-                                size="large"></v-icon>
-                        </template>
-                    </v-list-item>
+                    <v-card v-for="mission in dailyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || 'Misión Especial' }}</div>
+                        <div class="d-flex justify-space-between align-center">
+                            <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
+                            <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">COBRAR</v-btn>
+                        </div>
+                    </v-card>
                 </v-list>
             </v-card>
         </v-dialog>
 
-        <!-- Weekly Missions Dialog -->
-        <v-dialog v-model="dialogMisiones" max-width="450" scrim="rgba(0,0,0,0.5)">
-            <v-card class="glass-popup pa-5 shadow-xl">
-                <div class="d-flex align-center justify-space-between mb-5">
-                    <div class="d-flex align-center">
-                        <v-icon icon="mdi-calendar-check" color="blue-accent-2" class="mr-2"></v-icon>
-                        <span class="text-h5 text-white font-weight-bold">{{ $t('rightSidebar.weeklyMissions') }}</span>
-                    </div>
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="dialogMisiones = false"></v-btn>
+        <v-dialog v-model="dialogMisiones" max-width="450">
+            <v-card class="glass-panel pa-6">
+                <div class="d-flex align-center justify-space-between mb-6">
+                    <h2 class="text-h5 text-white">MISIONES SEMANALES</h2>
+                    <v-btn icon="mdi-close" variant="text" @click="dialogMisiones = false"></v-btn>
                 </div>
-
                 <v-list bg-color="transparent" class="pa-0">
-                    <v-list-item v-for="mission in weeklyMissions" :key="mission.id"
-                        class="mission-item mb-3 pa-4 rounded-xl">
-                        <v-list-item-title
-                            :class="['text-h6 font-weight-bold truncate-text', mission.claimed ? 'text-grey text-decoration-line-through' : 'text-white']">
-                            {{ $te('missionsList.weekly.' + mission.type) ? $t('missionsList.weekly.' + mission.type, { goal: mission.goal }) : mission.text }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle
-                            :class="['text-body-2 mt-1', mission.claimed ? 'text-grey' : 'text-blue-accent-1']">
-                            {{ $t('rightSidebar.progressSub', { current: mission.progress, goal: mission.goal }) }}
-                            <span class="ml-2 text-yellow-accent-3 font-weight-bold">+{{ mission.reward }}
-                                {{ $t('rightSidebar.coinsSuffix') }}</span>
-                        </v-list-item-subtitle>
-                        <template v-slot:append>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="blue-accent-2" variant="elevated"
-                                class="font-weight-bold rounded-pill px-6" @click="claimReward(mission.id, 'weekly')">
-                                {{ $t('rightSidebar.claimCaps') }}
-                            </v-btn>
-                            <v-icon v-else-if="mission.claimed" icon="mdi-check-circle" color="blue-accent-2"
-                                size="large"></v-icon>
-                        </template>
-                    </v-list-item>
+                    <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || 'Misión Semanal' }}</div>
+                        <div class="d-flex justify-space-between align-center">
+                            <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
+                            <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">COBRAR</v-btn>
+                        </div>
+                    </v-card>
                 </v-list>
             </v-card>
         </v-dialog>
+
+        <!-- Feedback de reclamación -->
+        <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" elevation="24">
+            <div class="d-flex align-center">
+                <v-icon :icon="snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'" class="mr-3"></v-icon>
+                <span class="font-weight-bold">{{ snackbar.text }}</span>
+            </div>
+        </v-snackbar>
     </v-navigation-drawer>
 </template>
 
@@ -204,100 +173,169 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAstroStore } from '@/stores/astroStore'
-import { useProgressStore } from '@/stores/progressStore' // <-- Asegúrate que sea este
+import { useProgressStore } from '@/stores/progressStore'
 
 const { t } = useI18n()
 const astroStore = useAstroStore()
 const progressStore = useProgressStore()
 
-// CORRECCIÓN: Extraemos correctamente las misiones, stats y el getter de racha
 const { 
     dailyMissions, 
     weeklyMissions, 
     coins: userCoins, 
     level: userLevel, 
     xp: userXp,
-    streak: userStreak, // Mapeamos 'streak' del store a 'userStreak'
+    streak: userStreak,
     isStreakActiveToday
-} = storeToRefs(progressStore) // Usar el mismo store que el mapa
-
-watch(dailyMissions, (newVal) => {
-    console.log("👀 [Sidebar] Cambio en misiones diarias:", newVal?.length);
-}, { deep: true })
+} = storeToRefs(progressStore)
 
 onMounted(async () => {
     if (astroStore.user) {
-        // Al montar, pedimos las stats que ahora incluyen las misiones
         await astroStore.fetchUserStats()
         await astroStore.fetchUserBalance()
-        // También pedimos la lista de amigos si la necesitas aquí
         await astroStore.fetchAllUsers()
     }
 })
 
-const xpRequired = computed(() => {
-    return 100 + (userLevel.value - 1) * 50;
-})
-
-const dialogMisiones = ref(false)
+const xpRequired = computed(() => 100 + (userLevel.value - 1) * 50)
 const dialogDiarias = ref(false)
+const dialogMisiones = ref(false)
 const isRefreshing = ref(false)
+const snackbar = ref({
+    show: false,
+    text: '',
+    color: 'success'
+})
 
 const refreshMissions = async () => {
     isRefreshing.value = true
-    try {
-        await astroStore.fetchUserStats()
-        console.log("♻️ [Sidebar] Sincronización completada");
-    } finally {
-        isRefreshing.value = false
-    }
+    try { await astroStore.fetchUserStats() } finally { isRefreshing.value = false }
 }
 
 const claimReward = async (missionId, type = 'daily') => {
     const result = await astroStore.claimMissionReward(missionId, type)
     if (result.success) {
-        console.log("Recompensa reclamada:", result.message)
+        snackbar.value = {
+            show: true,
+            text: result.message || '¡Recompensa reclamada!',
+            color: 'success'
+        }
+    } else {
+        snackbar.value = {
+            show: true,
+            text: result.message || 'Error al reclamar la misión',
+            color: 'error'
+        }
     }
 }
 </script>
 
 <style scoped>
-.truncate-text {
-    white-space: normal !important;
-    word-break: break-word;
-    line-height: 1.2;
-}
-
-.shadow-cyan {
-    filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
-}
-
 .sidebar {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(10px);
-    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-}
-
-.glass-popup {
-    background: rgba(15, 15, 25, 0.9) !important;
+    background: linear-gradient(180deg, rgba(13, 25, 48, 0.7) 0%, rgba(5, 10, 20, 0.8) 100%) !important;
     backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5) !important;
+    border-left: 1px solid rgba(0, 242, 255, 0.1) !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
 }
 
-.mission-item {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+.section-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.4);
 }
 
-.glow-icon {
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+.stat-value {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+}
+
+.stat-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    line-height: 1;
+    margin-top: -2px;
+}
+
+.active-label {
+    color: rgba(255, 160, 0, 0.8);
+    text-shadow: 0 0 8px rgba(255, 87, 34, 0.3);
+}
+
+.glow-bar {
+    filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.4));
+}
+
+/* Streak Flame Styles */
+.streak-container {
+    position: relative;
+    z-index: 1;
+}
+
+.streak-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.streak-fire-icon {
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.active-fire {
+    filter: drop-shadow(0 0 5px rgba(255, 111, 0, 0.8));
+    animation: flicker 1.5s infinite ease-in-out;
+}
+
+.fire-glow {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background: radial-gradient(circle, rgba(255, 87, 34, 0.6) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 1;
+    animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes flicker {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    25% { transform: scale(1.1) rotate(-2deg); opacity: 0.9; }
+    50% { transform: scale(1.05) rotate(3deg); opacity: 1; }
+    75% { transform: scale(1.15) rotate(-1deg); opacity: 0.8; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.8); opacity: 0.8; }
+}
+
+.mission-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px;
+}
+
+.border-secondary {
+    border-color: rgba(112, 0, 255, 0.2) !important;
+}
+
+.mission-claimed {
+    opacity: 0.5;
+    background: transparent !important;
+}
+
+.missions-container::-webkit-scrollbar {
+    width: 3px;
+}
+
+.missions-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
 }
 </style>

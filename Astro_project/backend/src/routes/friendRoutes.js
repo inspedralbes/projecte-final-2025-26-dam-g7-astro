@@ -1,157 +1,62 @@
+// Astro_project/backend/src/routes/friendRoutes.js
+
 const express = require('express');
 
-function registerFriendRoutes(app, { getCollections }) {
+function registerFriendRoutes(app, { socialService }) {
     const router = express.Router();
 
-    // AÑADIR AMIGO
     router.post('/add', async (req, res) => {
         try {
             const { user, friendName } = req.body;
-            const { users } = getCollections();
-
-            if (user === friendName) {
-                return res.status(400).json({ message: "No puedes ser amigo de ti mismo" });
-            }
-
-            // Verificar que el amigo existe
-            const friendExists = await users.findOne({ user: friendName });
-            if (!friendExists) {
-                return res.status(404).json({ message: "Ese explorador no existe" });
-            }
-
-            // Usamos $addToSet para no duplicar si ya son amigos
-            await users.updateOne(
-                { user: user },
-                { $addToSet: { friends: friendName } }
-            );
-
-            // Devolver la lista actualizada
-            const updatedUser = await users.findOne({ user }, { projection: { friends: 1 } });
-
-            res.json({
-                success: true,
-                friends: updatedUser.friends || []
-            });
-
+            const friends = await socialService.addFriend(user, friendName);
+            res.json({ success: true, friends });
         } catch (error) {
             console.error("Error añadiendo amigo:", error);
-            res.status(500).json({ message: "Error del servidor" });
+            res.status(error.message.includes('existe') ? 404 : 400).json({ message: error.message });
         }
     });
 
-    // ELIMINAR AMIGO
     router.post('/remove', async (req, res) => {
         try {
             const { user, friendName } = req.body;
-            const { users } = getCollections();
-
-            // Usamos $pull para sacar al amigo del array
-            await users.updateOne(
-                { user: user },
-                { $pull: { friends: friendName } }
-            );
-
-            const updatedUser = await users.findOne({ user }, { projection: { friends: 1 } });
-
-            res.json({
-                success: true,
-                friends: updatedUser.friends || []
-            });
-
+            const friends = await socialService.removeFriend(user, friendName);
+            res.json({ success: true, friends });
         } catch (error) {
-            res.status(500).json({ message: "Error eliminando amigo" });
+            console.error("Error eliminando amigo:", error);
+            res.status(500).json({ message: error.message });
         }
     });
 
-    // ENVIAR SOLICITUD
     router.post('/request', async (req, res) => {
         try {
             const { user, friendName } = req.body;
-            const { users } = getCollections();
-
-            if (user === friendName) {
-                return res.status(400).json({ message: "No te puedes enviar solicitud a ti mismo" });
-            }
-
-            const friendExists = await users.findOne({ user: friendName });
-            if (!friendExists) {
-                return res.status(404).json({ message: "Ese explorador no existe" });
-            }
-
-            // Ya son amigos?
-            if (friendExists.friends && friendExists.friends.includes(user)) {
-                return res.status(400).json({ message: "Ya sois amigos" });
-            }
-
-            // Añadir al receptor la petición
-            await users.updateOne(
-                { user: friendName },
-                { $addToSet: { friendRequests: user } }
-            );
-
+            await socialService.sendFriendRequest(user, friendName);
             res.json({ success: true, message: "Solicitud enviada" });
         } catch (error) {
             console.error("Error enviando solicitud:", error);
-            res.status(500).json({ message: "Error enviando solicitud" });
+            res.status(error.message.includes('existe') ? 404 : 400).json({ message: error.message });
         }
     });
 
-    // ACEPTAR SOLICITUD
     router.post('/accept', async (req, res) => {
         try {
             const { user, friendName } = req.body;
-            const { users } = getCollections();
-
-            // Añadir a "user" el amigo "friendName", y quitar de friendRequests
-            await users.updateOne(
-                { user: user },
-                {
-                    $addToSet: { friends: friendName },
-                    $pull: { friendRequests: friendName }
-                }
-            );
-
-            // Añadir a "friendName" el amigo "user"
-            await users.updateOne(
-                { user: friendName },
-                { $addToSet: { friends: user } }
-            );
-
-            // Devolver las nuevas listas
-            const updatedUser = await users.findOne({ user }, { projection: { friends: 1, friendRequests: 1 } });
-
-            res.json({
-                success: true,
-                friends: updatedUser.friends || [],
-                friendRequests: updatedUser.friendRequests || []
-            });
+            const result = await socialService.acceptFriendRequest(user, friendName);
+            res.json({ success: true, ...result });
         } catch (error) {
             console.error("Error aceptando solicitud:", error);
-            res.status(500).json({ message: "Error aceptando solicitud" });
+            res.status(500).json({ message: error.message });
         }
     });
 
-    // RECHAZAR SOLICITUD
     router.post('/reject', async (req, res) => {
         try {
             const { user, friendName } = req.body;
-            const { users } = getCollections();
-
-            // Simplemente quitar de friendRequests
-            await users.updateOne(
-                { user: user },
-                { $pull: { friendRequests: friendName } }
-            );
-
-            const updatedUser = await users.findOne({ user }, { projection: { friends: 1, friendRequests: 1 } });
-
-            res.json({
-                success: true,
-                friendRequests: updatedUser.friendRequests || []
-            });
+            const friendRequests = await socialService.rejectFriendRequest(user, friendName);
+            res.json({ success: true, friendRequests });
         } catch (error) {
             console.error("Error rechazando solicitud:", error);
-            res.status(500).json({ message: "Error rechazando solicitud" });
+            res.status(500).json({ message: error.message });
         }
     });
 

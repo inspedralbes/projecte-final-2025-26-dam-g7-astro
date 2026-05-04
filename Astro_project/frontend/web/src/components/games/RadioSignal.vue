@@ -1,12 +1,10 @@
 <template>
     <div class="radio-cabinet">
-        <!-- Tornillos decorativos -->
         <div class="screw screw-tl"></div>
         <div class="screw screw-tr"></div>
         <div class="screw screw-bl"></div>
         <div class="screw screw-br"></div>
 
-        <!-- Cabecera de la radio -->
         <div class="radio-brand">
             <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
             <div class="brand-subtitle">COMMS RECEIVER</div>
@@ -17,7 +15,6 @@
             <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">{{ $t('radioSignal.time', { time: timeLeft }) }}</div>
         </div>
 
-        <!-- Pantalla del Osciloscopio -->
         <div class="screen-housing">
             <div class="screen-bezel">
                 <div class="wave-panels">
@@ -35,7 +32,6 @@
             </div>
         </div>
 
-        <!-- Panel de Indicadores -->
         <div class="indicator-strip">
             <div class="freq-display">
                 <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
@@ -52,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Zona del Dial -->
         <div class="dial-housing">
             <div class="dial-markings">
                 <span v-for="n in 11" :key="n" class="dial-mark" 
@@ -76,7 +71,6 @@
             </div>
         </div>
 
-        <!-- Sección de Entrada (siempre visible con altura fija) -->
         <div class="input-housing">
             <div v-if="isTuned" class="input-active">
                 <div class="input-header">
@@ -105,37 +99,62 @@
         </div>
 
         <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
-            {{ $t('radioSignal.error') }}
+            ✗ DADES INCORRECTES - TORNA A INTENTAR
+        </v-snackbar>
+
+        <v-snackbar v-model="showSuccess" color="success" timeout="2000" location="top">
+            ✓ SENYAL DESXIFRADA! +150 PTS | +15s
         </v-snackbar>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { radioSignalData } from '@/data/radioSignalData';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+    isMultiplayer: {
+        type: Boolean,
+        default: false
+    }
+});
 
 const emit = defineEmits(['game-over']);
 const { t, locale } = useI18n();
 
-// Frecuencia objetivo: rango completo 5-95, siempre diferente
+// Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
-const currentFrequency = ref(Math.random() * 20); // posición inicial aleatoria también
+const currentFrequency = ref(Math.random() * 20); 
 const tuningThreshold = 2.0;
 const userGuess = ref('');
 const isTuned = ref(false);
 const showError = ref(false);
+const showSuccess = ref(false); // NUEVO: Feedback de éxito
 const score = ref(0);
 const timeLeft = ref(60);
 const gameFinished = ref(false);
 let roundTimer = null;
 
-const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['ca']);
-const currentPhrase = ref(phrases.value[Math.floor(Math.random() * phrases.value.length)]);
-
-watch(locale, () => {
-    currentPhrase.value = phrases.value[Math.floor(Math.random() * phrases.value.length)];
-});
+const phrases = [
+    'EL VAIXELL DAURAT BRILLA DE DIA',
+    'EL PETIT PAQUET VA QUEDAR AL PARC',
+    'ELS DRACS BOTEN SOBRE LES PEDRES',
+    'TRES TRISTOS TIGRES MENGEN BLAT',
+    'LA SARA SURT SOLA SEMPRE SENSE BARRET',
+    'EN PEP POSA PERES PER AL PAPA',
+    'EXTRAORDINARI DESCOBRIMENT A LA BIBLIOTECA',
+    'LA NAU ESPACIAL DESPEGA A L\'ALBA',
+    'BASE LUNAR REPORTA BON ESTAT',
+];
+// Phrases shuffled at start
+const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
+const phraseIndex = ref(0); // Frase atual
+const currentPhrase = ref(shuffledPhrases[0]);
+const totalPhrases = shuffledPhrases.length;
 let speechRepeatTimer = null;
 
 // ---- DIAL ----
@@ -151,7 +170,6 @@ const removeDragListeners = () => {
     window.removeEventListener('touchend', stopRotating);
 };
 
-// Sincronizar knob con frecuencia inicial
 knobRotation.value = (currentFrequency.value / 100) * 360;
 currentKnobRotation = knobRotation.value;
 
@@ -253,7 +271,6 @@ const renderWave = (canvas, isTarget) => {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    // Grid
     ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5;
     for (let i = 0; i < w; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
     for (let i = 0; i < h; i += 18) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
@@ -290,34 +307,73 @@ const renderWave = (canvas, isTarget) => {
 
 // ---- VOZ ----
 const startSpeechLoop = () => {
-    stopSpeechLoop(); speakPhrase(1.0);
-    speechRepeatTimer = setInterval(() => {
-        if (isTuned.value && !window.speechSynthesis.speaking) speakPhrase(1.0);
-    }, 4000);
+    if (!isTuned.value || gameFinished.value) return;
+    speakPhrase(1.0);
 };
-const stopSpeechLoop = () => { clearInterval(speechRepeatTimer); speechRepeatTimer = null; window.speechSynthesis.cancel(); };
+
+const stopSpeechLoop = () => {
+    if (speechRepeatTimer) {
+        clearTimeout(speechRepeatTimer);
+        speechRepeatTimer = null;
+    }
+    window.speechSynthesis.cancel();
+};
 
 const speakPhrase = (volume = 1.0) => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis || gameFinished.value) return;
+    
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(currentPhrase.value);
+    
+    // Configurar veus
     const voices = window.speechSynthesis.getVoices();
     const targetLang = locale.value === 'ca' ? 'ca' : 'es';
     const v = voices.find(v => v.lang.includes(targetLang)) ||
               voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
               voices.find(v => v.lang.includes('es')) || voices[0];
+    
     if (v) u.voice = v;
-    u.lang = locale.value === 'ca' ? 'ca-ES' : 'es-ES'; u.rate = 0.8; u.pitch = 0.8; u.volume = volume;
+    u.lang = 'ca-ES';
+    u.rate = 0.8;
+    u.pitch = 0.8;
+    u.volume = volume;
+
+    // Lògica de repetició robusta: quan acaba, espera 1s i torna a parlar si seguim afinats
+    u.onend = () => {
+        if (isTuned.value && !gameFinished.value) {
+            speechRepeatTimer = setTimeout(() => {
+                if (isTuned.value && !gameFinished.value) speakPhrase(volume);
+            }, 1000);
+        }
+    };
+
     window.speechSynthesis.speak(u);
 };
 
+// LÓGICA CORE CORREGIDA
 const checkPhrase = () => {
     if (gameFinished.value) return;
     const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    
     if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        score.value += 50;
-        finishGame();
-    } else { showError.value = true; userGuess.value = ''; }
+        // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
+        score.value += 150;
+        timeLeft.value += 15;
+        userGuess.value = '';
+        showSuccess.value = true;
+        
+        // Generamos nueva señal objetivo
+        currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
+        targetFrequency.value = Math.random() * 90 + 5;
+        
+        // Reseteamos el estado para que vuelva a buscar
+        isTuned.value = false;
+        stopSpeechLoop();
+        updateNoise();
+    } else { 
+        showError.value = true; 
+        userGuess.value = ''; 
+    }
 };
 
 const startTimer = () => {
@@ -334,8 +390,14 @@ const startTimer = () => {
     }, 1000);
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
     if (gameFinished.value) return;
+    
+    if (props.isMultiplayer && !silent) {
+        multiplayerStore.submitRoundResult();
+        return;
+    }
+
     gameFinished.value = true;
     isDragging = false;
     removeDragListeners();
@@ -363,6 +425,28 @@ onMounted(() => {
     drawWaves();
     startTimer();
 });
+
+// Listener para eventos multijugador (Mantenemos de HEAD)
+watch(() => multiplayerStore.lastMessage, (msg) => {
+    if (!msg) return;
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+        // Alguien ganó la ronda, cerrar este juego formalmente
+        gameFinished.value = true; 
+        emit('game-over', score.value + timeLeft.value);
+    }
+});
+
+// Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
+watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+            type: 'SCORE_UPDATE',
+            score: newScore
+        });
+    }
+});
+
 onUnmounted(() => {
     isDragging = false;
     removeDragListeners();
@@ -388,7 +472,6 @@ onUnmounted(() => {
         inset 0 -1px 0 rgba(0,0,0,0.3);
 }
 
-/* TORNILLOS */
 .screw {
     position: absolute;
     width: 12px; height: 12px;
@@ -410,7 +493,6 @@ onUnmounted(() => {
 .screw-bl { bottom: 8px; left: 8px; }
 .screw-br { bottom: 8px; right: 8px; }
 
-/* BRAND */
 .radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
 .brand-text { 
     font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
@@ -443,7 +525,6 @@ onUnmounted(() => {
     border-color: #8b2d2d;
 }
 
-/* PANTALLA */
 .screen-housing {
     background: #111;
     border: 2px solid #3a3f4b;
@@ -480,7 +561,6 @@ canvas { display: block; width: 100%; height: auto; }
     pointer-events: none;
 }
 
-/* INDICADORES */
 .indicator-strip {
     display: flex; align-items: center; justify-content: space-between;
     background: #15171c;
@@ -504,7 +584,6 @@ canvas { display: block; width: 100%; height: auto; }
 .status-sync { color: #4caf50; }
 .status-lost { color: #666; }
 
-/* DIAL */
 .dial-housing {
     background: #15171c;
     border: 1px solid #2a2e36;
@@ -556,7 +635,6 @@ canvas { display: block; width: 100%; height: auto; }
     transform: translateX(-50%);
 }
 
-/* ENTRADA */
 .input-housing {
     min-height: 90px;
     background: #15171c;

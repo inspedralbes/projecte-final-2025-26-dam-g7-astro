@@ -63,8 +63,13 @@ async function spin() {
   isSpinning.value = true;
   emit('spin-start');
 
+  // 1. Definimos la URL base usando la variable de entorno de Vite/Astro
+  // Si la variable no existe, usará localhost por defecto para que no se rompa nada
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
   try {
-    const response = await fetch('http://localhost:3000/api/shop/spin', {
+    // 2. Usamos la variable API_BASE en lugar del texto fijo
+    const response = await fetch(`${API_BASE}/api/shop/spin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: props.user }) 

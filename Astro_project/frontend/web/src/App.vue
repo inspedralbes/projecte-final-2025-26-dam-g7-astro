@@ -6,16 +6,31 @@
     <v-main class="main-content">
       <router-view />
     </v-main>
+
+    <!-- Chat drawer global: persiste entre rutas -->
+    <ChatDrawer />
   </v-app>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
+import ChatDrawer from '@/components/layout/ChatDrawer.vue'
+import { useMultiplayerStore } from '@/stores/multiplayerStore'
+import { useSessionStore } from '@/stores/sessionStore'
 
 const route = useRoute()
+const sessionStore = useSessionStore()
+const multiplayerStore = useMultiplayerStore()
+
+// Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
+onMounted(() => {
+  if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+    multiplayerStore.connect()
+  }
+})
 
 // Define routes where sidebars should be hidden
 const showLayoutElements = computed(() => {
@@ -30,35 +45,79 @@ const showLayoutElements = computed(() => {
 </script>
 
 <style>
-/* En App.vue */
+/* Global Styles */
+:root {
+  --astro-bg: #05050a;
+  --astro-glass: rgba(255, 255, 255, 0.03);
+  --astro-border: rgba(255, 255, 255, 0.08);
+  --astro-glow: rgba(0, 242, 255, 0.3);
+}
+
+body {
+  font-family: 'Inter', sans-serif !important;
+  background-color: var(--astro-bg) !important;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .text-h1, .text-h2, .text-h3 {
+  font-family: 'Orbitron', sans-serif !important;
+  letter-spacing: 2px !important;
+}
+
+h4, h5, h6, .text-h4, .text-h5, .text-h6, .text-subtitle-1, .v-btn {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .app-container {
-  background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%) !important;
+  background: radial-gradient(circle at 50% -20%, #1a1a3a 0%, #05050a 70%) !important;
   color: white !important;
   min-height: 100vh;
-  /* Make sure the main layout can scroll vertically */
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .main-content {
   background: transparent !important;
 }
 
-/* Global scrollbar styling for a cleaner look */
+/* Glassmorphism Helper Classes */
+.glass-panel {
+  background: var(--astro-glass) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--astro-border) !important;
+  border-radius: 16px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 242, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Global scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--astro-glow);
 }
 </style>

@@ -69,7 +69,7 @@
 
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
           <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
-          <span class="text-red-lighten-1 font-weight-bold">{{ errorMessage }}</span>
+          <span class="text-red-lighten-1 font-weight-bold uppercase">{{ errorMessage }}</span>
         </div>
 
         <v-btn
@@ -108,7 +108,6 @@ import { useAstroStore } from '@/stores/astroStore';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-// Props and Emits
 const props = defineProps(['selectedPlan']);
 const emit = defineEmits(['back']);
 
@@ -147,9 +146,7 @@ const handleLogin = async () => {
 };
 </script>
 
-
 <style scoped>
-/* Container & Background */
 .login-container {
   background: radial-gradient(circle at center, #0b1021 0%, #000000 100%);
   position: relative;
@@ -176,7 +173,6 @@ const handleLogin = async () => {
   to { transform: translateY(-1000px); }
 }
 
-/* Glass Card */
 .glass-panel {
   background: rgba(10, 25, 41, 0.75) !important;
   backdrop-filter: blur(12px);
@@ -187,10 +183,9 @@ const handleLogin = async () => {
   overflow: hidden;
 }
 
-/* Header Elements */
 .neon-text {
   text-shadow: 0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3);
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Orbitron', sans-serif !important;
   letter-spacing: 0.15em !important;
 }
 
@@ -210,7 +205,6 @@ const handleLogin = async () => {
   100% { text-shadow: 0 0 0 rgba(0, 242, 255, 0.4); }
 }
 
-/* Inputs */
 .future-input :deep(.v-field) {
   border-radius: 0;
   border: 1px solid rgba(0, 242, 255, 0.2);
@@ -223,12 +217,12 @@ const handleLogin = async () => {
 }
 
 .future-input :deep(input) {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 600;
   letter-spacing: 1px;
   color: white !important;
 }
 
-/* Button */
 .login-btn {
   border-radius: 2px;
   position: relative;
@@ -236,6 +230,7 @@ const handleLogin = async () => {
   transition: all 0.3s;
   letter-spacing: 2px;
   background: linear-gradient(90deg, rgba(0,242,255,0.8) 0%, rgba(0,180,255,0.8) 100%) !important;
+  font-family: 'Rajdhani', sans-serif !important;
 }
 
 .login-btn:hover {
@@ -259,20 +254,18 @@ const handleLogin = async () => {
   100% { transform: translateX(150%) rotate(45deg); }
 }
 
-/* Error Display */
 .error-display {
   background: rgba(255, 0, 0, 0.1);
   border: 1px solid rgba(255, 0, 0, 0.3);
   border-left: 4px solid #ff4081;
 }
 
-/* Footer Tech Details */
 .border-top-tech {
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 .font-weight-mono {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Rajdhani', sans-serif;
 }
 
 .glow-text {
@@ -284,6 +277,10 @@ const handleLogin = async () => {
 }
 .hover-bright:hover {
   color: white !important;
+}
+
+.uppercase {
+  text-transform: uppercase;
 }
 
 :deep(.v-field__input) {

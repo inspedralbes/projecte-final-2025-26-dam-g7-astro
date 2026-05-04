@@ -2,6 +2,8 @@ require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+console.log('🔌 Intentando conectar a:', uri);
+
 
 const client = new MongoClient(uri);
 let database = null;

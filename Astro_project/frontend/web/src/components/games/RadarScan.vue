@@ -46,7 +46,7 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
+    <v-overlay v-if="!isMultiplayer" v-model="showGameOverOverlay" class="align-center justify-center" persistent z-index="100">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
         <v-icon icon="mdi-trophy" color="amber-accent-3" size="80" class="mb-4"></v-icon>
         <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radarScan.completed') }}</h2>
@@ -56,15 +56,25 @@
         </v-btn>
       </v-card>
     </v-overlay>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
 
 const emit = defineEmits(['game-over']);
-const { t } = useI18n();
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 // --- VARIABLES D'ESTAT ---
 const showStartOverlay = ref(true);
@@ -137,6 +147,16 @@ const checkLetter = (index) => {
     
     setTimeout(() => {
       correctClicked.value = false;
+      
+      // Enviar sabotament en multijugador: -1s al rival
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+          type: 'SABOTAGE',
+          subtype: 'REDUCE_TIME',
+          amount: 1
+        });
+      }
+
       nextRound(); 
       
       setTimeout(() => {
@@ -170,14 +190,54 @@ const startGame = () => {
   }, 1000);
 };
 
-const endGame = () => {
+const endGame = (silent = false) => {
   clearInterval(timerInterval);
-  showGameOverOverlay.value = true; 
+  
+  if (props.isMultiplayer) {
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
+  if (!silent) {
+    showGameOverOverlay.value = true;
+  } else {
+    emit('game-over', score.value);
+  }
 };
 
 const returnToMenu = () => {
   emit('game-over', score.value); 
 };
+
+onMounted(() => {
+  if (props.isMultiplayer) {
+    startGame();
+  }
+});
+
+// Listener para acciones multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    emit('game-over', score.value);
+    return;
+  }
+
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
+});
 
 onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval);

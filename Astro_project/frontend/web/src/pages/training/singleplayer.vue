@@ -1,7 +1,7 @@
 <template>
     <v-container fluid class="space-map pa-0">
 
-        <div v-if="!activeGameComponent" class="map-scroll-container">
+        <div v-if="!activeGameComponent" class="map-scroll-container" @click="activePreviewIndex = null">
 
             <div class="start-spacer"></div>
 
@@ -41,11 +41,11 @@
                                 :class="{ 'connector-flip': index % 2 !== 0 }">
                                 <svg viewBox="0 0 140 140">
                                     <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                        :class="{ 'line-active': index + 1 < progressStore.level }" />
+                                        :class="{ 'line-active': index + 1 < astroStore.mapLevel }" />
                                 </svg>
                             </div>
 
-                            <div v-if="index + 1 <= progressStore.level" class="floating-label"
+                            <div v-if="index + 1 <= astroStore.mapLevel" class="floating-label"
                                 :class="getLevelState(index)">
                                 {{ $t(level.nameKey) }}
                             </div>
@@ -56,8 +56,8 @@
 
                             <button class="node-btn" :class="[
                                 `state-${getLevelState(index)}`,
-                                { 'is-interactive': index + 1 <= progressStore.level }
-                            ]" @click="handleLevelClick(index)" v-ripple>
+                                { 'is-interactive': index + 1 <= astroStore.mapLevel }
+                            ]" @click.stop="handleLevelClick(index)" v-ripple>
                                 <div class="icon-layer">
                                     <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
                                         class="icon-completed" />
@@ -75,6 +75,33 @@
                                 </div>
                             </button>
 
+                            <!-- Viñeta de Previsualización -->
+                            <transition name="pop-in">
+                                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
+                                    <div class="preview-gif-container">
+                                        <img :src="level.previewGif || '/previews/placeholder.gif'" alt="Preview" class="preview-gif">
+                                        <div class="preview-overlay">
+                                            <div class="preview-badge">{{ level.minScore }} pts</div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-content">
+                                        <h3 class="preview-title">{{ level.name }}</h3>
+                                        <v-btn
+                                            color="cyan-accent-3"
+                                            class="play-btn-preview font-weight-black"
+                                            block
+                                            rounded="lg"
+                                            elevation="8"
+                                            @click.stop="startGame(index)"
+                                        >
+                                            <v-icon icon="mdi-play" start></v-icon>
+                                            ¡JUGAR!
+                                        </v-btn>
+                                    </div>
+                                    <div class="preview-arrow"></div>
+                                </div>
+                            </transition>
+
                         </div>
                     </div>
                 </template>
@@ -91,49 +118,60 @@
             </div>
         </transition>
 
-        <v-dialog v-model="showLevelUpDialog" max-width="400" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #00e5ff;">
-                <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="80"
-                    class="mb-2 animate-bounce"></v-icon>
-                <h2 class="text-h3 font-weight-black text-white mb-2">{{ $t('singleplayer.level_up', { level: newLevelData.level }) }}</h2>
-
-                <div v-if="newLevelData.rankChanged" class="my-4 pa-3 rounded-lg"
-                    style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
-                    <div class="text-caption text-grey-lighten-1 text-uppercase">{{ $t('singleplayer.new_rank') }}</div>
-                    <div class="text-h6 font-weight-bold text-amber-accent-3">{{ newLevelData.rank }}</div>
+        <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
+            <v-card class="text-center pa-8 rounded-xl elevation-24" 
+                style="background: #020617; border: 2px solid #00e5ff; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);">
+                
+                <div class="glow-icon-wrapper mb-4">
+                    <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="90" class="animate-bounce"></v-icon>
                 </div>
 
-                <p class="text-body-1 text-grey-lighten-1 mb-6 mt-2">
-                    {{ $t('singleplayer.accumulated_xp', { xp: `<span class="text-cyan-accent-3 font-weight-bold">${progressStore.xp} XP</span>` }) }}
+                <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
+                    ¡NIVELL {{ newLevelData.level }}!
+                </h2>
+
+                <div v-if="newLevelData.rankChanged" class="my-5 pa-4 rounded-lg"
+                    style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;">
+                    <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
+                    <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
+                </div>
+
+                <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
+                    Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
+                    <br>i ets un pas més a prop de dominar la galàxia.
                 </p>
                 
-                <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" size="x-large"
-                    class="font-weight-bold text-black" @click="showLevelUpDialog = false">
-                    {{ $t('singleplayer.continue') }}
+                <v-btn color="cyan-accent-3" variant="elevated" block rounded="xl" size="x-large"
+                    class="font-weight-black text-black" @click="showLevelUpDialog = false">
+                    CONTINUAR EXPLORACIÓ
                 </v-btn>
             </v-card>
         </v-dialog>
 
         <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl bg-slate-900 elevation-24" style="border: 2px solid #ff5252;">
-                <v-icon icon="mdi-close-circle-outline" color="red-accent-2" size="80" class="mb-4"></v-icon>
+            <v-card class="text-center pa-8 rounded-xl elevation-24" 
+                style="background: #0f0505; border: 2px solid #ff5252; box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);">
+                
+                <v-icon icon="mdi-alert-octagon" color="red-accent-2" size="80" class="mb-4 pulse-red"></v-icon>
 
-                <h2 class="text-h4 font-weight-black text-white mb-2">{{ $t('singleplayer.almost_there') }}</h2>
+                <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
 
                 <div class="py-4">
-                    <p class="text-body-1 text-grey-lighten-1">{{ $t('singleplayer.obtained') }}</p>
-                    <div class="text-h3 font-weight-bold text-white mb-4">{{ lastScore }} {{ $t('singleplayer.pts') }}</div>
+                    <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
+                    <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
 
-                    <v-divider class="mb-4"></v-divider>
+                    <v-divider class="border-red-accent-2 opacity-30 mb-6"></v-divider>
 
-                    <p class="text-body-2 text-grey-lighten-1">
-                        {{ $t('singleplayer.need', { score: `<span class="text-red-accent-2 font-weight-bold">${requiredScore}</span>` }) }}
+                    <p class="text-body-1 text-blue-grey-lighten-2">
+                        Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
+                        para desbloquear este sector.
                     </p>
                 </div>
 
-                <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="large"
-                    class="font-weight-bold text-black mt-4" @click="showFailDialog = false">
-                    {{ $t('singleplayer.retry') }}
+                <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="x-large"
+                    class="font-weight-bold text-white mt-4" @click="showFailDialog = false" 
+                    style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;">
+                    REINTENTAR MISIÓN
                 </v-btn>
             </v-card>
         </v-dialog>
@@ -143,8 +181,7 @@
 
 <script setup>
 import { ref, shallowRef } from 'vue';
-import { useProgressStore } from '@/stores/progressStore';
-import { useI18n } from 'vue-i18n';
+import { useAstroStore } from '@/stores/astroStore'; 
 
 import WordConstruction from '@/components/games/WordConstruction.vue';
 import SpelledRosco from '@/components/games/SpelledRosco.vue';
@@ -153,10 +190,10 @@ import RadioSignal from '@/components/games/RadioSignal.vue';
 import RhymeSquad from '@/components/games/RhymeSquad.vue';
 import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
 
-const progressStore = useProgressStore();
-const { t } = useI18n();
+const astroStore = useAstroStore();
 const activeGameComponent = shallowRef(null);
 const currentPlayingIndex = ref(null); 
+const activePreviewIndex = ref(null);
 
 const showLevelUpDialog = ref(false);
 const showFailDialog = ref(false);
@@ -170,39 +207,40 @@ const newLevelData = ref({
     rankChanged: false
 });
 
-// MATRIZ ACTUALIZADA CON phaseAlign Y phaseIcon PARA EL DISEÑO LATERAL
 const levelSequence = [
-    { 
-        name: 'Preparativos', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, 
-        phaseTitle: 'Entrenamiento', phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitle: 'Fase 1: La Tierra', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle',
-        phaseAlign: 'left',
-    },
-    { name: '¡Despegue!', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200 },
-    { name: 'Rompiendo la Gravedad', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350 },
-    { name: 'Desacoplamiento Orbital', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500 },
-    { 
-        name: 'Ruta Estelar', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, 
-        phaseTitle: 'El Viaje Comienza', phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle',
-        phaseAlign: 'right',  
-    },
-    { name: 'Llamando a la Base', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 100 },
-    { name: 'Recarga Solar', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250 },
-    { name: 'Reparación Express', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500 },
+    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { name: '¡Despegue!', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
+    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
+    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
+    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
+    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
+    { name: 'Reparación Express', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
 ];
 
 const getLevelState = (index) => {
     const levelNum = index + 1;
-    if (levelNum === progressStore.level) return 'current';
-    if (levelNum < progressStore.level) return 'completed';
+    const currentMap = astroStore.mapLevel || 1; 
+    if (levelNum === currentMap) return 'current';
+    if (levelNum < currentMap) return 'completed';
     return 'locked';
 };
 
 const handleLevelClick = (index) => {
     const state = getLevelState(index);
     if (state !== 'locked') {
-        currentPlayingIndex.value = index;
-        activeGameComponent.value = levelSequence[index].component;
+        if (activePreviewIndex.value === index) {
+            activePreviewIndex.value = null;
+        } else {
+            activePreviewIndex.value = index;
+        }
     }
+};
+
+const startGame = (index) => {
+    activePreviewIndex.value = null;
+    currentPlayingIndex.value = index;
+    activeGameComponent.value = levelSequence[index].component;
 };
 
 const handleGameOver = async (finalScore) => {
@@ -212,8 +250,7 @@ const handleGameOver = async (finalScore) => {
     activeGameComponent.value = null;
     lastScore.value = finalScore;
 
-    const user = progressStore.resolveUser();
-    if (user && levelIndex !== null) {
+    if (astroStore.user && levelIndex !== null) {
         try {
             const levelConfig = levelSequence[levelIndex];
 
@@ -223,15 +260,19 @@ const handleGameOver = async (finalScore) => {
                 return;
             }
 
-            const previousLevel = progressStore.level;
-            const result = await progressStore.registerCompletedGame(gameName, finalScore);
+            const previousAccountLevel = astroStore.level;
+            const currentMap = astroStore.mapLevel || 1;
+            
+            const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null;
+
+            const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete);
 
             if (!result.success) throw new Error(result.message);
 
-            if (progressStore.level > previousLevel) {
+            if (astroStore.level > previousAccountLevel) {
                 newLevelData.value = {
-                    level: progressStore.level,
-                    rank: result.data.newRank || t('profile.guest'),
+                    level: astroStore.level,
+                    rank: result.data.newRank || 'Explorador',
                     rankChanged: !!result.data.newRank
                 };
                 showLevelUpDialog.value = true;
@@ -270,7 +311,6 @@ const handleGameOver = async (finalScore) => {
 .start-spacer { height: 80px; }
 .end-spacer { height: 150px; }
 
-/* NUEVOS ESTILOS PARA LAS CABECERAS LATERALES */
 .phase-divider-wrapper {
     position: relative;
     z-index: 10;
@@ -310,13 +350,12 @@ const handleGameOver = async (finalScore) => {
 .glow-text { text-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
 .border-cyan { border-color: #00e5ff !important; border-width: 1px; border-style: solid; }
 
-/* CONTENEDOR AMPLIADO PARA USAR LOS BORDES DE LA PANTALLA */
 .path-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 900px; /* Ampliado desde los 400px originales */
+    max-width: 900px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -486,4 +525,152 @@ svg {
 
 .fade-zoom-enter-active, .fade-zoom-leave-active { transition: all 0.3s ease; }
 .fade-zoom-enter-from, .fade-zoom-leave-to { opacity: 0; transform: scale(0.95); }
+
+/* --- NUEVAS ANIMACIONES PARA LOS DIÁLOGOS --- */
+
+.animate-bounce {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-20px);}
+    60% {transform: translateY(-10px);}
+}
+
+.pulse-red {
+    animation: pulse-red-effect 2s infinite;
+}
+
+@keyframes pulse-red-effect {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.tracking-tighter {
+    letter-spacing: -1px !important;
+}
+
+.uppercase {
+    text-transform: uppercase;
+}
+
+.v-divider {
+    opacity: 0.2 !important;
+}
+
+/* --- ESTILOS DE LA VIÑETA DE PREVISUALIZACIÓN --- */
+
+.level-preview-card {
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border: 2px solid rgba(0, 229, 255, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1);
+    z-index: 100;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-gif-container {
+    width: 100%;
+    height: 120px;
+    position: relative;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    background: #000;
+}
+
+.preview-gif {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.level-preview-card:hover .preview-gif {
+    transform: scale(1.05);
+}
+
+.preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
+}
+
+.preview-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 229, 255, 0.2);
+    border: 1px solid rgba(0, 229, 255, 0.5);
+    color: #00e5ff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.preview-content {
+    padding: 12px;
+    text-align: center;
+}
+
+.preview-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.play-btn-preview {
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.play-btn-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+}
+
+.preview-arrow {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid rgba(15, 23, 42, 0.85);
+}
+
+/* ANIMACIÓN POP-IN */
+.pop-in-enter-active {
+    animation: pop-in-kf 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pop-in-leave-active {
+    animation: pop-in-kf 0.2s reverse ease-in;
+}
+
+@keyframes pop-in-kf {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.5) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1) translateY(0);
+    }
+}
 </style>

@@ -54,20 +54,33 @@
         </v-btn>
       </template>
     </v-card>
+
   </v-container>
 </template>
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { syllableData } from '@/data/syllableGamesData';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
 
 const { locale, t } = useI18n();
 const emit = defineEmits(['game-over']);
-
-const words = computed(() => {
-    return syllableData[locale.value] || syllableData['es'];
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
 });
+
+const words = [
+  { text: 'OR-DI-NA-DOR', syllables: 4 },
+  { text: 'GA-LÀ-XI-A', syllables: 4 },
+  { text: 'COET', syllables: 2 },
+  { text: 'TE-LES-CO-PI', syllables: 4 }
+];
 
 const currentWordIndex = ref(0);
 const currentWord = computed(() => words.value[currentWordIndex.value]);
@@ -85,8 +98,16 @@ const addSyllable = () => {
   if (userSyllables.value < 8) userSyllables.value++;
 };
 
-const finishGame = () => {
+const finishGame = (silent = false) => {
   if (gameFinished.value) return;
+  
+  if (props.isMultiplayer && !silent) {
+    gameFinished.value = true;
+    if (timerInterval) clearInterval(timerInterval);
+    multiplayerStore.submitRoundResult();
+    return;
+  }
+
   gameFinished.value = true;
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -104,6 +125,7 @@ const checkSyllables = () => {
 
     if (currentWordIndex.value >= words.value.length - 1) {
       finishGame();
+      if (props.isMultiplayer) emitExit();
       return;
     }
 
@@ -137,6 +159,32 @@ const emitExit = () => {
 
 onMounted(() => {
   startTimer();
+  if (props.isMultiplayer) {
+    // En multijugador no necesitamos botón de "Obtener Recompensa"
+    // Pero este juego ya empieza el timer al montar, 
+    // así que solo lo dejamos así.
+  }
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    gameFinished.value = true;
+    emitExit(); 
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
 });
 
 onUnmounted(() => {

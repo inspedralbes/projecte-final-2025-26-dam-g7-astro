@@ -102,13 +102,24 @@
     </v-card>
 
   </v-container>
+
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import draggable from 'vuedraggable';
-import { useI18n } from 'vue-i18n';
-import { wordConstructionData } from '@/data/wordConstructionData';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useAstroStore } from '@/stores/astroStore';
+
+const multiplayerStore = useMultiplayerStore();
+const astroStore = useAstroStore();
+
+const props = defineProps({
+  isMultiplayer: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const { locale, t } = useI18n();
 // Definim els events per comunicar-nos amb el component pare
@@ -129,6 +140,7 @@ const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
 const gameSaved = ref(false);
+const isWaitingForOthers = ref(false);
 const isRoundLocked = ref(false);
 const totalTime = 90;
 const timeLeft = ref(totalTime);
@@ -193,12 +205,41 @@ const checkAnswer = () => {
   if (guess === correct) {
     isRoundLocked.value = true;
 
-    // Correcte
-    score.value += 100 + (level.value * 10);
+    // Recompensa base
+    let pointsGained = 100 + (level.value * 10);
+    
+    // Bonus per temps (guanyes temps)
+    timeLeft.value = Math.min(totalTime, timeLeft.value + 5);
+
+    // Bonus per diferencia de punts (si l'altre va molt enrere)
+    if (props.isMultiplayer && opponentName.value) {
+      const myMatchScore = multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0;
+      const oppMatchScore = multiplayerStore.room?.gameConfig?.scores?.[opponentName.value] || 0;
+      
+      // Si estas guanyant per més de 100 punts a la partida general, bonus de "Superioritat"
+      if (myMatchScore - oppMatchScore > 100) {
+        pointsGained += 50; 
+        message.value = "Correcte! +5s Temps i Bonus de Superioritat! 🔥";
+      } else {
+        message.value = "Correcte! +5s Temps. Bloc afegit!";
+      }
+    } else {
+      message.value = "Correcte! Bloc afegit a l'estructura.";
+    }
+
+    score.value += pointsGained;
     currentStep.value++;
-    message.value = t('wordConstruction.msgCorrect');
     messageType.value = "success";
     
+    // Notificar sabotatge/bonus (visualment al HUD del rival)
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'SABOTAGE',
+        subtype: 'REDUCE_TIME',
+        amount: 2 // Restem 2s al rival per cada paraula encertada? 
+      });
+    }
+
     setTimeout(() => {
       loadNextWord();
       isRoundLocked.value = false;
@@ -211,8 +252,15 @@ const checkAnswer = () => {
   }
 };
 
-const finishGame = async () => {
+const finishGame = async (silent = false) => {
   if (gameFinished.value) return;
+
+  if (props.isMultiplayer && !silent) {
+    gameFinished.value = true;
+    if (timerInterval) clearInterval(timerInterval);
+    multiplayerStore.submitRoundResult();
+    return;
+  }
 
   gameFinished.value = true;
   if (timerInterval) {
@@ -243,6 +291,35 @@ const startTimer = () => {
 onMounted(() => {
   loadNextWord();
   startTimer();
+});
+
+// Listener para eventos multijugador
+watch(() => multiplayerStore.lastMessage, (msg) => {
+  if (!msg) return;
+
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+    gameFinished.value = true;
+    emitExit(); 
+  }
+
+  // REBRE SABOTATGE: Restar temps
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+    timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2));
+    if (timeLeft.value <= 0 && !gameFinished.value) {
+      finishGame();
+    }
+  }
+});
+
+// Notificar puntuación al servidor en modo multijugador
+watch(score, (newScore) => {
+  if (props.isMultiplayer) {
+    multiplayerStore.sendGameAction({
+      type: 'SCORE_UPDATE',
+      score: newScore
+    });
+  }
 });
 
 onUnmounted(() => {

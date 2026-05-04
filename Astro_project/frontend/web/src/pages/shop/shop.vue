@@ -202,12 +202,16 @@
             <v-dialog v-model="showWinDialog" max-width="360" persistent>
                 <v-card class="text-center pa-6 rounded-xl bg-slate-900 border-cyan elevation-20">
                     <div class="mb-4 mt-2">
-                        <v-icon size="80" :color="lastPrize?.color || 'white'" class="animate-bounce drop-shadow">
+                    <v-icon size="80" :color="lastPrize?.color || 'white'" class="animate-bounce drop-shadow">
                             {{ lastPrize?.icon }}
                         </v-icon>
                     </div>
-                    <h3 class="text-h5 font-weight-bold mb-2 text-white">{{ $t('store.reward') }}</h3>
-                    <p class="text-body-1 text-cyan-accent-3 mb-6">{{ lastPrize?.label }}</p>
+                    <h3 class="text-h5 font-weight-bold mb-2 text-white">¡RECOMPENSA!</h3>
+                    <p class="text-body-1 text-cyan-accent-3 mb-2">{{ lastPrize?.label }}</p>
+                    <p v-if="lastPrize?.rewardMessage" class="text-body-2 text-amber-accent-3 mb-6">
+                        {{ lastPrize.rewardMessage }}
+                    </p>
+                    <div v-else class="mb-6"></div>
                     <v-btn color="cyan-accent-3" variant="flat" block rounded="xl" class="font-weight-bold text-black"
                         @click="showWinDialog = false">
                         {{ $t('store.accept') }}
@@ -245,13 +249,19 @@ const updateStats = (data) => {
 };
 
 const triggerMultiSpin = async () => {
-    if (!confirm(t('shopActions.confirmMulti'))) return;
+    if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
+
+    // 1. Definimos la URL base dinámica
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
     try {
-        const response = await fetch('http://localhost:3000/api/shop/buy-tickets', {
+        // 2. Reemplazamos la URL estática por la variable
+        const response = await fetch(`${API_BASE}/api/shop/buy-tickets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: astroStore.user })
         });
+        
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message);
 
@@ -261,7 +271,6 @@ const triggerMultiSpin = async () => {
         alert(error.message);
     }
 };
-
 async function fetchUserBalance() {
     const result = await astroStore.fetchUserBalance();
     if (result.success && result.balance) {
@@ -341,9 +350,6 @@ onMounted(async () => {
 const handleWin = (prize) => {
     lastPrize.value = prize;
     showWinDialog.value = true;
-    if (prize?.rewardMessage) {
-        alert(prize.rewardMessage);
-    }
 };
 
 const updateCoins = (newBalance) => {
