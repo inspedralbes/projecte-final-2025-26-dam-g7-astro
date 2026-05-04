@@ -3,6 +3,7 @@ name: Deploy Production PI
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch: # Permite ejecución manual desde GitHub
 
 jobs:
   # --- BLOQUE 1: VALIDACIÓN ---
@@ -68,9 +69,14 @@ jobs:
           docker compose -f docker-compose.prod.yml up -d --build
           
           # 4. Reiniciar proyecto PI (necesario si comparten red/proxy Nginx)
+          # NOTA: Asegúrate de que esta ruta sea correcta en tu servidor
           echo "Reiniciando proyecto PI para asegurar sincronización de red..."
-          cd /var/www/PI/tr2-reptes-tr2-g4/Incorporacio_PI
-          docker compose -f docker-compose.prod.yml up -d
+          if [ -d "/var/www/PI/tr2-reptes-tr2-g4/Incorporacio_PI" ]; then
+            cd /var/www/PI/tr2-reptes-tr2-g4/Incorporacio_PI
+            docker compose -f docker-compose.prod.yml up -d
+          else
+            echo "Ruta de proyecto PI no encontrada, saltando."
+          fi
 
           # 5. Asegurar que el modelo de IA esté descargado (solo si el contenedor ollama existe)
           if docker ps -a --format '{{.Names}}' | grep -q "ollama"; then
