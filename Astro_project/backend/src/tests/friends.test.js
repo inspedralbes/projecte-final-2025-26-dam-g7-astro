@@ -1,69 +1,80 @@
 const request = require('supertest');
 const express = require('express');
 const { registerFriendRoutes } = require('../routes/friendRoutes');
+const SocialService = require('../services/socialService');
+const InMemoryUserRepository = require('../repositories/InMemoryUserRepository');
+const User = require('../domain/User');
 
 describe('Friend Routes', () => {
     let app;
-    let mockUsersCollection;
-    let mockGetCollections;
+    let userRepo;
+    let socialService;
 
     beforeEach(() => {
         app = express();
         app.use(express.json());
 
-        mockUsersCollection = {
-            findOne: jest.fn(),
-            updateOne: jest.fn().mockResolvedValue({}),
-            find: jest.fn().mockReturnValue({
-                toArray: jest.fn().mockResolvedValue([])
-            })
-        };
+        userRepo = new InMemoryUserRepository();
+        socialService = new SocialService({ userRepository: userRepo });
 
-        mockGetCollections = jest.fn().mockReturnValue({
-            users: mockUsersCollection
-        });
-
-        registerFriendRoutes(app, { getCollections: mockGetCollections });
+        registerFriendRoutes(app, { socialService });
     });
 
     test('POST /api/friends/request debe enviar una solicitud si el usuario existe', async () => {
-        mockUsersCollection.findOne.mockResolvedValue({ user: 'FriendUser', friends: [] });
+        // Arrange
+        const userMe = new User({ user: 'Me' });
+        const userFriend = new User({ user: 'FriendUser' });
+        await userRepo.save(userMe);
+        await userRepo.save(userFriend);
 
+        // Act
         const res = await request(app)
             .post('/api/friends/request')
             .send({ user: 'Me', friendName: 'FriendUser' });
 
+        // Assert
         expect(res.status).toBe(200);
         expect(res.body.message).toBe('Solicitud enviada');
-        expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
-            { user: 'FriendUser' },
-            { $addToSet: { friendRequests: 'Me' } }
-        );
+        
+        const updatedFriend = await userRepo.findByUsername('FriendUser');
+        expect(updatedFriend.friendRequests).toContain('Me');
     });
 
     test('POST /api/friends/accept debe añadir a ambos como amigos', async () => {
-        mockUsersCollection.findOne.mockResolvedValue({ 
-            user: 'Me', 
-            friends: ['FriendUser'], 
-            friendRequests: [] 
-        });
+        // Arrange
+        const userMe = new User({ user: 'Me', friendRequests: ['FriendUser'] });
+        const userFriend = new User({ user: 'FriendUser' });
+        await userRepo.save(userMe);
+        await userRepo.save(userFriend);
 
+        // Act
         const res = await request(app)
             .post('/api/friends/accept')
             .send({ user: 'Me', friendName: 'FriendUser' });
 
+        // Assert
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(mockUsersCollection.updateOne).toHaveBeenCalledTimes(2);
+        
+        const updatedMe = await userRepo.findByUsername('Me');
+        const updatedFriend = await userRepo.findByUsername('FriendUser');
+        
+        expect(updatedMe.friends).toContain('FriendUser');
+        expect(updatedFriend.friends).toContain('Me');
+        expect(updatedMe.friendRequests).not.toContain('FriendUser');
     });
 
     test('POST /api/friends/request debe fallar si el usuario no existe', async () => {
-        mockUsersCollection.findOne.mockResolvedValue(null);
+        // Arrange
+        const userMe = new User({ user: 'Me' });
+        await userRepo.save(userMe);
 
+        // Act
         const res = await request(app)
             .post('/api/friends/request')
             .send({ user: 'Me', friendName: 'Unknown' });
 
+        // Assert
         expect(res.status).toBe(404);
         expect(res.body.message).toBe('Ese explorador no existe');
     });
