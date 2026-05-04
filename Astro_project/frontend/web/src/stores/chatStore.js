@@ -165,7 +165,8 @@ export const useChatStore = defineStore('chat', {
                 to: data.to,
                 content: data.content,
                 at: data.at,
-                read: data.from === myUser // nuestros propios mensajes ya los leemos
+                read: data.from === myUser, // nuestros propios mensajes ya los leemos
+                msgType: data.msgType || 'text'
             });
 
             // Si el mensaje es entrante (de otro) y el chat no está abierto con ese amigo → incrementar badge

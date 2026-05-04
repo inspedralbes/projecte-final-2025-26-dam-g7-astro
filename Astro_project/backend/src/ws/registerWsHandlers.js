@@ -139,6 +139,75 @@ function registerWsHandlers(wss, getDB) {
                         break;
                     }
 
+                    case 'CHALLENGE': {
+                        // { type: 'CHALLENGE', from: 'UserA', to: 'UserB' }
+                        try {
+                            console.log(`⚔️ Desafío de ${msg.from} para ${msg.to}`);
+                            
+                            // Notificar por el canal de desafíos (para el popup)
+                            const sent = roomManager.sendToUser(msg.to, {
+                                type: 'CHALLENGE_RECEIVED',
+                                from: msg.from
+                            });
+
+                            if (!sent) {
+                                console.warn(`⚠️ Usuario ${msg.to} no está conectado. El desafío solo aparecerá en su chat.`);
+                            }
+
+                            // También enviar como mensaje de chat especial
+                            const dbC = getDB();
+                            const saved = await chatService.saveMessage(dbC, {
+                                from: msg.from,
+                                to: msg.to,
+                                content: '¡Te he desafiado a un duelo!',
+                                type: 'challenge'
+                            });
+
+                            const chatMsg = {
+                                type: 'CHAT_MESSAGE',
+                                from: msg.from,
+                                to: msg.to,
+                                content: saved.content,
+                                at: saved.at.toISOString(),
+                                msgType: 'challenge'
+                            };
+
+                            roomManager.sendToUser(msg.to, chatMsg);
+                            ws.send(JSON.stringify(chatMsg)); // Confirmar al emisor
+                        } catch (e) {
+                            console.error('❌ Error procesando desafío:', e);
+                            ws.send(JSON.stringify({ type: 'ERROR', message: 'No se pudo enviar el desafío.' }));
+                        }
+                        break;
+                    }
+
+                    case 'CHALLENGE_RESPONSE': {
+                        // { type: 'CHALLENGE_RESPONSE', from: 'UserB', to: 'UserA', accepted: true/false }
+                        console.log(`⚔️ Respuesta al desafío de ${msg.from} para ${msg.to}: ${msg.accepted ? 'ACEPTADO' : 'RECHAZADO'}`);
+                        
+                        if (msg.accepted) {
+                            // Crear una sala privada para los dos
+                            const roomId = await roomManager.createRoom(msg.to, false, 2); // El que desafió es el host
+                            await roomManager.joinRoom(roomId, msg.from); // El que aceptó se une
+                            
+                            const acceptedMsg = {
+                                type: 'CHALLENGE_ACCEPTED',
+                                challenger: msg.to,
+                                opponent: msg.from,
+                                roomId
+                            };
+                            
+                            roomManager.sendToUser(msg.to, acceptedMsg);
+                            roomManager.sendToUser(msg.from, acceptedMsg);
+                        } else {
+                            roomManager.sendToUser(msg.to, {
+                                type: 'CHALLENGE_REJECTED',
+                                from: msg.from
+                            });
+                        }
+                        break;
+                    }
+
                     case 'CHAT_FETCH_HISTORY': {
                         // { type: 'CHAT_FETCH_HISTORY', userA: 'yo', userB: 'amigo' }
                         if (!msg.userA || !msg.userB) break;
@@ -157,7 +226,8 @@ function registerWsHandlers(wss, getDB) {
                                 to: m.to,
                                 content: m.content,
                                 at: m.at.toISOString(),
-                                read: m.read
+                                read: m.read,
+                                msgType: m.type || 'text'
                             }))
                         }));
                         break;
