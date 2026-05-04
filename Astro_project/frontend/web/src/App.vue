@@ -9,15 +9,19 @@
 
     <!-- Chat drawer global: persiste entre rutas -->
     <ChatDrawer />
+
+    <!-- Popup de desafíos globales -->
+    <ChallengePopup />
   </v-app>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
 import ChatDrawer from '@/components/layout/ChatDrawer.vue'
+import ChallengePopup from '@/components/multiplayer/ChallengePopup.vue'
 import { useMultiplayerStore } from '@/stores/multiplayerStore'
 import { useSessionStore } from '@/stores/sessionStore'
 
@@ -25,12 +29,13 @@ const route = useRoute()
 const sessionStore = useSessionStore()
 const multiplayerStore = useMultiplayerStore()
 
-// Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
-onMounted(() => {
-  if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
-    multiplayerStore.connect()
+// Reconectar WS si el usuario ya tiene sesión activa o acaba de iniciarla
+watch(() => sessionStore.user, (newUser) => {
+  if (newUser && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+    console.log(`🔌 Detectada sesión para ${newUser}, conectando WS...`);
+    multiplayerStore.connect();
   }
-})
+}, { immediate: true });
 
 // Define routes where sidebars should be hidden
 const showLayoutElements = computed(() => {

@@ -9,12 +9,13 @@
  * @param {{ from: string, to: string, content: string }} param
  * @returns {Promise<object>} El documento insertado
  */
-async function saveMessage(db, { from, to, content }) {
+async function saveMessage(db, { from, to, content, type = 'text' }) {
     const messages = db.collection('messages');
     const doc = {
         from,
         to,
         content,
+        type,
         at: new Date(),
         read: false
     };

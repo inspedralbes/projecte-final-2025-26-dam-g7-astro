@@ -79,7 +79,7 @@
                 <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
-                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold">
+                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold" @click="challengeFriend(friend.user)">
                     <v-icon start icon="mdi-sword-cross" size="18"></v-icon>
                     DESAFIAR
                   </v-btn>
@@ -312,11 +312,13 @@ import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import Medal from '@/components/achievements/Medal.vue';
 
 const astroStore = useAstroStore();
 const chatStore = useChatStore();
+const multiplayerStore = useMultiplayerStore();
 const { explorers, friends, friendRequests } = storeToRefs(astroStore);
 
 const loading = ref(true);
@@ -458,6 +460,17 @@ const sendRequest = async (friendName) => {
 
 const startChat = (friendObj) => {
   chatStore.openChat(friendObj);
+};
+
+const challengeFriend = async (friendName) => {
+  showMessage(`Conectando con la flota para desafiar a ${friendName}...`, 'info');
+  const success = await multiplayerStore.sendChallenge(friendName);
+  
+  if (success) {
+    showMessage(`¡Desafío enviado a ${friendName}! Prepárate.`);
+  } else {
+    showMessage(`Error: No se pudo enviar el desafío a ${friendName}. Verifica tu conexión.`, 'error');
+  }
 };
 
 const acceptRequest = async (requesterName) => {
