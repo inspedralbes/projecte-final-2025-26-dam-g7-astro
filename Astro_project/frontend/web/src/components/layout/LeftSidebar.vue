@@ -12,15 +12,18 @@
                     <v-icon :icon="item.icon" size="22" class="mr-4 item-icon"></v-icon>
                 </template>
                 <v-list-item-title class="text-subtitle-1 font-weight-bold">
-                    {{ item.title }}
+                    {{ $t(item.titleKey) }}
                 </v-list-item-title>
             </v-list-item>
         </v-list>
 
         <template v-slot:append>
             <div class="pa-4">
+                <div class="d-flex justify-center mb-6">
+                    <LanguageSelector />
+                </div>
                 <v-btn block variant="text" color="grey-lighten-1" @click="showLogoutDialog = true" prepend-icon="mdi-logout" class="logout-btn">
-                    Desconectarse
+                    {{ $t('profile.logoutBtn') }}
                 </v-btn>
             </div>
         </template>
@@ -29,16 +32,16 @@
         <v-dialog v-model="showLogoutDialog" max-width="400">
             <v-card class="glass-panel pa-6 text-center shadow-xl">
                 <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
-                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">¿CERRAR SESIÓN?</h2>
+                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
                 <p class="text-body-2 text-grey-lighten-1 mb-8">
-                    Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?
+                    {{ $t('profile.deepSpace', { level: '' }).includes('ESPACIO') ? 'Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?' : 'You are about to disconnect from ASTRO central system. Do you wish to continue?' }}
                 </p>
                 <div class="d-flex justify-center mt-4">
                     <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
-                        CANCELAR
+                        {{ $t('general.cancel').toUpperCase() }}
                     </v-btn>
                     <v-btn variant="flat" color="error" @click="handleLogout" class="rounded-lg flex-grow-1 ml-2" height="48">
-                        DESCONECTAR
+                        {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
                     </v-btn>
                 </div>
             </v-card>
@@ -47,10 +50,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore'
-import { useI18n } from 'vue-i18n'
+import LanguageSelector from '@/components/layout/LanguageSelector.vue'
 
 const router = useRouter()
 const store = useAstroStore()

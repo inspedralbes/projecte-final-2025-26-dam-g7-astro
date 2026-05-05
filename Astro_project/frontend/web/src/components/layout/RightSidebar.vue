@@ -3,7 +3,7 @@
         mobile-breakpoint="lg">
         <div class="d-flex flex-column h-100 pa-4">
             <!-- Stats Section -->
-            <div class="section-label mb-4">ESTADO DEL PILOTO</div>
+            <div class="section-label mb-4">{{ $t('rightSidebar.pilotState') }}</div>
             
             <v-card class="glass-card mb-4 pt-5 px-4 pb-6" elevation="0" style="overflow: visible !important;">
                 <div class="d-flex justify-space-around align-center">
@@ -20,7 +20,7 @@
                         <div class="stat-value text-h5 font-weight-bold" :class="isStreakActiveToday ? 'text-orange-accent-3' : 'text-grey'">
                             {{ userStreak }}
                         </div>
-                        <div class="stat-label" :class="{ 'active-label': isStreakActiveToday }">RACHA</div>
+                        <div class="stat-label" :class="{ 'active-label': isStreakActiveToday }">{{ $t('rightSidebar.streakCaps') }}</div>
                     </div>
                     <v-divider vertical class="mx-2 border-opacity-25" color="white"></v-divider>
                     <div class="text-center d-flex flex-column align-center">
@@ -34,14 +34,14 @@
                         <div class="stat-value text-h5 font-weight-bold text-yellow-accent-3">
                             {{ userCoins }}
                         </div>
-                        <div class="stat-label">CRÉDITOS</div>
+                        <div class="stat-label">{{ $t('rightSidebar.credits') }}</div>
                     </div>
                 </div>
             </v-card>
 
             <v-card class="glass-card mb-6 pa-4" elevation="0">
                 <div class="d-flex justify-space-between align-center mb-2">
-                    <span class="text-caption font-weight-black text-primary">NIVEL {{ userLevel }}</span>
+                    <span class="text-caption font-weight-black text-primary">{{ $t('rightSidebar.level', { level: userLevel }) }}</span>
                     <span class="text-caption text-grey-lighten-1">{{ userXp }} / {{ xpRequired }} XP</span>
                 </div>
                 <v-progress-linear :model-value="(userXp / Math.max(1, xpRequired)) * 100" color="primary"
@@ -50,20 +50,20 @@
 
             <!-- Daily Missions Section -->
             <div class="d-flex align-center justify-space-between mb-4">
-                <div class="section-label">MISIONES DIARIAS</div>
+                <div class="section-label">{{ $t('rightSidebar.dailyMissions') }}</div>
                 <v-btn icon="mdi-refresh" variant="text" color="primary" density="compact" @click="refreshMissions" :loading="isRefreshing"></v-btn>
             </div>
 
             <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
                 <div v-if="!dailyMissions || dailyMissions.length === 0" class="text-caption text-grey text-center py-4">
-                    Sincronizando con la base...
+                    {{ $t('rightSidebar.syncing') }}
                 </div>
                 
                 <v-card v-for="mission in (dailyMissions || []).slice(0, 3)" :key="mission.id"
                     class="mission-card mb-3 pa-3" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.label || mission.text || 'Misión Especial' }}
+                            {{ mission.label || mission.text || $t('rightSidebar.specialMission') }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="success" size="small"></v-icon>
                     </div>
@@ -74,32 +74,32 @@
                         </div>
                         <v-btn v-if="mission.completed && !mission.claimed" color="primary" variant="flat"
                             density="compact" size="small" class="px-3" @click.stop="claimReward(mission.id, 'daily')">
-                            RECLAMAR
+                            {{ $t('rightSidebar.claimCaps') }}
                         </v-btn>
                     </div>
                 </v-card>
             </div>
 
             <v-btn block variant="text" color="primary" class="mt-1 mb-2 text-caption font-weight-bold" @click="dialogDiarias = true">
-                VER TODAS LAS DIARIAS
+                {{ $t('rightSidebar.viewAllDaily') }}
             </v-btn>
 
             <!-- Weekly Missions Section -->
             <div class="d-flex align-center justify-space-between mb-4 mt-2">
-                <div class="section-label">MISIONES SEMANALES</div>
+                <div class="section-label">{{ $t('rightSidebar.weeklyMissions') }}</div>
                 <v-icon icon="mdi-calendar-clock" color="secondary" size="small"></v-icon>
             </div>
 
             <div class="missions-container flex-grow-1 overflow-y-auto pr-2" style="max-height: 220px;">
                 <div v-if="!weeklyMissions || weeklyMissions.length === 0" class="text-caption text-grey text-center py-4">
-                    No hay misiones semanales...
+                    {{ $t('rightSidebar.noWeeklyMissions') }}
                 </div>
                 
                 <v-card v-for="mission in (weeklyMissions || []).slice(0, 2)" :key="mission.id"
                     class="mission-card mb-3 pa-3 border-secondary" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.label || mission.text || 'Misión Semanal' }}
+                            {{ mission.label || mission.text || $t('rightSidebar.weeklyMission') }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="secondary" size="small"></v-icon>
                     </div>
@@ -110,14 +110,14 @@
                         </div>
                         <v-btn v-if="mission.completed && !mission.claimed" color="secondary" variant="flat"
                             density="compact" size="small" class="px-3" @click.stop="claimReward(mission.id, 'weekly')">
-                            RECLAMAR
+                            {{ $t('rightSidebar.claimCaps') }}
                         </v-btn>
                     </div>
                 </v-card>
             </div>
 
             <v-btn block variant="text" color="secondary" class="mt-2 text-caption font-weight-bold" @click="dialogMisiones = true">
-                VER TODAS LAS SEMANALES
+                {{ $t('rightSidebar.viewAllWeekly') }}
             </v-btn>
         </div>
 
@@ -125,15 +125,15 @@
         <v-dialog v-model="dialogDiarias" max-width="450">
             <v-card class="glass-panel pa-6">
                 <div class="d-flex align-center justify-space-between mb-6">
-                    <h2 class="text-h5 text-white">MISIONES DIARIAS</h2>
+                    <h2 class="text-h5 text-white">{{ $t('rightSidebar.dailyMissions') }}</h2>
                     <v-btn icon="mdi-close" variant="text" @click="dialogDiarias = false"></v-btn>
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in dailyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || 'Misión Especial' }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || $t('rightSidebar.specialMission') }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">COBRAR</v-btn>
+                            <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">{{ $t('rightSidebar.claimReward') }}</v-btn>
                         </div>
                     </v-card>
                 </v-list>
@@ -143,15 +143,15 @@
         <v-dialog v-model="dialogMisiones" max-width="450">
             <v-card class="glass-panel pa-6">
                 <div class="d-flex align-center justify-space-between mb-6">
-                    <h2 class="text-h5 text-white">MISIONES SEMANALES</h2>
+                    <h2 class="text-h5 text-white">{{ $t('rightSidebar.weeklyMissions') }}</h2>
                     <v-btn icon="mdi-close" variant="text" @click="dialogMisiones = false"></v-btn>
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || 'Misión Semanal' }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || $t('rightSidebar.weeklyMission') }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">COBRAR</v-btn>
+                            <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">{{ $t('rightSidebar.claimReward') }}</v-btn>
                         </div>
                     </v-card>
                 </v-list>
@@ -217,13 +217,13 @@ const claimReward = async (missionId, type = 'daily') => {
     if (result.success) {
         snackbar.value = {
             show: true,
-            text: result.message || '¡Recompensa reclamada!',
+            text: result.message || t('rightSidebar.rewardClaimed'),
             color: 'success'
         }
     } else {
         snackbar.value = {
             show: true,
-            text: result.message || 'Error al reclamar la misión',
+            text: result.message || t('rightSidebar.rewardError'),
             color: 'error'
         }
     }

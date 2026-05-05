@@ -346,7 +346,7 @@
                             prepend-inner-icon="mdi-key-check"
                             v-model="newGroupPasswordConfirm"
                             class="tech-input-green"
-                            :error-messages="newGroupPassword !== newGroupPasswordConfirm ? '!' : ''"
+                            :error-messages="newGroupPassword !== newGroupPasswordConfirm ? $t('plans.pwdMismatch') : ''"
                             hide-details
                         ></v-text-field>
                     </v-col>

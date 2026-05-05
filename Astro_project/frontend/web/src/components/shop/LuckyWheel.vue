@@ -17,6 +17,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const getSegmentStyle = (index) => {
   const degreePerItem = 360 / items.length;
@@ -77,10 +80,10 @@ async function spin() {
     
     const data = await response.json();
 
-    if (!response.ok || !data.success) throw new Error(data.message || "Error al girar");
+    if (!response.ok || !data.success) throw new Error(data.message || t('shop.spinError'));
 
     const winnerIndex = items.findIndex(i => i.id === data.prize.id);
-    if (winnerIndex === -1) throw new Error("El servidor ha retornat un premi desconegut.");
+    if (winnerIndex === -1) throw new Error(t('shop.unknownPrize'));
 
     const degreePerItem = 360 / items.length;
     const targetAngle = 360 - (winnerIndex * degreePerItem) - (degreePerItem / 2);
@@ -108,7 +111,7 @@ async function spin() {
     console.error("❌ Error en la ruleta:", e);
     isSpinning.value = false;
     emit('spin-end');
-    alert(e.message || "Error de comunicació");
+    alert(e.message || t('shop.commError'));
   }
 }
 
