@@ -80,7 +80,7 @@
                     {{ msg.content }}
                   </div>
                   <div v-if="msg.from !== myUser" class="challenge-msg-actions">
-                    <template v-if="isLastChallenge(index) && !msg.status">
+                    <template v-if="isLastChallenge(index) && msg.status === 'pending'">
                       <button class="chat-challenge-btn chat-challenge-btn--accept" @click="respondToChallenge(msg.from, true)">
                         <v-icon icon="mdi-check" size="14" class="mr-1"></v-icon>
                         ACEPTAR
@@ -106,6 +106,7 @@
                   <div v-else class="challenge-msg-status">
                     <span v-if="msg.status === 'accepted'" class="status-accepted">Duelo aceptado</span>
                     <span v-else-if="msg.status === 'rejected'" class="status-rejected">Duelo rechazado</span>
+                    <span v-else-if="msg.status === 'expired'" class="expired-text">Expirado</span>
                     <span v-else-if="isLastChallenge(index)">Invitación enviada...</span>
                     <span v-else class="expired-text">Expirado</span>
                   </div>
