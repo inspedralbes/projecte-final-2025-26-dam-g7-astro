@@ -382,7 +382,7 @@ const startTimer = () => {
 // --- INICI ---
 onMounted(async () => {
   if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT') {
-    await groupStore.fetchActiveSupplySetForStudent(astroStore.user);
+    await groupStore.fetchActiveSupplySetForStudent(astroStore.user, 'WordConstruction');
     if (groupStore.activeSupplySet && groupStore.activeSupplySet.content?.length > 0) {
       words.value = groupStore.activeSupplySet.content;
       currentWordObj.value = words.value[0];

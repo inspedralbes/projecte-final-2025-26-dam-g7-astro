@@ -11,11 +11,12 @@ class SupplyService {
     async createSupplySet(ownerId, data) {
         const supplySet = {
             ownerId,
+            gameId: data.gameId || null,
             name: data.name,
             type: data.type || 'words', // 'words', 'riddles', etc.
             content: data.content, // Array of { word, hint }
             createdAt: new Date(),
-            active: true
+            active: data.active !== undefined ? data.active : true
         };
         const result = await this.collection.insertOne(supplySet);
         return { id: result.insertedId, ...supplySet };
@@ -25,8 +26,10 @@ class SupplyService {
         return await this.collection.find({ ownerId }).toArray();
     }
 
-    async getActiveSupplySet(ownerId) {
-        return await this.collection.findOne({ ownerId, active: true });
+    async getActiveSupplySet(ownerId, gameId) {
+        const query = { ownerId, active: true };
+        if (gameId) query.gameId = gameId;
+        return await this.collection.findOne(query);
     }
 
     async deleteSupplySet(id) {

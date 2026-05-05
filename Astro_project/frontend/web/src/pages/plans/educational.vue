@@ -138,25 +138,7 @@
 
           <!-- TAB: EDITOR DE SUMINISTROS -->
           <div v-if="currentTab === 'supplies'">
-            <div class="d-flex justify-space-between align-center mb-6">
-              <h3 class="text-h4 font-weight-black text-white">EDITOR DE SUMINISTROS</h3>
-              <v-btn color="orange-accent-3" @click="showSupplyDialog = true" prepend-icon="mdi-package-variant-plus">NUEVO SET</v-btn>
-            </div>
-
-            <v-row>
-              <v-col v-for="set in groupStore.supplySets" :key="set._id" cols="12" sm="6" lg="4">
-                <v-card class="supply-card" :class="{ 'active-set': set.active }">
-                  <div class="d-flex justify-space-between align-start mb-2">
-                    <h4 class="text-h6 font-weight-bold">{{ set.name }}</h4>
-                    <v-chip v-if="set.active" color="green" size="x-small">ACTIVO</v-chip>
-                  </div>
-                  <p class="text-caption text-grey mb-4">{{ set.content.length }} palabras configuradas.</p>
-                  <v-btn block size="small" :color="set.active ? 'grey' : 'cyan'" @click="activateSet(set._id)">
-                    {{ set.active ? 'DESACTIVAR' : 'ACTIVAR PARA CLASE' }}
-                  </v-btn>
-                </v-card>
-              </v-col>
-            </v-row>
+            <SupplyEditor />
           </div>
 
         </v-card>
@@ -173,25 +155,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- DIALOGO: NUEVO SET DE SUMINISTROS -->
-    <v-dialog v-model="showSupplyDialog" max-width="600">
-      <v-card class="glass-popup pa-6">
-        <h3 class="text-h5 text-white mb-4">CREAR SET DE PALABRAS</h3>
-        <v-text-field v-model="supplySetName" label="Nombre del Set (ej: Vocabulario Marte)" variant="solo-filled" class="mb-4"></v-text-field>
-        
-        <div class="supply-editor-area mb-4">
-          <div v-for="(item, idx) in newSupplyContent" :key="idx" class="d-flex ga-2 mb-2">
-            <v-text-field v-model="item.word" placeholder="Palabra" density="compact" hide-details></v-text-field>
-            <v-text-field v-model="item.hint" placeholder="Pista" density="compact" hide-details></v-text-field>
-            <v-btn icon="mdi-delete" size="small" color="red" @click="newSupplyContent.splice(idx, 1)"></v-btn>
-          </div>
-          <v-btn variant="text" color="cyan" prepend-icon="mdi-plus" @click="newSupplyContent.push({ word: '', hint: '' })">AÑADIR FILA</v-btn>
-        </div>
-        
-        <v-btn block color="orange-accent-3" @click="saveSupplySet">GUARDAR SUMINISTROS</v-btn>
-      </v-card>
-    </v-dialog>
-
   </v-container>
 </template>
 
@@ -200,6 +163,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useAstroStore } from '@/stores/astroStore'
 import { useGroupStore } from '@/stores/groupStore'
 import { storeToRefs } from 'pinia'
+import SupplyEditor from '@/components/educational/SupplyEditor.vue'
 
 const astroStore = useAstroStore()
 const groupStore = useGroupStore()
@@ -207,13 +171,10 @@ const { user, role } = storeToRefs(astroStore)
 
 const currentTab = ref('stats')
 const showAddDialog = ref(false)
-const showSupplyDialog = ref(false)
 
 // Forms
 const newName = ref('')
 const newPass = ref('')
-const supplySetName = ref('')
-const newSupplyContent = ref([{ word: '', hint: '' }])
 
 onMounted(async () => {
   if (role.value === 'CENTER') {
@@ -244,28 +205,6 @@ const addMember = async () => {
   } else {
     alert(result.message)
   }
-}
-
-const saveSupplySet = async () => {
-  const content = newSupplyContent.value.filter(i => i.word.trim() !== '')
-  const result = await groupStore.saveSupplySet({
-    ownerId: user.value,
-    name: supplySetName.value,
-    type: 'words',
-    content
-  })
-  
-  if (result.success) {
-    showSupplyDialog.value = false
-    supplySetName.value = ''
-    newSupplyContent.value = [{ word: '', hint: '' }]
-    await groupStore.fetchSupplySets(user.value)
-  }
-}
-
-const activateSet = async (id) => {
-  await groupStore.activateSupplySet(id, user.value)
-  await groupStore.fetchSupplySets(user.value)
 }
 
 const viewTeacherStats = async (tUsername) => {
