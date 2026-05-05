@@ -17,6 +17,8 @@ export const useAstroStore = defineStore('astro', () => {
 
     const user = computed({ get: () => sessionStore.user, set: (value) => sessionStore.setUser(value) });
     const plan = computed({ get: () => sessionStore.plan, set: (value) => sessionStore.setPlan(value) });
+    const role = computed({ get: () => sessionStore.role, set: (value) => sessionStore.setRole(value) });
+    const parentId = computed({ get: () => sessionStore.parentId, set: (value) => sessionStore.setParentId(value) });
     const rank = computed({ get: () => sessionStore.rank, set: (value) => sessionStore.setRank(value) });
     const avatar = computed({ get: () => sessionStore.avatar, set: (value) => sessionStore.setAvatar(value) });
     const mascot = computed({ get: () => sessionStore.mascot, set: (value) => sessionStore.setMascot(value) });
@@ -203,7 +205,7 @@ export const useAstroStore = defineStore('astro', () => {
 
 
     return {
-        user, plan, rank, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
+        user, plan, role, parentId, rank, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
         inventory, selectedAchievements, unlockedAchievements, avatar, mascot, token, lastActivity, lastGame,
         dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
         

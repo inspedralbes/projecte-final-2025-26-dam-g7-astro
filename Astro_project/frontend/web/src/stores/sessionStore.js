@@ -21,6 +21,8 @@ export const useSessionStore = defineStore('session', {
         user: storageGetItem(STORAGE_KEYS.user) || null,
         plan: storageGetItem(STORAGE_KEYS.plan) || 'INDIVIDUAL_FREE',
         rank: storageGetItem(STORAGE_KEYS.rank) || null,
+        role: storageGetItem(STORAGE_KEYS.role) || null,
+        parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
         mascot: storageGetItem(STORAGE_KEYS.mascot) || null,
         token: storageGetItem(STORAGE_KEYS.token) || null,
@@ -42,6 +44,16 @@ export const useSessionStore = defineStore('session', {
         setRank(rank) {
             this.rank = rank || null;
             persistNullable(STORAGE_KEYS.rank, this.rank);
+        },
+
+        setRole(role) {
+            this.role = role || null;
+            persistNullable(STORAGE_KEYS.role, this.role);
+        },
+
+        setParentId(parentId) {
+            this.parentId = parentId || null;
+            persistNullable(STORAGE_KEYS.parentId, this.parentId);
         },
 
         setToken(token) {
@@ -84,6 +96,8 @@ export const useSessionStore = defineStore('session', {
             this.setUser(profile.name ?? this.user);
             this.setPlan(profile.plan ?? this.plan);
             this.setRank(profile.rank ?? this.rank);
+            this.setRole(profile.role ?? this.role);
+            this.setParentId(profile.parentId ?? this.parentId);
             this.setToken(data.token ?? this.token);
 
             if (profile.avatar) {
@@ -212,6 +226,8 @@ export const useSessionStore = defineStore('session', {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';
             this.rank = null;
+            this.role = null;
+            this.parentId = null;
             this.avatar = 'Astronauta_blanc.jpg';
             this.mascot = null;
             this.token = null;
@@ -220,6 +236,8 @@ export const useSessionStore = defineStore('session', {
             storageRemoveItem(STORAGE_KEYS.token);
             storageRemoveItem(STORAGE_KEYS.user);
             storageRemoveItem(STORAGE_KEYS.rank);
+            storageRemoveItem(STORAGE_KEYS.role);
+            storageRemoveItem(STORAGE_KEYS.parentId);
             storageRemoveItem(STORAGE_KEYS.plan);
             storageRemoveItem(STORAGE_KEYS.avatar);
             storageRemoveItem(STORAGE_KEYS.mascot);

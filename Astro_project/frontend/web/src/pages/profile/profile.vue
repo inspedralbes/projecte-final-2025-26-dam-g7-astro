@@ -128,6 +128,13 @@
                         <!-- ACCIONES -->
                         <div class="actions-container ga-3 mb-10">
                             <v-row dense>
+                                <v-col v-if="role === 'CENTER' || role === 'TEACHER'" cols="12">
+                                    <v-btn block color="cyan-accent-4" height="56" rounded="lg" variant="flat" to="/educational"
+                                        class="action-btn font-weight-black mb-2">
+                                        <v-icon start icon="mdi-shield-account" class="mr-2"></v-icon>
+                                        GESTIÓN EDUCATIVA
+                                    </v-btn>
+                                </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="goToInventory"
                                         class="action-btn font-weight-black">
