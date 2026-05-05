@@ -26,6 +26,9 @@ function registerWsHandlers(wss, getDB) {
                         // Enviar conteo de mensajes no leídos al conectar
                         try {
                             const db = getDB();
+                            // Marcar desafíos expirados antes de contar no leídos
+                            await chatService.markExpiredChallenges(db, 5);
+                            
                             const unread = await chatService.getUnreadByConversation(db, currentUser);
                             ws.send(JSON.stringify({ type: 'CHAT_UNREAD_COUNTS', counts: unread }));
                         } catch (_) { /* DB puede no estar lista en tests */ }
@@ -185,6 +188,12 @@ function registerWsHandlers(wss, getDB) {
                         // { type: 'CHALLENGE_RESPONSE', from: 'UserB', to: 'UserA', accepted: true/false }
                         console.log(`⚔️ Respuesta al desafío de ${msg.from} para ${msg.to}: ${msg.accepted ? 'ACEPTADO' : 'RECHAZADO'}`);
                         
+                        const dbR = getDB();
+                        const newStatus = msg.accepted ? 'accepted' : 'rejected';
+                        
+                        // Persistir en DB: msg.to es el challenger (UserA), msg.from es el receptor (UserB)
+                        await chatService.updateLatestChallengeStatus(dbR, msg.to, msg.from, newStatus);
+
                         if (msg.accepted) {
                             // Crear una sala privada para los dos
                             const roomId = await roomManager.createRoom(msg.to, false, 2); // El que desafió es el host
@@ -213,6 +222,10 @@ function registerWsHandlers(wss, getDB) {
                         if (!msg.userA || !msg.userB) break;
 
                         const dbH = getDB();
+                        
+                        // 1. Marcar desafíos expirados (5 min) antes de devolver historial
+                        await chatService.markExpiredChallenges(dbH, 5);
+
                         const history = await chatService.getHistory(dbH, msg.userA, msg.userB);
 
                         // Marcar como leídos los mensajes que el amigo envió a este usuario
@@ -227,7 +240,8 @@ function registerWsHandlers(wss, getDB) {
                                 content: m.content,
                                 at: m.at.toISOString(),
                                 read: m.read,
-                                msgType: m.type || 'text'
+                                msgType: m.type || 'text',
+                                status: m.status // Incluir estado para la UI
                             }))
                         }));
                         break;
