@@ -155,25 +155,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- DIALOGO: NUEVO SET DE SUMINISTROS -->
-    <v-dialog v-model="showSupplyDialog" max-width="600">
-      <v-card class="glass-popup pa-6">
-        <h3 class="text-h5 text-white mb-4">CREAR SET DE PALABRAS</h3>
-        <v-text-field v-model="supplySetName" label="Nombre del Set (ej: Vocabulario Marte)" variant="solo-filled" class="mb-4"></v-text-field>
-        
-        <div class="supply-editor-area mb-4">
-          <div v-for="(item, idx) in newSupplyContent" :key="idx" class="d-flex ga-2 mb-2">
-            <v-text-field v-model="item.word" placeholder="Palabra" density="compact" hide-details></v-text-field>
-            <v-text-field v-model="item.hint" placeholder="Pista" density="compact" hide-details></v-text-field>
-            <v-btn icon="mdi-delete" size="small" color="red" @click="newSupplyContent.splice(idx, 1)"></v-btn>
-          </div>
-          <v-btn variant="text" color="cyan" prepend-icon="mdi-plus" @click="newSupplyContent.push({ word: '', hint: '' })">AÑADIR FILA</v-btn>
-        </div>
-        
-        <v-btn block color="orange-accent-3" @click="saveSupplySet">GUARDAR SUMINISTROS</v-btn>
-      </v-card>
-    </v-dialog>
-
   </v-container>
 </template>
 
@@ -182,6 +163,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useAstroStore } from '@/stores/astroStore'
 import { useGroupStore } from '@/stores/groupStore'
 import { storeToRefs } from 'pinia'
+import SupplyEditor from '@/components/educational/SupplyEditor.vue'
 
 const astroStore = useAstroStore()
 const groupStore = useGroupStore()
@@ -189,13 +171,10 @@ const { user, role } = storeToRefs(astroStore)
 
 const currentTab = ref('stats')
 const showAddDialog = ref(false)
-const showSupplyDialog = ref(false)
 
 // Forms
 const newName = ref('')
 const newPass = ref('')
-const supplySetName = ref('')
-const newSupplyContent = ref([{ word: '', hint: '' }])
 
 onMounted(async () => {
   if (role.value === 'CENTER') {
@@ -228,28 +207,6 @@ const addMember = async () => {
   }
 }
 
-const saveSupplySet = async () => {
-  const content = newSupplyContent.value.filter(i => i.word.trim() !== '')
-  const result = await groupStore.saveSupplySet({
-    ownerId: user.value,
-    name: supplySetName.value,
-    type: 'words',
-    content
-  })
-  
-  if (result.success) {
-    showSupplyDialog.value = false
-    supplySetName.value = ''
-    newSupplyContent.value = [{ word: '', hint: '' }]
-    await groupStore.fetchSupplySets(user.value)
-  }
-}
-
-const activateSet = async (id) => {
-  await groupStore.activateSupplySet(id, user.value)
-  await groupStore.fetchSupplySets(user.value)
-}
-
 const viewTeacherStats = async (tUsername) => {
   currentTab.value = 'stats'
   await groupStore.fetchClassStats(tUsername)
@@ -257,64 +214,6 @@ const viewTeacherStats = async (tUsername) => {
 </script>
 
 <style scoped>
-.edu-dashboard {
-  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-  color: white;
-}
-
-.glass-card {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 242, 255, 0.1);
-  border-radius: 20px !important;
-}
-
-.active-item {
-  background: rgba(0, 242, 255, 0.1);
-  color: #00e5ff !important;
-  border-left: 4px solid #00e5ff;
-}
-
-.tech-table {
-  background: transparent !important;
-  color: white !important;
-}
-
-.tech-table th {
-  color: #00e5ff !important;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-}
-
-.stat-mini-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.supply-card {
-  background: rgba(255, 255, 255, 0.05) !important;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.active-set {
-  border-color: #00e676;
-  background: rgba(0, 230, 118, 0.05) !important;
-}
-
-.glass-popup {
-  background: rgba(15, 23, 42, 0.9) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 242, 255, 0.2);
-  border-radius: 24px !important;
-}
-</style>
-d>
 .edu-dashboard {
   background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
   color: white;
