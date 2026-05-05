@@ -58,7 +58,7 @@ const userRepository = new MongoUserRepository(() => getCollections().users);
 const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
 const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
 
-roomManager.init(getCollections, wss);
+roomManager.init(roomRepository, userRepository, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
 
 const updateStreak = createUpdateStreak({
