@@ -323,10 +323,11 @@ const checkAnswer = () => {
     
     // Notificar sabotatge/bonus (visualment al HUD del rival)
     if (props.isMultiplayer) {
+      const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0;
       multiplayerStore.sendGameAction({
         type: 'SABOTAGE',
         subtype: 'REDUCE_TIME',
-        amount: 2 // Restem 2s al rival per cada paraula encertada? 
+        amount: isSaboteurActive ? 4 : 2 // Restem 2s al rival per cada paraula encertada? 
       });
     }
 

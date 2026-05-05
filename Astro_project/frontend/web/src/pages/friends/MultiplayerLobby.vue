@@ -21,6 +21,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ astroStore.user }}</div>
+                <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ astroStore.selectedTitle.replace('Título: ', '') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
               </div>
             </div>
@@ -50,6 +51,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ opponentName }}</div>
+                <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ opponentTitle.replace('Título: ', '') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
               </div>
             </div>
@@ -636,6 +638,13 @@ const otherExplorersList = computed(() => {
 const opponentName = computed(() => {
   if (!multiplayerStore.room) return 'Oponente';
   return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente';
+});
+
+const opponentTitle = computed(() => {
+  const opName = opponentName.value;
+  if (opName === 'Oponente') return null;
+  const explorer = astroStore.explorers?.find(e => e.user === opName);
+  return explorer?.selectedTitle || null;
 });
 
 // Sincronizar rondas si el host las cambia

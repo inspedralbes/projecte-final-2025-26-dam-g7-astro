@@ -182,3 +182,19 @@ app.put('/api/user/avatar', async (req, res) => {
         res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
     }
 });
+
+app.put('/api/user/title', async (req, res) => {
+    const { user, title } = req.body;
+    if (!user) {
+        return res.status(400).json({ message: 'Usuario requerido.' });
+    }
+
+    try {
+        await userServiceInstance.updateSelectedTitle(user, title);
+        console.log(`👤 Título actualizado en DB para ${user}: ${title}`);
+        res.json({ success: true, title });
+    } catch (error) {
+        console.error("❌ Error al actualizar título en DB:", error);
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
+    }
+});

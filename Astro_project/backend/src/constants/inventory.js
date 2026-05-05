@@ -42,6 +42,16 @@ const INVENTORY_ITEMS = Object.freeze([
         stackable: true
     },
     {
+        id: 5,
+        name: 'Rayo Saboteador',
+        desc: 'En multijugador, tus aciertos restan el doble de tiempo al rival.',
+        icon: 'mdi-lightning-bolt',
+        color: 'deep-purple-accent-2',
+        cat: 'items',
+        price: 500,
+        stackable: true
+    },
+    {
         id: 101,
         name: 'Pin Comandante',
         desc: 'Insignia dorada.',
@@ -82,6 +92,39 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'pink-accent-3',
         cat: 'trails',
         price: 1500,
+        stackable: false,
+        maxQuantity: 1
+    },
+    {
+        id: 105,
+        name: 'Título: El Imparable',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'red-accent-3',
+        cat: 'title',
+        price: 1000,
+        stackable: false,
+        maxQuantity: 1
+    },
+    {
+        id: 106,
+        name: 'Título: Leyenda Galáctica',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'cyan-accent-3',
+        cat: 'title',
+        price: 1000,
+        stackable: false,
+        maxQuantity: 1
+    },
+    {
+        id: 107,
+        name: 'Título: Destructor de Asteroides',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'amber-accent-3',
+        cat: 'title',
+        price: 1000,
         stackable: false,
         maxQuantity: 1
     },

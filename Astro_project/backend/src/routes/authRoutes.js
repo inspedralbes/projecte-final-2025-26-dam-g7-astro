@@ -58,7 +58,8 @@ function registerAuthRoutes(app, {
                     totalPoints: user.totalPoints || 0,
                     missionsCompleted: user.missionsCompleted || 0,
                     dailyMissions: user.dailyMissions || [],
-                    weeklyMissions: user.weeklyMissions || []
+                    weeklyMissions: user.weeklyMissions || [],
+                    selectedTitle: user.selectedTitle || null
                 }
             });
         } catch (error) {

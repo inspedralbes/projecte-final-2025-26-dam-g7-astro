@@ -185,14 +185,18 @@ const basicItems = ref([
     { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
     { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
     { id: 3, name: 'Doble de Monedas', cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
-    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' }
+    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' },
+    { id: 5, name: 'Rayo Saboteador', cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: 'En multijugador, tus aciertos restan el doble de tiempo al rival.', limitacio: '* Solo para la próxima partida multijugador', bgColor: 'rgba(124, 77, 255, 0.1)' }
 ]);
 
 const premiumItems = ref([
     { id: 101, name: 'Pin Comandante', cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
     { id: 102, name: 'Skin Cyberpunk', cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
     { id: 103, name: 'Mascota Dron', cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
-    { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' }
+    { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' },
+    { id: 105, name: 'Título: El Imparable', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(255, 82, 82, 0.15)' },
+    { id: 106, name: 'Título: Leyenda Galáctica', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(0, 229, 255, 0.15)' },
+    { id: 107, name: 'Título: Destructor de Asteroides', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(255, 193, 7, 0.15)' }
 ]);
 
 onMounted(async () => {
