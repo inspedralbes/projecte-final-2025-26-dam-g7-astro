@@ -138,25 +138,7 @@
 
           <!-- TAB: EDITOR DE SUMINISTROS -->
           <div v-if="currentTab === 'supplies'">
-            <div class="d-flex justify-space-between align-center mb-6">
-              <h3 class="text-h4 font-weight-black text-white">EDITOR DE SUMINISTROS</h3>
-              <v-btn color="orange-accent-3" @click="showSupplyDialog = true" prepend-icon="mdi-package-variant-plus">NUEVO SET</v-btn>
-            </div>
-
-            <v-row>
-              <v-col v-for="set in groupStore.supplySets" :key="set._id" cols="12" sm="6" lg="4">
-                <v-card class="supply-card" :class="{ 'active-set': set.active }">
-                  <div class="d-flex justify-space-between align-start mb-2">
-                    <h4 class="text-h6 font-weight-bold">{{ set.name }}</h4>
-                    <v-chip v-if="set.active" color="green" size="x-small">ACTIVO</v-chip>
-                  </div>
-                  <p class="text-caption text-grey mb-4">{{ set.content.length }} palabras configuradas.</p>
-                  <v-btn block size="small" :color="set.active ? 'grey' : 'cyan'" @click="activateSet(set._id)">
-                    {{ set.active ? 'DESACTIVAR' : 'ACTIVAR PARA CLASE' }}
-                  </v-btn>
-                </v-card>
-              </v-col>
-            </v-row>
+            <SupplyEditor />
           </div>
 
         </v-card>
@@ -275,6 +257,64 @@ const viewTeacherStats = async (tUsername) => {
 </script>
 
 <style scoped>
+.edu-dashboard {
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+  color: white;
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 255, 0.1);
+  border-radius: 20px !important;
+}
+
+.active-item {
+  background: rgba(0, 242, 255, 0.1);
+  color: #00e5ff !important;
+  border-left: 4px solid #00e5ff;
+}
+
+.tech-table {
+  background: transparent !important;
+  color: white !important;
+}
+
+.tech-table th {
+  color: #00e5ff !important;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.stat-mini-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.supply-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.active-set {
+  border-color: #00e676;
+  background: rgba(0, 230, 118, 0.05) !important;
+}
+
+.glass-popup {
+  background: rgba(15, 23, 42, 0.9) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 255, 0.2);
+  border-radius: 24px !important;
+}
+</style>
+d>
 .edu-dashboard {
   background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
   color: white;

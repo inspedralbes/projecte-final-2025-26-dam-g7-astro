@@ -3,9 +3,9 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     
     // Crear o actualizar un set de suministros
     app.post('/api/supplies', async (req, res) => {
-        const { ownerId, name, type, content } = req.body;
+        const { ownerId, name, type, content, gameId } = req.body;
         try {
-            const result = await supplyService.createSupplySet(ownerId, { name, type, content });
+            const result = await supplyService.createSupplySet(ownerId, { name, type, content, gameId });
             res.json(result);
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -23,13 +23,13 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     });
 
     // Obtener el set activo para un estudiante (via su profe)
-    app.get('/api/supplies/active/:username', async (req, res) => {
+    app.get('/api/supplies/active/:username/:gameId?', async (req, res) => {
         try {
             const user = await userRepository.findByUsername(req.params.username);
             if (!user || !user.parentId) {
                 return res.json(null);
             }
-            const activeSet = await supplyService.getActiveSupplySet(user.parentId);
+            const activeSet = await supplyService.getActiveSupplySet(user.parentId, req.params.gameId);
             res.json(activeSet);
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -38,12 +38,17 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
 
     // Activar un set específico
     app.put('/api/supplies/activate/:id', async (req, res) => {
-        const { ownerId } = req.body;
+        const { ownerId, gameId } = req.body;
         try {
-            // Primero desactivamos todos los del dueño
+            // Desactivamos los del mismo juego del dueño
+            const query = { ownerId };
+            if (gameId) query.gameId = gameId;
+            
             const sets = await supplyService.getSupplySetsByOwner(ownerId);
             for (const set of sets) {
-                await supplyService.updateSupplySet(set._id, { active: false });
+                if (set.gameId === gameId) {
+                    await supplyService.updateSupplySet(set._id, { active: false });
+                }
             }
             // Activamos el elegido
             await supplyService.updateSupplySet(req.params.id, { active: true });

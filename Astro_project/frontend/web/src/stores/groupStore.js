@@ -94,12 +94,12 @@ export const useGroupStore = defineStore('group', {
             }
         },
 
-        async activateSupplySet(id, ownerId) {
+        async activateSupplySet(id, ownerId, gameId) {
             try {
                 const { response } = await requestJson(`/api/supplies/activate/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ownerId })
+                    body: JSON.stringify({ ownerId, gameId })
                 });
                 return response.ok;
             } catch (error) {
@@ -107,9 +107,23 @@ export const useGroupStore = defineStore('group', {
             }
         },
 
-        async fetchActiveSupplySetForStudent(studentUsername) {
+        async deleteSupplySet(id) {
             try {
-                const { response, data } = await requestJson(`/api/supplies/active/${studentUsername}`);
+                const { response } = await requestJson(`/api/supplies/${id}`, {
+                    method: 'DELETE'
+                });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        },
+
+        async fetchActiveSupplySetForStudent(studentUsername, gameId = null) {
+            try {
+                const url = gameId 
+                    ? `/api/supplies/active/${studentUsername}/${gameId}`
+                    : `/api/supplies/active/${studentUsername}`;
+                const { response, data } = await requestJson(url);
                 if (response.ok) this.activeSupplySet = data;
             } catch (error) {
                 console.error("Error fetching active supplies:", error);
