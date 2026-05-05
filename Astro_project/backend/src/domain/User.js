@@ -7,6 +7,8 @@ class User {
         this.username = data.user || data.username;
         
         this.plan = data.plan || 'INDIVIDUAL_FREE';
+        this.role = data.role || null; // For GRUPAL plan: 'CENTER', 'TEACHER', 'STUDENT'
+        this.parentId = data.parentId || null; // Links STUDENT to TEACHER, and TEACHER to CENTER
         this.rank = data.rank || 'Cadete de Vuelo';
         this.level = data.level || 1;
         this.xp = data.xp || 0;

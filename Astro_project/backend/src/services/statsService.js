@@ -130,6 +130,48 @@ class StatsService {
             await this.userRepo.update(user);
         }
     }
+
+    async getClassStats(teacherUsername) {
+        const students = await this.userRepo.collection.find({ parentId: teacherUsername, role: 'STUDENT' }).toArray();
+        if (!students.length) return { totalGames: 0, avgLevel: 0, students: [] };
+
+        const studentStatsPromises = students.map(s => this.getUserStats(s.user));
+        const allStudentStats = await Promise.all(studentStatsPromises);
+
+        const totalGames = allStudentStats.reduce((sum, s) => sum + (s.totalGamesPlayed || 0), 0);
+        const totalXP = allStudentStats.reduce((sum, s) => sum + (s.xp || 0), 0);
+        const avgLevel = allStudentStats.reduce((sum, s) => sum + (s.level || 0), 0) / students.length;
+
+        return {
+            teacher: teacherUsername,
+            totalStudents: students.length,
+            totalGames,
+            totalXP,
+            avgLevel,
+            students: allStudentStats
+        };
+    }
+
+    async getCenterStats(centerUsername) {
+        const teachers = await this.userRepo.collection.find({ parentId: centerUsername, role: 'TEACHER' }).toArray();
+        const teacherStatsPromises = teachers.map(t => this.getClassStats(t.user));
+        const allClassStats = await Promise.all(teacherStatsPromises);
+
+        const totalStudents = allClassStats.reduce((sum, c) => sum + c.totalStudents, 0);
+        const totalGames = allClassStats.reduce((sum, c) => sum + c.totalGames, 0);
+        const avgLevel = totalStudents > 0 
+            ? allClassStats.reduce((sum, c) => sum + (c.avgLevel * c.totalStudents), 0) / totalStudents 
+            : 0;
+
+        return {
+            center: centerUsername,
+            totalTeachers: teachers.length,
+            totalStudents,
+            totalGames,
+            avgLevel,
+            classes: allClassStats
+        };
+    }
 }
 
 // Per mantenir compatibilitat temporal amb el codi que usa createGetUserStats

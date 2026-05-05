@@ -467,17 +467,24 @@ const login = async () => {
 const createGroup = async () => {
     if (!newGroupName.value || !newGroupPassword.value) return
     
-    // Aquí iría la lógica para crear el grupo en el backend
-    console.log("Creando grupo:", newGroupName.value)
-    
-    // Sincronizamos el plan "GRUPAL" con el servidor
-    const result = await astroStore.updatePlan('GRUPAL')
+    // Al fundar escuadra desde aquí, el usuario actual se convierte en el "CENTRO"
+    const result = await astroStore.registerTripulante({
+        username: newGroupName.value,
+        password: newGroupPassword.value,
+        plan: 'GRUPAL',
+        role: 'CENTER',
+        rank: 'Centro de Mando'
+    })
     
     if (result.success) {
-        router.push('/multiplayer')
+        // Hacemos login automático con el nuevo centro
+        await astroStore.loginTripulante({
+            user: newGroupName.value,
+            password: newGroupPassword.value
+        })
+        router.push('/profile')
     } else {
-        console.error("Error al establecer plan grupal:", result.message)
-        router.push('/multiplayer')
+        alert(result.message)
     }
 }
 </script>

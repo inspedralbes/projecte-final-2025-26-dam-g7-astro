@@ -113,6 +113,8 @@ class MongoUserRepository extends UserRepository {
         return {
             user: user.username,
             plan: user.plan,
+            role: user.role,
+            parentId: user.parentId,
             rank: user.rank,
             level: user.level,
             xp: user.xp,

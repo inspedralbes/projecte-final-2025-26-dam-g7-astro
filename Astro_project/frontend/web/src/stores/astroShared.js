@@ -19,6 +19,8 @@ export const STORAGE_KEYS = Object.freeze({
     avatar: 'astro_avatar',
     mascot: 'astro_mascot',
     token: 'astro_token',
+    role: 'astro_role',
+    parentId: 'astro_parent_id',
     lastActivity: 'astro_last_activity',
     lastGame: 'astro_last_game'
 });
