@@ -61,7 +61,7 @@ function registerWsHandlers(wss, getDB) {
                         } else {
                             ws.send(JSON.stringify({
                                 type: 'JOIN_SUCCESS',
-                                room: roomManager.getRoom(msg.roomId)
+                                room: await roomManager.getRoom(msg.roomId)
                             }));
                         }
                         break;
