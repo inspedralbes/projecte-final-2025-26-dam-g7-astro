@@ -110,9 +110,11 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { useGroupStore } from '@/stores/groupStore';
 
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
+const groupStore = useGroupStore();
 
 const props = defineProps({
   isMultiplayer: {
@@ -125,7 +127,7 @@ const props = defineProps({
 const emit = defineEmits(['game-over']);
 
 // Luego lo podemos conectar a la base de datos
-const words = Object.freeze([
+const words = ref([
   { word: 'NAU', hint: 'Vehicle espacial' },
   { word: 'PAU', hint: 'Persona que s\'encarrega de la IA' },
   { word: 'ASTRE', hint: 'Cos celeste' },
@@ -223,7 +225,7 @@ const words = Object.freeze([
 // --- ESTAT ---
 const level = ref(1);
 const score = ref(0);
-const currentWordObj = ref(words[0]);
+const currentWordObj = ref(words.value[0]);
 const scrambledLetters = ref([]);
 const message = ref('');
 const messageType = ref('info');
@@ -280,8 +282,8 @@ const loadNextWord = () => {
   }
   
   // Selecciona una paraula aleatòria
-  const randomIndex = Math.floor(Math.random() * words.length);
-  currentWordObj.value = words[randomIndex];
+  const randomIndex = Math.floor(Math.random() * words.value.length);
+  currentWordObj.value = words.value[randomIndex];
   shuffleCurrentLetters();
   message.value = '';
 };
@@ -378,7 +380,14 @@ const startTimer = () => {
 };
 
 // --- INICI ---
-onMounted(() => {
+onMounted(async () => {
+  if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT') {
+    await groupStore.fetchActiveSupplySetForStudent(astroStore.user, 'WordConstruction');
+    if (groupStore.activeSupplySet && groupStore.activeSupplySet.content?.length > 0) {
+      words.value = groupStore.activeSupplySet.content;
+      currentWordObj.value = words.value[0];
+    }
+  }
   loadNextWord();
   startTimer();
 });

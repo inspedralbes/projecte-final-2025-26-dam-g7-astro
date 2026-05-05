@@ -7,14 +7,14 @@ function registerAuthRoutes(app, {
     normalizeActiveBoosters
 }) {
     app.post('/api/auth/register', async (req, res) => {
-        const { username, password, rank } = req.body;
+        const { username, password, rank, role, plan } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ message: 'Nombre y contraseña requeridos.' });
         }
 
         try {
-            await authService.register(username, password, rank);
+            await authService.register(username, password, rank, role, plan);
             res.status(201).json({ message: 'Reclutamiento completado exitosamente.' });
         } catch (error) {
             console.error('❌ Error en registro:', error);
@@ -38,6 +38,8 @@ function registerAuthRoutes(app, {
                 profile: {
                     name: user.username,
                     plan: user.plan,
+                    role: user.role,
+                    parentId: user.parentId,
                     rank: user.rank,
                     coins: user.coins,
                     level: user.level,

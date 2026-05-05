@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore'
 
@@ -62,14 +62,23 @@ const handleLogout = () => {
     router.push('/')
 }
 
-const menuItems = ref([
-    { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
-    { title: 'Multijugador', icon: 'mdi-sword-cross', to: '/multiplayer' },
-    { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
-    { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
-    { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
-    { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
-])
+const menuItems = computed(() => {
+    const items = [
+        { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
+        { title: 'Multijugador', icon: 'mdi-sword-cross', to: '/multiplayer' },
+        { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
+        { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
+        { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
+        { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
+    ]
+
+    // Si es profe o centro, añadimos la gestión educativa
+    if (store.role === 'TEACHER' || store.role === 'CENTER') {
+        items.splice(2, 0, { title: 'Gestión Educativa', icon: 'mdi-shield-account', to: '/educational' })
+    }
+
+    return items
+})
 </script>
 
 <style scoped>
