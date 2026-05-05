@@ -23,7 +23,21 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     });
 
     // Obtener el set activo para un estudiante (via su profe)
-    app.get('/api/supplies/active/:username/:gameId?', async (req, res) => {
+    // Definimos dos rutas separadas para evitar problemas con parámetros opcionales en ciertas versiones de express
+    app.get('/api/supplies/active/:username', async (req, res) => {
+        try {
+            const user = await userRepository.findByUsername(req.params.username);
+            if (!user || !user.parentId) {
+                return res.json(null);
+            }
+            const activeSet = await supplyService.getActiveSupplySet(user.parentId, null);
+            res.json(activeSet);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    });
+
+    app.get('/api/supplies/active/:username/:gameId', async (req, res) => {
         try {
             const user = await userRepository.findByUsername(req.params.username);
             if (!user || !user.parentId) {
