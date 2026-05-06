@@ -13,7 +13,8 @@
         "inventory": "Inventory",
         "achievements": "Achievements",
         "friends": "Friends",
-        "profile": "Profile"
+        "profile": "Profile",
+        "educational": "Educational Management"
     },
     "home": {
         "login": "Login",
@@ -556,8 +557,9 @@
         "weekly": {
             "games": "Game Master ({goal} games)",
             "coins": "Gold Digger ({goal} coins)",
-            "level": "Lunar Ascension (Go up {goal} levels)",
-            "streak": "Space Survivor ({goal} day streak)"
+            "xp": "Lunar Ascension (Get {goal} XP)",
+            "streak": "Space Survivor ({goal} day streak)",
+            "item": "Object Interaction ({goal} items)"
         }
     },
     "achievementsList": {
