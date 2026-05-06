@@ -93,13 +93,24 @@
                 <h4 class="text-h5 font-weight-bold text-cyan-accent-2">1. BANC DE PARAULES</h4>
                 <v-btn size="small" color="cyan-accent-4" @click="addWordToBank">AFEGIR PARAULA</v-btn>
               </div>
+
+              <v-text-field
+                v-model="wordBankSearch"
+                placeholder="Cerca..."
+                density="compact"
+                variant="solo-filled"
+                prepend-inner-icon="mdi-magnify"
+                class="mb-4 search-input-compact search-input-bank"
+                clearable
+                hide-details
+              ></v-text-field>
               
               <v-card class="bank-area flex-grow-1 pa-4 overflow-y-auto" variant="outlined">
-                <div v-for="(item, idx) in wordBank" :key="idx" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
+                <div v-for="(item, idx) in filteredWordBank" :key="idx" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
                    <v-icon icon="mdi-drag-variant" color="grey"></v-icon>
                    <v-text-field v-model="item.word" label="Paraula" density="compact" hide-details variant="solo-filled"></v-text-field>
                    <v-text-field v-model="item.hint" label="Pista" density="compact" hide-details variant="solo-filled"></v-text-field>
-                   <v-btn icon="mdi-delete" size="x-small" color="red" variant="text" @click="wordBank.splice(idx, 1)"></v-btn>
+                   <v-btn icon="mdi-delete" size="x-small" color="red" variant="text" @click="removeFromBank(item)"></v-btn>
                    <v-btn icon="mdi-arrow-right-bold" color="cyan" size="small" @click="moveToExercise(item)"></v-btn>
                 </div>
               </v-card>
@@ -111,6 +122,17 @@
                 <h4 class="text-h5 font-weight-bold text-orange-accent-2">2. CONFIGURACIÓ DE L'EXERCICI</h4>
                 <v-text-field v-model="exerciseName" label="Nom de l'exercici" variant="underlined" color="orange-accent-2" class="mt-2"></v-text-field>
                 
+                <v-text-field
+                  v-model="exerciseSearch"
+                  placeholder="Cercar en l'exercici..."
+                  density="compact"
+                  variant="solo-filled"
+                  prepend-inner-icon="mdi-magnify"
+                  class="mt-2 search-input-compact"
+                  clearable
+                  hide-details
+                ></v-text-field>
+
                 <!-- Si és centre, pot triar per a quin professor és aquest set (si és nou) -->
                 <v-select
                   v-if="astroStore.role === 'CENTER' && !editingId"
@@ -123,7 +145,13 @@
               </div>
 
               <v-card class="exercise-area flex-grow-1 pa-4 overflow-y-auto" variant="outlined">
-                <draggable v-model="exerciseContent" item-key="word" class="d-flex flex-column ga-2" ghost-class="ghost-card">
+                <draggable
+                  v-if="!isExerciseSearchActive"
+                  v-model="exerciseContent"
+                  item-key="word"
+                  class="d-flex flex-column ga-2"
+                  ghost-class="ghost-card"
+                >
                   <template #item="{ element, index }">
                     <div class="d-flex align-center pa-3 bg-white-5 rounded-lg border-orange">
                       <v-chip color="orange" size="small" class="mr-3">{{ index + 1 }}</v-chip>
@@ -131,10 +159,28 @@
                         <div class="text-subtitle-1 font-weight-bold">{{ element.word }}</div>
                         <div class="text-caption text-grey">{{ element.hint }}</div>
                       </div>
-                      <v-btn icon="mdi-close" size="x-small" color="grey" variant="text" @click="removeFromExercise(index)"></v-btn>
+                      <v-btn icon="mdi-close" size="x-small" color="grey" variant="text" @click="removeFromExercise(element)"></v-btn>
                     </div>
                   </template>
                 </draggable>
+
+                <div v-else class="d-flex flex-column ga-2">
+                  <div
+                    v-for="(element, index) in filteredExerciseContent"
+                    :key="`${element.word}-${element.hint}-${index}`"
+                    class="d-flex align-center pa-3 bg-white-5 rounded-lg border-orange"
+                  >
+                    <v-chip color="orange" size="small" class="mr-3">{{ index + 1 }}</v-chip>
+                    <div class="flex-grow-1">
+                      <div class="text-subtitle-1 font-weight-bold">{{ element.word }}</div>
+                      <div class="text-caption text-grey">{{ element.hint }}</div>
+                    </div>
+                    <v-btn icon="mdi-close" size="x-small" color="grey" variant="text" @click="removeFromExercise(element)"></v-btn>
+                  </div>
+                  <div v-if="filteredExerciseContent.length === 0" class="text-caption text-grey text-center py-4">
+                    Cap resultat per aquesta cerca.
+                  </div>
+                </div>
               </v-card>
             </v-col>
           </v-row>
@@ -145,7 +191,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { useAstroStore } from '@/stores/astroStore'
 import { useGroupStore } from '@/stores/groupStore'
@@ -170,6 +216,32 @@ const exerciseName = ref('')
 const wordBank = ref([])
 const exerciseContent = ref([])
 const editingId = ref(null)
+
+// Filtres de cerca
+const wordBankSearch = ref('')
+const exerciseSearch = ref('')
+
+const filteredWordBank = computed(() => {
+  if (!wordBankSearch.value.trim()) return wordBank.value
+  const query = wordBankSearch.value.toLowerCase().trim()
+  return wordBank.value.filter(item => 
+    (item.word || '').toLowerCase().includes(query) || 
+    (item.hint || '').toLowerCase().includes(query)
+  )
+})
+
+const normalizedExerciseSearch = computed(() => exerciseSearch.value.trim().toLowerCase())
+
+const isExerciseSearchActive = computed(() => normalizedExerciseSearch.value.length > 0)
+
+const filteredExerciseContent = computed(() => {
+  if (!isExerciseSearchActive.value) return exerciseContent.value
+
+  return exerciseContent.value.filter(item =>
+    (item.word || '').toLowerCase().includes(normalizedExerciseSearch.value) ||
+    (item.hint || '').toLowerCase().includes(normalizedExerciseSearch.value)
+  )
+})
 
 const teacherOptions = computed(() => {
   const options = [{ title: 'Tots els Profes', value: 'all' }]
@@ -265,8 +337,26 @@ const deleteSet = async (id) => {
 }
 
 const addWordToBank = () => wordBank.value.push({ word: '', hint: '' })
-const moveToExercise = (item) => item.word.trim() !== '' && exerciseContent.value.push({ ...item })
-const removeFromExercise = (index) => exerciseContent.value.splice(index, 1)
+
+const removeFromBank = (item) => {
+  const index = wordBank.value.indexOf(item)
+  if (index !== -1) wordBank.value.splice(index, 1)
+}
+
+const moveToExercise = (item) => {
+    if (item.word.trim() === '') return
+
+    // Comprovar si la paraula ja existeix a l'exercici
+    const exists = exerciseContent.value.some(e => e.word.toLowerCase() === item.word.toLowerCase())
+    if (exists) return
+
+    exerciseContent.value.push({ ...item })
+}
+
+const removeFromExercise = (item) => {
+    const index = exerciseContent.value.indexOf(item)
+    if (index !== -1) exerciseContent.value.splice(index, 1)
+}
 
 onMounted(() => {
     if (astroStore.role === 'CENTER') groupStore.fetchMembers(astroStore.user)
@@ -313,4 +403,44 @@ onMounted(() => {
 .border-orange { border: 1px solid rgba(255, 171, 0, 0.2); }
 .ghost-card { opacity: 0.5; background: #ffab00 !important; }
 .max-w-xs { max-width: 250px; }
+
+.search-input-compact {
+  width: 100%;
+}
+
+.search-input-bank {
+  max-width: none !important;
+}
+
+.search-input-compact :deep(.v-input__control) {
+  min-height: 38px !important;
+}
+
+.search-input-compact :deep(.v-field__input) {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-inline: 10px !important;
+  align-items: center;
+}
+
+.search-input-compact :deep(.v-field) {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 8px !important;
+}
+
+.search-input-compact :deep(.v-field__field) {
+  min-height: 38px !important;
+}
+
+.search-input-compact :deep(.v-field__prepend-inner),
+.search-input-compact :deep(.v-field__append-inner),
+.search-input-compact :deep(.v-field__clearable) {
+  height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding-top: 0 !important;
+}
 </style>
