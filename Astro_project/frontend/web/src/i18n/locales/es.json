@@ -13,7 +13,8 @@
         "inventory": "Inventario",
         "achievements": "Logros",
         "friends": "Amigos",
-        "profile": "Perfil"
+        "profile": "Perfil",
+        "educational": "Gestión Educativa"
     },
     "home": {
         "login": "Iniciar sesión",
@@ -556,8 +557,9 @@
         "weekly": {
             "games": "Maestro de Juegos ({goal} partidas)",
             "coins": "Buscador de Oro ({goal} monedas)",
-            "level": "Ascensión Lunar (Sube {goal} niveles)",
-            "streak": "Superviviente Espacial (Racha {goal} días)"
+            "xp": "Ascensión Lunar (Gana {goal} XP)",
+            "streak": "Superviviente Espacial (Racha {goal} días)",
+            "item": "Interacción de Objetos ({goal} objetos)"
         }
     },
     "achievementsList": {

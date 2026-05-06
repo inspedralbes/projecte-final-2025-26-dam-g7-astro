@@ -331,7 +331,7 @@ const currentPage = ref(1)
 const pageSize = 4
 const currentSlotIndex = ref(null)
 const { 
-    user, rank, plan, selectedAchievements, unlockedAchievements, 
+    user, rank, plan, role, selectedAchievements, unlockedAchievements, 
     avatar, mascot, level, coins, xp, partides,
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
