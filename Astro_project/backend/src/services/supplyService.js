@@ -11,6 +11,7 @@ class SupplyService {
     async createSupplySet(ownerId, data) {
         const supplySet = {
             ownerId,
+            centerId: data.centerId || null,
             gameId: data.gameId || null,
             name: data.name,
             type: data.type || 'words', // 'words', 'riddles', etc.
@@ -24,6 +25,10 @@ class SupplyService {
 
     async getSupplySetsByOwner(ownerId) {
         return await this.collection.find({ ownerId }).toArray();
+    }
+
+    async getSupplySetsByCenter(centerId) {
+        return await this.collection.find({ centerId }).toArray();
     }
 
     async getActiveSupplySet(ownerId, gameId) {

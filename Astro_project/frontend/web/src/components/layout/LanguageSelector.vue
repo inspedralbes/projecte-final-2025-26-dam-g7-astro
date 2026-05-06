@@ -9,24 +9,24 @@
         rounded="xl"
       >
         <v-icon start icon="mdi-translate" size="small"></v-icon>
-        <span class="font-weight-bold">{{ currentLangLabel }}</span>
+        <span class="font-weight-bold">{{ currentLangCode }}</span>
         <v-icon end icon="mdi-chevron-down" size="small"></v-icon>
       </v-btn>
     </template>
 
     <v-list class="glass-menu pa-2 mt-2" elevation="12">
       <v-list-item
-        v-for="lang in languages"
+        v-for="lang in languageList"
         :key="lang.value"
         @click="changeLanguage(lang.value)"
-        :class="{ 'active-lang': currentLang === lang.value }"
+        :class="{ 'active-lang': locale === lang.value }"
         class="rounded-lg mb-1 lang-item"
       >
         <template v-slot:prepend>
           <span class="mr-3 lang-code-badge">{{ lang.flag }}</span>
         </template>
         <v-list-item-title class="text-white font-weight-medium">
-          {{ lang.label }}
+          {{ $t(lang.labelKey) }}
         </v-list-item-title>
       </v-list-item>
     </v-list>
@@ -37,19 +37,16 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { locale, t } = useI18n()
+const { locale } = useI18n()
 
-const languages = computed(() => [
-  { label: t('languages.es'), value: 'es', flag: 'ES' },
-  { label: t('languages.ca'), value: 'ca', flag: 'CA' },
-  { label: t('languages.en'), value: 'en', flag: 'EN' }
-])
+const languageList = [
+  { labelKey: 'languages.es', value: 'es', flag: 'ES' },
+  { labelKey: 'languages.ca', value: 'ca', flag: 'CA' },
+  { labelKey: 'languages.en', value: 'en', flag: 'EN' }
+]
 
-const currentLang = computed(() => locale.value)
-
-const currentLangLabel = computed(() => {
-  const lang = languages.value.find(l => l.value === currentLang.value)
-  return lang ? currentLang.value.toUpperCase() : 'ES'
+const currentLangCode = computed(() => {
+  return locale.value.toUpperCase()
 })
 
 const changeLanguage = (newLang) => {

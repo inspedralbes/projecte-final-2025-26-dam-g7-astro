@@ -5,9 +5,28 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     app.post('/api/supplies', async (req, res) => {
         const { ownerId, name, type, content, gameId } = req.body;
         try {
-            const result = await supplyService.createSupplySet(ownerId, { name, type, content, gameId });
+            console.log('--- POST /api/supplies ---');
+            console.log('Data received:', { ownerId, name, type, gameId });
+            
+            // Busquem qui és el centre (parentId) si el creador és un profe
+            const owner = await userRepository.findByUsername(ownerId);
+            if (!owner) {
+                console.error(`User not found: ${ownerId}`);
+                return res.status(404).json({ success: false, message: 'Owner not found' });
+            }
+
+            let centerId = ownerId; // Per defecte ell mateix (si és centre)
+            if (owner.role === 'TEACHER') {
+                centerId = owner.parentId;
+            }
+            console.log(`Determined centerId: ${centerId}`);
+
+            const result = await supplyService.createSupplySet(ownerId, { 
+                name, type, content, gameId, centerId 
+            });
             res.json(result);
         } catch (error) {
+            console.error('Error in POST /api/supplies:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     });
@@ -16,6 +35,16 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     app.get('/api/supplies/:ownerId', async (req, res) => {
         try {
             const sets = await supplyService.getSupplySetsByOwner(req.params.ownerId);
+            res.json(sets);
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    });
+
+    // Obtener todos los sets de un centro (incluyendo los de sus profes)
+    app.get('/api/supplies/center/:centerId', async (req, res) => {
+        try {
+            const sets = await supplyService.getSupplySetsByCenter(req.params.centerId);
             res.json(sets);
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -53,21 +82,32 @@ function registerSupplyRoutes(app, { supplyService, userRepository }) {
     // Activar un set específico
     app.put('/api/supplies/activate/:id', async (req, res) => {
         const { ownerId, gameId } = req.body;
+        const setId = req.params.id;
+        
         try {
             // Desactivamos los del mismo juego del dueño
-            const query = { ownerId };
-            if (gameId) query.gameId = gameId;
-            
             const sets = await supplyService.getSupplySetsByOwner(ownerId);
             for (const set of sets) {
                 if (set.gameId === gameId) {
                     await supplyService.updateSupplySet(set._id, { active: false });
                 }
             }
-            // Activamos el elegido
-            await supplyService.updateSupplySet(req.params.id, { active: true });
+
+            // Si el ID es 'none', simplemente hemos limpiado los activos (volvemos a default)
+            if (setId === 'none') {
+                return res.json({ success: true, message: 'Reverted to default' });
+            }
+
+            // Si no, activamos el elegido (validando que sea un ObjectId válido antes)
+            const { ObjectId } = require('mongodb');
+            if (!ObjectId.isValid(setId)) {
+                return res.status(400).json({ success: false, message: 'Invalid ID format' });
+            }
+
+            await supplyService.updateSupplySet(setId, { active: true });
             res.json({ success: true });
         } catch (error) {
+            console.error('Error in PUT /api/supplies/activate:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     });

@@ -81,6 +81,15 @@ export const useGroupStore = defineStore('group', {
             }
         },
 
+        async fetchCenterSupplies(centerId) {
+            try {
+                const { response, data } = await requestJson(`/api/supplies/center/${centerId}`);
+                if (response.ok) this.supplySets = data;
+            } catch (error) {
+                this.error = error.message;
+            }
+        },
+
         async saveSupplySet(supplyData) {
             try {
                 const { response, data } = await requestJson('/api/supplies', {
