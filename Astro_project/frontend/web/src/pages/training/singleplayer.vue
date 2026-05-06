@@ -206,14 +206,14 @@ const newLevelData = ref({
 });
 
 const levelSequence = [
-    { nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
-    { nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
-    { nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
-    { nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
-    { nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
-    { nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
-    { nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
+    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
+    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
 ];
 
 const getLevelState = (index) => {
@@ -243,7 +243,7 @@ const startGame = (index) => {
 
 const handleGameOver = async (finalScore) => {
     const levelIndex = currentPlayingIndex.value;
-    const gameName = levelSequence[levelIndex]?.name || 'Minijuego';
+    const gameName = levelSequence[levelIndex]?.id || 'Minijuego';
 
     activeGameComponent.value = null;
     lastScore.value = finalScore;

@@ -31,6 +31,7 @@ export const useProgressStore = defineStore('progress', {
         streakFreezes: Number(storageGetItem(STORAGE_KEYS.streakFreezes)) || 0,
         activeBoosters: normalizeActiveBoosters(readStoredObject(STORAGE_KEYS.activeBoosters, {})),
         needsFreeze: false,
+        previousStreak: 0,
         lastActivity: storageGetItem(STORAGE_KEYS.lastActivity) || null,
         lastGame: storageGetItem(STORAGE_KEYS.lastGame) || null,
         dailyMissions: [],
@@ -137,6 +138,7 @@ export const useProgressStore = defineStore('progress', {
             this.setStreakFreezes(profile.streakFreezes ?? this.streakFreezes);
             this.setActiveBoosters(profile.activeBoosters ?? this.activeBoosters);
             this.setNeedsFreeze(profile.needsFreeze);
+            this.previousStreak = profile.previousStreak || 0;
             this.setLastActivity(profile.lastActivity ?? this.lastActivity);
             this.setLastGame(profile.lastGame ?? this.lastGame);
 

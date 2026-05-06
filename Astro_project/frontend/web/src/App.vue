@@ -12,6 +12,9 @@
 
     <!-- Popup de desafíos globales -->
     <ChallengePopup />
+
+    <!-- Diálogo de pérdida de racha -->
+    <StreakLossDialog />
   </v-app>
 </template>
 
@@ -22,6 +25,7 @@ import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
 import ChatDrawer from '@/components/layout/ChatDrawer.vue'
 import ChallengePopup from '@/components/multiplayer/ChallengePopup.vue'
+import StreakLossDialog from '@/components/layout/StreakLossDialog.vue'
 import { useMultiplayerStore } from '@/stores/multiplayerStore'
 import { useSessionStore } from '@/stores/sessionStore'
 

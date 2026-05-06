@@ -28,17 +28,24 @@ class StreakService {
         let newStreak = user.streak || 0;
         let needsFreeze = false;
 
-        if (lastActivity) {
-            const lastActivityDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
-            const diffDays = Math.floor((today - lastActivityDay) / (1000 * 60 * 60 * 24));
+        if (lastGame) {
+            const lastGameDay = new Date(lastGame.getFullYear(), lastGame.getMonth(), lastGame.getDate());
+            const diffDays = Math.floor((today - lastGameDay) / (1000 * 60 * 60 * 24));
 
             if (diffDays > 1) {
-                if (availableFreezes > 0) {
-                    needsFreeze = true;
-                } else {
+                needsFreeze = true; // Avisamos al frontend siempre que se detecte pérdida
+                if (availableFreezes <= 0) {
                     newStreak = 0;
                 }
+                // Si hay congeladores, mantenemos newStreak con el valor antiguo 
+                // para que el usuario pueda "rescatarlo" antes de que se pierda definitivamente al jugar.
             }
+        } else if (!isGame && lastActivity) {
+            // Si mai ha jugat però té activitat, podríem resetar si ha passat molt temps, 
+            // però normalment la racha només té sentit si ha començat a jugar.
+            const lastActivityDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+            const diffDays = Math.floor((today - lastActivityDay) / (1000 * 60 * 60 * 24));
+            if (diffDays > 1) newStreak = 0;
         }
 
         if (isGame) {
@@ -61,6 +68,7 @@ class StreakService {
             }
         }
 
+        const previousStreak = user.streak || 0;
         // Actualitzar l'objecte User
         user.streak = newStreak;
         user.streakFreezes = availableFreezes;
@@ -73,6 +81,7 @@ class StreakService {
 
         return { 
             streak: newStreak, 
+            previousStreak,
             needsFreeze, 
             lastGame: isGame ? now : user.lastGame 
         };
