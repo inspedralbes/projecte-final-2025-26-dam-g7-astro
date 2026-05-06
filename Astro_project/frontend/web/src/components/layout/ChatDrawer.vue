@@ -168,6 +168,7 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useChatStore } from '@/stores/chatStore';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useI18n } from 'vue-i18n';
 
 const { t, locale } = useI18n();
