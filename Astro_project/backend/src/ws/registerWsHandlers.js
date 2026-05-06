@@ -201,18 +201,21 @@ function registerWsHandlers(wss, getDB) {
                             
                             const acceptedMsg = {
                                 type: 'CHALLENGE_ACCEPTED',
-                                challenger: msg.to,
-                                opponent: msg.from,
+                                from: msg.to,   // El challenger
+                                to: msg.from,   // El que aceptó
                                 roomId
                             };
                             
                             roomManager.sendToUser(msg.to, acceptedMsg);
                             roomManager.sendToUser(msg.from, acceptedMsg);
                         } else {
-                            roomManager.sendToUser(msg.to, {
+                            const rejectedMsg = {
                                 type: 'CHALLENGE_REJECTED',
-                                from: msg.from
-                            });
+                                from: msg.from, // El que rechazó
+                                to: msg.to      // El challenger
+                            };
+                            roomManager.sendToUser(msg.to, rejectedMsg);
+                            ws.send(JSON.stringify(rejectedMsg)); // También al que rechazó para confirmar
                         }
                         break;
                     }
