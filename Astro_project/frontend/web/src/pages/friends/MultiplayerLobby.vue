@@ -28,7 +28,7 @@
             <!-- Centro: VS + ronda + Indicador Tiempo -->
             <div class="hud-center-unit mx-8 text-center position-relative">
               <div class="vs-text">VS</div>
-              <div class="round-text">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound + 1 || 1 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
+              <div class="round-text">{{ $t('multiplayerLobby.round', { current: multiplayerStore.room?.gameConfig?.currentRound + 1 || 1, total: multiplayerStore.room?.gameConfig?.totalRounds || '?' }) }}</div>
               
               <!-- Notificacions de sabotatge (flotants) -->
               <transition-group name="floating-score">
@@ -73,10 +73,10 @@
               <v-icon v-else icon="mdi-timer-off" size="80" color="grey-lighten-1"></v-icon>
             </v-avatar>
             <h2 class="text-h2 font-weight-black text-cyan-accent-2 mb-2 italic">
-              {{ roundWinner ? '¡RONDA PARA!' : (isRoundTie ? '¡EMPATE!' : '¡TIEMPO AGOTADO!') }}
+              {{ roundWinner ? $t('multiplayerLobby.roundWinner') : (isRoundTie ? $t('multiplayerLobby.tie') : $t('multiplayerLobby.timeout')) }}
             </h2>
             <h1 class="text-h1 font-weight-black text-white glow-text">
-              {{ roundWinner ? (roundWinner === astroStore.user ? 'TU' : roundWinner) : (isRoundTie ? 'EMPATE' : '-') }}
+              {{ roundWinner ? (roundWinner === astroStore.user ? $t('multiplayerLobby.you') : roundWinner) : (isRoundTie ? $t('multiplayerLobby.tie') : '-') }}
             </h1>
           </div>
         </transition>
@@ -100,9 +100,9 @@
       <div class="mb-10 text-center">
         <div class="d-flex align-center justify-center mb-6">
           <v-icon icon="mdi-sword-cross" size="x-large" color="orange-accent-2" class="mr-4"></v-icon>
-          <h1 class="text-h4 font-weight-bold text-white tracking-wide">Centro de Mando Multijugador</h1>
+          <h1 class="text-h4 font-weight-bold text-white tracking-wide">{{ $t('multiplayerLobby.title') }}</h1>
         </div>
-        <p class="text-subtitle-1 text-grey-lighten-1">Invita a tus amigos y preparaos para la misión.</p>
+        <p class="text-subtitle-1 text-grey-lighten-1">{{ $t('multiplayerLobby.subtitle') }}</p>
       </div>
 
       <v-row>
@@ -114,19 +114,19 @@
             <div class="d-flex align-center">
               <v-icon icon="mdi-shield-star" color="cyan-accent-2" size="36" class="mr-4"></v-icon>
               <div>
-                <div class="text-overline text-cyan-accent-2 line-height-1">Misión en curso</div>
-                <h2 class="text-h4 font-weight-black text-white tracking-widest">SALA {{ multiplayerStore.room.id }}</h2>
+                <div class="text-overline text-cyan-accent-2 line-height-1">{{ $t('multiplayerLobby.missionInProgress') }}</div>
+                <h2 class="text-h4 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.room', { id: multiplayerStore.room.id }) }}</h2>
               </div>
             </div>
             <v-btn color="error" variant="tonal" rounded="pill" size="small" @click="multiplayerStore.leaveRoom()" class="px-6 font-weight-bold">
               <v-icon icon="mdi-logout" start></v-icon>
-              Abortar
+              {{ $t('multiplayerLobby.abort') }}
             </v-btn>
           </div>
 
           <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
             <div class="d-flex align-center mb-8">
-              <h3 class="text-h6 text-white font-weight-bold mr-4">Tripulación Actual (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
+              <h3 class="text-h6 text-white font-weight-bold mr-4">{{ $t('multiplayerLobby.currentCrew') }} (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
               <v-divider class="flex-grow-1 border-opacity-25" color="cyan-lighten-4"></v-divider>
             </div>
 
@@ -152,10 +152,10 @@
 
                   <div class="text-h6 font-weight-bold text-white mb-1">{{ player }}</div>
                   <v-chip v-if="player === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
-                    COMANDANTE
+                    {{ $t('multiplayerLobby.commander') }}
                   </v-chip>
                   <v-chip v-else color="cyan-accent-1" size="x-small" variant="tonal" class="font-weight-bold px-3">
-                    TRIPULANTE
+                    {{ $t('multiplayerLobby.crewmate') }}
                   </v-chip>
                 </v-card>
               </v-col>
@@ -164,7 +164,7 @@
               <v-col v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room.players?.length || 0))" :key="'empty-' + n" cols="12" sm="6" md="4" lg="3">
                 <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100" variant="dashed" min-height="180">
                   <v-icon icon="mdi-account-plus-outline" color="grey-darken-1" size="32" class="mb-2"></v-icon>
-                  <div class="text-body-2 text-grey-darken-1">Esperando...</div>
+                  <div class="text-body-2 text-grey-darken-1">{{ $t('multiplayerLobby.waiting') }}</div>
                 </v-card>
               </v-col>
             </v-row>
@@ -179,11 +179,11 @@
                 :disabled="(multiplayerStore.room?.players?.length || 0) < 2"
                 @click="multiplayerStore.startMatch()"
               >
-                ¡DESPEGAR AHORA!
+                {{ $t('multiplayerLobby.launchNow') }}
               </v-btn>
               <div v-else class="waiting-broadcast d-flex align-center">
                 <v-progress-circular indeterminate color="amber-accent-2" size="20" width="2" class="mr-3"></v-progress-circular>
-                <span class="text-amber-accent-2 font-weight-bold">Esperando órdenes del Comandante...</span>
+                <span class="text-amber-accent-2 font-weight-bold">{{ $t('multiplayerLobby.waitingOrders') }}</span>
               </div>
             </div>
           </div>
@@ -194,7 +194,7 @@
           <v-card class="setup-panel pa-6 rounded-xl" elevation="4">
             <div class="text-center mb-6">
               <v-icon icon="mdi-orbit" size="48" color="cyan-accent-2" class="mb-2"></v-icon>
-              <h3 class="text-h5 font-weight-black text-white">Preparar Expedición</h3>
+              <h3 class="text-h5 font-weight-black text-white">{{ $t('multiplayerLobby.prepareExpedition') }}</h3>
             </div>
 
             <v-row justify="center">
@@ -204,12 +204,12 @@
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="d-flex align-center">
                       <v-icon icon="mdi-plus-circle-outline" color="cyan-accent-2" class="mr-2"></v-icon>
-                      <span class="text-subtitle-1 font-weight-bold text-white">Nueva Misión</span>
+                      <span class="text-subtitle-1 font-weight-bold text-white">{{ $t('multiplayerLobby.newMission') }}</span>
                     </div>
                     <v-switch
                       v-model="isPublic"
                       color="cyan-accent-2"
-                      :label="isPublic ? 'Pública' : 'Privada'"
+                      :label="isPublic ? $t('multiplayerLobby.public') : $t('multiplayerLobby.private')"
                       hide-details
                       density="compact"
                       inset
@@ -218,7 +218,7 @@
                   </div>
                   
                   <div class="mb-6">
-                     <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">TAMAÑO DE LA NAVE MÁX.</div>
+                     <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">{{ $t('multiplayerLobby.maxPlayers') }}</div>
                      <v-select
                         v-model="maxPlayers"
                         :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
@@ -232,13 +232,13 @@
                         :menu-props="{ maxHeight: '300' }"
                      >
                         <template v-slot:selection="{ item }">
-                           <span class="text-white font-weight-bold">{{ item.title }} Astronautas</span>
+                           <span class="text-white font-weight-bold">{{ item.title }} {{ $t('multiplayerLobby.astronauts') }}</span>
                         </template>
                      </v-select>
                   </div>
                   
                   <div class="mb-6">
-                     <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">NOMBRE DE RONDES</div>
+                     <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">{{ $t('multiplayerLobby.roundsCount') }}</div>
                      <v-select
                         v-model="pointsToWin"
                         :items="[1, 2, 3, 4, 5]"
@@ -251,13 +251,13 @@
                         prepend-inner-icon="mdi-trophy-outline"
                      >
                         <template v-slot:selection="{ item }">
-                           <span class="text-white font-weight-bold">{{ item.title }} Rondes</span>
+                           <span class="text-white font-weight-bold">{{ item.title }} {{ $t('multiplayerLobby.rounds') }}</span>
                         </template>
                      </v-select>
                   </div>
 
                   <v-btn block color="cyan-accent-2" size="large" class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan" @click="createRoom">
-                    INICIAR SALA
+                    {{ $t('multiplayerLobby.startRoom') }}
                   </v-btn>
                 </div>
 
@@ -267,11 +267,11 @@
                 <div class="setup-section pa-4 rounded-xl border-light">
                   <div class="d-flex align-center mb-4">
                     <v-icon icon="mdi-key-variant" color="amber-accent-2" class="mr-2"></v-icon>
-                    <span class="text-subtitle-1 font-weight-bold text-white">Unirse por Código</span>
+                    <span class="text-subtitle-1 font-weight-bold text-white">{{ $t('multiplayerLobby.joinByCode') }}</span>
                   </div>
                   <v-text-field
                     v-model="roomCode"
-                    placeholder="CÓDIGO (EJ: AB12YZ)"
+                    :placeholder="$t('multiplayerLobby.codePlaceholder')"
                     variant="solo-filled"
                     bg-color="rgba(255,255,255,0.05)"
                     class="room-code-input mb-4"
@@ -280,7 +280,7 @@
                     hide-details
                   ></v-text-field>
                   <v-btn block color="amber-accent-2" size="large" class="rounded-pill font-weight-bold text-black h-custom-btn shadow-amber" :disabled="!roomCode || roomCode.length < 6" @click="joinByCode">
-                    ACOPLARSE
+                    {{ $t('multiplayerLobby.dock') }}
                   </v-btn>
                 </div>
               </v-col>
@@ -295,7 +295,7 @@
         <v-card class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
           <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
             <v-icon icon="mdi-gamepad-variant" color="cyan-accent-2" class="mr-2"></v-icon>
-            Selecciona modalitat
+            {{ $t('multiplayerLobby.selectModality') }}
           </h3>
           <v-row dense>
             <v-col v-for="mode in modalities" :key="mode.id" cols="6">
@@ -307,9 +307,9 @@
               >
                 <v-icon :icon="mode.icon" :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-darken-1'" size="28" class="mb-2"></v-icon>
                 <div class="text-caption font-weight-black line-height-1" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-darken-1'">
-                  {{ mode.name }}
+                  {{ $te('multiplayerLobby.modalities.' + mode.id) ? $t('multiplayerLobby.modalities.' + mode.id) : mode.name }}
                 </div>
-                <v-chip v-if="!mode.active" size="x-small" color="grey-darken-2" variant="tonal" class="mt-2 text-7px">PROXIMAMENT</v-chip>
+                <v-chip v-if="!mode.active" size="x-small" color="grey-darken-2" variant="tonal" class="mt-2 text-7px">{{ $t('multiplayerLobby.comingSoon') }}</v-chip>
               </v-card>
             </v-col>
           </v-row>
@@ -319,13 +319,13 @@
         <v-card v-if="multiplayerStore.invitations.length > 0" class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
           <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
             <v-icon icon="mdi-email-alert" color="orange-accent-2" class="mr-2"></v-icon>
-            Llamadas Entrantes ({{ multiplayerStore.invitations.length }})
+            {{ $t('multiplayerLobby.incomingCalls', { count: multiplayerStore.invitations.length }) }}
           </h3>
           <v-list bg-color="transparent">
             <v-list-item v-for="(inv, index) in multiplayerStore.invitations" :key="index" class="px-2 invitation-item mb-2 rounded-lg">
               <div class="d-flex align-center w-100">
                 <div class="flex-grow-1">
-                  <div class="text-body-2 text-white"><b>{{ inv.from }}</b> solicita tu apoyo</div>
+                  <div class="text-body-2 text-white"><span v-html="$t('multiplayerLobby.requestSupport', { user: `<b>${inv.from}</b>` })"></span></div>
                 </div>
                 <div class="d-flex gap-2">
                   <v-btn icon="mdi-check" color="success" size="x-small" variant="flat" @click="acceptInvitation(inv, index)"></v-btn>
@@ -340,7 +340,7 @@
         <v-card v-if="!multiplayerStore.room" class="side-panel-card rounded-xl pa-0 mb-6 overflow-hidden" elevation="8">
           <div class="side-panel-header pa-4 d-flex align-center">
             <v-icon icon="mdi-map-search" color="cyan-accent-2" class="mr-3"></v-icon>
-            <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">RED DE MISIONES</h3>
+            <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.missionNetwork') }}</h3>
           </div>
           
           <div class="pa-4">
@@ -351,7 +351,7 @@
                     <div class="d-flex align-center justify-space-between mb-3">
                       <div class="d-flex align-center">
                         <div class="mission-status-led mr-2"></div>
-                        <div class="text-body-2 font-weight-black text-white">SECTOR {{ room.id }}</div>
+                        <div class="text-body-2 font-weight-black text-white">{{ $t('multiplayerLobby.sector', { id: room.id }) }}</div>
                       </div>
                       <v-chip size="x-small" color="cyan-lighten-4" variant="tonal" class="rounded-pill font-weight-bold">
                         {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
@@ -363,7 +363,7 @@
                       <v-img :src="getPlayerAvatar(room.host)" cover></v-img>
                     </v-avatar>
                       <div>
-                        <div class="text-caption text-grey-lighten-1 line-height-1">COMANDANTE</div>
+                        <div class="text-caption text-grey-lighten-1 line-height-1">{{ $t('multiplayerLobby.commander') }}</div>
                         <div class="text-body-2 font-weight-bold text-white">{{ room.host }}</div>
                       </div>
                     </div>
@@ -376,7 +376,7 @@
                       class="rounded-pill font-weight-black text-black action-glow-btn" 
                       @click="multiplayerStore.joinRoom(room.id)"
                     >
-                      ESTABLECER ENLACE
+                      {{ $t('multiplayerLobby.establishLink') }}
                     </v-btn>
                   </div>
                 </v-list-item>
@@ -384,7 +384,7 @@
             </v-list>
             <div v-else class="text-center py-12 empty-discovery rounded-xl">
               <v-icon icon="mdi-wifi-off" size="48" color="rgba(255, 255, 255, 0.05)" class="mb-4"></v-icon>
-              <p class="text-caption text-grey-darken-1 font-weight-bold">SIN SEÑALES EN EL SECTOR</p>
+              <p class="text-caption text-grey-darken-1 font-weight-bold">{{ $t('multiplayerLobby.noSignals') }}</p>
             </div>
           </div>
         </v-card>
@@ -394,13 +394,13 @@
           <div class="pa-4 border-bottom-light">
             <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
               <v-icon icon="mdi-account-group" color="cyan-accent-2" class="mr-2"></v-icon>
-              Reclutar Tripulación
+              {{ $t('multiplayerLobby.recruitCrew') }}
             </h3>
           </div>
           <v-list bg-color="transparent" class="pa-0 recruit-list" max-height="450px">
             <!-- SECCIÓN AMIGOS -->
             <template v-if="friendsList.length > 0">
-              <v-list-subheader class="text-cyan-accent-2 font-weight-bold text-overline pb-0">AMIGOS</v-list-subheader>
+              <v-list-subheader class="text-cyan-accent-2 font-weight-bold text-overline pb-0">{{ $t('multiplayerLobby.friends') }}</v-list-subheader>
               <v-list-item v-for="explorer in friendsList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
                 <template v-slot:prepend>
                   <v-avatar size="40" class="mr-3 border-light">
@@ -426,7 +426,7 @@
 
             <!-- SECCIÓN OTROS -->
             <template v-if="otherExplorersList.length > 0">
-              <v-list-subheader class="text-grey-lighten-1 font-weight-bold text-overline pb-0 mt-2">POSIBLES TRIPULANTES</v-list-subheader>
+              <v-list-subheader class="text-grey-lighten-1 font-weight-bold text-overline pb-0 mt-2">{{ $t('multiplayerLobby.possibleCrewmates') }}</v-list-subheader>
               <v-list-item v-for="explorer in otherExplorersList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
                 <template v-slot:prepend>
                   <v-avatar size="40" class="mr-3 border-light">
@@ -451,7 +451,7 @@
             </template>
           </v-list>
           <div v-if="friendsList.length === 0 && otherExplorersList.length === 0" class="text-center py-6 text-grey-darken-1">
-            <p class="text-caption">Sin tripulantes en el sector.</p>
+            <p class="text-caption">{{ $t('multiplayerLobby.noCrewmates') }}</p>
           </div>
         </v-card>
       </v-col>
@@ -703,7 +703,7 @@ const joinByCode = () => {
 const acceptInvitation = (inv, index) => {
   multiplayerStore.joinRoom(inv.roomId);
   multiplayerStore.invitations.splice(index, 1);
-  showMessage(`Uniéndote a la sala de ${inv.from}`);
+  showMessage(t('multiplayerLobby.joiningRoom', { user: inv.from }));
 };
 
 const rejectInvitation = (index) => {

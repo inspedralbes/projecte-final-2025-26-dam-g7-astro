@@ -14,6 +14,7 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
     ChallengePopup: typeof import('./src/components/multiplayer/ChallengePopup.vue')['default']
     ChatDrawer: typeof import('./src/components/layout/ChatDrawer.vue')['default']
+    LanguageSelector: typeof import('./src/components/layout/LanguageSelector.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
     LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
     MatchResultScreen: typeof import('./src/components/multiplayer/MatchResultScreen.vue')['default']

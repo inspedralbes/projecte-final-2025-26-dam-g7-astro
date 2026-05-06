@@ -8,9 +8,9 @@ function registerShopRoutes(app, { shopService }) {
             res.json(result);
         } catch (error) {
             console.error('Error en ruleta:', error);
-            res.status(error.message === 'Saldo insuficiente' ? 402 : 500).json({ 
-                success: false, 
-                message: error.message || 'Error en la ruleta' 
+            res.status(error.message === 'Saldo insuficiente' ? 402 : 500).json({
+                success: false,
+                message: error.message || 'Error en la ruleta'
             });
         }
     });
@@ -22,9 +22,9 @@ function registerShopRoutes(app, { shopService }) {
             res.json(result);
         } catch (error) {
             console.error('Error comprando tickets:', error);
-            res.status(error.message.includes('insuficientes') ? 402 : 500).json({ 
-                success: false, 
-                message: error.message || 'Error procesando la compra de tickets.' 
+            res.status(error.message.includes('insuficientes') ? 402 : 500).json({
+                success: false,
+                message: error.message || 'Error procesando la compra de tickets.'
             });
         }
     });
@@ -36,9 +36,9 @@ function registerShopRoutes(app, { shopService }) {
             res.json(result);
         } catch (error) {
             console.error('Error en compra:', error);
-            res.status(error.message.includes('insuficientes') ? 400 : 500).json({ 
-                success: false, 
-                message: error.message || 'Error en la transacción estelar.' 
+            res.status(error.message.includes('insuficientes') ? 400 : 500).json({
+                success: false,
+                message: error.message || 'Error en la transacción estelar.'
             });
         }
     });

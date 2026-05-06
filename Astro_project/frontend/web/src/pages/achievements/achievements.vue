@@ -5,10 +5,10 @@
             <div class="header mb-12 text-center">
                 <div class="d-flex justify-center align-center mb-4">
                     <v-icon icon="mdi-trophy-outline" color="cyan-accent-2" size="48" class="mr-4"></v-icon>
-                    <h1 class="text-h2 font-weight-bold text-white tracking-wide">LOGROS</h1>
+                    <h1 class="text-h2 font-weight-bold text-white tracking-wide">{{ $t('achievements.title') }}</h1>
                     <v-icon icon="mdi-trophy-outline" color="cyan-accent-2" size="48" class="ml-4"></v-icon>
                 </div>
-                <p class="text-h6 text-cyan-lighten-4 opacity-75">Tus condecoraciones y méritos en la exploración espacial</p>
+                <p class="text-h6 text-cyan-lighten-4 opacity-75">{{ $t('achievements.subtitle') }}</p>
             </div>
 
             <!-- Stats Overview -->
@@ -17,7 +17,7 @@
                     <v-card variant="tonal" class="stats-card pa-6">
                         <v-row align="center">
                             <v-col cols="12" sm="4" class="text-center">
-                                <div class="text-overline text-cyan-accent-1">Completado</div>
+                                <div class="text-overline text-cyan-accent-1">{{ $t('achievements.completed') }}</div>
                                 <div class="text-h3 font-weight-black text-white">
                                     {{ unlockedCount }}<span class="text-h5 text-grey">/{{ totalCount }}</span>
                                 </div>
@@ -33,7 +33,9 @@
                             <v-col cols="12" sm="8">
                                 <v-row>
                                     <v-col v-for="type in ['bronze', 'silver', 'gold', 'platinum']" :key="type" cols="6" sm="3" class="text-center">
-                                        <div :class="['text-caption text-uppercase font-weight-bold mb-1', type + '-text']">{{ type }}</div>
+                                        <div :class="['text-caption text-uppercase font-weight-bold mb-1', type + '-text']">
+                                            {{ $t('achievements.types.' + type) }}
+                                        </div>
                                         <div class="text-h5 text-white">{{ countByType(type) }}</div>
                                     </v-col>
                                 </v-row>
@@ -56,7 +58,7 @@
             <div v-if="loading" class="d-flex justify-center align-center" style="height: 300px;">
                 <div class="loading-scanner">
                     <v-progress-circular indeterminate color="cyan-accent-3" size="80" width="8"></v-progress-circular>
-                    <div class="text-overline mt-4 text-cyan-accent-1">Sincronizando Archivos...</div>
+                    <div class="text-overline mt-4 text-cyan-accent-1">{{ $t('achievements.syncing') }}</div>
                 </div>
             </div>
 
@@ -72,15 +74,17 @@
 
                         <div class="achievement-info pa-4">
                             <h3 :class="['text-h6 font-weight-bold mb-1', achievement.unlocked ? 'text-white' : 'text-grey-darken-1']">
-                                {{ achievement.title }}
+                                {{ $t('achievementsList.' + achievement.id + '.title') }}
                             </h3>
                             <p class="achievement-description text-body-2 mb-4">
-                                {{ achievement.description }}
+                                {{ $t('achievementsList.' + achievement.id + '.desc') }}
                             </p>
 
                             <div class="progress-section">
                                 <div class="d-flex justify-space-between text-caption mb-1">
-                                    <span :class="achievement.unlocked ? 'text-cyan-accent-1' : 'text-grey'">{{ achievement.metricLabel }}</span>
+                                    <span :class="achievement.unlocked ? 'text-cyan-accent-1' : 'text-grey'">
+                                        {{ $t('achievements.metrics.' + achievement.metric) }}
+                                    </span>
                                     <span class="text-white">{{ achievement.progress }} / {{ achievement.goal }}</span>
                                 </div>
                                 <v-progress-linear
@@ -99,7 +103,7 @@
                                         prepend-icon="mdi-check-decagram"
                                         class="text-uppercase font-weight-bold"
                                     >
-                                        Conseguido
+                                        {{ $t('achievements.unlocked') }}
                                     </v-chip>
                                     <v-chip 
                                         v-else 
@@ -108,7 +112,7 @@
                                         variant="outlined"
                                         class="text-uppercase font-weight-bold"
                                     >
-                                        Bloqueado
+                                        {{ $t('achievements.locked') }}
                                     </v-chip>
                                 </div>
                             </div>
@@ -122,10 +126,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Medal from '@/components/achievements/Medal.vue'
 import { useAstroStore } from '@/stores/astroStore'
 import { ACHIEVEMENTS as ACHIEVEMENT_DEFINITIONS } from '@/constants/achievements'
 
+const { t } = useI18n()
 const astroStore = useAstroStore()
 const loading = ref(false)
 const loadError = ref(null)
@@ -151,13 +157,13 @@ onMounted(async () => {
         ])
 
         if (statsResult?.success === false || achievementsResult?.success === false) {
-            loadError.value = "No se pudo sincronizar completamente con MongoDB Atlas."
+            loadError.value = t('achievements.syncErrorAtlas')
         } else {
             loadError.value = null
         }
     } catch (err) {
         console.error("Error de sincronización:", err)
-        loadError.value = "No se pudo sincronizar con la base de mando."
+        loadError.value = t('achievements.syncErrorBase')
     } finally {
         loading.value = false
         readyToSync.value = true

@@ -39,18 +39,18 @@
                             <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
                                 <div class="flex-grow-1">
                                     <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2">
-                                        {{ user || 'Explorador' }}
+                                        {{ user || $t('profile.guest') }}
                                     </h1>
                                     <div class="d-flex flex-wrap align-center ga-3">
                                         <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat">
-                                            {{ rank || 'Cadete de Vuelo' }}
+                                            {{ rank || $t('profile.defaultRank') }}
                                         </v-chip>
                                         <div class="d-flex align-center ga-3 text-grey-lighten-1">
-                                            <span class="text-overline">NIVEL {{ level || 1 }}</span>
+                                            <span class="text-overline">{{ $t('profile.level', { level: level || 1 }) }}</span>
                                             <v-divider vertical class="mx-1 my-1 border-opacity-25" color="white"></v-divider>
                                             <div class="status-indicator d-flex align-center ga-2">
                                                 <div class="status-dot online"></div>
-                                                <span class="text-caption font-weight-bold">EN ÓRBITA</span>
+                                                <span class="text-caption font-weight-bold">{{ $t('profile.online') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -63,14 +63,14 @@
                                     prepend-icon="mdi-history"
                                     @click="historyDialog = !historyDialog"
                                 >
-                                    {{ historyDialog ? 'CERRAR PANEL' : 'HISTORIAL' }}
+                                    {{ historyDialog ? $t('profile.closeHistory') : $t('profile.openHistory') }}
                                 </v-btn>
                             </div>
 
                             <!-- Barra de Progreso XP -->
                             <div class="xp-progress-wrapper mt-6">
                                 <div class="d-flex justify-space-between align-center mb-1 px-1">
-                                    <span class="text-caption font-weight-bold text-cyan-accent-3">PROGRESO DE MISIÓN</span>
+                                    <span class="text-caption font-weight-bold text-cyan-accent-3">{{ $t('profile.missionProgress') }}</span>
                                     <span class="text-caption font-weight-black text-white">{{ xp }} / {{ xpRequired }} XP</span>
                                 </div>
                                 <v-progress-linear
@@ -90,23 +90,23 @@
                         <!-- ESTADÍSTICAS RÁPIDAS -->
                         <div class="stats-grid mb-10">
                             <div class="stat-item">
-                                <span class="stat-label">PLAN ACTUAL</span>
+                                <span class="stat-label">{{ $t('profile.planLabel') }}</span>
                                 <span class="stat-value text-cyan-accent-2">{{ plan || 'INDIVIDUAL' }}</span>
                             </div>
                             <div class="stat-item text-center">
-                                <span class="stat-label">MISIÓN ACTUAL</span>
+                                <span class="stat-label">{{ $t('profile.missionLabel') }}</span>
                                 <span class="stat-value text-amber-accent-2">{{ currentMissionName }}</span>
                             </div>
                             <div class="stat-item text-right">
-                                <span class="stat-label">SISTEMA</span>
-                                <span class="stat-value">ASTRO-V2.0</span>
+                                <span class="stat-label">{{ $t('profile.systemLabel') }}</span>
+                                <span class="stat-value">{{ $t('profile.systemValue') }}</span>
                             </div>
                         </div>
 
                         <!-- SECCIÓN DE LOGROS -->
                         <div class="achievements-section mb-10">
                             <div class="section-header d-flex align-center justify-space-between mb-4">
-                                <h3 class="text-overline font-weight-black text-grey-lighten-2">LOGROS DESTACADOS</h3>
+                                <h3 class="text-overline font-weight-black text-grey-lighten-2">{{ $t('profile.featuredAchievements') }}</h3>
                             </div>
                             <v-row dense>
                                 <v-col v-for="i in 3" :key="i" cols="4">
@@ -139,20 +139,20 @@
                                     <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="goToInventory"
                                         class="action-btn font-weight-black">
                                         <v-icon start icon="mdi-cube-outline" class="mr-2"></v-icon>
-                                        INVENTARIO
+                                        {{ $t('profile.inventoryBtn') }}
                                     </v-btn>
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="changePlan"
                                         class="action-btn font-weight-black">
                                         <v-icon start icon="mdi-rocket-launch-outline" class="mr-2"></v-icon>
-                                        CAMBIAR PLAN
+                                        {{ $t('profile.changePlanBtn') }}
                                     </v-btn>
                                 </v-col>
                             </v-row>
                             <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="handleLogout"
                                 class="logout-btn font-weight-black mt-4">
-                                FINALIZAR CONEXIÓN Y SALIR
+                                {{ $t('profile.logoutBtn') }}
                             </v-btn>
                         </div>
                     </div>
@@ -162,17 +162,17 @@
                 <div v-if="historyDialog" class="history-panel">
                     <div class="history-header pa-6">
                         <div class="d-flex align-center justify-space-between mb-2">
-                            <h3 class="text-h6 font-weight-black text-white">HISTORIAL DE VUELO</h3>
+                            <h3 class="text-h6 font-weight-black text-white">{{ $t('profile.flightHistory') }}</h3>
                             <v-icon icon="mdi-chart-line" color="cyan-accent-3"></v-icon>
                         </div>
-                        <p class="text-caption text-grey">Tus últimos registros de misión en el espacio profundo.</p>
+                        <p class="text-caption text-grey">{{ $t('profile.flightHistorySub') }}</p>
                     </div>
 
                     <div class="history-scroll-area pa-6 pt-0">
                         <!-- TOP MISIONES -->
                         <div class="mb-8">
                             <h4 class="text-overline text-amber-accent-3 font-weight-black mb-4 d-flex align-center">
-                                <v-icon size="16" class="mr-2">mdi-star</v-icon> RECORDS PERSONALES
+                                <v-icon size="16" class="mr-2">mdi-star</v-icon> {{ $t('profile.personalRecords') }}
                             </h4>
                             <div v-if="topGames.length > 0" class="top-games-list ga-3 d-flex flex-column">
                                 <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card">
@@ -188,13 +188,13 @@
                                 </div>
                             </div>
                             <div v-else class="empty-state">
-                                <span class="text-caption">Sin registros de élite</span>
+                                <span class="text-caption">{{ $t('profile.noEliteRecords') }}</span>
                             </div>
                         </div>
 
                         <!-- RECIENTES -->
                         <div>
-                            <h4 class="text-overline text-grey font-weight-black mb-4">INCURSIONES RECIENTES</h4>
+                            <h4 class="text-overline text-grey font-weight-black mb-4">{{ $t('profile.recentIncursions') }}</h4>
                             <div v-if="gameHistory.length > 0" class="recent-list ga-2 d-flex flex-column">
                                 <div v-for="(match, idx) in paginatedHistory" :key="`hist-${idx}`" class="recent-item">
                                     <div class="recent-icon">
@@ -212,13 +212,13 @@
                             <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-4 mt-6">
                                 <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-left"
                                     :disabled="currentPage === 1" @click="currentPage--"></v-btn>
-                                <span class="text-caption font-weight-black text-grey">{{ currentPage }} / {{ totalPages }}</span>
+                                <span class="text-caption font-weight-black text-grey">{{ $t('profile.page', { current: currentPage, total: totalPages }) }}</span>
                                 <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-right"
                                     :disabled="currentPage >= totalPages" @click="currentPage++"></v-btn>
                             </div>
 
                             <div v-if="gameHistory.length === 0" class="empty-state">
-                                <span class="text-caption">No hay misiones recientes</span>
+                                <span class="text-caption">{{ $t('profile.noRecent') }}</span>
                             </div>
                         </div>
                     </div>
@@ -230,13 +230,14 @@
         <v-dialog v-model="selectionDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    SELECCIONAR LOGRO
+                    {{ $t('profile.selectAchievement') }}
                     <v-btn icon="mdi-close" variant="text" color="white" @click="selectionDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
                     <v-list bg-color="transparent" class="text-white">
                         <v-list-item v-for="achievement in allAchievements" :key="achievement.id"
-                            :title="achievement.title" :subtitle="achievement.description"
+                            :title="$te('achievementsList.' + achievement.id + '.title') ? $t('achievementsList.' + achievement.id + '.title') : achievement.title" 
+                            :subtitle="$te('achievementsList.' + achievement.id + '.desc') ? $t('achievementsList.' + achievement.id + '.desc') : achievement.description"
                             @click="achievement.unlocked ? selectAchievement(achievement.id) : null"
                             :disabled="!achievement.unlocked" class="mb-2 achievement-list-item" :class="{
                                 'selected': isSelected(achievement.id),
@@ -251,7 +252,7 @@
                             </template>
                         </v-list-item>
                         <v-divider class="my-2 border-opacity-20"></v-divider>
-                        <v-list-item prepend-icon="mdi-delete-outline" title="Quitar Logro"
+                        <v-list-item prepend-icon="mdi-delete-outline" :title="$t('profile.removeAchievement')"
                             @click="selectAchievement(null)" class="text-error"></v-list-item>
                     </v-list>
                 </v-card-text>
@@ -262,7 +263,7 @@
         <v-dialog v-model="avatarDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    TRAJE DE ASTRONAUTA
+                    {{ $t('profile.astronautSuit') }}
                     <v-btn icon="mdi-close" variant="text" color="white" @click="avatarDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
@@ -283,7 +284,7 @@
         <v-dialog v-model="mascotDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    COMPAÑERO DE MISIÓN
+                    {{ $t('profile.missionCompanion') }}
                     <v-btn icon="mdi-close" variant="text" color="white" @click="mascotDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
@@ -300,7 +301,7 @@
                                 @click="selectMascot(null)">
                                 <v-icon color="grey">mdi-close</v-icon>
                             </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">NINGUNO</div>
+                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">{{ $t('profile.none') }}</div>
                         </v-col>
                     </v-row>
                 </v-card-text>
@@ -316,7 +317,9 @@ import { useAstroStore } from '@/stores/astroStore'
 import { storeToRefs } from 'pinia' 
 import { ACHIEVEMENTS } from '@/constants/achievements'
 import Medal from '@/components/achievements/Medal.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const astroStore = useAstroStore()
 
@@ -325,7 +328,7 @@ const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const historyDialog = ref(false)
 const currentPage = ref(1)
-const pageSize = 5
+const pageSize = 4
 const currentSlotIndex = ref(null)
 const { 
     user, rank, plan, selectedAchievements, unlockedAchievements, 
@@ -356,39 +359,39 @@ const xpRequired = computed(() => {
     return 100 + ((level.value || 1) - 1) * 50;
 })
 
-const missionNames = [
-    'Despegue',
-    'Navegación',
-    'Comunicaciones',
-    'Sistemas',
-    'Agujero Negro',
-    'Exoplaneta'
+const missionKeyPrefixes = [
+    'mission_1',
+    'mission_2',
+    'mission_3',
+    'mission_4',
+    'mission_5',
+    'mission_6'
 ];
 
 const currentMissionName = computed(() => {
     const currentLvl = level.value || 1;
-    if (currentLvl <= missionNames.length) {
-        return missionNames[currentLvl - 1].toUpperCase();
+    if (currentLvl <= missionKeyPrefixes.length) {
+        return t(`profile.${missionKeyPrefixes[currentLvl - 1]}`).toUpperCase();
     }
-    return `ESPACIO PROFUNDO (LVL ${currentLvl})`;
+    return t('profile.deepSpace', { level: currentLvl });
 });
 
-const avatarOptions = [
-    { label: 'Blanc', file: 'Astronauta_blanc.jpg' },
-    { label: 'Groc', file: 'Astronauta_groc.jpg' },
-    { label: 'Lila', file: 'Astronauta_lila.jpg' },
-    { label: 'Negre', file: 'Astronauta_negre.jpg' },
-    { label: 'Taronja', file: 'Astronauta_taronja.jpg' },
-    { label: 'Verd', file: 'Astronauta_verd.jpg' },
-    { label: 'Vermell', file: 'Astronauta_vermell.jpg' }
-]
+const avatarOptions = computed(() => [
+    { label: t('profile.avatar_white'), file: 'Astronauta_blanc.jpg' },
+    { label: t('profile.avatar_yellow'), file: 'Astronauta_groc.jpg' },
+    { label: t('profile.avatar_purple'), file: 'Astronauta_lila.jpg' },
+    { label: t('profile.avatar_black'), file: 'Astronauta_negre.jpg' },
+    { label: t('profile.avatar_orange'), file: 'Astronauta_taronja.jpg' },
+    { label: t('profile.avatar_green'), file: 'Astronauta_verd.jpg' },
+    { label: t('profile.avatar_red'), file: 'Astronauta_vermell.jpg' }
+])
 
-const mascotOptions = [
-    { label: 'Balena', file: 'Balena_alien.jpg' },
-    { label: 'Alien', file: 'Mascota_alien2.jpg' },
-    { label: 'Dron', file: 'Mascota_dron.jpg' },
-    { label: 'Pop', file: 'Pop_alien.jpg' }
-]
+const mascotOptions = computed(() => [
+    { label: t('profile.mascot_whale'), file: 'Balena_alien.jpg' },
+    { label: t('profile.mascot_alien'), file: 'Mascota_alien2.jpg' },
+    { label: t('profile.mascot_drone'), file: 'Mascota_dron.jpg' },
+    { label: t('profile.mascot_octopus'), file: 'Pop_alien.jpg' }
+])
 
 const playerMetrics = computed(() => ({
     coins: Number(coins.value) || 0,

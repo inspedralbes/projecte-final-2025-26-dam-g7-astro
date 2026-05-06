@@ -12,9 +12,9 @@
                         <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
                             
                             <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
-                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ $t(level.phaseSubtitleKey) }}</div>
                                 <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
-                                    {{ level.phaseTitle }}
+                                    {{ $t(level.phaseTitleKey) }}
                                 </h2>
                             </div>
 
@@ -47,11 +47,11 @@
 
                             <div v-if="index + 1 <= astroStore.mapLevel" class="floating-label"
                                 :class="getLevelState(index)">
-                                {{ level.name }}
+                                {{ $t(level.nameKey) }}
                             </div>
 
                             <div v-if="getLevelState(index) === 'current'" class="target-score-label">
-                                Meta: {{ level.minScore }} pts
+                                {{ $t('singleplayer.goal', { score: level.minScore }) }}
                             </div>
 
                             <button class="node-btn" :class="[
@@ -85,7 +85,7 @@
                                         </div>
                                     </div>
                                     <div class="preview-content">
-                                        <h3 class="preview-title">{{ level.name }}</h3>
+                                        <h3 class="preview-title">{{ $t(level.nameKey) }}</h3>
                                         <v-btn
                                             color="cyan-accent-3"
                                             class="play-btn-preview font-weight-black"
@@ -95,7 +95,7 @@
                                             @click.stop="startGame(index)"
                                         >
                                             <v-icon icon="mdi-play" start></v-icon>
-                                            ¡JUGAR!
+                                            {{ $t('singleplayer.start') || $t('singleplayer.continue') }}
                                         </v-btn>
                                     </div>
                                     <div class="preview-arrow"></div>
@@ -127,23 +127,22 @@
                 </div>
 
                 <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
-                    ¡NIVELL {{ newLevelData.level }}!
+                    {{ $t('singleplayer.level_up', { level: newLevelData.level }) }}
                 </h2>
 
                 <div v-if="newLevelData.rankChanged" class="my-5 pa-4 rounded-lg"
                     style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;">
-                    <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
+                    <div class="text-overline text-grey-lighten-1">{{ $t('singleplayer.new_rank') }}</div>
                     <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
                 </div>
 
                 <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
-                    Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
-                    <br>i ets un pas més a prop de dominar la galàxia.
+                    {{ $t('singleplayer.accumulated_xp', { xp: astroStore.xp }) }}
                 </p>
                 
                 <v-btn color="cyan-accent-3" variant="elevated" block rounded="xl" size="x-large"
                     class="font-weight-black text-black" @click="showLevelUpDialog = false">
-                    CONTINUAR EXPLORACIÓ
+                    {{ $t('singleplayer.continue') }}
                 </v-btn>
             </v-card>
         </v-dialog>
@@ -154,24 +153,23 @@
                 
                 <v-icon icon="mdi-alert-octagon" color="red-accent-2" size="80" class="mb-4 pulse-red"></v-icon>
 
-                <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
+                <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">{{ $t('singleplayer.almost_there') }}</h2>
 
                 <div class="py-4">
-                    <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
+                    <div class="text-overline text-red-accent-1">{{ $t('singleplayer.obtained') }}</div>
                     <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
 
                     <v-divider class="border-red-accent-2 opacity-30 mb-6"></v-divider>
 
                     <p class="text-body-1 text-blue-grey-lighten-2">
-                        Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
-                        para desbloquear este sector.
+                        {{ $t('singleplayer.need', { score: requiredScore }) }}
                     </p>
                 </div>
 
                 <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="x-large"
                     class="font-weight-bold text-white mt-4" @click="showFailDialog = false" 
                     style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;">
-                    REINTENTAR MISIÓN
+                    {{ $t('singleplayer.retry') }}
                 </v-btn>
             </v-card>
         </v-dialog>
@@ -208,14 +206,14 @@ const newLevelData = ref({
 });
 
 const levelSequence = [
-    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
-    { name: '¡Despegue!', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
-    { name: 'Reparación Express', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
+    { nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
+    { nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
+    { nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
+    { nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
+    { nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
+    { nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
 ];
 
 const getLevelState = (index) => {

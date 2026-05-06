@@ -1,0 +1,693 @@
+{
+    "general": {
+        "loading": "Cargando...",
+        "error": "Ha ocurrido un error.",
+        "save": "Guardar",
+        "cancel": "Cancelar"
+    },
+    "sidebar": {
+        "home": "Inicio",
+        "training": "Entrenamiento",
+        "multiplayer": "Multijugador",
+        "shop": "Tienda",
+        "inventory": "Inventario",
+        "achievements": "Logros",
+        "friends": "Amigos",
+        "profile": "Perfil"
+    },
+    "home": {
+        "login": "Iniciar sesión",
+        "register": "Registrarse",
+        "systemOnline": "SISTEMA ACTIVO: INTERFAZ DE ENTRENAMIENTO NEURAL",
+        "title": "PROYECTO {name}",
+        "subtitle": "Plataforma de entrenamiento neurocognitivo de alto rendimiento. <br> Optimiza tu capacidad de procesamiento visual y agilidad mental.",
+        "start": "INICIAR ENTRENAMIENTO",
+        "continue": "CONTINUAR MISIÓN",
+        "learnMore": "SABER MÁS"
+    },
+    "multiplayer": {
+        "title": "Modo Multijugador",
+        "description": "Página en desarrollo...",
+        "backButton": "Volver al Menú"
+    },
+    "singleplayer": {
+        "level_up": "¡NIVEL {level}!",
+        "new_rank": "Nuevo Rango Alcanzado",
+        "accumulated_xp": "Has acumulado un total de {xp} XP y estás a un paso de dominar la galaxia.",
+        "continue": "CONTINUAR",
+        "almost_there": "¡Casi lo logras!",
+        "obtained": "Has obtenido:",
+        "pts": "pts",
+        "need": "Necesitas {score} puntos para desbloquear la siguiente misión.",
+        "retry": "INTENTAR DE NUEVO",
+        "goal": "Meta: {score} pts"
+    },
+    "store": {
+        "title": "Bazar Espacial",
+        "subtitle": "Mejora tu equipamiento para la misión",
+        "wheelTitle": "Vórtice Cuántico",
+        "wheelDesc": "Gira el vórtice para obtener suministros únicos, monedas o aspectos épicos. La suerte favorece a los audaces.",
+        "extract": "EXTRAER (100",
+        "buy10": "COMPRAR 10 TIRADAS (900",
+        "freeSpins": "{spins} TIRADAS GRATIS",
+        "balance": "Saldo disponible",
+        "suppliesTitle": "Suministros Básicos",
+        "eliteTitle": "Colección de Élite",
+        "units": "Unidades: x{qty}",
+        "max": "MAX 99",
+        "owned": "ADQUIRIDO",
+        "reward": "¡RECOMPENSA!",
+        "accept": "Aceptar"
+    },
+    "inventory": {
+        "title": "MI INVENTARIO",
+        "subtitle": "Gestiona tu equipo y personaliza tu presencia estelar",
+        "categories": {
+            "all": "Todo",
+            "skin": "Skins",
+            "pets": "Compañeros",
+            "collectible": "Coleccionables",
+            "trails": "Rastros",
+            "items": "Objetos"
+        },
+        "active": "ACTIVO: {games} partidas",
+        "use": "UTILIZAR",
+        "unequipable": "NO EQUIPABLE",
+        "equipped": "EQUIPADO",
+        "equip": "EQUIPAR",
+        "empty": "Aún no tienes equipo en esta categoría",
+        "goToShop": "Visitar la Tienda",
+        "useError": "No se pudo usar el objeto."
+    },
+    "profile": {
+        "guest": "Explorador",
+        "defaultRank": "Cadete de Vuelo",
+        "level": "NIVEL {level}",
+        "online": "EN ÓRBITA",
+        "offline": "EN BASE",
+        "closeHistory": "CERRAR PANEL",
+        "openHistory": "HISTORIAL",
+        "xpProgress": "{xp} / {req} XP",
+        "missionProgress": "PROGRESO DE MISIÓN",
+        "planLabel": "PLAN ACTUAL",
+        "missionLabel": "MISIÓN ACTUAL",
+        "systemLabel": "SISTEMA",
+        "systemValue": "ASTRO-V2.0",
+        "deepSpace": "ESPACIO PROFUNDO (LVL {level})",
+        "activeAchievements": "LOGROS ACTIVOS",
+        "featuredAchievements": "LOGROS DESTACADOS",
+        "inventoryBtn": "INVENTARIO",
+        "changePlanBtn": "CAMBIAR PLAN",
+        "logoutBtn": "FINALIZAR CONEXIÓN Y SALIR",
+        "topGames": "MEJORES MISIONES (TOP 5)",
+        "flightHistory": "HISTORIAL DE VUELO",
+        "flightHistorySub": "Tus últimos registros de misión en el espacio profundo.",
+        "personalRecords": "RECORDS PERSONALES",
+        "noEliteRecords": "Sin registros de élite",
+        "min": "min",
+        "pts": "Pts",
+        "xpEarned": "+{xp} XP",
+        "noRecords": "Aún no has establecido ningún récord legendario.",
+        "recentIncursions": "INCURSIONES RECIENTES",
+        "page": "PÁGINA {current} DE {total}",
+        "noRecent": "No hay registros de expediciones recientes.",
+        "selectAchievement": "Seleccionar Logro",
+        "removeAchievement": "Quitar Logro",
+        "astronautSuit": "TRAJE DE ASTRONAUTA",
+        "missionCompanion": "COMPAÑERO DE MISIÓN",
+        "none": "NINGUNO",
+        "loginRequired": "Debes iniciar sesión para guardar tus logros.",
+        "mission_1": "Despegue",
+        "mission_2": "Navegación",
+        "mission_3": "Comunicaciones",
+        "mission_4": "Sistemas",
+        "mission_5": "Agujero Negro",
+        "mission_6": "Exoplaneta",
+        "avatar_white": "Blanco",
+        "avatar_yellow": "Amarillo",
+        "avatar_purple": "Lila",
+        "avatar_black": "Negro",
+        "avatar_orange": "Naranja",
+        "avatar_green": "Verde",
+        "avatar_red": "Rojo",
+        "mascot_whale": "Ballena",
+        "mascot_alien": "Alien",
+        "mascot_drone": "Dron",
+        "mascot_octopus": "Pulpo"
+    },
+    "friends": {
+        "title": "Tripulación",
+        "tabs": {
+            "myFriends": "Mis Amigos",
+            "search": "Buscar Amigos",
+            "requests": "Solicitudes"
+        },
+        "searchBar1": "Buscar en mi tripulación...",
+        "level": "Nivel {level}",
+        "viewProfile": "Ver Perfil",
+        "challenge": "Desafiar",
+        "noSearchMatch": "No tienes amigos que coincidan con la búsqueda.",
+        "emptyCrew": "Tu tripulación está vacía. ¡Busca nuevos reclutas!",
+        "searchExplore": "Buscar exploradores en la galaxia...",
+        "searchOthersBtn": "Buscar Otros",
+        "sentReq": "Enviada",
+        "recruit": "Reclutar",
+        "sentReqTo": "Solicitud Enviada a {name}",
+        "recruitName": "Reclutar a {name}",
+        "noExplorers": "No hay más exploradores por la galaxia ahora mismo.",
+        "reject": "Rechazar",
+        "accept": "Aceptar",
+        "noReqs": "No tienes solicitudes pendientes.",
+        "activeAchievements": "LOGROS ACTIVOS",
+        "errConnection": "Error de conexión con la flota",
+        "abandoned": "{name} ha abandonado la tripulación.",
+        "recruited": "¡{name} reclutado con éxito!",
+        "sent": "Solicitud enviada a {name}",
+        "errSendReq": "Error al enviar solicitud",
+        "accepted": "Has aceptado a {name} en tu tripulación",
+        "errAccept": "Error al aceptar solicitud",
+        "rejected": "Has rechazado a {name}",
+        "errReject": "Error al rechazar solicitud",
+        "ranks": {
+            "0": "Cadete",
+            "1": "Explorador",
+            "2": "Navegante",
+            "3": "Capitán",
+            "4": "Comandante",
+            "5": "Almirante",
+            "6": "Centinela",
+            "7": "Guardián",
+            "8": "Forjador",
+            "9": "Maestro",
+            "10": "Arconte",
+            "11": "Soberano",
+            "12": "Arquitecto",
+            "13": "Deidad",
+            "14": "Omnisciente"
+        }
+    },
+    "auth": {
+        "abortCmd": "ABORTAR / VOLVER A BASE",
+        "systemAccessTitle": "ACCESO AL SISTEMA DE MISIÓN",
+        "identification": "IDENTIFICACIÓN",
+        "usernameIdMarker": "NOMBRE DE USUARIO / ID TRIPULANTE",
+        "usernameReq": "Identificación requerida",
+        "flightCredentials": "CREDENCIALES DE VUELO",
+        "passcode": "CÓDIGO DE ACCESO",
+        "passcodeReq": "Código requerido",
+        "syncInit": "INICIAR SINCRONIZACIÓN",
+        "changePlan": "CAMBIAR PLAN",
+        "enlist": "ALISTARSE",
+        "status": "ESTADO:",
+        "statusOperative": "OPERATIVO",
+        "unrecognizedCreds": "Credenciales no reconocidas",
+        "idAndCodeReq": "Identificación y código requeridos",
+        "enlistment": "ALISTAMIENTO",
+        "newAstroCrew": "NUEVO TRIPULANTE ASTRO",
+        "usernameID": "NOMBRE DE USUARIO (TU ID)",
+        "idReq": "ID Requerido",
+        "visibleNameNote": "*Este será tu nombre visible en la misión",
+        "credentials": "CREDENCIALES",
+        "password": "CONTRASEÑA",
+        "codeReq": "Código Requerido",
+        "verif": "VERIFICACIÓN",
+        "confirmPwd": "CONFIRMAR CONTRASEÑA",
+        "initSignUp": "INICIAR PROTOCOLO DE ALTA",
+        "alreadyHaveId": "¿YA TIENES ID? ACCEDER",
+        "coordinates": "COORDENADAS:",
+        "sector": "SECTOR-7G",
+        "codesDontMatch": "Los códigos no coinciden",
+        "allReqs": "Todos los campos son obligatorios.",
+        "signUpErr": "Error al procesar el alta.",
+        "serverConnErr": "Error crítico: No se ha podido contactar con la base."
+    },
+    "chat": {
+        "title": "Chat privado",
+        "online": "En línea",
+        "privateChannel": "Canal de comunicación privado",
+        "close": "Cerrar comunicación",
+        "emptyTitle": "Canal abierto.",
+        "emptySubtitle": "Inicia la transmisión.",
+        "placeholder": "Transmitir mensaje...",
+        "send": "Enviar (Enter)",
+        "hint": "Enter para enviar · Shift+Enter nueva línea"
+    },
+    "symmetryBreaker": {
+        "points": "Puntos: {score}",
+        "target": "Objetivo: {target}",
+        "time": "Tiempo: {time}s",
+        "lockMeter": "Bloqueo de precisión (Ronda {round})",
+        "title": "Symmetry Breaker",
+        "desc": "¡Mantén el láser sobre el objetivo correcto. La velocidad aumentará cada ronda!",
+        "startMission": "INICIAR MISIÓN",
+        "endMission": "Fin de la Misión",
+        "returnMenu": "VOLVER AL MENÚ"
+    },
+    "rightSidebar": {
+        "pilotState": "ESTADO DEL PILOTO",
+        "progress": "PROGRESO",
+        "streak": "Racha",
+        "streakCaps": "RACHA",
+        "credits": "CRÉDITOS",
+        "coins": "AstroCoins",
+        "level": "NIVEL {level}",
+        "xpRemaining": "Faltan {xp} XP para el siguiente nivel",
+        "dailyMissions": "MISIONES DIARIAS",
+        "noDailyMissions": "No hay misiones disponibles",
+        "syncing": "Sincronizando con la base...",
+        "specialMission": "Misión Especial",
+        "progressSub": "Progreso: {current} / {goal}",
+        "claim": "Reclamar",
+        "claimCaps": "RECLAMAR",
+        "viewAllDaily": "VER TODAS LAS DIARIAS",
+        "weeklyMissions": "MISIONES SEMANALES",
+        "noWeeklyMissions": "No hay misiones semanales...",
+        "weeklyMission": "Misión Semanal",
+        "viewAllWeekly": "VER TODAS LAS SEMANALES",
+        "claimReward": "COBRAR",
+        "rewardClaimed": "¡Recompensa reclamada!",
+        "rewardError": "Error al reclamar la misión",
+        "coinsSuffix": "astrocoins"
+    },
+    "achievements": {
+        "title": "LOGROS",
+        "subtitle": "Tus condecoraciones en la flota estelar",
+        "syncErrorAtlas": "No se pudo sincronizar completamente con MongoDB Atlas.",
+        "syncErrorBase": "No se pudo sincronizar con la base de mando.",
+        "unlocked": "Conseguido",
+        "completed": "Completado",
+        "syncing": "Sincronizando Archivos...",
+        "locked": "Bloqueado",
+        "metrics": {
+            "missions": "Misiones",
+            "coins": "Monedas",
+            "inventory": "Objetos",
+            "level": "Nivel",
+            "xp": "XP"
+        },
+        "types": {
+            "bronze": "Bronce",
+            "silver": "Plata",
+            "gold": "Oro",
+            "platinum": "Platino"
+        }
+    },
+    "multiplayerLobby": {
+        "title": "Centro de Mando Multijugador",
+        "subtitle": "Invita a tus amigos y preparaos para la misión.",
+        "room": "SALA: {id}",
+        "abort": "ABORTAR",
+        "commander": "Comandante",
+        "crewmate": "Tripulante",
+        "waiting": "Esperando...",
+        "launchNow": "INICIAR MISIÓN",
+        "waitingOrders": "ESPERANDO ÓRDENES DEL COMANDANTE...",
+        "prepareExpedition": "PREPARAR EXPEDICIÓN",
+        "newMission": "NUEVA MISIÓN",
+        "public": "PÚBLICA",
+        "private": "PRIVADA",
+        "startRoom": "CREAR SALA",
+        "joinByCode": "UNIRSE POR CÓDIGO",
+        "codePlaceholder": "CÓDIGO DE 6 DÍGITOS",
+        "dock": "ACOPLARSE",
+        "incomingCalls": "LLAMADAS ENTRANTES ({count})",
+        "requestSupport": "{user} solicita tu apoyo en una misión.",
+        "missionNetwork": "RED DE MISIONES",
+        "sector": "SECTOR: {id}",
+        "establishLink": "ESTABLECER VÍNCULO",
+        "noSignals": "SIN SEÑALES DETECTADAS",
+        "recruitCrew": "RECLUTAR TRIPULACIÓN",
+        "friends": "AMIGOS",
+        "possibleCrewmates": "POSIBLES TRIPULANTES",
+        "noCrewmates": "No hay más pilotos disponibles.",
+        "joiningRoom": "Uniéndote a la sala de {user}...",
+        "missionInProgress": "MISIÓN EN CURSO",
+        "round": "RONDA {current} / {total}",
+        "roundWinner": "¡RONDA PARA!",
+        "tie": "¡EMPATE!",
+        "timeout": "¡TIEMPO AGOTADO!",
+        "you": "TU",
+        "currentCrew": "Tripulación Actual",
+        "maxPlayers": "TAMAÑO DE LA NAVE MÁX.",
+        "astronauts": "Astronautas",
+        "roundsCount": "NÚMERO DE RONDAS",
+        "rounds": "Rondas",
+        "selectModality": "Selecciona modalidad",
+        "comingSoon": "PRÓXIMAMENTE",
+        "selectingMission": "SELECCIONANDO MISIÓN...",
+        "modalities": {
+            "1vs1": "Modo 1vs1",
+            "2vs2": "Modo 2vs2",
+            "boss": "Modo Boss",
+            "carrera": "Carrera Espacial",
+            "torneig": "Torneo"
+        }
+    },
+    "plans": {
+        "selectMode": "SELECCIONA TU MODO DE MISIÓN",
+        "standard": "ESTÁNDAR",
+        "manage": "GESTIONAR",
+        "select": "SELECCIONAR",
+        "individualTitle": "MODALIDAD INDIVIDUAL",
+        "individualSubtitle": "Define tu nivel de acceso a la base de datos",
+        "freeTitle": "GRATIS",
+        "freeDesc": "Exploración básica. <br> Sin acceso a telemetría avanzada.",
+        "premiumTitle": "PREMIUM",
+        "currentPlan": "PLAN ACTUAL",
+        "premiumDesc": "Acceso Total. <br> Estadísticas, rendimiento y soporte Élite.",
+        "unlock": "DESBLOQUEAR",
+        "backToProfile": "VOLVER AL PERFIL",
+        "backToSelection": "VOLVER A SELECCIÓN",
+        "squadProtocol": "PROTOCOLO DE ESCUADRA",
+        "squadStatus": "¿Cuál es tu estatus de misión?",
+        "foundSquadTitle": "FUNDAR ESCUADRA",
+        "foundSquadDesc": "Crea un nuevo equipo y lidera la misión.",
+        "joinSquadTitle": "UNIRSE A ESCUADRA",
+        "joinSquadDesc": "Ingresa credenciales para unirte a un equipo existente.",
+        "linkSystem": "SISTEMA DE ENLACE",
+        "teamAccess": "ACCESO DE EQUIPO",
+        "missionId": "IDENTIFICADOR DE MISIÓN",
+        "squadNameId": "NOMBRE DE ESCUADRA / ID",
+        "encryptionKey": "CLAVE DE ENCRIPTACIÓN",
+        "accessCode": "CÓDIGO DE ACCESO",
+        "establishConnection": "ESTABLECER CONEXIÓN",
+        "abortAndReturn": "ABORTAR Y VOLVER",
+        "unitRegistration": "REGISTRO DE UNIDAD",
+        "newSquad": "NUEVA ESCUADRA",
+        "unitDesignation": "DESIGNACIÓN DE UNIDAD",
+        "squadName": "NOMBRE DE LA ESCUADRA",
+        "securityProtocols": "PROTOCOLOS DE SEGURIDAD",
+        "password": "CONTRASEÑA",
+        "repeatCode": "REPETIR CÓDIGO",
+        "confirmFoundation": "CONFIRMAR FUNDACIÓN",
+        "cancelProtocol": "CANCELAR PROTOCOLO",
+        "pwdMismatch": "Los códigos no coinciden",
+        "individualDesc": "Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.",
+        "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto."
+    },
+    "spelledRosco": {
+        "title": "🚀 Rosco Estelar",
+        "score": "Puntuación: {score}",
+        "time": "Tiempo: {time}s",
+        "definition": "Definición",
+        "writeWord": "ESCRIBE LA PALABRA",
+        "placeholder": "Escribe aquí...",
+        "pasapalabra": "Pasapalabra",
+        "confirm": "Confirmar",
+        "clearAll": "Borrar todo",
+        "completedTitle": "¡Rosco Completado!",
+        "correctHits": "Aciertos",
+        "incorrectHits": "Errores",
+        "finalScore": "Puntuación Final: {score}",
+        "timeRemaining": "Tiempo Restante: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtener Recompensa",
+        "msgCorrect": "¡Correcto! ¡Muy bien!",
+        "msgIncorrect": "¡Incorrecto! Era \"{answer}\""
+    },
+    "rhymeSquad": {
+        "title": "Escuadrón de Rimas",
+        "desc": "Tienes <span class=\"text-cyan-accent-3 font-weight-bold\">60 SEGUNDOS</span>. Atrapa rimas para sumar 2 segundos extra. ¡Si fallas perderás vidas!",
+        "startMission": "INICIAR MISIÓN",
+        "phonologicalSquad": "🎧 Escuadrón Fonológico",
+        "points": "Puntos: {score}",
+        "time": "Tiempo: {time}s",
+        "lives": "Vidas: {lives}",
+        "findRhymes": "Busca rimas con:",
+        "combo": "COMBO x{combo} {turbo}",
+        "timeOut": "¡Tiempo Agotado!",
+        "missionFailed": "¡Misión Fallida!",
+        "rhymesCaught": "Rimas Atrapadas",
+        "errors": "Errores",
+        "finalScore": "Puntuación Final: {score}",
+        "maxCombo": "Combo Máximo: x{combo}",
+        "getReward": "Obtener Recompensa"
+    },
+    "syllableQuest": {
+        "points": "Puntos: {score}",
+        "time": "Tiempo: {time}s",
+        "missionProgress": "Misión {current} / {total}",
+        "clickInstruction": "¡Haz un \"clic\" por cada sílaba!",
+        "check": "Comprobar",
+        "completedTitle": "Misión completada",
+        "finalScore": "Puntos: {score}",
+        "timeRemaining": "Tiempo restante: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtener Recompensa",
+        "msgCorrect": "¡Correcto!",
+        "msgIncorrect": "Incorrecto, vuelve a intentar."
+    },
+    "wordConstruction": {
+        "level": "Nivel {level}",
+        "score": "Puntuación: {score}",
+        "time": "Tiempo: {time}s",
+        "baseStatus": "Estado de la Base",
+        "dragInstruction": "¡Arrastra las letras para construir la estructura!",
+        "hint": "Pista: {hint}",
+        "currentOrder": "Orden actual: ",
+        "buildBlock": "Construir Bloque",
+        "shuffleAgain": "Mezclar de nuevo",
+        "completedTitle": "¡Construcción Completada!",
+        "totalPoints": "Puntos Totales: {score}",
+        "timeRemaining": "Tiempo Restante: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtener Recompensa",
+        "msgCorrect": "¡Correcto! Bloque añadido a la estructura.",
+        "msgIncorrect": "¡Error estructural! Vuelve a intentarlo."
+    },
+    "singleplayerLevels": {
+        "preparativos": "Preparativos",
+        "despegue": "¡Despegue!",
+        "gravedad": "Rompiendo la Gravedad",
+        "desacoplamiento": "Desacoplamiento Orbital",
+        "ruta": "Ruta Estelar",
+        "base": "Llamando a la Base",
+        "recarga": "Recarga Solar",
+        "reparacion": "Reparación Express",
+        "fase1Title": "Entrenamiento",
+        "fase1Subtitle": "Fase 1: La Tierra",
+        "fase2Title": "El Viaje Comienza",
+        "fase2Subtitle": "Fase 2: Espacio Cercano"
+    },
+    "shopActions": {
+        "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 monedas?",
+        "alreadyOwned": "¡Ya tienes {item} en tu inventario!",
+        "maxReached": "Has alcanzado el máximo de 99 unidades para {item}.",
+        "confirmBuy": "¿Quieres comprar {item} por {price} créditos?",
+        "buySuccess": "Compra exitosa"
+    },
+    "shopItems": {
+        "vidas": {
+            "name": "Pack de Vidas",
+            "desc": "Recupera 5 vidas inmediatamente."
+        },
+        "racha": {
+            "name": "Congelar Racha",
+            "desc": "Protege tu racha un día."
+        },
+        "dobleMonedas": {
+            "name": "Doble de Monedas",
+            "desc": "Multiplica x2 las monedas ganadas."
+        },
+        "doblePuntos": {
+            "name": "Doble Puntuación",
+            "desc": "Multiplica x2 los puntos obtenidos."
+        },
+        "pin": {
+            "name": "Pin Comandante",
+            "desc": "Insignia dorada."
+        },
+        "cyberpunk": {
+            "name": "Skin Cyberpunk",
+            "desc": "Aspecto robótico."
+        },
+        "dron": {
+            "name": "Mascota Dron",
+            "desc": "Un compañero fiel."
+        },
+        "neon": {
+            "name": "Rastro de Neón",
+            "desc": "Efectos visuales."
+        },
+        "limit3": "* Solo válido durante 3 partidas"
+    },
+    "radarScan": {
+        "points": "Puntos: {score}",
+        "time": "Tiempo:",
+        "title": "Escáner de Radar",
+        "desc": "Encuentra la letra diferente antes de que se agote el tiempo. ¡Cuidado, tu campo de visión es limitado y hacer clics al azar te restará tiempo!",
+        "startBtn": "COMENZAR (60s)",
+        "completed": "¡Escáner Completado!",
+        "totalPoints": "Puntos Totales: {score}",
+        "returnMenu": "VOLVER AL MENÚ"
+    },
+    "radioSignal": {
+        "points": "Puntos: {score}",
+        "time": "Tiempo: {time}s",
+        "locked": "● LOCKED",
+        "scanning": "○ SCANNING",
+        "placeholder": "Escribe la frase...",
+        "send": "SEND",
+        "waiting": "ESPERANDO SEÑAL...",
+        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR"
+    },
+    "errors": {
+        "noSession": "No hay una sesión activa.",
+        "invalidGame": "Nombre de juego inválido.",
+        "invalidItem": "Objeto inválido."
+    },
+    "games": {
+        "word-construction": "Construcción de Palabras",
+        "syllable-quest": "Aventura Silábica",
+        "rhyme-squad": "Escuadrón de Rimas",
+        "spelled-rosco": "Rosco Estelar",
+        "radar-scan": "Escáner de Radar",
+        "radio-signal": "Señal de Radio",
+        "symmetry-breaker": "Symmetry Breaker"
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Juega {goal} partidas",
+            "coins": "Gana {goal} monedas",
+            "xp": "Consigue {goal} XP",
+            "item": "Usa {goal} Potenciadores",
+            "streak": "Actividad Diaria"
+        },
+        "weekly": {
+            "games": "Maestro de Juegos ({goal} partidas)",
+            "coins": "Buscador de Oro ({goal} monedas)",
+            "level": "Ascensión Lunar (Sube {goal} niveles)",
+            "streak": "Superviviente Espacial (Racha {goal} días)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "Primer Vuelo",
+            "desc": "Completa 1 misión.",
+            "metric": "Partidas"
+        },
+        "2": {
+            "title": "Tripulante Activo",
+            "desc": "Completa 5 misiones.",
+            "metric": "Partidas"
+        },
+        "3": {
+            "title": "Veterano Estelar",
+            "desc": "Completa 20 misiones.",
+            "metric": "Partidas"
+        },
+        "4": {
+            "title": "Primer Botín",
+            "desc": "Acumula 1.200 monedas.",
+            "metric": "Monedas"
+        },
+        "5": {
+            "title": "Fortuna Galáctica",
+            "desc": "Acumula 3.000 monedas.",
+            "metric": "Monedas"
+        },
+        "6": {
+            "title": "Primer Coleccionable",
+            "desc": "Consigue 1 objeto en inventario.",
+            "metric": "Objetos"
+        },
+        "7": {
+            "title": "Coleccionista",
+            "desc": "Consigue 5 objetos en inventario.",
+            "metric": "Objetos"
+        },
+        "8": {
+            "title": "Museo Orbital",
+            "desc": "Consigue 10 objetos en inventario.",
+            "metric": "Objetos"
+        },
+        "9": {
+            "title": "Subiendo de Rango",
+            "desc": "Alcanza el nivel 3.",
+            "metric": "Nivel"
+        },
+        "10": {
+            "title": "Capitán Novato",
+            "desc": "Alcanza el nivel 5.",
+            "metric": "Nivel"
+        },
+        "11": {
+            "title": "Comandante",
+            "desc": "Alcanza el nivel 8.",
+            "metric": "Nivel"
+        },
+        "12": {
+            "title": "Energía Infinita",
+            "desc": "Consigue 500 XP.",
+            "metric": "XP"
+        },
+        "13": {
+            "title": "Estratega Galáctico",
+            "desc": "Completa 10 misiones.",
+            "metric": "Misiones"
+        },
+        "14": {
+            "title": "Mercader de Estrellas",
+            "desc": "Acumula 2.000 monedas.",
+            "metric": "Monedas"
+        },
+        "15": {
+            "title": "Héroe del Cosmos",
+            "desc": "Completa 50 misiones.",
+            "metric": "Misiones"
+        },
+        "16": {
+            "title": "Magnate de la Nebulosa",
+            "desc": "Acumula 5.000 monedas.",
+            "metric": "Monedas"
+        },
+        "17": {
+            "title": "Soberano del Vacío",
+            "desc": "Alcanza el nivel 10.",
+            "metric": "Nivel"
+        },
+        "18": {
+            "title": "Conquistador de Galaxias",
+            "desc": "Consigue 1.000 XP.",
+            "metric": "XP"
+        }
+    },
+    "multiplayerResult": {
+        "victory": "¡VICTORIA!",
+        "tie": "¡EMPATE!",
+        "defeat": "¡DERROTA!",
+        "winDesc": "Has conquistado la galaxia",
+        "tieDesc": "Nadie domina el cosmos hoy",
+        "defeatDesc": "El cosmos te ha vencido esta vez",
+        "you": "TÚ",
+        "roundsWon": "rondas ganadas",
+        "winner": "GANADOR",
+        "loser": "PERDEDOR",
+        "ready": "PREPARADO",
+        "waiting": "ESPERANDO...",
+        "pending": "PENDIENTE",
+        "vs": "VS",
+        "roundsPlayed": "{total} rondas jugadas",
+        "missionHistory": "HISTORIAL DE LA MISIÓN",
+        "backToLobby": "VOLVER A LA SALA",
+        "waitingTeam": "Esperando que el equipo regrese..."
+    },
+    "shop": {
+        "spinError": "Error al girar",
+        "unknownPrize": "El servidor ha devuelto un premio desconocido.",
+        "commError": "Error de comunicación"
+    },
+    "languages": {
+        "es": "Castellano",
+        "ca": "Catalán",
+        "en": "Inglés"
+    },
+    "footer": {
+        "docs": "Documentación",
+        "support": "Soporte Técnico",
+        "x": "Twitter / X",
+        "github": "Repositorio GitHub",
+        "discord": "Comunidad Discord",
+        "reddit": "Foro Reddit"
+    }
+}
