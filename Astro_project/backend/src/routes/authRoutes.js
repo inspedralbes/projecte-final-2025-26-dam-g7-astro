@@ -48,6 +48,7 @@ function registerAuthRoutes(app, {
                     selectedAchievements: user.selectedAchievements || [null, null, null],
                     unlockedAchievements: normalizeAchievementIds(user.unlockedAchievements || []),
                     streak: streakResult.streak,
+                    previousStreak: streakResult.previousStreak,
                     streakFreezes: Math.max(user.streakFreezes || 0, freezeUnits),
                     activeBoosters: normalizeActiveBoosters(user.activeBoosters),
                     avatar: user.avatar || 'Astronauta_blanc.jpg',

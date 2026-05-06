@@ -92,6 +92,7 @@ class GameService {
             newXP: user.xp,
             newCoins: user.coins,
             newRank: user.rank,
+            newMapLevel: user.mapLevel,
             streak: user.streak,
             leveledUp: false, // Hauríem de comprovar-ho si cal per la resposta
             boostedScore

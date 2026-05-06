@@ -27,6 +27,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
+    StreakLossDialog: typeof import('./src/components/layout/StreakLossDialog.vue')['default']
     SupplyEditor: typeof import('./src/components/educational/SupplyEditor.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
     SymmetryBreaker: typeof import('./src/components/games/SymmetryBreaker.vue')['default']

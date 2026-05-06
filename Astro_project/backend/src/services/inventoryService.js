@@ -213,6 +213,9 @@ class InventoryService {
         user.inventory = normalizedInventory;
         user.streakFreezes = this.getInventoryQuantity(normalizedInventory, 2);
         user.updateLastActivity();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        user.lastGame = yesterday; // Rescatamos la racha marcando actividad "ayer"
 
         await this.userRepo.update(user);
 

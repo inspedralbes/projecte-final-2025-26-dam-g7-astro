@@ -133,10 +133,10 @@
             </div>
 
             <v-row class="mb-4">
-              <v-col v-for="player in multiplayerStore.room.players" :key="player" cols="12" sm="6" md="4" lg="3">
+              <v-col v-for="player in multiplayerStore.room.players" :key="player.username || player" cols="12" sm="6" md="4" lg="3">
                 <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
                   <v-badge
-                    v-if="player === multiplayerStore.room.host"
+                    v-if="(player.username || player) === multiplayerStore.room.host"
                     icon="mdi-crown"
                     color="amber-accent-2"
                     location="top right"
@@ -145,15 +145,21 @@
                     offset-y="10"
                   >
                     <v-avatar size="80" class="mb-3 player-glow-avatar">
-                      <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
+                      <v-img :src="getPlayerAvatar(player.username || player)" alt="Avatar" cover></v-img>
                     </v-avatar>
                   </v-badge>
                   <v-avatar v-else size="80" class="mb-3 player-glow-avatar">
-                    <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
+                    <v-img :src="getPlayerAvatar(player.username || player)" alt="Avatar" cover></v-img>
                   </v-avatar>
 
-                  <div class="text-h6 font-weight-bold text-white mb-1">{{ player }}</div>
-                  <v-chip v-if="player === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
+                  <div class="text-h6 font-weight-bold text-white mb-1">{{ player.username || player }}</div>
+                  
+                  <!-- Mostrar nivel y rango si existen (objetos enriquecidos) -->
+                  <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
+                    Nivel {{ player.level }} · {{ player.rank }}
+                  </div>
+
+                  <v-chip v-if="(player.username || player) === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
                     {{ $t('multiplayerLobby.commander') }}
                   </v-chip>
                   <v-chip v-else color="cyan-accent-1" size="x-small" variant="tonal" class="font-weight-bold px-3">
@@ -419,7 +425,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players?.includes(explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
+                    :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -445,7 +451,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players?.includes(explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
+                    :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -637,7 +643,8 @@ const otherExplorersList = computed(() => {
 
 const opponentName = computed(() => {
   if (!multiplayerStore.room) return 'Oponente';
-  return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente';
+  const op = multiplayerStore.room.players.find(p => (p.username || p) !== astroStore.user);
+  return op?.username || op || 'Oponente';
 });
 
 const opponentTitle = computed(() => {
