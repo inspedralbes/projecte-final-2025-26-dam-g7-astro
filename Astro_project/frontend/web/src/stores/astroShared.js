@@ -149,6 +149,15 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'items',
         maxQuantity: 99
     },
+    5: {
+        id: 5,
+        name: 'Rayo Saboteador',
+        desc: 'En multijugador, tus aciertos restan el doble de tiempo al rival.',
+        icon: 'mdi-lightning-bolt',
+        color: 'deep-purple-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
     101: {
         id: 101,
         name: 'Pin Comandante',
@@ -185,10 +194,37 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'trails',
         maxQuantity: 1
     },
+    105: {
+        id: 105,
+        name: 'Título: El Imparable',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'red-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
+    106: {
+        id: 106,
+        name: 'Título: Leyenda Galáctica',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'cyan-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
+    107: {
+        id: 107,
+        name: 'Título: Destructor de Asteroides',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'amber-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
     201: {
         id: 201,
         name: 'Pin Raro',
-        desc: 'Insignia rara obtenida en la ruleta.',
+        desc: 'Insignia rara de edición limitada.',
         icon: 'mdi-decagram',
         color: 'purple-accent-2',
         cat: 'collectible',
@@ -197,7 +233,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     202: {
         id: 202,
         name: 'Avatar Ninja',
-        desc: 'Aspecto ninja obtenido en la ruleta.',
+        desc: 'Aspecto ninja exclusivo.',
         icon: 'mdi-ninja',
         color: 'blue-accent-2',
         cat: 'skin',

@@ -25,6 +25,7 @@ export const useSessionStore = defineStore('session', {
         parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
         mascot: storageGetItem(STORAGE_KEYS.mascot) || null,
+        selectedTitle: storageGetItem('astro_selected_title') || null,
         token: storageGetItem(STORAGE_KEYS.token) || null,
         lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
         error: null
@@ -91,6 +92,11 @@ export const useSessionStore = defineStore('session', {
             persistNullable(STORAGE_KEYS.mascot, this.mascot);
         },
 
+        setSelectedTitle(title) {
+            this.selectedTitle = title || null;
+            persistNullable('astro_selected_title', this.selectedTitle);
+        },
+
         applyLoginPayload(data = {}) {
             const profile = data.profile || {};
             this.setUser(profile.name ?? this.user);
@@ -106,6 +112,10 @@ export const useSessionStore = defineStore('session', {
 
             if (profile.mascot) {
                 this.setMascot(profile.mascot);
+            }
+
+            if (profile.selectedTitle !== undefined) {
+                this.setSelectedTitle(profile.selectedTitle);
             }
         },
 
@@ -222,6 +232,31 @@ export const useSessionStore = defineStore('session', {
             console.log('🐾 Mascota actualizada localmente:', mascotFile);
         },
 
+        async updateSelectedTitle(title) {
+            this.setSelectedTitle(title);
+            console.log('👑 Título actualizado localmente:', title);
+
+            if (!this.user) return;
+
+            try {
+                const { response, data } = await requestJson('/api/user/title', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        title: title
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error al guardar título en servidor');
+                }
+                console.log('✅ Título sincronizado en servidor');
+            } catch (error) {
+                console.error('❌ Error sincronizando título:', error);
+            }
+        },
+
         clearSession() {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';
@@ -242,6 +277,7 @@ export const useSessionStore = defineStore('session', {
             storageRemoveItem(STORAGE_KEYS.avatar);
             storageRemoveItem(STORAGE_KEYS.mascot);
             storageRemoveItem(STORAGE_KEYS.lastActivity);
+            storageRemoveItem('astro_selected_title');
         }
     }
 });

@@ -37,6 +37,7 @@ class User {
         this.unlockedAchievements = data.unlockedAchievements || [];
         this.avatar = data.avatar || 'Astronauta_blanc.jpg';
         this.missionsCompleted = data.missionsCompleted || 0;
+        this.selectedTitle = data.selectedTitle || null;
     }
 
     getXPNeeded() {

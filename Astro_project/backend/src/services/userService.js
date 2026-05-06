@@ -23,6 +23,15 @@ class UserService {
         return avatar;
     }
 
+    async updateSelectedTitle(username, title) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        user.selectedTitle = title;
+        await this.userRepo.update(user);
+        return title;
+    }
+
     async getAllExplorers() {
         // En una app real, el repositori hauria de tenir un mètode findAll simplificat
         // Per ara, usem la col·lecció directament via repo si l'exposem o afegim el mètode.
