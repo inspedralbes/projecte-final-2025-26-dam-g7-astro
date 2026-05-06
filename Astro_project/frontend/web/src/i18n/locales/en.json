@@ -66,7 +66,6 @@
         "categories": {
             "all": "All",
             "skin": "Skins",
-            "pets": "Pets",
             "collectible": "Collectibles",
             "trails": "Trails",
             "items": "Items"
@@ -115,7 +114,6 @@
         "selectAchievement": "Select Achievement",
         "removeAchievement": "Remove Achievement",
         "astronautSuit": "Astronaut Suit",
-        "missionCompanion": "Mission Companion",
         "none": "None",
         "loginRequired": "You must log in to save your achievements.",
         "mission_1": "Liftoff",
@@ -130,11 +128,7 @@
         "avatar_black": "Black",
         "avatar_orange": "Orange",
         "avatar_green": "Green",
-        "avatar_red": "Red",
-        "mascot_whale": "Whale",
-        "mascot_alien": "Alien",
-        "mascot_drone": "Drone",
-        "mascot_octopus": "Octopus"
+        "avatar_red": "Red"
     },
     "friends": {
         "title": "Crew",
@@ -501,10 +495,6 @@
         "cyberpunk": {
             "name": "Cyberpunk Skin",
             "desc": "Robotic appearance."
-        },
-        "dron": {
-            "name": "Drone Pet",
-            "desc": "A faithful companion."
         },
         "neon": {
             "name": "Neon Trail",

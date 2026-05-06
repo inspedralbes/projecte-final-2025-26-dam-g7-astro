@@ -26,13 +26,6 @@
                                 <v-btn icon="mdi-camera-outline" size="small" color="cyan-accent-3" class="edit-avatar-btn"
                                     elevation="8" @click="avatarDialog = true"></v-btn>
                             </div>
-                            <div class="mascot-wrapper">
-                                <v-avatar v-if="mascot" size="80" class="mascot-badge" @click="mascotDialog = true">
-                                    <v-img :src="`/${mascot}`" cover></v-img>
-                                </v-avatar>
-                                <v-btn v-else icon="mdi-paw" size="large" color="purple-accent-2" class="add-mascot-btn"
-                                    @click="mascotDialog = true"></v-btn>
-                            </div>
                         </div>
 
                         <div class="user-meta mt-4">
@@ -150,7 +143,7 @@
                                     </v-btn>
                                 </v-col>
                             </v-row>
-                            <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="handleLogout"
+                            <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="showLogoutDialog = true"
                                 class="logout-btn font-weight-black mt-4">
                                 {{ $t('profile.logoutBtn') }}
                             </v-btn>
@@ -279,34 +272,6 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
-
-        <!-- Diálogo Mascota -->
-        <v-dialog v-model="mascotDialog" max-width="500">
-            <v-card class="glass-popup pa-4">
-                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    {{ $t('profile.missionCompanion') }}
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="mascotDialog = false"></v-btn>
-                </v-card-title>
-                <v-card-text>
-                    <v-row class="mt-2 text-center">
-                        <v-col v-for="m in mascotOptions" :key="m.file" cols="4" sm="3" class="pa-2">
-                            <v-avatar size="70" class="avatar-option" :class="{ 'active-avatar': mascot === m.file }"
-                                @click="selectMascot(m.file)">
-                                <v-img :src="`/${m.file}`"></v-img>
-                            </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">{{ m.label }}</div>
-                        </v-col>
-                        <v-col cols="4" sm="3" class="pa-2">
-                            <v-avatar size="70" class="avatar-option d-flex align-center justify-center no-mascot"
-                                @click="selectMascot(null)">
-                                <v-icon color="grey">mdi-close</v-icon>
-                            </v-avatar>
-                            <div class="text-caption text-grey-lighten-1 mt-2 font-weight-bold">{{ $t('profile.none') }}</div>
-                        </v-col>
-                    </v-row>
-                </v-card-text>
-            </v-card>
-        </v-dialog>
         <!-- Diálogo Título -->
         <v-dialog v-model="titleDialog" max-width="500">
             <v-card class="glass-popup pa-4">
@@ -348,6 +313,25 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+
+        <!-- Logout Confirmation Dialog -->
+        <v-dialog v-model="showLogoutDialog" max-width="400">
+            <v-card class="glass-popup pa-6 text-center shadow-xl">
+                <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
+                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
+                <p class="text-body-2 text-grey-lighten-1 mb-8">
+                    {{ $t('profile.deepSpace', { level: '' }).includes('ESPACIO') ? 'Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?' : 'You are about to disconnect from ASTRO central system. Do you wish to continue?' }}
+                </p>
+                <div class="d-flex justify-center mt-4">
+                    <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
+                        {{ $t('general.cancel').toUpperCase() }}
+                    </v-btn>
+                    <v-btn variant="flat" color="error" @click="confirmLogout" class="rounded-lg flex-grow-1 ml-2" height="48">
+                        {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
+                    </v-btn>
+                </div>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -366,15 +350,15 @@ const astroStore = useAstroStore()
 
 const selectionDialog = ref(false)
 const avatarDialog = ref(false)
-const mascotDialog = ref(false)
 const historyDialog = ref(false)
 const titleDialog = ref(false)
+const showLogoutDialog = ref(false)
 const currentPage = ref(1)
 const pageSize = 4
 const currentSlotIndex = ref(null)
 const { 
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
-    avatar, mascot, level, coins, xp, partides, inventory,
+    avatar, level, coins, xp, partides, inventory,
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
@@ -426,13 +410,6 @@ const avatarOptions = computed(() => [
     { label: t('profile.avatar_orange'), file: 'Astronauta_taronja.jpg' },
     { label: t('profile.avatar_green'), file: 'Astronauta_verd.jpg' },
     { label: t('profile.avatar_red'), file: 'Astronauta_vermell.jpg' }
-])
-
-const mascotOptions = computed(() => [
-    { label: t('profile.mascot_whale'), file: 'Balena_alien.jpg' },
-    { label: t('profile.mascot_alien'), file: 'Mascota_alien2.jpg' },
-    { label: t('profile.mascot_drone'), file: 'Mascota_dron.jpg' },
-    { label: t('profile.mascot_octopus'), file: 'Pop_alien.jpg' }
 ])
 
 const ALL_TITLES = [
@@ -515,7 +492,8 @@ async function selectAchievement(achievementId) {
     await astroStore.updateAchievements(newSelection);
 }
 
-function handleLogout() {
+function confirmLogout() {
+    showLogoutDialog.value = false
     astroStore.logout()
     router.push('/login')
 }
@@ -531,11 +509,6 @@ function goToInventory() {
 function selectAvatar(file) {
     astroStore.updateAvatar(file)
     avatarDialog.value = false
-}
-
-function selectMascot(file) {
-    astroStore.updateMascot(file)
-    mascotDialog.value = false
 }
 
 function selectTitle(titleName) {
@@ -640,21 +613,6 @@ watch(historyDialog, async (isOpen) => {
     border: 3px solid #0a0c10 !important;
 }
 
-.mascot-badge {
-    border: 4px solid #0a0c10;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    cursor: pointer;
-    transition: transform 0.3s;
-}
-
-.mascot-badge:hover {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.add-mascot-btn {
-    border: 3px solid #0a0c10 !important;
-    margin-bottom: 5px;
-}
 
 .user-name {
     letter-spacing: -1px !important;
@@ -969,9 +927,11 @@ watch(historyDialog, async (isOpen) => {
     box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
-.no-mascot {
-    border: 2px dashed rgba(255,255,255,0.2) !important;
-}
+    .profile-main-content.history-open {
+        flex-direction: column;
+        max-width: 600px;
+    }
+
 
 /* RESPONSIVIDAD */
 @media (max-width: 1200px) {
@@ -1009,5 +969,18 @@ watch(historyDialog, async (isOpen) => {
     .avatar-circle {
         size: 120px !important;
     }
+}
+.pulse-error {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 82, 82, 0.5)); }
+    100% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
+}
+
+.tracking-tighter {
+    letter-spacing: -2px;
 }
 </style>

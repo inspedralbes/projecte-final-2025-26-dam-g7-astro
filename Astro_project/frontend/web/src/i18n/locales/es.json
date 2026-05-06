@@ -66,7 +66,6 @@
         "categories": {
             "all": "Todo",
             "skin": "Skins",
-            "pets": "Compañeros",
             "collectible": "Coleccionables",
             "trails": "Rastros",
             "items": "Objetos"
@@ -115,7 +114,6 @@
         "selectAchievement": "Seleccionar Logro",
         "removeAchievement": "Quitar Logro",
         "astronautSuit": "TRAJE DE ASTRONAUTA",
-        "missionCompanion": "COMPAÑERO DE MISIÓN",
         "none": "NINGUNO",
         "loginRequired": "Debes iniciar sesión para guardar tus logros.",
         "mission_1": "Despegue",
@@ -130,11 +128,7 @@
         "avatar_black": "Negro",
         "avatar_orange": "Naranja",
         "avatar_green": "Verde",
-        "avatar_red": "Rojo",
-        "mascot_whale": "Ballena",
-        "mascot_alien": "Alien",
-        "mascot_drone": "Dron",
-        "mascot_octopus": "Pulpo"
+        "avatar_red": "Rojo"
     },
     "friends": {
         "title": "Tripulación",
@@ -501,10 +495,6 @@
         "cyberpunk": {
             "name": "Skin Cyberpunk",
             "desc": "Aspecto robótico."
-        },
-        "dron": {
-            "name": "Mascota Dron",
-            "desc": "Un compañero fiel."
         },
         "neon": {
             "name": "Rastro de Neón",
