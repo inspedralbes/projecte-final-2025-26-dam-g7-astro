@@ -23,10 +23,9 @@
                         </div>
                     </div>
                 </v-col>
-                    </div>
-                </v-col>
 
                 <v-col cols="12" max-width="1200">
+
                     <div class="d-flex align-center mb-6 px-2">
                         <v-icon color="cyan-accent-3" class="mr-3">mdi-cube-outline</v-icon>
                         <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
