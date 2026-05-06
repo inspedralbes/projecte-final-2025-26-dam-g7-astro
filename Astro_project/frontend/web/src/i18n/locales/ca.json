@@ -1,0 +1,691 @@
+{
+    "general": {
+        "loading": "Carregant...",
+        "error": "Hi ha hagut un error.",
+        "save": "Desar",
+        "cancel": "Cancel·lar"
+    },
+    "sidebar": {
+        "home": "Inici",
+        "training": "Entrenament",
+        "multiplayer": "Multijugador",
+        "shop": "Botiga",
+        "inventory": "Inventari",
+        "achievements": "Assoliments",
+        "friends": "Amics",
+        "profile": "Perfil"
+    },
+    "home": {
+        "login": "Iniciar sessió",
+        "register": "Registrar-se",
+        "systemOnline": "SISTEMA ACTIU: INTERFÍCIE D'ENTRENAMENT NEURAL",
+        "title": "PROJECTE {name}",
+        "subtitle": "Plataforma d'entrenament neurocognitiu d'alt rendiment. <br> Optimitza la teva capacitat de processament visual i agilitat mental.",
+        "start": "INICIAR ENTRENAMENT",
+        "continue": "CONTINUAR MISSIÓ",
+        "learnMore": "SABER MÉS"
+    },
+    "multiplayer": {
+        "title": "Mode Multijugador",
+        "description": "Pàgina en desenvolupament...",
+        "backButton": "Tornar al Menú"
+    },
+    "singleplayer": {
+        "level_up": "¡NIVELL {level}!",
+        "new_rank": "Nou Rang Assolit",
+        "accumulated_xp": "Has acumulat un total de {xp} XP i ets un pas més a prop de dominar la galàxia.",
+        "continue": "CONTINUAR",
+        "almost_there": "Gairebé ho aconsegueixes!",
+        "obtained": "Has obtingut:",
+        "pts": "pts",
+        "need": "Necessites {score} punts per desbloquejar la següent missió.",
+        "retry": "TORNAR A INTENTAR",
+        "goal": "Meta: {score} pts"
+    },
+    "store": {
+        "title": "Basar Espacial",
+        "subtitle": "Millora el teu equipament per a la missió",
+        "wheelTitle": "Vòrtex Quàntic",
+        "wheelDesc": "Gira el vòrtex per obtenir subministraments únics, monedes o aspectes èpics. La sort afavoreix als audaços.",
+        "extract": "EXTRAURE (100",
+        "buy10": "COMPRAR 10 TIRADES (900",
+        "freeSpins": "{spins} TIRADES GRATIS",
+        "balance": "Saldo disponible",
+        "suppliesTitle": "Subministraments Bàsics",
+        "eliteTitle": "Col·lecció d'Elit",
+        "units": "Unitats: x{qty}",
+        "max": "MÀX 99",
+        "owned": "ADQUIRIT",
+        "reward": "¡RECOMPENSA!",
+        "accept": "Acceptar"
+    },
+    "inventory": {
+        "title": "EL MEU INVENTARI",
+        "subtitle": "Gestiona el teu equip i personalitza la teva presència estel·lar",
+        "categories": {
+            "all": "Tot",
+            "skin": "Aparences",
+            "pets": "Companys",
+            "collectible": "Col·leccionables",
+            "trails": "Rastres",
+            "items": "Objectes"
+        },
+        "active": "ACTIU: {games} partides",
+        "use": "UTILITZAR",
+        "unequipable": "NO EQUIPABLE",
+        "equipped": "EQUIPAT",
+        "equip": "EQUIPAR",
+        "empty": "Encara no tens equip en aquesta categoria",
+        "goToShop": "Visitar la Botiga",
+        "useError": "No s'ha pogut utilitzar l'objecte."
+    },
+    "profile": {
+        "guest": "Explorador",
+        "defaultRank": "Cadet de Vol",
+        "level": "NIVELL {level}",
+        "online": "EN ÒRBITA",
+        "offline": "A LA BASE",
+        "closeHistory": "TANCAR PANEL",
+        "openHistory": "HISTORIAL",
+        "xpProgress": "{xp} / {req} XP",
+        "missionProgress": "PROGRÉS DE MISSIÓ",
+        "planLabel": "PLA ACTUAL",
+        "missionLabel": "MISSIÓ ACTUAL",
+        "systemLabel": "SISTEMA",
+        "systemValue": "ASTRO-V2.0",
+        "deepSpace": "ESPAI PROFUND (LVL {level})",
+        "activeAchievements": "ASSOLIMENTS ACTIUS",
+        "featuredAchievements": "ASSOLIMENTS DESTACATS",
+        "inventoryBtn": "INVENTARI",
+        "changePlanBtn": "CANVIAR PLA",
+        "logoutBtn": "FINALITZAR CONNEXIÓ I SORTIR",
+        "topGames": "MILLORS MISSIONS (TOP 5)",
+        "flightHistory": "HISTORIAL DE VOL",
+        "flightHistorySub": "Els teus últims registres de missió en l'espai profund.",
+        "personalRecords": "RECORDS PERSONALS",
+        "noEliteRecords": "Sense registres d'elit",
+        "min": "min",
+        "pts": "Pts",
+        "xpEarned": "+{xp} XP",
+        "noRecords": "Encara no has establert cap rècord llegendari.",
+        "recentIncursions": "INCURSIONS RECENTS",
+        "page": "PÀGINA {current} DE {total}",
+        "noRecent": "No hi ha registres d'expedicions recents.",
+        "selectAchievement": "Seleccionar Assoliment",
+        "removeAchievement": "Treure Assoliment",
+        "astronautSuit": "VESTIT D'ASTRONAUTA",
+        "missionCompanion": "COMPANY DE MISSIÓ",
+        "none": "CAP",
+        "loginRequired": "Has d'iniciar sessió per guardar els teus assoliments.",
+        "mission_1": "Enlairament",
+        "mission_2": "Navegació",
+        "mission_3": "Comunicacions",
+        "mission_4": "Sistemes",
+        "mission_5": "Forat Negre",
+        "mission_6": "Exoplaneta",
+        "avatar_white": "Blanc",
+        "avatar_yellow": "Groc",
+        "avatar_purple": "Lila",
+        "avatar_black": "Negre",
+        "avatar_orange": "Taronja",
+        "avatar_green": "Verd",
+        "avatar_red": "Vermell",
+        "mascot_whale": "Balena",
+        "mascot_alien": "Alien",
+        "mascot_drone": "Dron",
+        "mascot_octopus": "Pop"
+    },
+    "friends": {
+        "title": "Tripulació",
+        "tabs": {
+            "myFriends": "Els meus Amics",
+            "search": "Buscar Amics",
+            "requests": "Sol·licituds"
+        },
+        "searchBar1": "Buscar a la meva tripulació...",
+        "level": "Nivell {level}",
+        "viewProfile": "Veure Perfil",
+        "challenge": "Desafiar",
+        "noSearchMatch": "No tens amics que coincideixin amb la cerca.",
+        "emptyCrew": "La teva tripulació està buida. Busca nous reclutes!",
+        "searchExplore": "Buscar exploradors per la galàxia...",
+        "searchOthersBtn": "Buscar Altres",
+        "sentReq": "Enviada",
+        "recruit": "Reclutar",
+        "sentReqTo": "Sol·licitud Enviada a {name}",
+        "recruitName": "Reclutar a {name}",
+        "noExplorers": "No hi ha més exploradors per la galàxia ara mateix.",
+        "reject": "Rebutjar",
+        "accept": "Acceptar",
+        "noReqs": "No tens sol·licituds pendents.",
+        "activeAchievements": "ASSOLIMENTS ACTIUS",
+        "errConnection": "Error de connexió amb la flota",
+        "abandoned": "{name} ha abandonat la tripulació.",
+        "recruited": "¡{name} reclutat amb èxit!",
+        "sent": "Sol·licitud enviada a {name}",
+        "errSendReq": "Error a l'enviar la sol·licitud",
+        "accepted": "Has acceptat a {name} a la teva tripulació",
+        "errAccept": "Error a l'acceptar la sol·licitud",
+        "rejected": "Has rebutjat a {name}",
+        "errReject": "Error a l'rebutjar la sol·licitud",
+        "ranks": {
+            "0": "Cadet",
+            "1": "Explorador",
+            "2": "Navegant",
+            "3": "Capità",
+            "4": "Comandant",
+            "5": "Almirall",
+            "6": "Centinela",
+            "7": "Guardià",
+            "8": "Forjador",
+            "9": "Mestre",
+            "10": "Arcont",
+            "11": "Sobirà",
+            "12": "Arquitecte",
+            "13": "Deitat",
+            "14": "Omniscient"
+        }
+    },
+    "auth": {
+        "abortCmd": "AVORTAR / TORNAR A LA BASE",
+        "systemAccessTitle": "ACCÉS AL SISTEMA DE MISSIÓ",
+        "identification": "IDENTIFICACIÓ",
+        "usernameIdMarker": "NOM D'USUARI / ID TRIPULANT",
+        "usernameReq": "Identificació requerida",
+        "flightCredentials": "CREDENCIALS DE VOL",
+        "passcode": "CODI D'ACCÉS",
+        "passcodeReq": "Codi requerit",
+        "syncInit": "INICIAR SINCRONITZACIÓ",
+        "changePlan": "CANVIAR PLA",
+        "enlist": "ALLISTAR-SE",
+        "status": "ESTAT:",
+        "statusOperative": "OPERATIU",
+        "unrecognizedCreds": "Credencials no reconegudes",
+        "idAndCodeReq": "Identificació i codi requerits",
+        "enlistment": "ALLISTAMENT",
+        "newAstroCrew": "NOU TRIPULANT ASTRO",
+        "usernameID": "NOM D'USUARI (EL TEU ID)",
+        "idReq": "ID Requerit",
+        "visibleNameNote": "*Aquest serà el teu nom visible a la missió",
+        "credentials": "CREDENCIALS",
+        "password": "CONTRASENYA",
+        "codeReq": "Codi Requerit",
+        "verif": "VERIFICACIÓ",
+        "confirmPwd": "CONFIRMAR CONTRASENYA",
+        "initSignUp": "INICIAR PROTOCOL D'ALTA",
+        "alreadyHaveId": "¿JA TENS ID? ACCEDIR",
+        "coordinates": "COORDENADES:",
+        "sector": "SECTOR-7G",
+        "codesDontMatch": "Els codis no coincideixen",
+        "allReqs": "Tots els camps són obligatoris.",
+        "signUpErr": "Error al processar l'alta.",
+        "serverConnErr": "Error crític: No s'ha pogut contactar amb la base."
+    },
+    "chat": {
+        "title": "Xat privat",
+        "online": "En línia",
+        "privateChannel": "Canal de comunicació privat",
+        "close": "Tancar comunicació",
+        "emptyTitle": "Canal obert.",
+        "emptySubtitle": "Inicia la transmissió.",
+        "placeholder": "Transmetre missatge...",
+        "send": "Enviar (Retorn)",
+        "hint": "Retorn per enviar · Maj+Retorn nova línia"
+    },
+    "symmetryBreaker": {
+        "points": "Punts: {score}",
+        "target": "Objectiu: {target}",
+        "time": "Temps: {time}s",
+        "lockMeter": "Bloqueig de precisió (Ronda {round})",
+        "title": "Symmetry Breaker",
+        "desc": "Manté el làser sobre l'objectiu correcte. La velocitat augmentarà cada ronda!",
+        "startMission": "INICIAR MISSIÓ",
+        "endMission": "Fi de la Missió",
+        "returnMenu": "TORNAR AL MENÚ"
+    },
+    "rightSidebar": {
+        "pilotState": "ESTAT DEL PILOT",
+        "progress": "PROGRÉS",
+        "streak": "Ratxa",
+        "streakCaps": "RATXA",
+        "credits": "CRÈDITS",
+        "coins": "AstroCoins",
+        "level": "NIVELL {level}",
+        "xpRemaining": "Falten {xp} XP per al següent nivell",
+        "dailyMissions": "MISSIONS DIÀRIES",
+        "noDailyMissions": "No hi ha missions disponibles",
+        "syncing": "Sincronitzant amb la base...",
+        "specialMission": "Missió Especial",
+        "progressSub": "Progrés: {current} / {goal}",
+        "claim": "Reclamar",
+        "claimCaps": "RECLAMAR",
+        "viewAllDaily": "VEURE TOTES LES DIÀRIES",
+        "weeklyMissions": "MISSIONS SETMANALS",
+        "noWeeklyMissions": "No hi ha missions setmanals...",
+        "weeklyMission": "Missió Setmanal",
+        "viewAllWeekly": "VEURE TOTES LES SETMANALS",
+        "claimReward": "COBRAR",
+        "rewardClaimed": "¡Recompensa reclamada!",
+        "rewardError": "Error en reclamar la missió",
+        "coinsSuffix": "astrocoins"
+    },
+    "achievements": {
+        "title": "ASSOLIMENTS",
+        "subtitle": "Les teves condecoracions a la flota estel·lar",
+        "syncErrorAtlas": "No s'ha pogut sincronitzar completament amb MongoDB Atlas.",
+        "syncErrorBase": "No s'ha pogut sincronitzar amb la base de comandament.",
+        "unlocked": "Aconseguit",
+        "completed": "Completat",
+        "syncing": "Sincronitzant Arxius...",
+        "locked": "Bloquejat",
+        "metrics": {
+            "missions": "Missions",
+            "coins": "Monedes",
+            "inventory": "Objectes",
+            "level": "Nivell",
+            "xp": "XP"
+        },
+        "types": {
+            "bronze": "Bronze",
+            "silver": "Plata",
+            "gold": "Or",
+            "platinum": "Platí"
+        }
+    },
+    "multiplayerLobby": {
+        "title": "Centre de Comandament Multijugador",
+        "subtitle": "Convida els teus amics i prepareu-vos per a la missió.",
+        "room": "SALA: {id}",
+        "abort": "AVORTAR",
+        "commander": "Comandant",
+        "crewmate": "Tripulant",
+        "waiting": "Esperant...",
+        "launchNow": "INICIAR MISSIÓ",
+        "waitingOrders": "ESPERANT ORDRES DEL COMANDANT...",
+        "prepareExpedition": "PREPARAR EXPEDICIÓ",
+        "newMission": "NOVA MISSIÓ",
+        "public": "PÚBLICA",
+        "private": "PRIVADA",
+        "startRoom": "CREAR SALA",
+        "joinByCode": "UNIR-SE PER CODI",
+        "codePlaceholder": "CODI DE 6 DÍGITS",
+        "dock": "ACOPLAR-SE",
+        "incomingCalls": "TRUCADES ENTRANTS ({count})",
+        "requestSupport": "{user} sol·licita el teu suport en una missió.",
+        "missionNetwork": "XARXA DE MISSIONS",
+        "sector": "SECTOR: {id}",
+        "establishLink": "ESTABLIR VINCLE",
+        "noSignals": "SENSE SENYALS DETECTADES",
+        "recruitCrew": "RECLUTAR TRIPULACIÓ",
+        "friends": "AMICS",
+        "possibleCrewmates": "POSSIBLES TRIPULANTS",
+        "noCrewmates": "No hi ha més pilots disponibles.",
+        "joiningRoom": "Unint-te a la sala de {user}...",
+        "missionInProgress": "MISSIÓ EN CURS",
+        "round": "RONDA {current} / {total}",
+        "roundWinner": "¡RONDA PER A!",
+        "tie": "¡EMPANT!",
+        "timeout": "¡TEMPS EXHAURIT!",
+        "you": "TU",
+        "currentCrew": "Tripulació Actual",
+        "maxPlayers": "MIDA DE LA NAU MÀX.",
+        "astronauts": "Astronautes",
+        "roundsCount": "NOMBRE DE RONDES",
+        "rounds": "Rondes",
+        "selectModality": "Selecciona modalitat",
+        "comingSoon": "PRÒXIMAMENT",
+        "selectingMission": "SELECCIONANT MISSIÓ...",
+        "modalities": {
+            "1vs1": "Mode 1vs1",
+            "2vs2": "Mode 2vs2",
+            "boss": "Mode Boss",
+            "carrera": "Carrera Espacial",
+            "torneig": "Torneig"
+        }
+    },
+    "plans": {
+        "selectMode": "SELECCIONA EL TEU MODE DE MISSIÓ",
+        "standard": "ESTÀNDARD",
+        "manage": "GESTIONAR",
+        "select": "SELECCIONAR",
+        "individualTitle": "MODALITAT INDIVIDUAL",
+        "individualSubtitle": "Defineix el teu nivell d'accés a la base de dades",
+        "freeDesc": "Exploració bàsica. <br> Sense accés a telemetria avançada.",
+        "currentPlan": "PLA ACTUAL",
+        "premiumDesc": "Accés Total. <br> Estadístiques, rendiment i suport d'Elit.",
+        "unlock": "DESBLOQUEJAR",
+        "backToProfile": "TORNAR AL PERFIL",
+        "backToSelection": "TORNAR A LA SELECCIÓ",
+        "squadProtocol": "PROTOCOL D'ESQUADRA",
+        "squadStatus": "Quin és el teu estatus de missió?",
+        "foundSquadTitle": "FUNDAR ESQUADRA",
+        "foundSquadDesc": "Crea un nou equip i lidera la missió.",
+        "joinSquadTitle": "UNIR-SE A ESQUADRA",
+        "joinSquadDesc": "Introdueix credencials per unir-te a un equip existent.",
+        "linkSystem": "SISTEMA D'ENLLAÇ",
+        "teamAccess": "ACCÉS D'EQUIP",
+        "missionId": "IDENTIFICADOR DE MISSIÓ",
+        "squadNameId": "NOM D'ESQUADRA / ID",
+        "encryptionKey": "CLAU D'ENCRIPTACIÓ",
+        "accessCode": "CODI D'ACCÉS",
+        "establishConnection": "ESTABLIR CONNEXIÓ",
+        "abortAndReturn": "AVORTAR I TORNAR",
+        "unitRegistration": "REGISTRE D'UNITAT",
+        "newSquad": "NOVA ESQUADRA",
+        "unitDesignation": "DESIGNACIÓ D'UNITAT",
+        "squadName": "NOM DE L'ESQUADRA",
+        "securityProtocols": "PROTOCOLS DE SEGURETAT",
+        "password": "CONTRASENYA",
+        "repeatCode": "REPETIR CODI",
+        "confirmFoundation": "CONFIRMAR FUNDACIÓ",
+        "cancelProtocol": "CANCEL·LAR PROTOCOL",
+        "pwdMismatch": "Els codis no coincideixen",
+        "individualDesc": "Enlaira't en solitari. Domina les missions bàsiques i explora el cosmos al teu propi ritme.",
+        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en temps real i panell de telemetria conjunt."
+    },
+    "spelledRosco": {
+        "title": "🚀 Rosco Estel·lar",
+        "score": "Puntuació: {score}",
+        "time": "Temps: {time}s",
+        "definition": "Definició",
+        "writeWord": "ESCRIU LA PARAULA",
+        "placeholder": "Escriu aquí...",
+        "pasapalabra": "Pasapalabra",
+        "confirm": "Confirmar",
+        "clearAll": "Esborrar tot",
+        "completedTitle": "Rosco Completat!",
+        "correctHits": "Encerts",
+        "incorrectHits": "Errors",
+        "finalScore": "Puntuació Final: {score}",
+        "timeRemaining": "Temps Restant: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtenir Recompensa",
+        "msgCorrect": "Correcte! Molt bé!",
+        "msgIncorrect": "Incorrecte! Era \"{answer}\""
+    },
+    "rhymeSquad": {
+        "title": "Esquadró de Rimes",
+        "desc": "Tens <span class=\"text-cyan-accent-3 font-weight-bold\">60 SEGONS</span>. Atrapa rimes per sumar 2 segons extra. Si falles perdràs vides!",
+        "startMission": "INICIAR MISSIÓ",
+        "phonologicalSquad": "🎧 Esquadró Fonològic",
+        "points": "Punts: {score}",
+        "time": "Temps: {time}s",
+        "lives": "Vides: {lives}",
+        "findRhymes": "Busca rimes amb:",
+        "combo": "COMBO x{combo} {turbo}",
+        "timeOut": "Temps Esgotat!",
+        "missionFailed": "Missió Fallida!",
+        "rhymesCaught": "Rimes Atrapades",
+        "errors": "Errors",
+        "finalScore": "Puntuació Final: {score}",
+        "maxCombo": "Combo Màxim: x{combo}",
+        "getReward": "Obtenir Recompensa"
+    },
+    "syllableQuest": {
+        "points": "Punts: {score}",
+        "time": "Temps: {time}s",
+        "missionProgress": "Missió {current} / {total}",
+        "clickInstruction": "Fes un \"clic\" per cada síl·laba!",
+        "check": "Comprovar",
+        "completedTitle": "Missió completada",
+        "finalScore": "Punts: {score}",
+        "timeRemaining": "Temps restant: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtenir Recompensa",
+        "msgCorrect": "Correcte!",
+        "msgIncorrect": "Incorrecte, torna a provar."
+    },
+    "wordConstruction": {
+        "level": "Nivell {level}",
+        "score": "Puntuació: {score}",
+        "time": "Temps: {time}s",
+        "baseStatus": "Estat de la Base",
+        "dragInstruction": "Arrossega les lletres per construir l'estructura!",
+        "hint": "Pista: {hint}",
+        "currentOrder": "Ordre actual: ",
+        "buildBlock": "Construir Bloc",
+        "shuffleAgain": "Barrejar de nou",
+        "completedTitle": "Construcció Completada!",
+        "totalPoints": "Punts Totals: {score}",
+        "timeRemaining": "Temps Restant: {time}s",
+        "reward": "Recompensa: {reward}",
+        "getReward": "Obtenir Recompensa",
+        "msgCorrect": "Correcte! Bloc afegit a l'estructura.",
+        "msgIncorrect": "Error estructural! Torna-ho a intentar."
+    },
+    "singleplayerLevels": {
+        "preparativos": "Preparatius",
+        "despegue": "Enlairament!",
+        "gravedad": "Trencant la Gravetat",
+        "desacoplamiento": "Desacoblament Orbital",
+        "ruta": "Ruta Estel·lar",
+        "base": "Cridant a la Base",
+        "recarga": "Recàrrega Solar",
+        "reparacion": "Reparació Exprés",
+        "fase1Title": "Entrenament",
+        "fase1Subtitle": "Fase 1: La Terra",
+        "fase2Title": "El Viatge Comença",
+        "fase2Subtitle": "Fase 2: Espai Proper"
+    },
+    "shopActions": {
+        "confirmMulti": "Vols comprar un pack de 10 tirades per 900 monedes?",
+        "alreadyOwned": "Ja tens {item} al teu inventari!",
+        "maxReached": "Has assolit el màxim de 99 unitats per {item}.",
+        "confirmBuy": "Vols comprar {item} per {price} crèdits?",
+        "buySuccess": "Compra amb èxit"
+    },
+    "shopItems": {
+        "vidas": {
+            "name": "Pack de Vides",
+            "desc": "Recupera 5 vides immediatament."
+        },
+        "racha": {
+            "name": "Congelar Ratxa",
+            "desc": "Protegeix la teva ratxa un dia."
+        },
+        "dobleMonedas": {
+            "name": "Doble de Monedes",
+            "desc": "Multiplica x2 les monedes guanyades."
+        },
+        "doblePuntos": {
+            "name": "Doble Puntuació",
+            "desc": "Multiplica x2 els punts obtinguts."
+        },
+        "pin": {
+            "name": "Pin Comandant",
+            "desc": "Insígnia daurada."
+        },
+        "cyberpunk": {
+            "name": "Skin Cyberpunk",
+            "desc": "Aspecte robòtic."
+        },
+        "dron": {
+            "name": "Mascota Dron",
+            "desc": "Un company fidel."
+        },
+        "neon": {
+            "name": "Rastre de Neó",
+            "desc": "Efectes visuals."
+        },
+        "limit3": "* Només vàlid durant 3 partides"
+    },
+    "radarScan": {
+        "points": "Punts: {score}",
+        "time": "Temps:",
+        "title": "Escàner de Ràdar",
+        "desc": "Troba la lletra diferent abans que s'esgoti el temps. Vigila, el teu camp de visió és limitat i fer clics a l'atzar et restarà temps!",
+        "startBtn": "COMENÇAR (60s)",
+        "completed": "¡Escàner Completat!",
+        "totalPoints": "Punts Totals: {score}",
+        "returnMenu": "TORNAR AL MENÚ"
+    },
+    "radioSignal": {
+        "points": "Punts: {score}",
+        "time": "Temps: {time}s",
+        "locked": "● LOCKED",
+        "scanning": "○ SCANNING",
+        "placeholder": "Escriu la frase...",
+        "send": "SEND",
+        "waiting": "ESPERANT SENYAL...",
+        "error": "✗ DADES INCORRECTES - TORNA A INTENTAR"
+    },
+    "errors": {
+        "noSession": "No hi ha una sessió activa.",
+        "invalidGame": "Nom de joc invàlid.",
+        "invalidItem": "Objecte invàlid."
+    },
+    "games": {
+        "word-construction": "Construcció de Paraules",
+        "syllable-quest": "Aventura Sil·làbica",
+        "rhyme-squad": "Esquadró de Rimes",
+        "spelled-rosco": "Rosco Estel·lar",
+        "radar-scan": "Escàner de Ràdar",
+        "radio-signal": "Senyal de Ràdio",
+        "symmetry-breaker": "Symmetry Breaker"
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Juga {goal} partides",
+            "coins": "Guanya {goal} monedes",
+            "xp": "Aconsegueix {goal} XP",
+            "item": "Utilitza {goal} Potenciadors",
+            "streak": "Activitat Diària"
+        },
+        "weekly": {
+            "games": "Mestre de Jocs ({goal} partides)",
+            "coins": "Buscador d'Or ({goal} monedes)",
+            "level": "Ascensió Lunar (Puja {goal} nivells)",
+            "streak": "Supervivient Espacial (Ratxa {goal} dies)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "Primer Vol",
+            "desc": "Completa 1 missió.",
+            "metric": "Partides"
+        },
+        "2": {
+            "title": "Tripulant Actiu",
+            "desc": "Completa 5 missions.",
+            "metric": "Partides"
+        },
+        "3": {
+            "title": "Veterà Estel·lar",
+            "desc": "Completa 20 missions.",
+            "metric": "Partides"
+        },
+        "4": {
+            "title": "Primer Botí",
+            "desc": "Acumula 1.200 monedes.",
+            "metric": "Monedes"
+        },
+        "5": {
+            "title": "Fortuna Galàctica",
+            "desc": "Acumula 3.000 monedes.",
+            "metric": "Monedes"
+        },
+        "6": {
+            "title": "Primer Col·leccionable",
+            "desc": "Aconsegueix 1 objecte a l'inventari.",
+            "metric": "Objectes"
+        },
+        "7": {
+            "title": "Col·leccionista",
+            "desc": "Aconsegueix 5 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "8": {
+            "title": "Museu Orbital",
+            "desc": "Aconsegueix 10 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "9": {
+            "title": "Pujant de Rang",
+            "desc": "Assoleix el nivell 3.",
+            "metric": "Nivell"
+        },
+        "10": {
+            "title": "Capità Novell",
+            "desc": "Assoleix el nivell 5.",
+            "metric": "Nivell"
+        },
+        "11": {
+            "title": "Comandant",
+            "desc": "Assoleix el nivell 8.",
+            "metric": "Nivell"
+        },
+        "12": {
+            "title": "Energia Infinita",
+            "desc": "Aconsegueix 500 XP.",
+            "metric": "XP"
+        },
+        "13": {
+            "title": "Estrateg Galàctic",
+            "desc": "Completa 10 missions.",
+            "metric": "Missions"
+        },
+        "14": {
+            "title": "Mercader d'Estrelles",
+            "desc": "Acumula 2.000 monedes.",
+            "metric": "Monedes"
+        },
+        "15": {
+            "title": "Heroi del Cosmos",
+            "desc": "Completa 50 missions.",
+            "metric": "Missions"
+        },
+        "16": {
+            "title": "Magnat de la Nebulosa",
+            "desc": "Acumula 5.000 monedes.",
+            "metric": "Monedes"
+        },
+        "17": {
+            "title": "Sobirà del Buit",
+            "desc": "Assoleix el nivell 10.",
+            "metric": "Nivell"
+        },
+        "18": {
+            "title": "Conqueridor de Galàxies",
+            "desc": "Aconsegueix 1.000 XP.",
+            "metric": "XP"
+        }
+    },
+    "multiplayerResult": {
+        "victory": "¡VICTÒRIA!",
+        "tie": "¡EMPAT!",
+        "defeat": "¡DERROTA!",
+        "winDesc": "Has conquerit la galàxia",
+        "tieDesc": "Ningú domina el cosmos avui",
+        "defeatDesc": "El cosmos t'ha vençut aquest cop",
+        "you": "TU",
+        "roundsWon": "rondes guanyades",
+        "winner": "GUANYADOR",
+        "loser": "PERDEDOR",
+        "ready": "PREPARAT",
+        "waiting": "ESPERANT...",
+        "pending": "PENDENT",
+        "vs": "VS",
+        "roundsPlayed": "{total} rondes jugades",
+        "missionHistory": "HISTORIAL DE LA MISSIÓ",
+        "backToLobby": "TORNAR A LA SALA",
+        "waitingTeam": "Esperant que l'equip torni..."
+    },
+    "shop": {
+        "spinError": "Error en girar",
+        "unknownPrize": "El servidor ha retornat un premi desconegut.",
+        "commError": "Error de comunicació"
+    },
+    "languages": {
+        "es": "Castellà",
+        "ca": "Català",
+        "en": "Anglès"
+    },
+    "footer": {
+        "docs": "Documentació",
+        "support": "Suport Tècnic",
+        "x": "Twitter / X",
+        "github": "Repositori GitHub",
+        "discord": "Comunitat Discord",
+        "reddit": "Fòrum Reddit"
+    }
+}

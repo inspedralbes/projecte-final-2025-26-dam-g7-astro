@@ -6,11 +6,12 @@
             <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
         </div>
       <v-spacer></v-spacer>
+      <LanguageSelector class="mr-4" />
       <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
-        LOGIN
+        {{ $t('home.login') }}
       </v-btn>
       <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
-        UNIRSE
+        {{ $t('home.register') }}
       </v-btn>
     </v-app-bar>
 
@@ -22,27 +23,24 @@
       <div class="content-wrapper px-4">
         <div class="system-status mb-6">
             <span class="pulse-dot"></span>
-            SYSTEM ONLINE: NEURAL TRAINING INTERFACE
+            {{ $t('home.systemOnline') }}
         </div>
         
         <h1 class="hero-title mb-4">
-          PROYECTO <span class="primary-gradient-text">ASTRO</span>
+          {{ $t('home.title', { name: 'ASTRO' }) }}
         </h1>
         
-        <p class="hero-subtitle mb-10 mx-auto">
-          Plataforma de entrenamiento neurocognitivo de alto rendimiento.<br>
-          Optimiza tu capacidad de procesamiento visual y agilidad mental.
-        </p>
+        <p class="hero-subtitle mb-10 mx-auto" v-html="$t('home.subtitle')"></p>
 
         <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
             <v-btn size="x-large" color="primary" variant="flat" class="action-button px-12 py-6 rounded-lg"
               :to="isLoggedIn ? '/singleplayer' : '/register'">
-              {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
+              {{ isLoggedIn ? $t('home.continue') : $t('home.start') }}
               <v-icon end icon="mdi-chevron-right" class="ms-2"></v-icon>
             </v-btn>
 
             <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg">
-                SABER MÁS
+                {{ $t('home.learnMore') }}
             </v-btn>
         </div>
       </div>
@@ -62,6 +60,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import LanguageSelector from '@/components/layout/LanguageSelector.vue';
 
 const isLoggedIn = computed(() => {
   return !!localStorage.getItem('user-session');

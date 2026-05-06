@@ -11,8 +11,8 @@
         </div>
 
         <div class="session-hud">
-            <div class="hud-pill">Punts: {{ score }}</div>
-            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+            <div class="hud-pill">{{ $t('radioSignal.points', { score }) }}</div>
+            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">{{ $t('radioSignal.time', { time: timeLeft }) }}</div>
         </div>
 
         <div class="screen-housing">
@@ -43,7 +43,7 @@
             </div>
             <div class="status-display">
                 <span :class="isTuned ? 'status-sync' : 'status-lost'">
-                    {{ isTuned ? '● LOCKED' : '○ SCANNING' }}
+                    {{ isTuned ? $t('radioSignal.locked') : $t('radioSignal.scanning') }}
                 </span>
             </div>
         </div>
@@ -83,18 +83,18 @@
                     <input
                         v-model="userGuess"
                         class="radio-input"
-                        placeholder="Escriu la frase..."
+                        :placeholder="$t('radioSignal.placeholder')"
                         @keyup.enter="checkPhrase"
                         autofocus
                     />
                     <button class="send-btn" @click="checkPhrase">
-                        SEND
+                        {{ $t('radioSignal.send') }}
                     </button>
                 </div>
             </div>
             <div v-else class="input-placeholder">
                 <v-icon size="18" color="#444">mdi-antenna</v-icon>
-                <span>ESPERANT SENYAL...</span>
+                <span>{{ $t('radioSignal.waiting') }}</span>
             </div>
         </div>
 
@@ -124,6 +124,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['game-over']);
+const { t, locale } = useI18n();
 
 // Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
@@ -326,7 +327,8 @@ const speakPhrase = (volume = 1.0) => {
     
     // Configurar veus
     const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(v => v.lang.includes('ca')) ||
+    const targetLang = locale.value === 'ca' ? 'ca' : 'es';
+    const v = voices.find(v => v.lang.includes(targetLang)) ||
               voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
               voices.find(v => v.lang.includes('es')) || voices[0];
     

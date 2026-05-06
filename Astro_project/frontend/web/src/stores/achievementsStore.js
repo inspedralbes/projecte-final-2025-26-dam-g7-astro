@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
+import i18n from '@/i18n';
 import {
     STORAGE_KEYS,
     normalizeSelectedAchievements,
@@ -47,7 +48,7 @@ export const useAchievementsStore = defineStore('achievements', {
             this.error = null;
             const user = this.resolveUser();
             if (!user) {
-                return { success: false, message: 'No hay una sesión activa.' };
+                return { success: false, message: i18n.global.t('errors.noSession') };
             }
 
             try {

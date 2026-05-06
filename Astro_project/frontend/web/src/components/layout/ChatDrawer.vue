@@ -7,7 +7,7 @@
 
     <!-- Panel del Chat -->
     <Transition name="chat-drawer">
-      <div v-if="chatStore.isOpen" class="chat-drawer" role="dialog" aria-label="Chat privado">
+      <div v-if="chatStore.isOpen" class="chat-drawer" role="dialog" :aria-label="$t('chat.title')">
 
         <!-- ── HEADER ──────────────────────────────────────── -->
         <div class="chat-header">
@@ -23,15 +23,15 @@
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
                 </span>
               </v-avatar>
-              <span class="online-dot" title="Online" />
+              <span class="online-dot" :title="$t('chat.online')" />
             </div>
             <div class="friend-info">
               <div class="friend-name">{{ activeFriend?.user }}</div>
-              <div class="friend-status">Canal de comunicación privado</div>
+              <div class="friend-status">{{ $t('chat.privateChannel') }}</div>
             </div>
           </div>
 
-          <button class="close-btn" @click="chatStore.closeChat()" title="Cerrar comunicación">
+          <button class="close-btn" @click="chatStore.closeChat()" :title="$t('chat.close')">
             <v-icon icon="mdi-close" size="20" />
           </button>
         </div>
@@ -41,7 +41,7 @@
           <!-- Estado vacío -->
           <div v-if="chatStore.activeMessages.length === 0" class="chat-empty">
             <v-icon icon="mdi-satellite-variant" size="48" color="rgba(0,229,255,0.3)" />
-            <p class="chat-empty-text">Canal abierto.<br>Inicia la transmisión.</p>
+            <p class="chat-empty-text">{{ $t('chat.emptyTitle') }}<br>{{ $t('chat.emptySubtitle') }}</p>
           </div>
 
           <!-- Burbujas de mensajes -->
@@ -140,7 +140,7 @@
               ref="inputRef"
               v-model="inputText"
               class="chat-input"
-              placeholder="Transmitir mensaje..."
+              :placeholder="$t('chat.placeholder')"
               rows="1"
               maxlength="500"
               @keydown.enter.exact.prevent="sendMessage"
@@ -151,12 +151,12 @@
               :class="{ 'send-btn--active': inputText.trim() }"
               :disabled="!inputText.trim()"
               @click="sendMessage"
-              title="Enviar (Enter)"
+              :title="$t('chat.send')"
             >
               <v-icon icon="mdi-send" size="18" />
             </button>
           </div>
-          <div class="input-hint">Enter para enviar · Shift+Enter nueva línea</div>
+          <div class="input-hint">{{ $t('chat.hint') }}</div>
         </div>
 
       </div>
@@ -168,8 +168,9 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useChatStore } from '@/stores/chatStore';
 import { useSessionStore } from '@/stores/sessionStore';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
+import { useI18n } from 'vue-i18n';
 
+const { t, locale } = useI18n();
 const chatStore = useChatStore();
 const sessionStore = useSessionStore();
 const multiplayerStore = useMultiplayerStore();
@@ -204,7 +205,8 @@ const getAvatarUrl = (avatarStr) => {
 const formatTime = (isoString) => {
   if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const localeStr = locale.value === 'en' ? 'en-US' : (locale.value === 'ca' ? 'ca-ES' : 'es-ES');
+  return date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
 };
 
 const autoResize = () => {

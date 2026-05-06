@@ -1,0 +1,693 @@
+{
+    "general": {
+        "loading": "Loading...",
+        "error": "An error has occurred.",
+        "save": "Save",
+        "cancel": "Cancel"
+    },
+    "sidebar": {
+        "home": "Home",
+        "training": "Training",
+        "multiplayer": "Multiplayer",
+        "shop": "Shop",
+        "inventory": "Inventory",
+        "achievements": "Achievements",
+        "friends": "Friends",
+        "profile": "Profile"
+    },
+    "home": {
+        "login": "Login",
+        "register": "Register",
+        "systemOnline": "SYSTEM ONLINE: NEURAL TRAINING INTERFACE",
+        "title": "PROJECT {name}",
+        "subtitle": "High-performance visual and neurocognitive training platform. <br> Optimize your visual processing and mental agility.",
+        "start": "START TRAINING",
+        "continue": "CONTINUE MISSION",
+        "learnMore": "LEARN MORE"
+    },
+    "multiplayer": {
+        "title": "Multiplayer Mode",
+        "description": "Page under development...",
+        "backButton": "Back to Menu"
+    },
+    "singleplayer": {
+        "level_up": "LEVEL {level}!",
+        "new_rank": "New Rank Achieved",
+        "accumulated_xp": "You have accumulated a total of {xp} XP and are one step closer to dominating the galaxy.",
+        "continue": "CONTINUE",
+        "almost_there": "Almost there!",
+        "obtained": "You have obtained:",
+        "pts": "pts",
+        "need": "You need {score} points to unlock the next mission.",
+        "retry": "RETRY",
+        "goal": "Goal: {score} pts"
+    },
+    "store": {
+        "title": "Space Bazaar",
+        "subtitle": "Improve your equipment for the mission",
+        "wheelTitle": "Quantum Vortex",
+        "wheelDesc": "Spin the vortex to obtain unique supplies, coins, or epic skins. Luck favors the bold.",
+        "extract": "EXTRACT (100",
+        "buy10": "BUY 10 SPINS (900",
+        "freeSpins": "{spins} FREE SPINS",
+        "balance": "Available balance",
+        "suppliesTitle": "Basic Supplies",
+        "eliteTitle": "Elite Collection",
+        "units": "Units: x{qty}",
+        "max": "MAX 99",
+        "owned": "OWNED",
+        "reward": "REWARD!",
+        "accept": "Accept"
+    },
+    "inventory": {
+        "title": "MY INVENTORY",
+        "subtitle": "Manage your equipment and personalize your stellar presence",
+        "categories": {
+            "all": "All",
+            "skin": "Skins",
+            "pets": "Pets",
+            "collectible": "Collectibles",
+            "trails": "Trails",
+            "items": "Items"
+        },
+        "active": "ACTIVE: {games} games",
+        "use": "USE",
+        "unequipable": "NOT EQUIPABLE",
+        "equipped": "EQUIPPED",
+        "equip": "EQUIP",
+        "empty": "You don't have any equipment in this category yet",
+        "goToShop": "Visit the Shop",
+        "useError": "Could not use the item."
+    },
+    "profile": {
+        "guest": "Explorer",
+        "defaultRank": "Flight Cadet",
+        "level": "Level {level}",
+        "online": "In orbit",
+        "offline": "At base",
+        "closeHistory": "CLOSE PANEL",
+        "openHistory": "HISTORY",
+        "xpProgress": "{xp} / {req} XP",
+        "missionProgress": "MISSION PROGRESS",
+        "planLabel": "CURRENT PLAN",
+        "missionLabel": "CURRENT MISSION",
+        "systemLabel": "SYSTEM",
+        "systemValue": "ASTRO-V2.0",
+        "deepSpace": "DEEP SPACE (LVL {level})",
+        "activeAchievements": "ACTIVE ACHIEVEMENTS",
+        "featuredAchievements": "FEATURED ACHIEVEMENTS",
+        "inventoryBtn": "INVENTORY",
+        "changePlanBtn": "CHANGE PLAN",
+        "logoutBtn": "LOGOUT AND EXIT",
+        "topGames": "BEST MISSIONS (TOP 5)",
+        "flightHistory": "FLIGHT HISTORY",
+        "flightHistorySub": "Your latest mission records in deep space.",
+        "personalRecords": "PERSONAL RECORDS",
+        "noEliteRecords": "No elite records",
+        "min": "min",
+        "pts": "Pts",
+        "xpEarned": "+{xp} XP",
+        "noRecords": "You haven't established any legendary records yet.",
+        "recentIncursions": "RECENT INCURSIONS",
+        "page": "PAGE {current} OF {total}",
+        "noRecent": "No recent expedition records found.",
+        "selectAchievement": "Select Achievement",
+        "removeAchievement": "Remove Achievement",
+        "astronautSuit": "Astronaut Suit",
+        "missionCompanion": "Mission Companion",
+        "none": "None",
+        "loginRequired": "You must log in to save your achievements.",
+        "mission_1": "Liftoff",
+        "mission_2": "Navigation",
+        "mission_3": "Communications",
+        "mission_4": "Systems",
+        "mission_5": "Black Hole",
+        "mission_6": "Exoplanet",
+        "avatar_white": "White",
+        "avatar_yellow": "Yellow",
+        "avatar_purple": "Purple",
+        "avatar_black": "Black",
+        "avatar_orange": "Orange",
+        "avatar_green": "Green",
+        "avatar_red": "Red",
+        "mascot_whale": "Whale",
+        "mascot_alien": "Alien",
+        "mascot_drone": "Drone",
+        "mascot_octopus": "Octopus"
+    },
+    "friends": {
+        "title": "Crew",
+        "tabs": {
+            "myFriends": "My Friends",
+            "search": "Search Friends",
+            "requests": "Requests"
+        },
+        "searchBar1": "Search in my crew...",
+        "level": "Level {level}",
+        "viewProfile": "View Profile",
+        "challenge": "Challenge",
+        "noSearchMatch": "No friends matching the search found.",
+        "emptyCrew": "Your crew is empty. Search for new recruits!",
+        "searchExplore": "Search for explorers in the galaxy...",
+        "searchOthersBtn": "Search Others",
+        "sentReq": "Sent",
+        "recruit": "Recruit",
+        "sentReqTo": "Request Sent to {name}",
+        "recruitName": "Recruit {name}",
+        "noExplorers": "No more explorers in the galaxy right now.",
+        "reject": "Reject",
+        "accept": "Accept",
+        "noReqs": "You have no pending requests.",
+        "activeAchievements": "ACTIVE ACHIEVEMENTS",
+        "errConnection": "Connection error with the fleet",
+        "abandoned": "{name} has left the crew.",
+        "recruited": "{name} successfully recruited!",
+        "sent": "Request sent to {name}",
+        "errSendReq": "Error sending request",
+        "accepted": "You have accepted {name} into your crew",
+        "errAccept": "Error accepting request",
+        "rejected": "You have rejected {name}",
+        "errReject": "Error rejecting request",
+        "ranks": {
+            "0": "Cadet",
+            "1": "Explorer",
+            "2": "Navigator",
+            "3": "Captain",
+            "4": "Commander",
+            "5": "Admiral",
+            "6": "Sentinel",
+            "7": "Guardian",
+            "8": "Forger",
+            "9": "Master",
+            "10": "Archon",
+            "11": "Sovereign",
+            "12": "Architect",
+            "13": "Deity",
+            "14": "Omniscient"
+        }
+    },
+    "auth": {
+        "abortCmd": "ABORT / RETURN TO BASE",
+        "systemAccessTitle": "MISSION SYSTEM ACCESS",
+        "identification": "IDENTIFICATION",
+        "usernameIdMarker": "USERNAME / CREW ID",
+        "usernameReq": "Identification required",
+        "flightCredentials": "FLIGHT CREDENTIALS",
+        "passcode": "ACCESS CODE",
+        "passcodeReq": "Code required",
+        "syncInit": "START SYNCHRONIZATION",
+        "changePlan": "CHANGE PLAN",
+        "enlist": "ENLIST",
+        "status": "STATUS:",
+        "statusOperative": "OPERATIVE",
+        "unrecognizedCreds": "Unrecognized credentials",
+        "idAndCodeReq": "Identification and code required",
+        "enlistment": "ENLISTMENT",
+        "newAstroCrew": "NEW ASTRO CREWMATE",
+        "usernameID": "USERNAME (YOUR ID)",
+        "idReq": "ID Required",
+        "visibleNameNote": "*This will be your visible name in the mission",
+        "credentials": "CREDENTIALS",
+        "password": "PASSWORD",
+        "codeReq": "Code Required",
+        "verif": "VERIFICATION",
+        "confirmPwd": "CONFIRM PASSWORD",
+        "initSignUp": "START ENLISTMENT PROTOCOL",
+        "alreadyHaveId": "ALREADY HAVE AN ID? ACCESS",
+        "coordinates": "COORDINATES:",
+        "sector": "SECTOR-7G",
+        "codesDontMatch": "Codes do not match",
+        "allReqs": "All fields are required.",
+        "signUpErr": "Error processing enlistment.",
+        "serverConnErr": "Critical error: Could not contact base."
+    },
+    "chat": {
+        "title": "Private Chat",
+        "online": "Online",
+        "privateChannel": "Private communication channel",
+        "close": "Close communication",
+        "emptyTitle": "Channel open.",
+        "emptySubtitle": "Start the transmission.",
+        "placeholder": "Transmit message...",
+        "send": "Send (Enter)",
+        "hint": "Enter to send · Shift+Enter new line"
+    },
+    "symmetryBreaker": {
+        "points": "Points: {score}",
+        "target": "Target: {target}",
+        "time": "Time: {time}s",
+        "lockMeter": "Precision Lock (Round {round})",
+        "title": "Symmetry Breaker",
+        "desc": "Keep the laser on the correct target. Speed increases each round!",
+        "startMission": "START MISSION",
+        "endMission": "Mission End",
+        "returnMenu": "RETURN TO MENU"
+    },
+    "rightSidebar": {
+        "pilotState": "PILOT STATE",
+        "progress": "PROGRESS",
+        "streak": "Streak",
+        "streakCaps": "STREAK",
+        "credits": "CREDITS",
+        "coins": "AstroCoins",
+        "level": "LEVEL {level}",
+        "xpRemaining": "{xp} XP remaining for next level",
+        "dailyMissions": "DAILY MISSIONS",
+        "noDailyMissions": "No missions available",
+        "syncing": "Syncing with base...",
+        "specialMission": "Special Mission",
+        "progressSub": "Progress: {current} / {goal}",
+        "claim": "Claim",
+        "claimCaps": "CLAIM",
+        "viewAllDaily": "VIEW ALL DAILY",
+        "weeklyMissions": "WEEKLY MISSIONS",
+        "noWeeklyMissions": "No weekly missions available",
+        "weeklyMission": "Weekly Mission",
+        "viewAllWeekly": "VIEW ALL WEEKLY",
+        "claimReward": "CLAIM",
+        "rewardClaimed": "Reward claimed!",
+        "rewardError": "Error claiming mission",
+        "coinsSuffix": "astrocoins"
+    },
+    "achievements": {
+        "title": "ACHIEVEMENTS",
+        "subtitle": "Your commendations in the stellar fleet",
+        "syncErrorAtlas": "Could not fully synchronize with MongoDB Atlas.",
+        "syncErrorBase": "Could not synchronize with the command base.",
+        "unlocked": "Unlocked",
+        "completed": "Completed",
+        "syncing": "Syncing Files...",
+        "locked": "Locked",
+        "metrics": {
+            "missions": "Missions",
+            "coins": "Coins",
+            "inventory": "Items",
+            "level": "Level",
+            "xp": "XP"
+        },
+        "types": {
+            "bronze": "Bronze",
+            "silver": "Silver",
+            "gold": "Gold",
+            "platinum": "Platinum"
+        }
+    },
+    "multiplayerLobby": {
+        "title": "Multiplayer Command Center",
+        "subtitle": "Invite your friends and prepare for the mission.",
+        "room": "ROOM: {id}",
+        "abort": "ABORT",
+        "commander": "Commander",
+        "crewmate": "Crewmate",
+        "waiting": "Waiting...",
+        "launchNow": "LAUNCH NOW",
+        "waitingOrders": "WAITING FOR COMMANDER'S ORDERS...",
+        "prepareExpedition": "PREPARE EXPEDITION",
+        "newMission": "NEW MISSION",
+        "public": "PUBLIC",
+        "private": "PRIVATE",
+        "startRoom": "CREATE ROOM",
+        "joinByCode": "JOIN BY CODE",
+        "codePlaceholder": "6-DIGIT CODE",
+        "dock": "DOCK",
+        "incomingCalls": "INCOMING CALLS ({count})",
+        "requestSupport": "{user} requests your support in a mission.",
+        "missionNetwork": "MISSION NETWORK",
+        "sector": "SECTOR: {id}",
+        "establishLink": "ESTABLISH LINK",
+        "noSignals": "NO SIGNALS DETECTED",
+        "recruitCrew": "RECRUIT CREW",
+        "friends": "FRIENDS",
+        "possibleCrewmates": "POSSIBLE CREWMATES",
+        "noCrewmates": "No more pilots available.",
+        "joiningRoom": "Joining {user}'s room...",
+        "missionInProgress": "MISSION IN PROGRESS",
+        "round": "ROUND {current} / {total}",
+        "roundWinner": "ROUND FOR!",
+        "tie": "TIE!",
+        "timeout": "TIMEOUT!",
+        "you": "YOU",
+        "currentCrew": "Current Crew",
+        "maxPlayers": "MAX SHIP SIZE",
+        "astronauts": "Astronauts",
+        "roundsCount": "NUMBER OF ROUNDS",
+        "rounds": "Rounds",
+        "selectModality": "Select modality",
+        "comingSoon": "COMING SOON",
+        "selectingMission": "SELECTING MISSION...",
+        "modalities": {
+            "1vs1": "1vs1 Mode",
+            "2vs2": "2vs2 Mode",
+            "boss": "Boss Mode",
+            "carrera": "Space Race",
+            "torneig": "Tournament"
+        }
+    },
+    "plans": {
+        "selectMode": "SELECT YOUR MISSION MODE",
+        "standard": "STANDARD",
+        "manage": "MANAGE",
+        "select": "SELECT",
+        "individualTitle": "INDIVIDUAL MODE",
+        "individualSubtitle": "Define your database access level",
+        "freeTitle": "FREE",
+        "freeDesc": "Basic exploration. <br> No access to advanced telemetry.",
+        "premiumTitle": "PREMIUM",
+        "currentPlan": "CURRENT PLAN",
+        "premiumDesc": "Full Access. <br> Statistics, performance, and Elite support.",
+        "unlock": "UNLOCK",
+        "backToProfile": "BACK TO PROFILE",
+        "backToSelection": "BACK TO SELECTION",
+        "squadProtocol": "SQUAD PROTOCOL",
+        "squadStatus": "What is your mission status?",
+        "foundSquadTitle": "FOUND SQUAD",
+        "foundSquadDesc": "Create a new team and lead the mission.",
+        "joinSquadTitle": "JOIN SQUAD",
+        "joinSquadDesc": "Enter credentials to join an existing team.",
+        "linkSystem": "LINK SYSTEM",
+        "teamAccess": "TEAM ACCESS",
+        "missionId": "MISSION IDENTIFIER",
+        "squadNameId": "SQUAD NAME / ID",
+        "encryptionKey": "ENCRYPTION KEY",
+        "accessCode": "ACCESS CODE",
+        "establishConnection": "ESTABLISH CONNECTION",
+        "abortAndReturn": "ABORT AND RETURN",
+        "unitRegistration": "UNIT REGISTRATION",
+        "newSquad": "NEW SQUAD",
+        "unitDesignation": "UNIT DESIGNATION",
+        "squadName": "SQUAD NAME",
+        "securityProtocols": "SECURITY PROTOCOLS",
+        "password": "PASSWORD",
+        "repeatCode": "REPEAT CODE",
+        "confirmFoundation": "CONFIRM FOUNDATION",
+        "cancelProtocol": "CANCEL PROTOCOL",
+        "pwdMismatch": "Passwords do not match",
+        "individualDesc": "Take off solo. Master basic missions and explore the cosmos at your own pace.",
+        "grupalDesc": "Join a squad. Tactical coordination, real-time tracking, and joint telemetry panel."
+    },
+    "spelledRosco": {
+        "title": "🚀 Stellar Rosco",
+        "score": "Score: {score}",
+        "time": "Time: {time}s",
+        "definition": "Definition",
+        "writeWord": "WRITE THE WORD",
+        "placeholder": "Write here...",
+        "pasapalabra": "Pasapalabra",
+        "confirm": "Confirm",
+        "clearAll": "Clear all",
+        "completedTitle": "Rosco Completed!",
+        "correctHits": "Correct",
+        "incorrectHits": "Errors",
+        "finalScore": "Final Score: {score}",
+        "timeRemaining": "Time Remaining: {time}s",
+        "reward": "Reward: {reward}",
+        "getReward": "Get Reward",
+        "msgCorrect": "Correct! Well done!",
+        "msgIncorrect": "Incorrect! It was \"{answer}\""
+    },
+    "rhymeSquad": {
+        "title": "Rhyme Squad",
+        "desc": "You have <span class=\"text-cyan-accent-3 font-weight-bold\">60 SECONDS</span>. Catch rhymes to add 2 extra seconds. If you fail, you'll lose lives!",
+        "startMission": "START MISSION",
+        "phonologicalSquad": "🎧 Phonological Squad",
+        "points": "Points: {score}",
+        "time": "Time: {time}s",
+        "lives": "Lives: {lives}",
+        "findRhymes": "Find rhymes with:",
+        "combo": "COMBO x{combo} {turbo}",
+        "timeOut": "Time Out!",
+        "missionFailed": "Mission Failed!",
+        "rhymesCaught": "Rhymes Caught",
+        "errors": "Errors",
+        "finalScore": "Final Score: {score}",
+        "maxCombo": "Max Combo: x{combo}",
+        "getReward": "Get Reward"
+    },
+    "syllableQuest": {
+        "points": "Points: {score}",
+        "time": "Time: {time}s",
+        "missionProgress": "Mission {current} / {total}",
+        "clickInstruction": "Click once for each syllable!",
+        "check": "Check",
+        "completedTitle": "Mission completed",
+        "finalScore": "Points: {score}",
+        "timeRemaining": "Time remaining: {time}s",
+        "reward": "Reward: {reward}",
+        "getReward": "Get Reward",
+        "msgCorrect": "Correct!",
+        "msgIncorrect": "Incorrect, try again."
+    },
+    "wordConstruction": {
+        "level": "Level {level}",
+        "score": "Score: {score}",
+        "time": "Time: {time}s",
+        "baseStatus": "Base Status",
+        "dragInstruction": "Drag the letters to build the structure!",
+        "hint": "Hint: {hint}",
+        "currentOrder": "Current order: ",
+        "buildBlock": "Build Block",
+        "shuffleAgain": "Shuffle again",
+        "completedTitle": "Construction Completed!",
+        "totalPoints": "Total Points: {score}",
+        "timeRemaining": "Time Remaining: {time}s",
+        "reward": "Reward: {reward}",
+        "getReward": "Get Reward",
+        "msgCorrect": "Correct! Block added to the structure.",
+        "msgIncorrect": "Structural error! Try again."
+    },
+    "singleplayerLevels": {
+        "preparativos": "Preparations",
+        "despegue": "Liftoff!",
+        "gravedad": "Breaking Gravity",
+        "desacoplamiento": "Orbital Decoupling",
+        "ruta": "Stellar Route",
+        "base": "Calling Base",
+        "recarga": "Solar Recharge",
+        "reparacion": "Express Repair",
+        "fase1Title": "Training",
+        "fase1Subtitle": "Phase 1: Earth",
+        "fase2Title": "The Journey Begins",
+        "fase2Subtitle": "Phase 2: Near Space"
+    },
+    "shopActions": {
+        "confirmMulti": "Do you want to buy a 10-spin pack for 900 coins?",
+        "alreadyOwned": "You already have {item} in your inventory!",
+        "maxReached": "You have reached the maximum of 99 units for {item}.",
+        "confirmBuy": "Do you want to buy {item} for {price} credits?",
+        "buySuccess": "Purchase successful"
+    },
+    "shopItems": {
+        "vidas": {
+            "name": "Life Pack",
+            "desc": "Recover 5 lives immediately."
+        },
+        "racha": {
+            "name": "Freeze Streak",
+            "desc": "Protect your streak for one day."
+        },
+        "dobleMonedas": {
+            "name": "Double Coins",
+            "desc": "Multiply earned coins by 2."
+        },
+        "doblePuntos": {
+            "name": "Double Score",
+            "desc": "Multiply obtained points by 2."
+        },
+        "pin": {
+            "name": "Commander Pin",
+            "desc": "Golden badge."
+        },
+        "cyberpunk": {
+            "name": "Cyberpunk Skin",
+            "desc": "Robotic appearance."
+        },
+        "dron": {
+            "name": "Drone Pet",
+            "desc": "A faithful companion."
+        },
+        "neon": {
+            "name": "Neon Trail",
+            "desc": "Visual effects."
+        },
+        "limit3": "* Only valid for 3 games"
+    },
+    "radarScan": {
+        "points": "Points: {score}",
+        "time": "Time:",
+        "title": "Radar Scan",
+        "desc": "Find the different letter before time runs out. Be careful, your field of vision is limited and random clicks will deduct time!",
+        "startBtn": "START (60s)",
+        "completed": "Scan Completed!",
+        "totalPoints": "Total Points: {score}",
+        "returnMenu": "RETURN TO MENU"
+    },
+    "radioSignal": {
+        "points": "Points: {score}",
+        "time": "Time: {time}s",
+        "locked": "● LOCKED",
+        "scanning": "○ SCANNING",
+        "placeholder": "Type the phrase...",
+        "send": "SEND",
+        "waiting": "WAITING FOR SIGNAL...",
+        "error": "✗ INCORRECT DATA - TRY AGAIN"
+    },
+    "errors": {
+        "noSession": "There is no active session.",
+        "invalidGame": "Invalid game name.",
+        "invalidItem": "Invalid item."
+    },
+    "games": {
+        "word-construction": "Word Construction",
+        "syllable-quest": "Syllable Quest",
+        "rhyme-squad": "Rhyme Squad",
+        "spelled-rosco": "Stellar Rosco",
+        "radar-scan": "Radar Scan",
+        "radio-signal": "Radio Signal",
+        "symmetry-breaker": "Symmetry Breaker"
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Play {goal} games",
+            "coins": "Earn {goal} coins",
+            "xp": "Get {goal} XP",
+            "item": "Use {goal} Boosters",
+            "streak": "Daily Activity"
+        },
+        "weekly": {
+            "games": "Game Master ({goal} games)",
+            "coins": "Gold Digger ({goal} coins)",
+            "level": "Lunar Ascension (Go up {goal} levels)",
+            "streak": "Space Survivor ({goal} day streak)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "First Flight",
+            "desc": "Complete 1 mission.",
+            "metric": "Games"
+        },
+        "2": {
+            "title": "Active Crewmate",
+            "desc": "Complete 5 missions.",
+            "metric": "Games"
+        },
+        "3": {
+            "title": "Stellar Veteran",
+            "desc": "Complete 20 missions.",
+            "metric": "Games"
+        },
+        "4": {
+            "title": "First Loot",
+            "desc": "Accumulate 1,200 coins.",
+            "metric": "Coins"
+        },
+        "5": {
+            "title": "Galactic Fortune",
+            "desc": "Accumulate 3,000 coins.",
+            "metric": "Coins"
+        },
+        "6": {
+            "title": "First Collectible",
+            "desc": "Get 1 item in inventory.",
+            "metric": "Items"
+        },
+        "7": {
+            "title": "Collector",
+            "desc": "Get 5 items in inventory.",
+            "metric": "Items"
+        },
+        "8": {
+            "title": "Orbital Museum",
+            "desc": "Get 10 items in inventory.",
+            "metric": "Items"
+        },
+        "9": {
+            "title": "Rising Ranks",
+            "desc": "Reach level 3.",
+            "metric": "Level"
+        },
+        "10": {
+            "title": "Rookie Captain",
+            "desc": "Reach level 5.",
+            "metric": "Level"
+        },
+        "11": {
+            "title": "Commander",
+            "desc": "Reach level 8.",
+            "metric": "Level"
+        },
+        "12": {
+            "title": "Infinite Energy",
+            "desc": "Get 500 XP.",
+            "metric": "XP"
+        },
+        "13": {
+            "title": "Galactic Strategist",
+            "desc": "Complete 10 missions.",
+            "metric": "Missions"
+        },
+        "14": {
+            "title": "Star Merchant",
+            "desc": "Accumulate 2,000 coins.",
+            "metric": "Coins"
+        },
+        "15": {
+            "title": "Hero of the Cosmos",
+            "desc": "Complete 50 missions.",
+            "metric": "Missions"
+        },
+        "16": {
+            "title": "Nebula Tycoon",
+            "desc": "Accumulate 5,000 coins.",
+            "metric": "Coins"
+        },
+        "17": {
+            "title": "Sovereign of the Void",
+            "desc": "Reach level 10.",
+            "metric": "Level"
+        },
+        "18": {
+            "title": "Galaxy Conqueror",
+            "desc": "Get 1,000 XP.",
+            "metric": "XP"
+        }
+    },
+    "multiplayerResult": {
+        "victory": "VICTORY!",
+        "tie": "TIE!",
+        "defeat": "DEFEAT!",
+        "winDesc": "You have conquered the galaxy",
+        "tieDesc": "No one dominates the cosmos today",
+        "defeatDesc": "The cosmos has beaten you this time",
+        "you": "YOU",
+        "roundsWon": "rounds won",
+        "winner": "WINNER",
+        "loser": "LOSER",
+        "ready": "READY",
+        "waiting": "WAITING...",
+        "pending": "PENDING",
+        "vs": "VS",
+        "roundsPlayed": "{total} rounds played",
+        "missionHistory": "MISSION HISTORY",
+        "backToLobby": "BACK TO LOBBY",
+        "waitingTeam": "Waiting for the team to return..."
+    },
+    "shop": {
+        "spinError": "Error while spinning",
+        "unknownPrize": "The server returned an unknown prize.",
+        "commError": "Communication error"
+    },
+    "languages": {
+        "es": "Spanish",
+        "ca": "Catalan",
+        "en": "English"
+    },
+    "footer": {
+        "docs": "Documentation",
+        "support": "Technical Support",
+        "x": "Twitter / X",
+        "github": "GitHub Repository",
+        "discord": "Discord Community",
+        "reddit": "Reddit Forum"
+    }
+}

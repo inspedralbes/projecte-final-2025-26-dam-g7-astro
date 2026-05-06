@@ -23,7 +23,7 @@
               <span class="font-weight-bold">Punts: {{ score }}</span>
               <span class="mx-3">|</span>
               <span class="font-weight-bold" :class="timeLeft <= 15 ? 'text-red-accent-2 animate-pulse' : 'text-blue-lighten-2'">
-                Temps: {{ timeLeft }}s
+                {{ $t('rhymeSquad.time', { time: timeLeft }) }}
               </span>
               <span class="mx-3">|</span>
               <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">Vides: {{ lives }}</span>
@@ -124,14 +124,10 @@ const props = defineProps({
 
 const emit = defineEmits(['game-over']);
 
-// DICCIONARIO ESTRUCTURADO
-const dictionary = [
-  { word: 'BOTÓN', ending: 'ÓN', rhymes: ['LEÓN', 'AVIÓN', 'CAMIÓN', 'BALÓN', 'MELÓN', 'RATÓN', 'CORAZÓN'], fakes: ['CASA', 'PERRO', 'MESA', 'GATO', 'LIBRO', 'SILLA', 'COCHE'] },
-  { word: 'CUNA', ending: 'UNA', rhymes: ['LUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'ACEITUNA', 'NINGUNA'], fakes: ['SOL', 'MAR', 'TIERRA', 'FUEGO', 'AIRE', 'AGUA', 'CIELO'] },
-  { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BAILAR', 'VOLAR', 'PENSAR', 'LLORAR', 'AMAR'], fakes: ['CORRER', 'DORMIR', 'VIVIR', 'REIR', 'COMER', 'BEBER', 'LEER'] },
-  { word: 'QUESO', ending: 'ESO', rhymes: ['HUESO', 'PESO', 'BESO', 'ESPESO', 'ACCESO', 'ILESO'], fakes: ['PAN', 'AGUA', 'VINO', 'LECHE', 'FRUTA', 'CARNE', 'SOPA'] },
-  { word: 'ESPEJO', ending: 'EJO', rhymes: ['CONEJO', 'CANGREJO', 'VIEJO', 'REFLEJO', 'CONSEJO'], fakes: ['CRISTAL', 'PARED', 'PUERTA', 'VENTANA', 'SUELO'] }
-];
+// DICCIONARIO ESTRUCTURADO Y LOCALIZADO
+const currentDictionary = computed(() => {
+    return rhymeData[locale.value] || rhymeData['es'];
+});
 
 // ESTADOS
 const isPlaying = ref(false);
@@ -146,7 +142,7 @@ const incorrectHits = ref(0);
 const isTurbo = ref(false);
 const showTimeBonus = ref(false);
 
-const currentTarget = ref(dictionary[0]);
+const currentTarget = ref(currentDictionary.value[0]);
 const activeWords = ref([]);
 
 // CONTROLES INTERNOS
@@ -156,6 +152,11 @@ let wordIdCounter = 0;
 let currentSpawnRate = 1200; 
 let currentSpeed = 5; 
 let bonusTimeout = null;
+
+// Observa cambios en el idioma para actualizar target si está jugando
+watch(locale, () => {
+    if (!isPlaying.value) pickNewTarget();
+});
 
 const startGame = () => {
   score.value = 0;
@@ -187,8 +188,8 @@ const startGame = () => {
 };
 
 const pickNewTarget = () => {
-  const randomIndex = Math.floor(Math.random() * dictionary.length);
-  currentTarget.value = dictionary[randomIndex];
+  const randomIndex = Math.floor(Math.random() * currentDictionary.value.length);
+  currentTarget.value = currentDictionary.value[randomIndex];
 };
 
 const spawnWord = () => {

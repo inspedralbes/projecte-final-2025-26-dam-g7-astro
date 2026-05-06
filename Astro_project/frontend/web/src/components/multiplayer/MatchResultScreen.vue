@@ -15,10 +15,10 @@
 
     <!-- Título -->
     <h1 class="result-title mb-2" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-      {{ isWin ? '¡VICTORIA!' : (isTie ? '¡EMPATE!' : '¡DERROTA!') }}
+      {{ isWin ? $t('multiplayerResult.victory') : (isTie ? $t('multiplayerResult.tie') : $t('multiplayerResult.defeat')) }}
     </h1>
     <p class="text-h5 text-grey-lighten-2 mb-10">
-      {{ isWin ? 'Has conquistado la galaxia' : (isTie ? 'Nadie domina el cosmos hoy' : 'El cosmos te ha vencido esta vez') }}
+      {{ isWin ? $t('multiplayerResult.winDesc') : (isTie ? $t('multiplayerResult.tieDesc') : $t('multiplayerResult.defeatDesc')) }}
     </p>
 
     <!-- Marcador final -->
@@ -28,14 +28,14 @@
         <v-avatar size="80" class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'">
           <v-img :src="getPlayerAvatar(myName)" />
         </v-avatar>
-        <div class="text-overline text-cyan-accent-2 mb-1">TÚ</div>
+        <div class="text-overline text-cyan-accent-2 mb-1">{{ $t('multiplayerResult.you') }}</div>
         <div class="text-h2 font-weight-black" :class="isWin ? 'text-amber' : 'text-white'">
           {{ scores[myName] || 0 }}
         </div>
-        <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
+        <div class="text-caption text-grey-lighten-1">{{ $t('multiplayerResult.roundsWon') }}</div>
         <div class="mt-4">
-          <v-chip v-if="isWin" color="amber" size="small" class="font-weight-black text-black">GANADOR</v-chip>
-          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">PERDEDOR</v-chip>
+          <v-chip v-if="isWin" color="amber" size="small" class="font-weight-black text-black">{{ $t('multiplayerResult.winner') }}</v-chip>
+          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">{{ $t('multiplayerResult.loser') }}</v-chip>
           
           <!-- Estado de retorno -->
           <div class="mt-2 status-container">
@@ -46,7 +46,7 @@
               variant="flat"
               prepend-icon="mdi-check-circle"
             >
-              PREPARADO
+              {{ $t('multiplayerResult.ready') }}
             </v-chip>
             <v-chip
               v-else
@@ -54,7 +54,7 @@
               size="x-small"
               variant="outlined"
             >
-              ESPERANDO...
+              {{ $t('multiplayerResult.waiting') }}
             </v-chip>
           </div>
         </div>
@@ -62,8 +62,8 @@
 
       <!-- VS separador -->
       <div class="vs-separator mx-8 text-center">
-        <div class="text-h3 font-weight-black text-grey-darken-1">VS</div>
-        <div class="text-caption text-grey mt-1">{{ totalRounds }} rondas jugadas</div>
+        <div class="text-h3 font-weight-black text-grey-darken-1">{{ $t('multiplayerResult.vs') }}</div>
+        <div class="text-caption text-grey mt-1">{{ $t('multiplayerResult.roundsPlayed', { total: totalRounds }) }}</div>
       </div>
 
       <!-- OPONENTE -->
@@ -75,10 +75,10 @@
         <div class="text-h2 font-weight-black" :class="!isWin && !isTie ? 'text-amber' : 'text-white'">
           {{ scores[opponentName] || 0 }}
         </div>
-        <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
+        <div class="text-caption text-grey-lighten-1">{{ $t('multiplayerResult.roundsWon') }}</div>
         <div class="mt-4">
-          <v-chip v-if="!isWin && !isTie" color="amber" size="small" class="font-weight-black text-black">GANADOR</v-chip>
-          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">PERDEDOR</v-chip>
+          <v-chip v-if="!isWin && !isTie" color="amber" size="small" class="font-weight-black text-black">{{ $t('multiplayerResult.winner') }}</v-chip>
+          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">{{ $t('multiplayerResult.loser') }}</v-chip>
           
           <!-- Estado de retorno oponente -->
           <div class="mt-2 status-container">
@@ -89,7 +89,7 @@
               variant="flat"
               prepend-icon="mdi-check-circle"
             >
-              PREPARADO
+              {{ $t('multiplayerResult.ready') }}
             </v-chip>
             <v-chip
               v-else
@@ -97,7 +97,7 @@
               size="x-small"
               variant="outlined"
             >
-              PENDIENTE
+              {{ $t('multiplayerResult.waiting') }}
             </v-chip>
           </div>
         </div>
@@ -106,7 +106,7 @@
 
     <!-- Historial de rondas (NUEVO) -->
     <div v-if="multiplayerStore.room?.gameConfig?.roundHistory?.length" class="round-history-section w-100 max-width-600 mb-8">
-      <div class="text-overline text-grey-darken-1 mb-4 text-center">HISTORIAL DE LA MISIÓN</div>
+      <div class="text-overline text-grey-darken-1 mb-4 text-center">{{ $t('multiplayerResult.missionHistory') }}</div>
       <v-row dense justify="center">
         <v-col v-for="h in multiplayerStore.room.gameConfig.roundHistory" :key="h.round" cols="12">
           <v-card class="round-history-card pa-3 mb-2 rounded-lg" variant="flat" color="rgba(255,255,255,0.03)">
@@ -114,12 +114,12 @@
               <div class="round-num text-caption font-weight-black text-cyan-accent-2 mr-4">RD {{ h.round }}</div>
               <div class="game-info d-flex align-center flex-grow-1">
                 <v-icon icon="mdi-controller" size="18" class="mr-2 text-grey-darken-1"></v-icon>
-                <div class="text-body-2 font-weight-bold text-white">{{ h.game }}</div>
+                <div class="text-body-2 font-weight-bold text-white">{{ $te('games.' + h.game) ? $t('games.' + h.game) : h.game }}</div>
               </div>
               <div class="round-winner-indicator mx-4">
-                <v-chip v-if="h.winner === myName" color="success" size="x-small" density="compact" variant="flat" class="font-weight-black">VICTORIA</v-chip>
-                <v-chip v-else-if="h.winner === opponentName" color="error" size="x-small" density="compact" variant="flat" class="font-weight-black">DERROTA</v-chip>
-                <v-chip v-else color="grey-darken-1" size="x-small" density="compact" variant="tonal" class="font-weight-black">EMPATE</v-chip>
+                <v-chip v-if="h.winner === myName" color="success" size="x-small" density="compact" variant="flat" class="font-weight-black">{{ $t('multiplayerResult.victory') }}</v-chip>
+                <v-chip v-else-if="h.winner === opponentName" color="error" size="x-small" density="compact" variant="flat" class="font-weight-black">{{ $t('multiplayerResult.defeat') }}</v-chip>
+                <v-chip v-else color="grey-darken-1" size="x-small" density="compact" variant="tonal" class="font-weight-black">{{ $t('multiplayerResult.tie') }}</v-chip>
               </div>
               <div class="round-scores text-caption text-grey-lighten-1 font-weight-bold">
                 {{ h.scores[myName] || 0 }} - {{ h.scores[opponentName] || 0 }}
@@ -140,11 +140,11 @@
         class="font-weight-black px-12 pulse-button"
         @click="handleReturn"
       >
-        <v-icon start>mdi-reply</v-icon> VOLVER A LA SALA
+        <v-icon start>mdi-reply</v-icon> {{ $t('multiplayerResult.backToLobby') }}
       </v-btn>
       <div v-else class="text-center">
         <v-progress-circular indeterminate color="cyan-accent-2" size="40" class="mb-2" />
-        <p class="text-cyan-accent-2 font-weight-bold italic">Esperando que el equipo regrese...</p>
+        <p class="text-cyan-accent-2 font-weight-bold italic">{{ $t('multiplayerResult.waitingTeam') }}</p>
       </div>
     </div>
   </div>
