@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { storageGetItem, STORAGE_KEYS } from '@/stores/astroShared'
 
 import register from '@/pages/auth/register.vue'
 import login from '@/pages/auth/login.vue'
@@ -86,7 +87,8 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
   // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
-  const isAuthenticated = !!localStorage.getItem('astro_token');
+  // Comprobamos en sessionStorage (por defecto) y localStorage por si acaso
+  const isAuthenticated = !!(storageGetItem(STORAGE_KEYS.token) || localStorage.getItem('astro_token'));
 
   if (requiresAuth && !isAuthenticated) {
     // Si la ruta es privada y no hay token, al login

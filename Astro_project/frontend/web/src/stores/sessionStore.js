@@ -268,16 +268,13 @@ export const useSessionStore = defineStore('session', {
             this.token = null;
             this.error = null;
 
-            storageRemoveItem(STORAGE_KEYS.token);
-            storageRemoveItem(STORAGE_KEYS.user);
-            storageRemoveItem(STORAGE_KEYS.rank);
-            storageRemoveItem(STORAGE_KEYS.role);
-            storageRemoveItem(STORAGE_KEYS.parentId);
-            storageRemoveItem(STORAGE_KEYS.plan);
-            storageRemoveItem(STORAGE_KEYS.avatar);
-            storageRemoveItem(STORAGE_KEYS.mascot);
-            storageRemoveItem(STORAGE_KEYS.lastActivity);
-            storageRemoveItem('astro_selected_title');
+            // Limpiar ambos (Persistent y Session) por seguridad
+            [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
+             STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, STORAGE_KEYS.mascot, 
+             STORAGE_KEYS.lastActivity, 'astro_selected_title'].forEach(key => {
+                storageRemoveItem(key, false); // Session
+                storageRemoveItem(key, true);  // Local
+            });
         }
     }
 });
