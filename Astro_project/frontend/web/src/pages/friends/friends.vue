@@ -79,7 +79,15 @@
                 <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
-                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold">
+                  <v-btn 
+                    color="primary" 
+                    variant="elevated" 
+                    block 
+                    class="action-btn font-weight-bold"
+                    :loading="challengeCooldowns[friend.user]"
+                    :disabled="challengeCooldowns[friend.user]"
+                    @click="challengeFriend(friend.user)"
+                  >
                     <v-icon start icon="mdi-sword-cross" size="18"></v-icon>
                     {{ $t('friends.challenge') }}
                   </v-btn>
