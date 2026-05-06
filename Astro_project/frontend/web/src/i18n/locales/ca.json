@@ -66,7 +66,6 @@
         "categories": {
             "all": "Tot",
             "skin": "Aparences",
-            "pets": "Companys",
             "collectible": "Col·leccionables",
             "trails": "Rastres",
             "items": "Objectes"
@@ -115,7 +114,6 @@
         "selectAchievement": "Seleccionar Assoliment",
         "removeAchievement": "Treure Assoliment",
         "astronautSuit": "VESTIT D'ASTRONAUTA",
-        "missionCompanion": "COMPANY DE MISSIÓ",
         "none": "CAP",
         "loginRequired": "Has d'iniciar sessió per guardar els teus assoliments.",
         "mission_1": "Enlairament",
@@ -130,11 +128,7 @@
         "avatar_black": "Negre",
         "avatar_orange": "Taronja",
         "avatar_green": "Verd",
-        "avatar_red": "Vermell",
-        "mascot_whale": "Balena",
-        "mascot_alien": "Alien",
-        "mascot_drone": "Dron",
-        "mascot_octopus": "Pop"
+        "avatar_red": "Vermell"
     },
     "friends": {
         "title": "Tripulació",
@@ -499,10 +493,6 @@
         "cyberpunk": {
             "name": "Skin Cyberpunk",
             "desc": "Aspecte robòtic."
-        },
-        "dron": {
-            "name": "Mascota Dron",
-            "desc": "Un company fidel."
         },
         "neon": {
             "name": "Rastre de Neó",

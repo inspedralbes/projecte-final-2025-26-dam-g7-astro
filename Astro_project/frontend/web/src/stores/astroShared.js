@@ -17,7 +17,6 @@ export const STORAGE_KEYS = Object.freeze({
     selectedAchievements: 'astro_selected_achievements',
     unlockedAchievements: 'astro_unlocked_achievements',
     avatar: 'astro_avatar',
-    mascot: 'astro_mascot',
     token: 'astro_token',
     role: 'astro_role',
     parentId: 'astro_parent_id',
@@ -106,7 +105,8 @@ export function normalizeActiveBoosters(values = {}) {
 
     return {
         doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
-        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft),
+        sabotageGamesLeft: toNonNegativeInteger(source.sabotageGamesLeft)
     };
 }
 
@@ -176,15 +176,6 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'skin',
         maxQuantity: 1
     },
-    103: {
-        id: 103,
-        name: 'Mascota Dron',
-        desc: 'Un compañero fiel.',
-        icon: 'mdi-quadcopter',
-        color: 'green-accent-3',
-        cat: 'pets',
-        maxQuantity: 1
-    },
     104: {
         id: 104,
         name: 'Rastro de Neón',
@@ -249,7 +240,6 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Doble Puntuación': 4,
     'Pin Comandante': 101,
     'Skin Cyberpunk': 102,
-    'Mascota Dron': 103,
     'Rastro de Neón': 104,
     'Pin Raro': 201,
     'Avatar Ninja': 202

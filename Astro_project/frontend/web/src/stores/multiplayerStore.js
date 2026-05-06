@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
 import { API_BASE_URL, requestJson } from './astroShared';
 import { useChatStore } from './chatStore';
+import { useSocialStore } from './socialStore';
 
 function buildWsUrl() {
     // 1. Reemplazamos 'http' o 'https' por 'ws'
@@ -195,6 +196,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     break;
                 case 'CHAT_UNREAD_COUNTS':
                     useChatStore().handleUnreadCounts(data);
+                    break;
+
+                // ── ACTUALIZACIONES SOCIALES EN TIEMPO REAL ───────────
+                case 'FRIEND_UPDATE':
+                    useSocialStore().setFriends(data.friends);
+                    useSocialStore().fetchAllUsers(); 
+                    break;
+                case 'FRIEND_REQUEST_UPDATE':
+                    useSocialStore().setFriendRequests(data.friendRequests);
+                    useSocialStore().fetchAllUsers();
+                    break;
+                case 'FRIEND_ACCEPT_NOTIF':
+                    useSocialStore().setFriends(data.friends);
+                    useSocialStore().setFriendRequests(data.friendRequests);
+                    useSocialStore().fetchAllUsers();
                     break;
 
                 default:

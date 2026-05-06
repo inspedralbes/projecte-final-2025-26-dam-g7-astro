@@ -24,7 +24,6 @@ export const useSessionStore = defineStore('session', {
         role: storageGetItem(STORAGE_KEYS.role) || null,
         parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
-        mascot: storageGetItem(STORAGE_KEYS.mascot) || null,
         selectedTitle: storageGetItem('astro_selected_title') || null,
         token: storageGetItem(STORAGE_KEYS.token) || null,
         lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
@@ -87,10 +86,6 @@ export const useSessionStore = defineStore('session', {
             persistNullable(STORAGE_KEYS.avatar, this.avatar);
         },
 
-        setMascot(mascot) {
-            this.mascot = mascot || null;
-            persistNullable(STORAGE_KEYS.mascot, this.mascot);
-        },
 
         setSelectedTitle(title) {
             this.selectedTitle = title || null;
@@ -110,9 +105,6 @@ export const useSessionStore = defineStore('session', {
                 this.setAvatar(profile.avatar);
             }
 
-            if (profile.mascot) {
-                this.setMascot(profile.mascot);
-            }
 
             if (profile.selectedTitle !== undefined) {
                 this.setSelectedTitle(profile.selectedTitle);
@@ -227,10 +219,6 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
-        updateMascot(mascotFile) {
-            this.setMascot(mascotFile);
-            console.log('🐾 Mascota actualizada localmente:', mascotFile);
-        },
 
         async updateSelectedTitle(title) {
             this.setSelectedTitle(title);
@@ -264,13 +252,12 @@ export const useSessionStore = defineStore('session', {
             this.role = null;
             this.parentId = null;
             this.avatar = 'Astronauta_blanc.jpg';
-            this.mascot = null;
             this.token = null;
             this.error = null;
 
             // Limpiar ambos (Persistent y Session) por seguridad
             [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
-             STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, STORAGE_KEYS.mascot, 
+             STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, 
              STORAGE_KEYS.lastActivity, 'astro_selected_title'].forEach(key => {
                 storageRemoveItem(key, false); // Session
                 storageRemoveItem(key, true);  // Local
