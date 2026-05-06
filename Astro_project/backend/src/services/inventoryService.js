@@ -248,10 +248,11 @@ class InventoryService {
         }
 
         normalizedInventory = this.serializeInventory(normalizedInventory);
+        const duration = boosterField === 'sabotageGamesLeft' ? 1 : 3;
         const nextActiveBoosters = this.addBoosterDuration(
             this.normalizeActiveBoosters(user.activeBoosters),
             boosterField,
-            3
+            duration
         );
 
         user.inventory = normalizedInventory;

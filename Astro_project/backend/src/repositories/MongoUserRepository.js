@@ -99,7 +99,8 @@ class MongoUserRepository extends UserRepository {
                 avatar: 1,
                 streak: 1,
                 selectedAchievements: 1,
-                friendRequests: 1
+                friendRequests: 1,
+                selectedTitle: 1
             }
         }).toArray();
 
@@ -140,7 +141,8 @@ class MongoUserRepository extends UserRepository {
             missionsCompleted: user.missionsCompleted,
             gameHistory: user.gameHistory,
             totalGamesPlayed: user.totalGamesPlayed,
-            totalPoints: user.totalPoints
+            totalPoints: user.totalPoints,
+            selectedTitle: user.selectedTitle
         };
     }
 }

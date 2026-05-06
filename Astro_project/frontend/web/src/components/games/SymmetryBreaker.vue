@@ -358,10 +358,11 @@ function lockTarget() {
 
   // Sabotatge: -2s al rival en multiplayer
   if (props.isMultiplayer) {
+    const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0;
     multiplayerStore.sendGameAction({
       type: 'SABOTAGE',
       subtype: 'REDUCE_TIME',
-      amount: 2
+      amount: isSaboteurActive ? 4 : 2
     });
   }
 }

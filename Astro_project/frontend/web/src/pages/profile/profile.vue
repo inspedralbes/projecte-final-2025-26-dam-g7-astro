@@ -42,8 +42,8 @@
                                         {{ user || $t('profile.guest') }}
                                     </h1>
                                     <div class="d-flex flex-wrap align-center ga-3">
-                                        <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat">
-                                            {{ rank || $t('profile.defaultRank') }}
+                                        <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat" @click="titleDialog = true" style="cursor: pointer;">
+                                            {{ formattedTitle }}
                                         </v-chip>
                                         <div class="d-flex align-center ga-3 text-grey-lighten-1">
                                             <span class="text-overline">{{ $t('profile.level', { level: level || 1 }) }}</span>
@@ -307,6 +307,47 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+        <!-- Diálogo Título -->
+        <v-dialog v-model="titleDialog" max-width="500">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    SELECCIONAR TÍTULO
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="titleDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-list bg-color="transparent" class="text-white">
+                        <v-list-item
+                            title="Por Defecto (Nivel)"
+                            subtitle="Rango basado en tu nivel"
+                            @click="selectTitle(null)"
+                            class="mb-2 achievement-list-item"
+                            :class="{ 'selected': !selectedTitle }"
+                        >
+                            <template v-slot:prepend>
+                                <v-icon color="grey-lighten-1" class="mr-3">mdi-medal-outline</v-icon>
+                            </template>
+                        </v-list-item>
+                        <v-list-item
+                            v-for="t in ownedTitles"
+                            :key="t.id"
+                            :title="t.name.replace('Título: ', '')"
+                            subtitle="Comprado en la tienda"
+                            @click="selectTitle(t.name)"
+                            class="mb-2 achievement-list-item"
+                            :class="{ 'selected': selectedTitle === t.name }"
+                        >
+                            <template v-slot:prepend>
+                                <v-icon :color="t.color" class="mr-3">{{ t.icon }}</v-icon>
+                            </template>
+                        </v-list-item>
+                        <v-divider v-if="ownedTitles.length === 0" class="my-2 border-opacity-20"></v-divider>
+                        <div v-if="ownedTitles.length === 0" class="text-caption text-grey text-center mt-4">
+                            No posees títulos especiales. Visita el Bazar Espacial para adquirirlos.
+                        </div>
+                    </v-list>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -327,12 +368,13 @@ const selectionDialog = ref(false)
 const avatarDialog = ref(false)
 const mascotDialog = ref(false)
 const historyDialog = ref(false)
+const titleDialog = ref(false)
 const currentPage = ref(1)
 const pageSize = 4
 const currentSlotIndex = ref(null)
 const { 
-    user, rank, plan, role, selectedAchievements, unlockedAchievements, 
-    avatar, mascot, level, coins, xp, partides,
+    user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
+    avatar, mascot, level, coins, xp, partides, inventory,
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
@@ -392,6 +434,27 @@ const mascotOptions = computed(() => [
     { label: t('profile.mascot_drone'), file: 'Mascota_dron.jpg' },
     { label: t('profile.mascot_octopus'), file: 'Pop_alien.jpg' }
 ])
+
+const ALL_TITLES = [
+    { id: 105, name: 'Título: El Imparable', icon: 'mdi-format-title', color: 'red-accent-3' },
+    { id: 106, name: 'Título: Leyenda Galáctica', icon: 'mdi-format-title', color: 'cyan-accent-3' },
+    { id: 107, name: 'Título: Destructor de Asteroides', icon: 'mdi-format-title', color: 'amber-accent-3' }
+]
+
+const ownedTitles = computed(() => {
+    if (!inventory.value) return [];
+    return ALL_TITLES.filter(title => {
+        const item = inventory.value.find(i => Number(i.id) === title.id);
+        return item && Number(item.quantity) > 0;
+    });
+})
+
+const formattedTitle = computed(() => {
+    if (selectedTitle.value) {
+        return selectedTitle.value.replace('Título: ', '');
+    }
+    return rank.value || 'Cadete de Vuelo';
+})
 
 const playerMetrics = computed(() => ({
     coins: Number(coins.value) || 0,
@@ -473,6 +536,11 @@ function selectAvatar(file) {
 function selectMascot(file) {
     astroStore.updateMascot(file)
     mascotDialog.value = false
+}
+
+function selectTitle(titleName) {
+    astroStore.updateSelectedTitle(titleName)
+    titleDialog.value = false
 }
 
 watch(historyDialog, async (isOpen) => {

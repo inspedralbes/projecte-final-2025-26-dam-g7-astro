@@ -1,11 +1,13 @@
 const BOOSTER_ITEM_FIELD_MAP = Object.freeze({
     3: 'doubleCoinsGamesLeft',
-    4: 'doubleScoreGamesLeft'
+    4: 'doubleScoreGamesLeft',
+    5: 'sabotageGamesLeft'
 });
 
 const DEFAULT_ACTIVE_BOOSTERS = Object.freeze({
     doubleCoinsGamesLeft: 0,
-    doubleScoreGamesLeft: 0
+    doubleScoreGamesLeft: 0,
+    sabotageGamesLeft: 0
 });
 
 const DEFAULT_BOOSTER_DURATION_GAMES = 3;
@@ -24,7 +26,8 @@ function normalizeActiveBoosters(activeBoosters = {}) {
 
     return {
         doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
-        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft),
+        sabotageGamesLeft: toNonNegativeInteger(source.sabotageGamesLeft)
     };
 }
 
@@ -50,6 +53,9 @@ function consumeBoostersForCompletedGame(activeBoosters) {
     }
     if (normalized.doubleScoreGamesLeft > 0) {
         normalized.doubleScoreGamesLeft -= 1;
+    }
+    if (normalized.sabotageGamesLeft > 0) {
+        normalized.sabotageGamesLeft -= 1;
     }
 
     return normalized;
