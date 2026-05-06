@@ -1,8 +1,8 @@
 const hasWindow = typeof window !== 'undefined';
 
-function getStorage() {
+function getStorage(persistent = false) {
     if (!hasWindow) return null;
-    return window.localStorage;
+    return persistent ? window.localStorage : window.sessionStorage;
 }
 
 export const STORAGE_KEYS = Object.freeze({
@@ -28,19 +28,19 @@ export const STORAGE_KEYS = Object.freeze({
 export const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos en milisegundos
 
 
-export function storageGetItem(key) {
-    const storage = getStorage();
+export function storageGetItem(key, persistent = false) {
+    const storage = getStorage(persistent);
     return storage ? storage.getItem(key) : null;
 }
 
-export function storageSetItem(key, value) {
-    const storage = getStorage();
+export function storageSetItem(key, value, persistent = false) {
+    const storage = getStorage(persistent);
     if (!storage) return;
     storage.setItem(key, String(value));
 }
 
-export function storageRemoveItem(key) {
-    const storage = getStorage();
+export function storageRemoveItem(key, persistent = false) {
+    const storage = getStorage(persistent);
     if (!storage) return;
     storage.removeItem(key);
 }
@@ -73,8 +73,8 @@ export function readStoredObject(key, fallback = {}) {
     }
 }
 
-export function writeStoredJson(key, value) {
-    storageSetItem(key, JSON.stringify(value));
+export function writeStoredJson(key, value, persistent = false) {
+    storageSetItem(key, JSON.stringify(value), persistent);
 }
 
 export function normalizeSelectedAchievements(values = []) {

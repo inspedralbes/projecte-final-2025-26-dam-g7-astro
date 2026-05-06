@@ -179,15 +179,25 @@ const handleReturn = () => {
 };
 
 const getAvatarUrl = (avatarName, username) => {
-  if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
+  // 0. Si el username es un objeto por error, intentamos sacar el nombre
+  const safeUsername = (username && typeof username === 'object') ? (username.name || username.user || 'Astronauta') : username;
+  
+  // 1. Si tenemos un nombre de archivo de astronauta válido
+  if (avatarName && typeof avatarName === 'string' && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
     return `/${avatarName.trim()}`;
   }
-  if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
+  
+  // 2. Si es un seed o nombre, pero parece un astronauta (por si acaso se guardó mal)
+  if (avatarName && typeof avatarName === 'string' && avatarName.toLowerCase().startsWith('astronauta')) {
     return `/${avatarName.trim()}`;
   }
-  if (username) {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+
+  // 3. Si no hay nada, pero tenemos el username, usamos DiceBear como fallback robótico
+  if (safeUsername && safeUsername !== '[object Object]') {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(safeUsername)}`;
   }
+
+  // 4. Fallback final absoluto (Astronauta blanco)
   return '/Astronauta_blanc.jpg';
 };
 
@@ -200,7 +210,7 @@ const getPlayerAvatar = (username) => {
   if (explorer) {
     return getAvatarUrl(explorer.avatar, username);
   }
-  return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+  return getAvatarUrl(null, username);
 };
 </script>
 

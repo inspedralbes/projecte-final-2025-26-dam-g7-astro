@@ -40,7 +40,7 @@
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(friend.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
-                        <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar)" cover></v-img>
+                        <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar, friend.user)" cover></v-img>
                         <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
                       </v-avatar>
                     </div>
@@ -147,7 +147,7 @@
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(explorer.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
-                        <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar)" cover></v-img>
+                        <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar, explorer.user)" cover></v-img>
                         <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
                       </v-avatar>
                     </div>
@@ -203,7 +203,7 @@
                 <div class="avatar-container mt-n12 mb-4">
                   <div class="avatar-ring ring-requests">
                     <v-avatar size="84" color="#0a192f" class="main-avatar">
-                      <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar)" cover></v-img>
+                      <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar, requester.user)" cover></v-img>
                       <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ requester.user.charAt(0).toUpperCase() }}</span>
                     </v-avatar>
                   </div>
@@ -257,7 +257,7 @@
           <div class="position-relative mb-6 d-inline-block">
             <div class="avatar-ring-large" :class="getRankClass(profileDialog.user?.level)">
               <v-avatar size="140" class="main-avatar bg-black">
-                <v-img v-if="profileDialog.user?.avatar" :src="getAvatarUrl(profileDialog.user.avatar)" cover></v-img>
+                <v-img v-if="profileDialog.user?.avatar" :src="getAvatarUrl(profileDialog.user.avatar, profileDialog.user.user)" cover></v-img>
                 <span v-else class="text-h1 text-cyan-accent-2 font-weight-bold">{{ profileDialog.user?.user?.charAt(0).toUpperCase() }}</span>
               </v-avatar>
             </div>
@@ -369,8 +369,13 @@ const getAchievement = (id) => {
   return ACHIEVEMENTS.find(a => a.id === Number(id));
 };
 
-const getAvatarUrl = (avatarStr) => {
-  if (!avatarStr) return '';
+const getAvatarUrl = (avatarStr, username) => {
+  if (!avatarStr || typeof avatarStr !== 'string') {
+    if (username && username !== '[object Object]') {
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`;
+    }
+    return '/Astronauta_blanc.jpg';
+  }
   return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`;
 };
 
