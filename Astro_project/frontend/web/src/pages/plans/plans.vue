@@ -34,7 +34,7 @@
                         </div>
 
                         <h2 class="text-h4 font-weight-bold mb-4 text-uppercase tracking-wider text-white">
-                            {{ plan.id }}
+                            {{ $t('plans.' + plan.id.toLowerCase()) }}
                         </h2>
 
                         <v-divider class="mb-6 w-50" :color="plan.color" thickness="2"></v-divider>

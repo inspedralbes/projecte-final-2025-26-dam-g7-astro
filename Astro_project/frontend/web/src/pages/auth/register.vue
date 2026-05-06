@@ -70,7 +70,7 @@
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.verif') }}</div>
             <v-text-field
               v-model="formData.confirmPassword"
-              placeholder="CONFIRMAR"
+              :placeholder="$t('auth.confirmPwd')"
               type="password"
               variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
@@ -105,7 +105,7 @@
 
       <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
         <div class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="router.push('/login')">
-          ¿YA TIENES ID? ACCEDER
+          {{ $t('auth.alreadyHaveId') }}
         </div>
         <div class="coordinate-display text-body-2 font-weight-bold text-cyan-lighten-4 font-weight-mono">
           {{ $t('auth.coordinates') }} <span class="text-cyan-accent-2 glow-text">{{ $t('auth.sector') }}</span>
@@ -144,7 +144,7 @@ const passwordMatchError = computed(() => {
 const handleRegister = async () => {
     if (passwordMatchError.value) return;
     if (!formData.value.username || !formData.value.password) {
-        errorMessage.value = "Datos incompletos";
+        errorMessage.value = t('auth.allReqs');
         return;
     }
     
@@ -160,10 +160,10 @@ const handleRegister = async () => {
         if (result.success) {
             router.push('/login'); 
         } else {
-            errorMessage.value = result.message || "Error en el alta";
+            errorMessage.value = result.message || t('auth.signUpErr');
         }
     } catch (err) {
-        errorMessage.value = "Error de conexión";
+        errorMessage.value = t('auth.serverConnErr');
     } finally {
         loading.value = false;
     }

@@ -180,7 +180,7 @@ async function handleItemAction(item) {
     if (isUsableBooster(item)) {
         const result = await astroStore.useInventoryItem(item.id);
         if (!result.success) {
-            alert(result.message || 'No se pudo usar el objeto.');
+            alert(result.message || t('inventory.useError'));
         }
         return;
     }

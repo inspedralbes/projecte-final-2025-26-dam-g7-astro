@@ -63,7 +63,7 @@
                     class="mission-card mb-3 pa-3" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.label || mission.text || $t('rightSidebar.specialMission') }}
+                            {{ getMissionTranslation(mission, 'daily') }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="success" size="small"></v-icon>
                     </div>
@@ -99,7 +99,7 @@
                     class="mission-card mb-3 pa-3 border-secondary" :class="{ 'mission-claimed': mission.claimed }">
                     <div class="d-flex justify-space-between align-start mb-1">
                         <div class="mission-text text-body-2 font-weight-bold" :class="{ 'text-grey': mission.claimed }">
-                            {{ mission.label || mission.text || $t('rightSidebar.weeklyMission') }}
+                            {{ getMissionTranslation(mission, 'weekly') }}
                         </div>
                         <v-icon v-if="mission.claimed" icon="mdi-check-circle" color="secondary" size="small"></v-icon>
                     </div>
@@ -130,7 +130,7 @@
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in dailyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || $t('rightSidebar.specialMission') }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ getMissionTranslation(mission, 'daily') }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
                             <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">{{ $t('rightSidebar.claimReward') }}</v-btn>
@@ -148,7 +148,7 @@
                 </div>
                 <v-list bg-color="transparent" class="pa-0">
                     <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ mission.label || mission.text || $t('rightSidebar.weeklyMission') }}</div>
+                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ getMissionTranslation(mission, 'weekly') }}</div>
                         <div class="d-flex justify-space-between align-center">
                             <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
                             <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">{{ $t('rightSidebar.claimReward') }}</v-btn>
@@ -227,6 +227,17 @@ const claimReward = async (missionId, type = 'daily') => {
             color: 'error'
         }
     }
+}
+
+const getMissionTranslation = (mission, period) => {
+    if (!mission) return '';
+    const type = mission.type || mission.id;
+    const key = `missionsList.${period}.${type}`;
+    const translated = t(key, { goal: mission.goal });
+    if (translated !== key) {
+        return translated;
+    }
+    return mission.label || mission.text || (period === 'daily' ? t('rightSidebar.specialMission') : t('rightSidebar.weeklyMission'));
 }
 </script>
 

@@ -217,7 +217,6 @@
                     </div>
                 </div>
             </div>
-            </v-card>
         </div>
 
         <!-- DIÁLOGOS (Sin cambios significativos en lógica, solo diseño glass) -->

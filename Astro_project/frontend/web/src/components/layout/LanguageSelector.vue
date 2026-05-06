@@ -23,7 +23,7 @@
         class="rounded-lg mb-1 lang-item"
       >
         <template v-slot:prepend>
-          <span class="mr-3">{{ lang.flag }}</span>
+          <span class="mr-3 lang-code-badge">{{ lang.flag }}</span>
         </template>
         <v-list-item-title class="text-white font-weight-medium">
           {{ lang.label }}
@@ -37,18 +37,18 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
-const languages = [
-  { label: 'Castellano', value: 'es', flag: '🇪🇸' },
-  { label: 'Català', value: 'ca', flag: '🏴󠁥󠁳󠁣󠁴󠁿' },
-  { label: 'English', value: 'en', flag: '🇺🇸' }
-]
+const languages = computed(() => [
+  { label: t('languages.es'), value: 'es', flag: 'ES' },
+  { label: t('languages.ca'), value: 'ca', flag: 'CA' },
+  { label: t('languages.en'), value: 'en', flag: 'EN' }
+])
 
 const currentLang = computed(() => locale.value)
 
 const currentLangLabel = computed(() => {
-  const lang = languages.find(l => l.value === currentLang.value)
+  const lang = languages.value.find(l => l.value === currentLang.value)
   return lang ? currentLang.value.toUpperCase() : 'ES'
 })
 
@@ -89,5 +89,19 @@ const changeLanguage = (newLang) => {
 .active-lang {
   background: rgba(0, 229, 255, 0.15) !important;
   border-left: 3px solid #00e5ff !important;
+}
+
+.lang-code-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 32px;
+  display: inline-block;
+  text-align: center;
+  border: 1px solid rgba(0, 229, 255, 0.3);
 }
 </style>

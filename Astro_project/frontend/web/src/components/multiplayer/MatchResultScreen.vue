@@ -97,10 +97,7 @@
               size="x-small"
               variant="outlined"
             >
-              {{ $t('multiplayerResult.pending') }}
-            </v-chip>
-          </div>
-        </div>
+              {{ $t('multiplayerResult.waiting') }}
             </v-chip>
           </div>
         </div>

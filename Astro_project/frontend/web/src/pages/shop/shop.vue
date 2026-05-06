@@ -206,7 +206,7 @@
                             {{ lastPrize?.icon }}
                         </v-icon>
                     </div>
-                    <h3 class="text-h5 font-weight-bold mb-2 text-white">¡RECOMPENSA!</h3>
+                    <h3 class="text-h5 font-weight-bold mb-2 text-white">{{ $t('store.reward') }}</h3>
                     <p class="text-body-1 text-cyan-accent-3 mb-2">{{ lastPrize?.label }}</p>
                     <p v-if="lastPrize?.rewardMessage" class="text-body-2 text-amber-accent-3 mb-6">
                         {{ lastPrize.rewardMessage }}
@@ -249,7 +249,7 @@ const updateStats = (data) => {
 };
 
 const triggerMultiSpin = async () => {
-    if (!confirm("Vols comprar un pack de 10 tirades per 900 monedes?")) return;
+    if (!confirm(t('shopActions.confirmMulti'))) return;
 
     // 1. Definimos la URL base dinámica
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -318,7 +318,7 @@ const buyProduct = async (item) => {
     try {
         const result = await astroStore.buyItem(item);
         if (result.success) {
-            console.log("Compra exitosa");
+            console.log(t('shopActions.buySuccess'));
         } else {
             alert(result.message);
         }

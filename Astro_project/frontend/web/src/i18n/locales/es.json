@@ -76,7 +76,8 @@
         "equipped": "EQUIPADO",
         "equip": "EQUIPAR",
         "empty": "Aún no tienes equipo en esta categoría",
-        "goToShop": "Visitar la Tienda"
+        "goToShop": "Visitar la Tienda",
+        "useError": "No se pudo usar el objeto."
     },
     "profile": {
         "guest": "Explorador",
@@ -166,7 +167,24 @@
         "accepted": "Has aceptado a {name} en tu tripulación",
         "errAccept": "Error al aceptar solicitud",
         "rejected": "Has rechazado a {name}",
-        "errReject": "Error al rechazar solicitud"
+        "errReject": "Error al rechazar solicitud",
+        "ranks": {
+            "0": "Cadete",
+            "1": "Explorador",
+            "2": "Navegante",
+            "3": "Capitán",
+            "4": "Comandante",
+            "5": "Almirante",
+            "6": "Centinela",
+            "7": "Guardián",
+            "8": "Forjador",
+            "9": "Maestro",
+            "10": "Arconte",
+            "11": "Soberano",
+            "12": "Arquitecto",
+            "13": "Deidad",
+            "14": "Omnisciente"
+        }
     },
     "auth": {
         "abortCmd": "ABORTAR / VOLVER A BASE",
@@ -256,40 +274,74 @@
         "subtitle": "Tus condecoraciones en la flota estelar",
         "syncErrorAtlas": "No se pudo sincronizar completamente con MongoDB Atlas.",
         "syncErrorBase": "No se pudo sincronizar con la base de mando.",
-        "unlocked": "Desbloqueado"
+        "unlocked": "Conseguido",
+        "completed": "Completado",
+        "syncing": "Sincronizando Archivos...",
+        "locked": "Bloqueado",
+        "metrics": {
+            "missions": "Misiones",
+            "coins": "Monedas",
+            "inventory": "Objetos",
+            "level": "Nivel",
+            "xp": "XP"
+        },
+        "types": {
+            "bronze": "Bronce",
+            "silver": "Plata",
+            "gold": "Oro",
+            "platinum": "Platino"
+        }
     },
     "multiplayerLobby": {
         "title": "Centro de Mando Multijugador",
         "subtitle": "Invita a tus amigos y preparaos para la misión.",
-        "missionInProgress": "Misión en curso",
-        "room": "SALA {id}",
-        "abort": "Abortar",
-        "currentCrew": "Tripulación Actual",
-        "commander": "COMANDANTE",
-        "crewmate": "TRIPULANTE",
+        "room": "SALA: {id}",
+        "abort": "ABORTAR",
+        "commander": "Comandante",
+        "crewmate": "Tripulante",
         "waiting": "Esperando...",
-        "launchNow": "¡DESPEGAR AHORA!",
-        "waitingOrders": "Esperando órdenes del Comandante...",
-        "prepareExpedition": "Preparar Expedición",
-        "newMission": "Nueva Misión",
-        "public": "Pública",
-        "private": "Privada",
-        "startRoom": "INICIAR SALA",
-        "joinByCode": "Unirse por Código",
-        "codePlaceholder": "CÓDIGO (EJ: AB12YZ)",
+        "launchNow": "INICIAR MISIÓN",
+        "waitingOrders": "ESPERANDO ÓRDENES DEL COMANDANTE...",
+        "prepareExpedition": "PREPARAR EXPEDICIÓN",
+        "newMission": "NUEVA MISIÓN",
+        "public": "PÚBLICA",
+        "private": "PRIVADA",
+        "startRoom": "CREAR SALA",
+        "joinByCode": "UNIRSE POR CÓDIGO",
+        "codePlaceholder": "CÓDIGO DE 6 DÍGITOS",
         "dock": "ACOPLARSE",
-        "incomingCalls": "Llamadas Entrantes ({count})",
-        "requestSupport": "{user} solicita tu apoyo",
+        "incomingCalls": "LLAMADAS ENTRANTES ({count})",
+        "requestSupport": "{user} solicita tu apoyo en una misión.",
         "missionNetwork": "RED DE MISIONES",
-        "sector": "SECTOR {id}",
-        "slot": "{current}/4 SLOT",
-        "establishLink": "ESTABLECER ENLACE",
-        "noSignals": "SIN SEÑALES EN EL SECTOR",
-        "recruitCrew": "Reclutar Tripulación",
+        "sector": "SECTOR: {id}",
+        "establishLink": "ESTABLECER VÍNCULO",
+        "noSignals": "SIN SEÑALES DETECTADAS",
+        "recruitCrew": "RECLUTAR TRIPULACIÓN",
         "friends": "AMIGOS",
         "possibleCrewmates": "POSIBLES TRIPULANTES",
-        "noCrewmates": "Sin tripulantes en el sector.",
-        "joiningRoom": "Uniéndote a la sala de {user}"
+        "noCrewmates": "No hay más pilotos disponibles.",
+        "joiningRoom": "Uniéndote a la sala de {user}...",
+        "missionInProgress": "MISIÓN EN CURSO",
+        "round": "RONDA {current} / {total}",
+        "roundWinner": "¡RONDA PARA!",
+        "tie": "¡EMPATE!",
+        "timeout": "¡TIEMPO AGOTADO!",
+        "you": "TU",
+        "currentCrew": "Tripulación Actual",
+        "maxPlayers": "TAMAÑO DE LA NAVE MÁX.",
+        "astronauts": "Astronautas",
+        "roundsCount": "NÚMERO DE RONDAS",
+        "rounds": "Rondas",
+        "selectModality": "Selecciona modalidad",
+        "comingSoon": "PRÓXIMAMENTE",
+        "selectingMission": "SELECCIONANDO MISIÓN...",
+        "modalities": {
+            "1vs1": "Modo 1vs1",
+            "2vs2": "Modo 2vs2",
+            "boss": "Modo Boss",
+            "carrera": "Carrera Espacial",
+            "torneig": "Torneo"
+        }
     },
     "plans": {
         "selectMode": "SELECCIONA TU MODO DE MISIÓN",
@@ -421,7 +473,8 @@
         "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 monedas?",
         "alreadyOwned": "¡Ya tienes {item} en tu inventario!",
         "maxReached": "Has alcanzado el máximo de 99 unidades para {item}.",
-        "confirmBuy": "¿Quieres comprar {item} por {price} créditos?"
+        "confirmBuy": "¿Quieres comprar {item} por {price} créditos?",
+        "buySuccess": "Compra exitosa"
     },
     "shopItems": {
         "vidas": {
@@ -567,21 +620,37 @@
             "title": "Energía Infinita",
             "desc": "Consigue 500 XP.",
             "metric": "XP"
+        },
+        "13": {
+            "title": "Estratega Galáctico",
+            "desc": "Completa 10 misiones.",
+            "metric": "Misiones"
+        },
+        "14": {
+            "title": "Mercader de Estrellas",
+            "desc": "Acumula 2.000 monedas.",
+            "metric": "Monedas"
+        },
+        "15": {
+            "title": "Héroe del Cosmos",
+            "desc": "Completa 50 misiones.",
+            "metric": "Misiones"
+        },
+        "16": {
+            "title": "Magnate de la Nebulosa",
+            "desc": "Acumula 5.000 monedas.",
+            "metric": "Monedas"
+        },
+        "17": {
+            "title": "Soberano del Vacío",
+            "desc": "Alcanza el nivel 10.",
+            "metric": "Nivel"
+        },
+        "18": {
+            "title": "Conquistador de Galaxias",
+            "desc": "Consigue 1.000 XP.",
+            "metric": "XP"
         }
-    },
-    "achievementsList": {
-        "1": { "title": "Primeros Pasos", "desc": "Completa 5 misiones." },
-        "2": { "title": "Explorador Veterano", "desc": "Completa 20 misiones." },
-        "3": { "title": "Maestro Estelar", "desc": "Completa 50 misiones." },
-        "4": { "title": "Ahorrador", "desc": "Acumula 1.200 monedas." },
-        "5": { "title": "Magnate", "desc": "Acumula 3.000 monedas." },
-        "6": { "title": "Banquero Galáctico", "desc": "Acumula 5.000 monedas." },
-        "7": { "title": "Coleccionista", "desc": "Consigue 1 objeto en inventario." },
-        "8": { "title": "Acaparador", "desc": "Consigue 5 objetos en inventario." },
-        "9": { "title": "Curador", "desc": "Consigue 10 objetos en inventario." },
-        "10": { "title": "Estrella Naciente", "desc": "Alcanza el nivel 3." },
-        "11": { "title": "Centro de Mando", "desc": "Alcanza el nivel 5." },
-        "12": { "title": "Energía Infinita", "desc": "Consigue 500 XP." }
     },
     "multiplayerResult": {
         "victory": "¡VICTORIA!",
@@ -607,5 +676,18 @@
         "spinError": "Error al girar",
         "unknownPrize": "El servidor ha devuelto un premio desconocido.",
         "commError": "Error de comunicación"
+    },
+    "languages": {
+        "es": "Castellano",
+        "ca": "Catalán",
+        "en": "Inglés"
+    },
+    "footer": {
+        "docs": "Documentación",
+        "support": "Soporte Técnico",
+        "x": "Twitter / X",
+        "github": "Repositorio GitHub",
+        "discord": "Comunidad Discord",
+        "reddit": "Foro Reddit"
     }
 }

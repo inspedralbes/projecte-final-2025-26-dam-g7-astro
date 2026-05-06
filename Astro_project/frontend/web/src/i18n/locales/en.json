@@ -76,7 +76,8 @@
         "equipped": "EQUIPPED",
         "equip": "EQUIP",
         "empty": "You don't have any equipment in this category yet",
-        "goToShop": "Visit the Shop"
+        "goToShop": "Visit the Shop",
+        "useError": "Could not use the item."
     },
     "profile": {
         "guest": "Explorer",
@@ -166,7 +167,24 @@
         "accepted": "You have accepted {name} into your crew",
         "errAccept": "Error accepting request",
         "rejected": "You have rejected {name}",
-        "errReject": "Error rejecting request"
+        "errReject": "Error rejecting request",
+        "ranks": {
+            "0": "Cadet",
+            "1": "Explorer",
+            "2": "Navigator",
+            "3": "Captain",
+            "4": "Commander",
+            "5": "Admiral",
+            "6": "Sentinel",
+            "7": "Guardian",
+            "8": "Forger",
+            "9": "Master",
+            "10": "Archon",
+            "11": "Sovereign",
+            "12": "Architect",
+            "13": "Deity",
+            "14": "Omniscient"
+        }
     },
     "auth": {
         "abortCmd": "ABORT / RETURN TO BASE",
@@ -256,40 +274,74 @@
         "subtitle": "Your commendations in the stellar fleet",
         "syncErrorAtlas": "Could not fully synchronize with MongoDB Atlas.",
         "syncErrorBase": "Could not synchronize with the command base.",
-        "unlocked": "Unlocked"
+        "unlocked": "Unlocked",
+        "completed": "Completed",
+        "syncing": "Syncing Files...",
+        "locked": "Locked",
+        "metrics": {
+            "missions": "Missions",
+            "coins": "Coins",
+            "inventory": "Items",
+            "level": "Level",
+            "xp": "XP"
+        },
+        "types": {
+            "bronze": "Bronze",
+            "silver": "Silver",
+            "gold": "Gold",
+            "platinum": "Platinum"
+        }
     },
     "multiplayerLobby": {
         "title": "Multiplayer Command Center",
         "subtitle": "Invite your friends and prepare for the mission.",
-        "missionInProgress": "Mission in progress",
-        "room": "ROOM {id}",
-        "abort": "Abort",
-        "currentCrew": "Current Crew",
-        "commander": "COMMANDER",
-        "crewmate": "CREWMATE",
+        "room": "ROOM: {id}",
+        "abort": "ABORT",
+        "commander": "Commander",
+        "crewmate": "Crewmate",
         "waiting": "Waiting...",
-        "launchNow": "LAUNCH NOW!",
-        "waitingOrders": "Waiting for orders from the Commander...",
-        "prepareExpedition": "Prepare Expedition",
-        "newMission": "New Mission",
-        "public": "Public",
-        "private": "Private",
-        "startRoom": "START ROOM",
-        "joinByCode": "Join by Code",
-        "codePlaceholder": "CODE (EX: AB12YZ)",
+        "launchNow": "LAUNCH NOW",
+        "waitingOrders": "WAITING FOR COMMANDER'S ORDERS...",
+        "prepareExpedition": "PREPARE EXPEDITION",
+        "newMission": "NEW MISSION",
+        "public": "PUBLIC",
+        "private": "PRIVATE",
+        "startRoom": "CREATE ROOM",
+        "joinByCode": "JOIN BY CODE",
+        "codePlaceholder": "6-DIGIT CODE",
         "dock": "DOCK",
-        "incomingCalls": "Incoming Calls ({count})",
-        "requestSupport": "{user} requests your support",
+        "incomingCalls": "INCOMING CALLS ({count})",
+        "requestSupport": "{user} requests your support in a mission.",
         "missionNetwork": "MISSION NETWORK",
-        "sector": "SECTOR {id}",
-        "slot": "{current}/4 SLOT",
+        "sector": "SECTOR: {id}",
         "establishLink": "ESTABLISH LINK",
-        "noSignals": "NO SIGNALS IN THE SECTOR",
-        "recruitCrew": "Recruit Crew",
+        "noSignals": "NO SIGNALS DETECTED",
+        "recruitCrew": "RECRUIT CREW",
         "friends": "FRIENDS",
         "possibleCrewmates": "POSSIBLE CREWMATES",
-        "noCrewmates": "No crewmates in the sector.",
-        "joiningRoom": "Joining {user}'s room"
+        "noCrewmates": "No more pilots available.",
+        "joiningRoom": "Joining {user}'s room...",
+        "missionInProgress": "MISSION IN PROGRESS",
+        "round": "ROUND {current} / {total}",
+        "roundWinner": "ROUND FOR!",
+        "tie": "TIE!",
+        "timeout": "TIMEOUT!",
+        "you": "YOU",
+        "currentCrew": "Current Crew",
+        "maxPlayers": "MAX SHIP SIZE",
+        "astronauts": "Astronauts",
+        "roundsCount": "NUMBER OF ROUNDS",
+        "rounds": "Rounds",
+        "selectModality": "Select modality",
+        "comingSoon": "COMING SOON",
+        "selectingMission": "SELECTING MISSION...",
+        "modalities": {
+            "1vs1": "1vs1 Mode",
+            "2vs2": "2vs2 Mode",
+            "boss": "Boss Mode",
+            "carrera": "Space Race",
+            "torneig": "Tournament"
+        }
     },
     "plans": {
         "selectMode": "SELECT YOUR MISSION MODE",
@@ -421,7 +473,8 @@
         "confirmMulti": "Do you want to buy a 10-spin pack for 900 coins?",
         "alreadyOwned": "You already have {item} in your inventory!",
         "maxReached": "You have reached the maximum of 99 units for {item}.",
-        "confirmBuy": "Do you want to buy {item} for {price} credits?"
+        "confirmBuy": "Do you want to buy {item} for {price} credits?",
+        "buySuccess": "Purchase successful"
     },
     "shopItems": {
         "vidas": {
@@ -567,21 +620,37 @@
             "title": "Infinite Energy",
             "desc": "Get 500 XP.",
             "metric": "XP"
+        },
+        "13": {
+            "title": "Galactic Strategist",
+            "desc": "Complete 10 missions.",
+            "metric": "Missions"
+        },
+        "14": {
+            "title": "Star Merchant",
+            "desc": "Accumulate 2,000 coins.",
+            "metric": "Coins"
+        },
+        "15": {
+            "title": "Hero of the Cosmos",
+            "desc": "Complete 50 missions.",
+            "metric": "Missions"
+        },
+        "16": {
+            "title": "Nebula Tycoon",
+            "desc": "Accumulate 5,000 coins.",
+            "metric": "Coins"
+        },
+        "17": {
+            "title": "Sovereign of the Void",
+            "desc": "Reach level 10.",
+            "metric": "Level"
+        },
+        "18": {
+            "title": "Galaxy Conqueror",
+            "desc": "Get 1,000 XP.",
+            "metric": "XP"
         }
-    },
-    "achievementsList": {
-        "1": { "title": "First Steps", "desc": "Complete 5 missions." },
-        "2": { "title": "Veteran Explorer", "desc": "Complete 20 missions." },
-        "3": { "title": "Stellar Master", "desc": "Complete 50 missions." },
-        "4": { "title": "Wealthy", "desc": "Accumulate 1,200 coins." },
-        "5": { "title": "Tycoon", "desc": "Accumulate 3,000 coins." },
-        "6": { "title": "Galactic Banker", "desc": "Accumulate 5,000 coins." },
-        "7": { "title": "Collector", "desc": "Get 1 item in inventory." },
-        "8": { "title": "Hoarder", "desc": "Get 5 items in inventory." },
-        "9": { "title": "Curator", "desc": "Get 10 items in inventory." },
-        "10": { "title": "Rising Star", "desc": "Reach level 3." },
-        "11": { "title": "Command Center", "desc": "Reach level 5." },
-        "12": { "title": "Infinite Energy", "desc": "Get 500 XP." }
     },
     "multiplayerResult": {
         "victory": "VICTORY!",
@@ -607,5 +676,18 @@
         "spinError": "Error while spinning",
         "unknownPrize": "The server returned an unknown prize.",
         "commError": "Communication error"
+    },
+    "languages": {
+        "es": "Spanish",
+        "ca": "Catalan",
+        "en": "English"
+    },
+    "footer": {
+        "docs": "Documentation",
+        "support": "Technical Support",
+        "x": "Twitter / X",
+        "github": "GitHub Repository",
+        "discord": "Discord Community",
+        "reddit": "Reddit Forum"
     }
 }
