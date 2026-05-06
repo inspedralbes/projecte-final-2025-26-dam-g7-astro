@@ -99,6 +99,7 @@
         "inventoryBtn": "INVENTARI",
         "changePlanBtn": "CANVIAR PLA",
         "logoutBtn": "FINALITZAR CONNEXIÓ I SORTIR",
+        "logoutConfirm": "Estàs a punt de desconnectar-te del sistema central d'ASTRO. Vols continuar?",
         "topGames": "MILLORS MISSIONS (TOP 5)",
         "flightHistory": "HISTORIAL DE VOL",
         "flightHistorySub": "Els teus últims registres de missió en l'espai profund.",
@@ -113,7 +114,7 @@
         "noRecent": "No hi ha registres d'expedicions recents.",
         "selectAchievement": "Seleccionar Assoliment",
         "removeAchievement": "Treure Assoliment",
-        "astronautSuit": "VESTIT D'ASTRONAUTA",
+        "astronautSuit": "TRAJO D'ASTRONAUTA",
         "missionCompanion": "COMPANY DE MISSIÓ",
         "none": "CAP",
         "loginRequired": "Has d'iniciar sessió per guardar els teus assoliments.",
@@ -133,7 +134,10 @@
         "mascot_whale": "Balena",
         "mascot_alien": "Alien",
         "mascot_drone": "Dron",
-        "mascot_octopus": "Pop"
+        "mascot_octopus": "Pop",
+        "seniorityLabel": "ANTIGUITAT",
+        "levelLabel": "NIVELL",
+        "systemValue": "ASTRO-V2.0"
     },
     "friends": {
         "title": "Tripulació",
@@ -234,8 +238,11 @@
     },
     "symmetryBreaker": {
         "points": "Punts: {score}",
+        "pointsLabel": "PUNTS",
         "target": "Objectiu: {target}",
+        "targetLabel": "OBJECTIU",
         "time": "Temps: {time}s",
+        "timeLabel": "TEMPS",
         "lockMeter": "Bloqueig de precisió (Ronda {round})",
         "title": "Symmetry Breaker",
         "desc": "Manté el làser sobre l'objectiu correcte. La velocitat augmentarà cada ronda!",
@@ -534,15 +541,6 @@
         "invalidGame": "Nom de joc invàlid.",
         "invalidItem": "Objecte invàlid."
     },
-    "games": {
-        "word-construction": "Construcció de Paraules",
-        "syllable-quest": "Aventura Sil·làbica",
-        "rhyme-squad": "Esquadró de Rimes",
-        "spelled-rosco": "Rosco Estel·lar",
-        "radar-scan": "Escàner de Ràdar",
-        "radio-signal": "Senyal de Ràdio",
-        "symmetry-breaker": "Symmetry Breaker"
-    },
     "missionsList": {
         "daily": {
             "games": "Juga {goal} partides",
@@ -650,6 +648,47 @@
             "metric": "XP"
         }
     },
+    "radarScan": {
+        "title": "Escàner de Ràdar",
+        "points": "Punts: {score}",
+        "time": "Temps: ",
+        "desc": "¡Troba l'objectiu fent servir l'escàner!",
+        "startBtn": "INICIAR MISSIÓ",
+        "completed": "Fi de l'Escaneig",
+        "totalPoints": "Puntuació Final: {score}",
+        "returnMenu": "Obtenir Recompensa"
+    },
+    "radioSignal": {
+        "title": "Senyal de Ràdio",
+        "points": "Punts: {score}",
+        "pointsLabel": "PUNTS",
+        "time": "Temps: {time}s",
+        "timeLabel": "TEMPS",
+        "locked": "SINCRONITZAT",
+        "scanning": "ESCANEJANT...",
+        "placeholder": "Introdueix la frase...",
+        "send": "ENVIAR",
+        "waiting": "Esperant senyal...",
+        "commsReceiver": "RECEPTOR DE COMUNICACIONS",
+        "targetLabel": "OBJECTIU",
+        "signalLabel": "SENYAL",
+        "incomingTransmission": "TRANSMISSIÓ ENTRANT"
+    },
+    "games": {
+        "SymmetryBreaker": "Simetria Estel·lar",
+        "WordConstruction": "Construcció de Paraules",
+        "RhymeSquad": "Esquadró de Rimes",
+        "SyllableQuest": "Aventura Sil·làbica",
+        "SpelledRosco": "Rosco Estelar",
+        "RadarScan": "Escaneig de Radar",
+        "RadioSignal": "Senyal de Ràdio"
+    },
+    "plans": {
+        "individual": "Individual",
+        "premium": "Premium",
+        "standard": "Estàndard",
+        "individual_free": "Individual (Gratuït)"
+    },
     "multiplayerResult": {
         "victory": "¡VICTÒRIA!",
         "tie": "¡EMPAT!",
@@ -687,5 +726,56 @@
         "github": "Repositori GitHub",
         "discord": "Comunitat Discord",
         "reddit": "Fòrum Reddit"
+    },
+    "multiplayerLobby": {
+        "round": "RONDA {current} / {total}",
+        "roundWinner": "GUANYADOR DE LA RONDA",
+        "tie": "EMPAT",
+        "timeout": "TEMPS ESGOTAT",
+        "you": "TU",
+        "title": "CENTRE DE CONTROL DE MISSIONS",
+        "subtitle": "Coordina la teva tripulació i prepara l'expedició galàctica",
+        "missionInProgress": "MISSIÓ EN CURS",
+        "room": "SALA {id}",
+        "abort": "AVORTAR",
+        "currentCrew": "TRIPULACIÓ ACTUAL",
+        "commander": "COMANDANT",
+        "crewmate": "TRIPULANT",
+        "waiting": "ESPERANT...",
+        "launchNow": "LLANÇAR ARA",
+        "waitingOrders": "ESPERANT ORDRES DEL COMANDANT",
+        "prepareExpedition": "PREPARA L'EXPEDICIÓ",
+        "newMission": "NOVA MISSIÓ",
+        "public": "PÚBLICA",
+        "private": "PRIVADA",
+        "maxPlayers": "MÀX. JUGADORS",
+        "astronauts": "Astronautes",
+        "roundsCount": "NOMBRE DE RONDES",
+        "rounds": "Rondes",
+        "startRoom": "CREAR SALA",
+        "joinByCode": "UNIR-SE PER CODI",
+        "codePlaceholder": "CODI-X",
+        "dock": "ACOPLAR-SE",
+        "selectModality": "SELECCIONA MODALITAT",
+        "modalities": {
+            "1vs1": "Modus 1vs1",
+            "2vs2": "Modus 2vs2",
+            "boss": "Modus Boss",
+            "carrera": "Carrera Espacial",
+            "torneig": "Torneig"
+        },
+        "comingSoon": "Properament",
+        "incomingCalls": "TRUCADES ENTRANTS ({count})",
+        "requestSupport": "{user} sol·licita suport a la seva missió!",
+        "missionNetwork": "XARXA DE MISSIONS",
+        "sector": "SECTOR {id}",
+        "establishLink": "ESTABLIR ENLLAÇ",
+        "noSignals": "No es detecten senyals de missions properes",
+        "recruitCrew": "RECRUTAR TRIPULACIÓ",
+        "friends": "AMICS",
+        "possibleCrewmates": "POSSIBLES TRIPULANTS",
+        "noCrewmates": "No hi ha tripulants disponibles",
+        "joiningRoom": "Unint-se a la sala de {user}...",
+        "opponent": "Oponent"
     }
 }

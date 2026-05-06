@@ -99,6 +99,7 @@
         "inventoryBtn": "INVENTORY",
         "changePlanBtn": "CHANGE PLAN",
         "logoutBtn": "LOGOUT AND EXIT",
+        "logoutConfirm": "You are about to disconnect from ASTRO system. Do you wish to continue?",
         "topGames": "BEST MISSIONS (TOP 5)",
         "flightHistory": "FLIGHT HISTORY",
         "flightHistorySub": "Your latest mission records in deep space.",
@@ -133,7 +134,9 @@
         "mascot_whale": "Whale",
         "mascot_alien": "Alien",
         "mascot_drone": "Drone",
-        "mascot_octopus": "Octopus"
+        "mascot_octopus": "Octopus",
+        "seniorityLabel": "SENIORITY",
+        "levelLabel": "LEVEL"
     },
     "friends": {
         "title": "Crew",
@@ -234,8 +237,11 @@
     },
     "symmetryBreaker": {
         "points": "Points: {score}",
+        "pointsLabel": "POINTS",
         "target": "Target: {target}",
+        "targetLabel": "TARGET",
         "time": "Time: {time}s",
+        "timeLabel": "TIME",
         "lockMeter": "Precision Lock (Round {round})",
         "title": "Symmetry Breaker",
         "desc": "Keep the laser on the correct target. Speed increases each round!",
@@ -536,15 +542,7 @@
         "invalidGame": "Invalid game name.",
         "invalidItem": "Invalid item."
     },
-    "games": {
-        "word-construction": "Word Construction",
-        "syllable-quest": "Syllable Quest",
-        "rhyme-squad": "Rhyme Squad",
-        "spelled-rosco": "Stellar Rosco",
-        "radar-scan": "Radar Scan",
-        "radio-signal": "Radio Signal",
-        "symmetry-breaker": "Symmetry Breaker"
-    },
+
     "missionsList": {
         "daily": {
             "games": "Play {goal} games",
@@ -652,6 +650,54 @@
             "metric": "XP"
         }
     },
+    "radarScan": {
+        "title": "Radar Scan",
+        "points": "Points: {score}",
+        "time": "Time: ",
+        "desc": "Find the target using the scanner!",
+        "startBtn": "START MISSION",
+        "completed": "Scan Finished",
+        "totalPoints": "Final Score: {score}",
+        "returnMenu": "Get Reward"
+    },
+    "radioSignal": {
+        "title": "Radio Signal",
+        "points": "Points: {score}",
+        "pointsLabel": "POINTS",
+        "time": "Time: {time}s",
+        "timeLabel": "TIME",
+        "locked": "LOCKED",
+        "scanning": "SCANNING...",
+        "placeholder": "Enter the phrase...",
+        "send": "SEND",
+        "waiting": "Waiting for signal...",
+        "commsReceiver": "COMMS RECEIVER",
+        "targetLabel": "TARGET",
+        "signalLabel": "SIGNAL",
+        "incomingTransmission": "INCOMING TRANSMISSION"
+    },
+    "games": {
+        "word-construction": "Word Construction",
+        "syllable-quest": "Syllable Quest",
+        "rhyme-squad": "Rhyme Squad",
+        "spelled-rosco": "Stellar Rosco",
+        "radar-scan": "Radar Scan",
+        "radio-signal": "Radio Signal",
+        "symmetry-breaker": "Symmetry Breaker",
+        "SymmetryBreaker": "Symmetry Breaker",
+        "WordConstruction": "Word Construction",
+        "RhymeSquad": "Rhyme Squad",
+        "SyllableQuest": "Syllable Quest",
+        "SpelledRosco": "Stellar Rosco",
+        "RadarScan": "Radar Scan",
+        "RadioSignal": "Radio Signal"
+    },
+    "plans": {
+        "individual": "Individual",
+        "premium": "Premium",
+        "standard": "Standard",
+        "individual_free": "Individual (Free)"
+    },
     "multiplayerResult": {
         "victory": "VICTORY!",
         "tie": "TIE!",
@@ -689,5 +735,56 @@
         "github": "GitHub Repository",
         "discord": "Discord Community",
         "reddit": "Reddit Forum"
+    },
+    "multiplayerLobby": {
+        "round": "ROUND {current} / {total}",
+        "roundWinner": "ROUND WINNER",
+        "tie": "TIE",
+        "timeout": "TIMEOUT",
+        "you": "YOU",
+        "title": "MISSION CONTROL CENTER",
+        "subtitle": "Coordinate your crew and prepare for the galactic expedition",
+        "missionInProgress": "MISSION IN PROGRESS",
+        "room": "ROOM {id}",
+        "abort": "ABORT",
+        "currentCrew": "CURRENT CREW",
+        "commander": "COMMANDER",
+        "crewmate": "CREWMATE",
+        "waiting": "WAITING...",
+        "launchNow": "LAUNCH NOW",
+        "waitingOrders": "WAITING FOR COMMANDER'S ORDERS",
+        "prepareExpedition": "PREPARE EXPEDITION",
+        "newMission": "NEW MISSION",
+        "public": "PUBLIC",
+        "private": "PRIVATE",
+        "maxPlayers": "MAX PLAYERS",
+        "astronauts": "Astronauts",
+        "roundsCount": "ROUNDS COUNT",
+        "rounds": "Rounds",
+        "startRoom": "CREATE ROOM",
+        "joinByCode": "JOIN BY CODE",
+        "codePlaceholder": "CODE-X",
+        "dock": "DOCK",
+        "selectModality": "SELECT MODALITY",
+        "modalities": {
+            "1vs1": "1vs1 Mode",
+            "2vs2": "2vs2 Mode",
+            "boss": "Boss Mode",
+            "carrera": "Space Race",
+            "torneig": "Tournament"
+        },
+        "comingSoon": "Coming Soon",
+        "incomingCalls": "INCOMING CALLS ({count})",
+        "requestSupport": "{user} requests support for their mission!",
+        "missionNetwork": "MISSION NETWORK",
+        "sector": "SECTOR {id}",
+        "establishLink": "ESTABLISH LINK",
+        "noSignals": "No mission signals detected nearby",
+        "recruitCrew": "RECRUIT CREW",
+        "friends": "FRIENDS",
+        "possibleCrewmates": "POSSIBLE CREWMATES",
+        "noCrewmates": "No crewmates available",
+        "joiningRoom": "Joining {user}'s room...",
+        "opponent": "Opponent"
     }
 }

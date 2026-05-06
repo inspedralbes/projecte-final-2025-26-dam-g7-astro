@@ -268,12 +268,12 @@
           
           <v-row class="bg-black-semi pa-4 rounded-lg mb-8" no-gutters>
             <v-col cols="6" class="border-right-dim">
-              <div class="text-overline text-grey">Nivel</div>
+              <div class="text-overline text-grey">{{ $t('profile.levelLabel') }}</div>
               <div class="text-h5 text-white font-weight-bold">{{ profileDialog.user?.level || 1 }}</div>
             </v-col>
             <v-col cols="6">
-              <div class="text-overline text-grey">Antigüedad</div>
-              <div class="text-h5 text-white font-weight-bold">ESTAR 2.0</div>
+              <div class="text-overline text-grey">{{ $t('profile.seniorityLabel') }}</div>
+              <div class="text-h5 text-white font-weight-bold">{{ $t('profile.systemValue') }}</div>
             </v-col>
           </v-row>
           

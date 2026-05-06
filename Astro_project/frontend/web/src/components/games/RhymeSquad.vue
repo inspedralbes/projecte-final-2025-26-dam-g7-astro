@@ -3,13 +3,10 @@
     
     <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="100" class="mb-6 animate-bounce"></v-icon>
-      <h1 class="text-h2 font-weight-black text-white mb-6">Escuadrón de Rimas</h1>
-      <p class="text-h5 text-grey-lighten-1 mb-10">
-        Tienes <span class="text-cyan-accent-3 font-weight-bold">60 SEGUNDOS</span>. Atrapa rimas para sumar 1 segundo extra. <br>
-        <span class="text-red-accent-2 mt-2 d-block">¡Si fallas o dejas que una rima caiga al vacío, perderás vidas!</span>
-      </p>
+      <h1 class="text-h2 font-weight-black text-white mb-6">{{ $t('rhymeSquad.title') }}</h1>
+      <p class="text-h5 text-grey-lighten-1 mb-10" v-html="$t('rhymeSquad.desc')"></p>
       <v-btn color="cyan-accent-3" size="x-large" height="60" block rounded="pill" class="font-weight-black text-black text-h6" @click="startGame">
-        INICIAR MISIÓN
+        {{ $t('rhymeSquad.startMission') }}
       </v-btn>
     </v-card>
 
@@ -18,26 +15,26 @@
       <v-card width="100%" max-width="1200" class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0" rounded="xl" style="z-index: 10;">
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadrón Fonológico</h2>
+            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">{{ $t('rhymeSquad.phonologicalSquad') }}</h2>
             <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
-              <span class="font-weight-bold">Punts: {{ score }}</span>
+              <span class="font-weight-bold">{{ $t('rhymeSquad.points', { score }) }}</span>
               <span class="mx-3">|</span>
               <span class="font-weight-bold" :class="timeLeft <= 15 ? 'text-red-accent-2 animate-pulse' : 'text-blue-lighten-2'">
                 {{ $t('rhymeSquad.time', { time: timeLeft }) }}
               </span>
               <span class="mx-3">|</span>
-              <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">Vides: {{ lives }}</span>
+              <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">{{ $t('rhymeSquad.lives', { lives }) }}</span>
             </div>
           </div>
 
           <div class="text-center px-10 target-box rounded-xl py-3">
-            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimas con:</div>
+            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">{{ $t('rhymeSquad.findRhymes') }}</div>
             <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget.word }}</div>
           </div>
 
           <div class="d-flex align-center gap-6">
             <v-chip v-if="combo > 0" :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'" size="x-large" class="font-weight-bold text-h6" :class="{ 'animate-pulse': isTurbo }">
-              COMBO x{{ combo }} {{ isTurbo ? '🔥' : '' }}
+              {{ $t('rhymeSquad.combo', { combo, turbo: isTurbo ? '🔥' : '' }) }}
             </v-chip>
             <v-btn icon="mdi-close" size="large" variant="text" color="grey" @click="forceEndGame"></v-btn>
           </div>
@@ -74,24 +71,24 @@
 
     <v-card v-else-if="isGameOver && !isMultiplayer" width="100%" max-width="600" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" size="100" class="mb-4"></v-icon>
-      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
+      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? $t('rhymeSquad.timeOut') : $t('rhymeSquad.missionFailed') }}</h2>
       
       <div class="d-flex justify-space-around my-8">
         <div class="text-center">
             <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
-            <div class="text-subtitle-1">Rimas Atrapadas</div>
+            <div class="text-subtitle-1">{{ $t('rhymeSquad.rhymesCaught') }}</div>
         </div>
         <div class="text-center">
             <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
-            <div class="text-subtitle-1">Errors y Omisiones</div>
+            <div class="text-subtitle-1">{{ $t('rhymeSquad.errors') }}</div>
         </div>
       </div>
       
-      <p class="text-h4 text-white mb-2">Puntuación Final: {{ score }}</p>
-      <p class="text-h6 text-grey-lighten-1 mb-8">Combo Máximo: x{{ maxCombo }}</p>
+      <p class="text-h4 text-white mb-2">{{ $t('rhymeSquad.finalScore', { score: score }) }}</p>
+      <p class="text-h6 text-grey-lighten-1 mb-8">{{ $t('rhymeSquad.maxCombo', { combo: maxCombo }) }}</p>
       
       <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="x-large" height="60" rounded="pill" class="text-black font-weight-bold text-h6 block w-100">
-        Obtener Recompensa
+        {{ $t('rhymeSquad.getReward') }}
       </v-btn>
     </v-card>
 
@@ -108,10 +105,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { rhymeData } from '@/data/rhymeGamesData';
 
+const { t, locale } = useI18n();
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
 

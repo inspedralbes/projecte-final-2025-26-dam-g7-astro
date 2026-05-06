@@ -34,7 +34,7 @@
                 <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
                 <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
                 <p class="text-body-2 text-grey-lighten-1 mb-8">
-                    {{ $t('profile.deepSpace', { level: '' }).includes('ESPACIO') ? 'Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?' : 'You are about to disconnect from ASTRO central system. Do you wish to continue?' }}
+                    {{ $t('profile.logoutConfirm') }}
                 </p>
                 <div class="d-flex justify-center mt-4">
                     <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">

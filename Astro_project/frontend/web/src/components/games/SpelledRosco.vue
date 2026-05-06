@@ -173,9 +173,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { roscoData } from '@/data/roscoGamesData';
 
+const { t, locale } = useI18n();
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
 

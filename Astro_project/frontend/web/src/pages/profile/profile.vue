@@ -43,7 +43,7 @@
                                     </h1>
                                     <div class="d-flex flex-wrap align-center ga-3">
                                         <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat">
-                                            {{ rank || $t('profile.defaultRank') }}
+                                            {{ getRankName(level) }}
                                         </v-chip>
                                         <div class="d-flex align-center ga-3 text-grey-lighten-1">
                                             <span class="text-overline">{{ $t('profile.level', { level: level || 1 }) }}</span>
@@ -71,7 +71,7 @@
                             <div class="xp-progress-wrapper mt-6">
                                 <div class="d-flex justify-space-between align-center mb-1 px-1">
                                     <span class="text-caption font-weight-bold text-cyan-accent-3">{{ $t('profile.missionProgress') }}</span>
-                                    <span class="text-caption font-weight-black text-white">{{ xp }} / {{ xpRequired }} XP</span>
+                                    <span class="text-caption font-weight-black text-white">{{ $t('profile.xpProgress', { xp, req: xpRequired }) }}</span>
                                 </div>
                                 <v-progress-linear
                                     :model-value="(xp / xpRequired) * 100"
@@ -91,7 +91,7 @@
                         <div class="stats-grid mb-10">
                             <div class="stat-item">
                                 <span class="stat-label">{{ $t('profile.planLabel') }}</span>
-                                <span class="stat-value text-cyan-accent-2">{{ plan || 'INDIVIDUAL' }}</span>
+                                <span class="stat-value text-cyan-accent-2">{{ translatedPlan }}</span>
                             </div>
                             <div class="stat-item text-center">
                                 <span class="stat-label">{{ $t('profile.missionLabel') }}</span>
@@ -171,7 +171,7 @@
                                 <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card">
                                     <div class="rank-num">{{ idx + 1 }}</div>
                                     <div class="game-info">
-                                        <span class="game-name text-capitalize">{{ match.game }}</span>
+                                        <span class="game-name text-capitalize">{{ $t('games.' + match.game) }}</span>
                                         <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
                                     <div class="game-stats">
@@ -194,7 +194,7 @@
                                         <v-icon size="16" color="cyan-accent-2">mdi-sword-cross</v-icon>
                                     </div>
                                     <div class="game-info">
-                                        <span class="game-name text-capitalize">{{ match.game }}</span>
+                                        <span class="game-name text-capitalize">{{ $t('games.' + match.game) }}</span>
                                         <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
                                     <div class="game-score-small">{{ match.score }}</div>
@@ -329,6 +329,11 @@ const {
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
+const getRankName = (lvl = 1) => {
+    const index = Math.min(Math.floor((lvl - 1) / 10), 14);
+    return t(`friends.ranks.${index}`);
+};
+
 const getRankClass = (lvl = 1) => {
     if (lvl <= 10) return 'rank-tier-1';
     if (lvl <= 30) return 'rank-tier-2';
@@ -367,6 +372,11 @@ const currentMissionName = computed(() => {
         return t(`profile.${missionKeyPrefixes[currentLvl - 1]}`).toUpperCase();
     }
     return t('profile.deepSpace', { level: currentLvl });
+});
+
+const translatedPlan = computed(() => {
+    const p = plan.value || 'individual_free';
+    return t(`plans.${p.toLowerCase()}`).toUpperCase();
 });
 
 const avatarOptions = computed(() => [

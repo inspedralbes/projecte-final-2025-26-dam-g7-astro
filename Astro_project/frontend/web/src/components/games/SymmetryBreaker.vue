@@ -76,8 +76,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+
+import { symmetryBreakerData } from '@/data/symmetryBreakerData';
 
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
@@ -89,30 +92,16 @@ const props = defineProps({
   }
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const emit = defineEmits(['game-over']);
-
-const targetLocale = computed(() => {
-  return t('symmetryBreaker.title') === "Symmetry Breaker" ? 'es' : 'ca'; // Basic check but we are translating a "dummy text" below
-});
 
 // Since language is dynamic, game sets should be dynamic
 const confusionSetsDynamic = computed(() => {
-    // You can adapt target and decoys conditionally if they have language dependencies.
-    // For now we map as is since they are short simple words. (e.g., ORBITA vs ORBETA).
-    // Let's assume this requires identical sets in ES / CA for now, or adapt them later.
-    return [
-      { target: 'B', decoys: ['D', 'P', 'Q', '8'] },
-      { target: 'M', decoys: ['N', 'W', 'H', 'U'] },
-      { target: 'FORMA', decoys: ['FIRMA', 'NORMA', 'FARMA', 'FORAT'] },
-      { target: 'CASA', decoys: ['COSA', 'CAPA', 'CARA', 'CAIXA'] },
-      { target: 'LLETRA', decoys: ['LLETRA?', 'LETRA', 'LINTER', 'LENTA'] },
-      { target: 'ORBITA', decoys: ['ORBETA', 'ORBE', 'ORBITS', 'ORDITA'] }
-    ]
+    return symmetryBreakerData[locale.value] || symmetryBreakerData['es'];
 });
 
-const wordSets = confusionSets.filter((s) => s.target.length > 1);
-const letterSets = confusionSets.filter((s) => s.target.length === 1);
+const wordSets = computed(() => confusionSetsDynamic.value.filter((s) => s.target.length > 1));
+const letterSets = computed(() => confusionSetsDynamic.value.filter((s) => s.target.length === 1));
 
 const gameArea = ref(null);
 const gameCanvas = ref(null);

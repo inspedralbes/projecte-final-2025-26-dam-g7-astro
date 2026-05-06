@@ -60,8 +60,10 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { syllableData } from '@/data/syllableGamesData';
 
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
@@ -75,12 +77,7 @@ const props = defineProps({
   }
 });
 
-const words = [
-  { text: 'OR-DI-NA-DOR', syllables: 4 },
-  { text: 'GA-LÀ-XI-A', syllables: 4 },
-  { text: 'COET', syllables: 2 },
-  { text: 'TE-LES-CO-PI', syllables: 4 }
-];
+const words = computed(() => syllableData[locale.value] || syllableData['es']);
 
 const currentWordIndex = ref(0);
 const currentWord = computed(() => words.value[currentWordIndex.value]);

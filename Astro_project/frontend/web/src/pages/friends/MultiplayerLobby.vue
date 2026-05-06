@@ -409,7 +409,7 @@
                 </template>
                 <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                  Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
                 </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn 
@@ -435,7 +435,7 @@
                 </template>
                 <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                  Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
                 </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn 
@@ -469,6 +469,9 @@ import { ref, computed, onMounted, watch, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 // Importar juegos
 import RadarScan from '@/components/games/RadarScan.vue';
@@ -516,6 +519,11 @@ const modalities = [
   { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: false },
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
 ];
+
+const getRankName = (level) => {
+    const rankIndex = Math.floor((level || 1) / 10);
+    return t(`friends.ranks.${rankIndex}`);
+};
 
 const matchResult = computed(() => {
   const me = astroStore.user;
@@ -634,8 +642,8 @@ const otherExplorersList = computed(() => {
 });
 
 const opponentName = computed(() => {
-  if (!multiplayerStore.room) return 'Oponente';
-  return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente';
+  if (!multiplayerStore.room) return t('multiplayerLobby.opponent');
+  return multiplayerStore.room.players.find(p => p !== astroStore.user) || t('multiplayerLobby.opponent');
 });
 
 // Sincronizar rondas si el host las cambia

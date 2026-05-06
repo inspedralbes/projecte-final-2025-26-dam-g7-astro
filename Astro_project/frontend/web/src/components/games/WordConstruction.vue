@@ -107,9 +107,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { wordConstructionData } from '@/data/wordConstructionData';
 
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
@@ -124,6 +126,11 @@ const props = defineProps({
 const { locale, t } = useI18n();
 // Definim els events per comunicar-nos amb el component pare
 const emit = defineEmits(['game-over']);
+
+const opponentName = computed(() => {
+  if (!multiplayerStore.room || !astroStore.user) return '?';
+  return multiplayerStore.room.players.find(p => p !== astroStore.user) || '?';
+});
 
 // Luego lo podemos conectar a la base de datos
 const words = computed(() => {

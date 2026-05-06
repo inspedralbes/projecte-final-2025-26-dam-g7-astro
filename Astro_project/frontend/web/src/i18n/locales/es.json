@@ -99,6 +99,7 @@
         "inventoryBtn": "INVENTARIO",
         "changePlanBtn": "CAMBIAR PLAN",
         "logoutBtn": "FINALIZAR CONEXIÓN Y SALIR",
+        "logoutConfirm": "Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?",
         "topGames": "MEJORES MISIONES (TOP 5)",
         "flightHistory": "HISTORIAL DE VUELO",
         "flightHistorySub": "Tus últimos registros de misión en el espacio profundo.",
@@ -127,6 +128,8 @@
         "avatar_yellow": "Amarillo",
         "avatar_purple": "Lila",
         "avatar_black": "Negro",
+        "seniorityLabel": "ANTIGÜEDAD",
+        "levelLabel": "NIVEL",
         "avatar_orange": "Naranja",
         "avatar_green": "Verde",
         "avatar_red": "Rojo",
@@ -234,8 +237,11 @@
     },
     "symmetryBreaker": {
         "points": "Puntos: {score}",
+        "pointsLabel": "PUNTOS",
         "target": "Objetivo: {target}",
+        "targetLabel": "OBJETIVO",
         "time": "Tiempo: {time}s",
+        "timeLabel": "TIEMPO",
         "lockMeter": "Bloqueo de precisión (Ronda {round})",
         "title": "Symmetry Breaker",
         "desc": "¡Mantén el láser sobre el objetivo correcto. La velocidad aumentará cada ronda!",
@@ -536,15 +542,7 @@
         "invalidGame": "Nombre de juego inválido.",
         "invalidItem": "Objeto inválido."
     },
-    "games": {
-        "word-construction": "Construcción de Palabras",
-        "syllable-quest": "Aventura Silábica",
-        "rhyme-squad": "Escuadrón de Rimas",
-        "spelled-rosco": "Rosco Estelar",
-        "radar-scan": "Escáner de Radar",
-        "radio-signal": "Señal de Radio",
-        "symmetry-breaker": "Symmetry Breaker"
-    },
+
     "missionsList": {
         "daily": {
             "games": "Juega {goal} partidas",
@@ -652,6 +650,54 @@
             "metric": "XP"
         }
     },
+    "radarScan": {
+        "title": "Radar Scan",
+        "points": "Puntos: {score}",
+        "time": "Tiempo: ",
+        "desc": "¡Encuentra el objetivo usando el escáner!",
+        "startBtn": "INICIAR MISIÓN",
+        "completed": "Fin del Escaneo",
+        "totalPoints": "Puntuación Final: {score}",
+        "returnMenu": "Obtener Recompensa"
+    },
+    "radioSignal": {
+        "title": "Señal de Radio",
+        "points": "Puntos: {score}",
+        "pointsLabel": "PUNTOS",
+        "time": "Tiempo: {time}s",
+        "timeLabel": "TIEMPO",
+        "locked": "SINCRONIZADO",
+        "scanning": "ESCANER...",
+        "placeholder": "Introduce la frase...",
+        "send": "ENVIAR",
+        "waiting": "Esperando señal...",
+        "commsReceiver": "RECEPTOR DE COMUNICACIONES",
+        "targetLabel": "OBJETIVO",
+        "signalLabel": "SEÑAL",
+        "incomingTransmission": "TRANSMISIÓN ENTRANTE"
+    },
+    "games": {
+        "word-construction": "Construcción de Palabras",
+        "syllable-quest": "Aventura Silábica",
+        "rhyme-squad": "Escuadrón de Rimas",
+        "spelled-rosco": "Rosco Estelar",
+        "radar-scan": "Escáner de Radar",
+        "radio-signal": "Señal de Radio",
+        "symmetry-breaker": "Simetría Estelar",
+        "SymmetryBreaker": "Simetría Estelar",
+        "WordConstruction": "Construcción de Palabras",
+        "RhymeSquad": "Escuadrón de Rimas",
+        "SyllableQuest": "Aventura Silábica",
+        "SpelledRosco": "Rosco Estelar",
+        "RadarScan": "Escáner de Radar",
+        "RadioSignal": "Señal de Radio"
+    },
+    "plans": {
+        "individual": "Individual",
+        "premium": "Premium",
+        "standard": "Estándar",
+        "individual_free": "Individual (Gratis)"
+    },
     "multiplayerResult": {
         "victory": "¡VICTORIA!",
         "tie": "¡EMPATE!",
@@ -689,5 +735,56 @@
         "github": "Repositorio GitHub",
         "discord": "Comunidad Discord",
         "reddit": "Foro Reddit"
+    },
+    "multiplayerLobby": {
+        "round": "RONDA {current} / {total}",
+        "roundWinner": "GANADOR DE LA RONDA",
+        "tie": "EMPATE",
+        "timeout": "TIEMPO AGOTADO",
+        "you": "TÚ",
+        "title": "CENTRO DE CONTROL DE MISIONES",
+        "subtitle": "Coordina a tu tripulación y prepara la expedición galáctica",
+        "missionInProgress": "MISIÓN EN CURSO",
+        "room": "SALA {id}",
+        "abort": "ABORTAR",
+        "currentCrew": "TRIPULACIÓN ACTUAL",
+        "commander": "COMANDANTE",
+        "crewmate": "TRIPULANTE",
+        "waiting": "ESPERANDO...",
+        "launchNow": "LANZAR AHORA",
+        "waitingOrders": "ESPERANDO ÓRDENES DEL COMANDANTE",
+        "prepareExpedition": "PREPARA LA EXPEDICIÓN",
+        "newMission": "NUEVA MISIÓN",
+        "public": "PÚBLICA",
+        "private": "PRIVADA",
+        "maxPlayers": "MÁX. JUGADORES",
+        "astronauts": "Astronautas",
+        "roundsCount": "NÚMERO DE RONDAS",
+        "rounds": "Rondas",
+        "startRoom": "CREAR SALA",
+        "joinByCode": "UNIRSE POR CÓDIGO",
+        "codePlaceholder": "CÓDIGO-X",
+        "dock": "ACOPLARSE",
+        "selectModality": "SELECCIONA MODALIDAD",
+        "modalities": {
+            "1vs1": "Modo 1vs1",
+            "2vs2": "Modo 2vs2",
+            "boss": "Modo Boss",
+            "carrera": "Carrera Espacial",
+            "torneig": "Torneo"
+        },
+        "comingSoon": "Próximamente",
+        "incomingCalls": "LLAMADAS ENTRANTES ({count})",
+        "requestSupport": "¡{user} solicita apoyo en su misión!",
+        "missionNetwork": "RED DE MISIONES",
+        "sector": "SECTOR {id}",
+        "establishLink": "ESTABLECER ENLACE",
+        "noSignals": "No se detectan señales de misiones cercanas",
+        "recruitCrew": "RECLUTAR TRIPULACIÓN",
+        "friends": "AMIGOS",
+        "possibleCrewmates": "POSSIBLES TRIPULANTES",
+        "noCrewmates": "No hay tripulantes disponibles",
+        "joiningRoom": "Uniéndose a la sala de {user}...",
+        "opponent": "Oponente"
     }
 }
