@@ -128,7 +128,18 @@
         "avatar_black": "Black",
         "avatar_orange": "Orange",
         "avatar_green": "Green",
-        "avatar_red": "Red"
+        "avatar_red": "Red",
+        "settings": "Settings",
+        "changePassword": "Change your account password",
+        "currentPassword": "Current password",
+        "newPassword": "New password",
+        "confirmNewPassword": "Confirm new password",
+        "updatePassword": "Update password",
+        "passwordMismatch": "The new password and confirmation do not match.",
+        "passwordFieldsRequired": "All password fields are required.",
+        "passwordMustDiffer": "The new password must be different from the current one.",
+        "passwordChangeSuccess": "Password updated successfully.",
+        "passwordChangeError": "Could not update the password."
     },
     "friends": {
         "title": "Crew",

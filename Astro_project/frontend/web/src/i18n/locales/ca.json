@@ -128,7 +128,18 @@
         "avatar_black": "Negre",
         "avatar_orange": "Taronja",
         "avatar_green": "Verd",
-        "avatar_red": "Vermell"
+        "avatar_red": "Vermell",
+        "settings": "Ajustos",
+        "changePassword": "Canvia la contrasenya del compte",
+        "currentPassword": "Contrasenya actual",
+        "newPassword": "Nova contrasenya",
+        "confirmNewPassword": "Confirma la nova contrasenya",
+        "updatePassword": "Actualitzar contrasenya",
+        "passwordMismatch": "La nova contrasenya i la confirmació no coincideixen.",
+        "passwordFieldsRequired": "Tots els camps de contrasenya són obligatoris.",
+        "passwordMustDiffer": "La nova contrasenya ha de ser diferent de l'actual.",
+        "passwordChangeSuccess": "Contrasenya actualitzada correctament.",
+        "passwordChangeError": "No s'ha pogut actualitzar la contrasenya."
     },
     "friends": {
         "title": "Tripulació",
