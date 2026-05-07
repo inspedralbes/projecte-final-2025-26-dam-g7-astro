@@ -32,6 +32,17 @@ class UserService {
         return title;
     }
 
+    async changePassword(username, oldPassword, newPassword) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        const validCredentials = await this.userRepo.findByCredentials(username, oldPassword);
+        if (!validCredentials) throw new Error("Contraseña actual incorrecta");
+
+        await this.userRepo.updatePassword(username, newPassword);
+        return true;
+    }
+
     async getAllExplorers() {
         // En una app real, el repositori hauria de tenir un mètode findAll simplificat
         // Per ara, usem la col·lecció directament via repo si l'exposem o afegim el mètode.

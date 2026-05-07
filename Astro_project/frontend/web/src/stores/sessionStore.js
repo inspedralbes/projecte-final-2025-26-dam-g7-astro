@@ -245,6 +245,37 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
+        async changePassword(oldPassword, newPassword) {
+            this.error = null;
+
+            if (!this.user) {
+                this.error = 'Usuario no identificado.';
+                return { success: false, message: this.error };
+            }
+
+            try {
+                const { response, data } = await requestJson('/api/user/password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        oldPassword,
+                        newPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error al cambiar la contraseña');
+                }
+
+                return { success: true, message: data.message || 'Contraseña actualizada correctamente' };
+            } catch (error) {
+                console.error('❌ Error cambiando contraseña:', error);
+                this.error = error.message || 'Error al cambiar la contraseña';
+                return { success: false, message: this.error };
+            }
+        },
+
         clearSession() {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';

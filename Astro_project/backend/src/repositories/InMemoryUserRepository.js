@@ -31,6 +31,25 @@ class InMemoryUserRepository extends UserRepository {
         this.users.set((data.user || data.username).toString(), data);
         return user;
     }
+
+    async findByCredentials(username, password) {
+        const key = username?.toString();
+        if (!key || !password) return null;
+        const user = this.users.get(key);
+        if (!user) return null;
+        return user.pass === password ? user : null;
+    }
+
+    async updatePassword(username, newPassword) {
+        const key = username?.toString();
+        if (!key || !newPassword) return false;
+
+        const existing = this.users.get(key);
+        if (!existing) return false;
+
+        this.users.set(key, { ...existing, pass: newPassword });
+        return true;
+    }
 }
 
 module.exports = InMemoryUserRepository;
