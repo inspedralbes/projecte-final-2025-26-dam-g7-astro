@@ -190,7 +190,7 @@ const basicItems = computed(() => [
     { id: 2, name: t('shopItems.racha.name'), cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: t('shopItems.racha.desc'), bgColor: 'rgba(24, 255, 255, 0.1)' },
     { id: 3, name: t('shopItems.dobleMonedas.name'), cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: t('shopItems.dobleMonedas.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 213, 79, 0.1)' },
     { id: 4, name: t('shopItems.doblePuntos.name'), cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: t('shopItems.doblePuntos.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 152, 0, 0.1)' },
-    { id: 5, name: 'Rayo Saboteador', cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: 'En multijugador, tus aciertos restan el doble de tiempo al rival.', limitacio: '* Solo para la próxima partida multijugador', bgColor: 'rgba(124, 77, 255, 0.1)' }
+    { id: 5, name: t('shopItems.sabotageRay.name'), cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: t('shopItems.sabotageRay.desc'), limitacio: t('shopItems.sabotageRay.limit'), bgColor: 'rgba(124, 77, 255, 0.1)' }
 ]);
 
 const premiumItems = computed(() => [
@@ -198,9 +198,9 @@ const premiumItems = computed(() => [
     { id: 102, name: t('shopItems.cyberpunk.name'), cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: t('shopItems.cyberpunk.desc'), bgColor: 'rgba(224, 64, 251, 0.15)' },
     { id: 103, name: t('shopItems.dron.name'), cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: t('shopItems.dron.desc'), bgColor: 'rgba(0, 230, 118, 0.15)' },
     { id: 104, name: t('shopItems.neon.name'), cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: t('shopItems.neon.desc'), bgColor: 'rgba(255, 64, 129, 0.15)' },
-    { id: 105, name: 'Título: El Imparable', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(255, 82, 82, 0.15)' },
-    { id: 106, name: 'Título: Leyenda Galáctica', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(0, 229, 255, 0.15)' },
-    { id: 107, name: 'Título: Destructor de Asteroides', cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: 'Etiqueta de texto permanente.', bgColor: 'rgba(255, 193, 7, 0.15)' }
+    { id: 105, name: t('shopItems.titleUnstoppable.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: t('shopItems.titleUnstoppable.desc'), bgColor: 'rgba(255, 82, 82, 0.15)' },
+    { id: 106, name: t('shopItems.titleLegend.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: t('shopItems.titleLegend.desc'), bgColor: 'rgba(0, 229, 255, 0.15)' },
+    { id: 107, name: t('shopItems.titleDestroyer.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: t('shopItems.titleDestroyer.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' }
 ]);
 
 onMounted(async () => {

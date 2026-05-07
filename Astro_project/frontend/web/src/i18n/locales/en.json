@@ -41,7 +41,9 @@
         "pts": "pts",
         "need": "You need {score} points to unlock the next mission.",
         "retry": "RETRY",
-        "goal": "Goal: {score} pts"
+        "goal": "Goal: {score} pts",
+        "start_game": "START {game}",
+        "start_simple": "START"
     },
     "store": {
         "title": "Space Bazaar",
@@ -135,7 +137,13 @@
         "mascot_drone": "Drone",
         "mascot_octopus": "Octopus",
         "seniorityLabel": "SENIORITY",
-        "levelLabel": "LEVEL"
+        "levelLabel": "LEVEL",
+        "eduManagement": "EDUCATIONAL MANAGEMENT",
+        "selectTitle": "SELECT TITLE",
+        "defaultTitle": "Default (Level)",
+        "rankBasedOnLevel": "Rank based on your level",
+        "boughtInShop": "Bought in the shop",
+        "noSpecialTitles": "You don't have any special titles. Visit the Space Bazaar to acquire them."
     },
     "friends": {
         "title": "Crew",
@@ -186,7 +194,8 @@
             "12": "Architect",
             "13": "Deity",
             "14": "Omniscient"
-        }
+        },
+        "level": "Level"
     },
     "auth": {
         "abortCmd": "ABORT / RETURN TO BASE",
@@ -346,7 +355,8 @@
             "boss": "Boss Mode",
             "carrera": "Space Race",
             "torneig": "Tournament"
-        }
+        },
+        "opponent": "Opponent"
     },
     "plans": {
         "selectMode": "SELECT YOUR MISSION MODE",
@@ -509,6 +519,27 @@
         "neon": {
             "name": "Neon Trail",
             "desc": "Visual effects."
+        },
+        "dron": {
+            "name": "Recon Drone",
+            "desc": "A small robotic companion."
+        },
+        "sabotageRay": {
+            "name": "Sabotage Ray",
+            "desc": "In multiplayer, your hits deduct double the time from your opponent.",
+            "limit": "* Only for the next multiplayer match"
+        },
+        "titleUnstoppable": {
+            "name": "Unstoppable",
+            "desc": "Permanent text tag."
+        },
+        "titleLegend": {
+            "name": "Galactic Legend",
+            "desc": "Permanent text tag."
+        },
+        "titleDestroyer": {
+            "name": "Asteroid Destroyer",
+            "desc": "Permanent text tag."
         },
         "limit3": "* Only valid for 3 games"
     },
@@ -804,5 +835,118 @@
         "noCrewmates": "No crewmates available",
         "joiningRoom": "Joining {user}'s room...",
         "opponent": "Opponent"
+    },
+    "educational": {
+        "title": "EDUCATIONAL PANEL",
+        "manageTeachers": "Teacher Management",
+        "myClass": "My Class",
+        "stats": "Statistics",
+        "supplyEditor": "Supply Editor",
+        "backToProfile": "BACK TO PROFILE",
+        "teachersTitle": "TEACHERS",
+        "addTeacher": "ADD TEACHER",
+        "teacher": "TEACHER",
+        "rank": "RANK",
+        "actions": "ACTIONS",
+        "studentsTitle": "CLASS STUDENTS",
+        "addStudent": "ADD STUDENT",
+        "student": "STUDENT",
+        "level": "LEVEL",
+        "telemetryTitle": "GROUP TELEMETRY",
+        "totalGames": "TOTAL GAMES",
+        "avgLevel": "AVERAGE LEVEL",
+        "totalMembers": "TOTAL MEMBERS",
+        "noData": "No data available to display.",
+        "addMember": "ADD {role}",
+        "username": "Username",
+        "password": "Password",
+        "confirmReg": "CONFIRM REGISTRATION",
+        "supplyEditorPage": {
+            "selectGame": "SELECT A GAME",
+            "editorTitle": "EDITOR: {game}",
+            "filterByTeacher": "Filter by Teacher",
+            "allTeachers": "All Teachers",
+            "newExercise": "NEW EXERCISE",
+            "defaultContent": "Default Content",
+            "active": "ACTIVE",
+            "defaultDesc": "Use the system's prefab words (Astronautics, Tech, etc.).",
+            "alreadyActive": "ALREADY ACTIVE",
+            "backToDefault": "BACK TO DEFAULT",
+            "author": "Author: {name}",
+            "wordsConfigured": "{count} words configured.",
+            "deactivate": "DEACTIVATE",
+            "activateForClass": "ACTIVATE FOR CLASS",
+            "deleteConfirm": "Delete this exercise?",
+            "editTitle": "EDIT EXERCISE: {game}",
+            "newTitle": "NEW EXERCISE: {game}",
+            "saveChanges": "SAVE CHANGES",
+            "wordBankTitle": "1. WORD BANK",
+            "addWord": "ADD WORD",
+            "searchPlaceholder": "Search...",
+            "wordLabel": "Word",
+            "hintLabel": "Hint",
+            "configExerciseTitle": "2. EXERCISE CONFIGURATION",
+            "exerciseNameLabel": "Exercise Name",
+            "exerciseSearchPlaceholder": "Search in exercise...",
+            "assignToTeacher": "Assign to Teacher",
+            "noResults": "No results for this search.",
+            "games": {
+                "WordConstruction": {
+                    "name": "Word Construction",
+                    "desc": "Build scrambled words."
+                },
+                "SyllableQuest": {
+                    "name": "Syllable Quest",
+                    "desc": "Split into syllables."
+                },
+                "SpelledRosco": {
+                    "name": "Stellar Rosco",
+                    "desc": "Guess by letters."
+                },
+                "RhymeSquad": {
+                    "name": "Rhyme Squad",
+                    "desc": "Find rhymes."
+                }
+            }
+        }
+    },
+    "games": {
+        "word-construction": "Word Construction",
+        "WordConstruction": "Word Construction",
+        "radar-scan": "Radar Scanner",
+        "radar-scanner": "Radar Scanner",
+        "RadarScan": "Radar Scanner",
+        "RadarScanner": "Radar Scanner",
+        "radio-signal": "Radio Signal",
+        "RadioSignal": "Radio Signal",
+        "spelled-rosco": "Spelled Rosco",
+        "SpelledRosco": "Spelled Rosco",
+        "rhyme-squad": "Rhyme Squad",
+        "RhymeSquad": "Rhyme Squad",
+        "symmetry-breaker": "Symmetry Breaker",
+        "SymmetryBreaker": "Symmetry Breaker",
+        "syllable-quest": "Syllable Quest",
+        "SyllableQuest": "Syllable Quest",
+        "multiplayer": "Multiplayer",
+        "Multiplayer": "Multiplayer",
+        "Minijuego": "Minigame",
+        "Minigame": "Minigame",
+        "Preparativos": "Word Construction",
+        "Preparations": "Word Construction",
+        "Preparativos de Vuelo": "Word Construction",
+        "¡Despegue!": "Radar Scanner",
+        "Despegue": "Radar Scanner",
+        "Gravedad": "Radio Signal",
+        "Rompiendo la Gravedad": "Radio Signal",
+        "Desacoplamiento": "Spelled Rosco",
+        "Desacoplamiento Orbital": "Spelled Rosco",
+        "Ruta": "Rhyme Squad",
+        "Ruta Estelar": "Rhyme Squad",
+        "Base": "Radio Signal",
+        "Llamando a la Base": "Radio Signal",
+        "Recarga": "Symmetry Breaker",
+        "Recarga Solar": "Symmetry Breaker",
+        "Reparación": "Radar Scanner",
+        "Reparación Express": "Radar Scanner"
     }
 }

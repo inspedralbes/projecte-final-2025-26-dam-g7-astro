@@ -33,11 +33,11 @@
                                     class="mb-4 medal-glow">
                                     <v-icon size="45" :color="item.color">{{ item.icon }}</v-icon>
                                 </v-avatar>
-                                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ item.name }}</h3>
+                                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ getItemKey(item) ? $t(getItemKey(item)) : item.name }}</h3>
                                 <v-chip size="small" color="cyan-accent-3" variant="tonal" class="mb-2">
                                     x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
                                 </v-chip>
-                                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
+                                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ getDescKey(item) ? $t(getDescKey(item)) : item.desc }}</p>
                                 <v-chip
                                     v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
                                     size="x-small"
@@ -88,12 +88,12 @@ const activeCategory = ref('all');
 const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
 
 const categories = [
-    { id: 'all', name: 'Todo', icon: 'mdi-apps' },
-    { id: 'skin', name: 'Skins', icon: 'mdi-palette' },
-    { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
-    { id: 'collectible', name: 'Coleccionables', icon: 'mdi-trophy' },
-    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
-    { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
+    { id: 'all', name: t('inventory.categories.all'), icon: 'mdi-apps' },
+    { id: 'skin', name: t('inventory.categories.skin'), icon: 'mdi-palette' },
+    { id: 'pets', name: t('profile.missionCompanion'), icon: 'mdi-robot' },
+    { id: 'collectible', name: t('inventory.categories.collectible'), icon: 'mdi-trophy' },
+    { id: 'trails', name: t('inventory.categories.trails'), icon: 'mdi-creation' },
+    { id: 'items', name: t('inventory.categories.items'), icon: 'mdi-flask-outline' }
 ];
 
 // Usamos SIEMPRE el estado global de Pinia
@@ -186,6 +186,43 @@ async function handleItemAction(item) {
     }
 
     await toggleEquip(item);
+}
+
+function getItemKey(item) {
+    const idMap = {
+        1: 'vidas',
+        2: 'racha',
+        3: 'dobleMonedas',
+        4: 'doblePuntos',
+        5: 'sabotageRay',
+        102: 'cyberpunk',
+        103: 'dron',
+        104: 'neon',
+        105: 'titleUnstoppable',
+        106: 'titleLegend',
+        107: 'titleDestroyer'
+    };
+    const key = idMap[item.id];
+    return key ? `shopItems.${key}.name` : null;
+}
+
+function getDescKey(item) {
+    const idMap = {
+        1: 'vidas',
+        2: 'racha',
+        3: 'dobleMonedas',
+        4: 'doblePuntos',
+        5: 'sabotageRay',
+        102: 'cyberpunk',
+        103: 'dron',
+        104: 'neon'
+    };
+    
+    // Títulos tienen descripción común
+    if ([105, 106, 107].includes(Number(item.id))) return 'shopItems.titleDesc';
+    
+    const key = idMap[item.id];
+    return key ? `shopItems.${key}.desc` : null;
 }
 </script>
 

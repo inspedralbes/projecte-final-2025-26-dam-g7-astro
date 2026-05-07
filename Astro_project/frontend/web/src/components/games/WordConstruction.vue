@@ -109,7 +109,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
-import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
 import { useGroupStore } from '@/stores/groupStore';

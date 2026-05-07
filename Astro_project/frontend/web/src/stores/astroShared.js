@@ -187,7 +187,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     },
     105: {
         id: 105,
-        name: 'Título: El Imparable',
+        name: 'El Imparable',
         desc: 'Etiqueta de texto permanente.',
         icon: 'mdi-format-title',
         color: 'red-accent-3',
@@ -196,7 +196,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     },
     106: {
         id: 106,
-        name: 'Título: Leyenda Galáctica',
+        name: 'Leyenda Galáctica',
         desc: 'Etiqueta de texto permanente.',
         icon: 'mdi-format-title',
         color: 'cyan-accent-3',
@@ -205,7 +205,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     },
     107: {
         id: 107,
-        name: 'Título: Destructor de Asteroides',
+        name: 'Destructor de Asteroides',
         desc: 'Etiqueta de texto permanente.',
         icon: 'mdi-format-title',
         color: 'amber-accent-3',
