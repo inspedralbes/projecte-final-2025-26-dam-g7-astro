@@ -10,5 +10,11 @@ export const syllableData = {
         { text: 'GA-LA-XIA', syllables: 3 },
         { text: 'CO-HE-TE', syllables: 3 },
         { text: 'TE-LES-CO-PIO', syllables: 4 }
+    ],
+    en: [
+        { text: 'COM-PU-TER', syllables: 3 },
+        { text: 'GA-LA-XY', syllables: 3 },
+        { text: 'ROC-KET', syllables: 2 },
+        { text: 'TE-LE-SCOPE', syllables: 3 }
     ]
 };

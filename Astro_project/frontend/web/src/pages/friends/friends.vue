@@ -61,8 +61,7 @@
                 <div class="mb-4">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(friend.level)]" size="x-small">
-                    {{ friend.selectedTitle ? friend.selectedTitle.replace('Título: ', '') : getRankName(friend.level)
-                    }}
+                    {{ friend.selectedTitle || getRankName(friend.level) }}
                   </v-chip>
                 </div>
 
@@ -158,8 +157,7 @@
                 <div class="mb-6">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
-                    {{ explorer.selectedTitle ? explorer.selectedTitle.replace('Título: ', '') :
-                      getRankName(explorer.level) }}
+                    {{ explorer.selectedTitle || getRankName(explorer.level) }}
                   </v-chip>
                 </div>
 
@@ -214,8 +212,7 @@
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.user }}</h2>
                   <div class="d-flex align-center gap-2">
                     <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(requester.level)]" size="x-small">
-                      {{ requester.selectedTitle ? requester.selectedTitle.replace('Título: ', '') :
-                        getRankName(requester.level) }}
+                      {{ requester.selectedTitle || getRankName(requester.level) }}
                     </v-chip>
                     <span class="text-caption text-cyan-accent-1 font-weight-bold">· {{ $t('profile.level', {
                       level:
@@ -275,8 +272,7 @@
           <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
           <div class="mb-6">
             <v-chip :class="['rank-chip font-weight-black px-6', getRankClass(profileDialog.user?.level)]" size="large">
-              {{ profileDialog.user?.selectedTitle ? profileDialog.user?.selectedTitle.replace('Título: ', '') :
-                getRankName(profileDialog.user?.level) }}
+              {{ profileDialog.user?.selectedTitle || getRankName(profileDialog.user?.level) }}
             </v-chip>
             <div class="mt-2 text-overline text-grey-lighten-1">{{ $t('profile.level', {
               level:
@@ -285,12 +281,12 @@
 
           <v-row class="bg-black-semi pa-4 rounded-lg mb-8" no-gutters>
             <v-col cols="6" class="border-right-dim">
-              <div class="text-overline text-grey">Nivel</div>
+              <div class="text-overline text-grey">{{ $t('profile.levelLabel') }}</div>
               <div class="text-h5 text-white font-weight-bold">{{ profileDialog.user?.level || 1 }}</div>
             </v-col>
             <v-col cols="6">
-              <div class="text-overline text-grey">Antigüedad</div>
-              <div class="text-h5 text-white font-weight-bold">ESTAR 2.0</div>
+              <div class="text-overline text-grey">{{ $t('profile.seniorityLabel') }}</div>
+              <div class="text-h5 text-white font-weight-bold">{{ $t('profile.systemValue') }}</div>
             </v-col>
           </v-row>
 

@@ -98,7 +98,7 @@
                                             @click.stop="startGame(index)"
                                         >
                                             <v-icon icon="mdi-play" start></v-icon>
-                                            {{ $t('singleplayer.start') || $t('singleplayer.continue') }}
+                                            {{ $t('singleplayer.start_simple') }}
                                         </v-btn>
                                     </div>
                                     <div class="preview-arrow"></div>

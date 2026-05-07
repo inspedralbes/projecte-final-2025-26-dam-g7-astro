@@ -21,7 +21,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ astroStore.user }}</div>
-                <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ astroStore.selectedTitle.replace('Título: ', '') }}</div>
+                <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ t('shopItems.' + getTitleKey(astroStore.selectedTitle) + '.name') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
               </div>
             </div>
@@ -51,7 +51,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ opponentName }}</div>
-                <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ opponentTitle.replace('Título: ', '') }}</div>
+                <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ t('shopItems.' + getTitleKey(opponentTitle) + '.name') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
               </div>
             </div>
@@ -156,7 +156,7 @@
                   
                   <!-- Mostrar nivel y rango si existen (objetos enriquecidos) -->
                   <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
-                    Nivel {{ player.level }} · {{ player.rank }}
+                    {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ player.rank }}
                   </div>
 
                   <v-chip v-if="(player.username || player) === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
@@ -417,7 +417,7 @@
                 </template>
                 <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                  Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
                 </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn 
@@ -443,7 +443,7 @@
                 </template>
                 <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                  Lv. {{ explorer.level }} · {{ explorer.rank }}
+                  Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
                 </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-btn 
@@ -477,6 +477,9 @@ import { ref, computed, onMounted, watch, shallowRef } from 'vue';
 import { useAstroStore } from '@/stores/astroStore';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 // Importar juegos
 import RadarScan from '@/components/games/RadarScan.vue';
@@ -524,6 +527,24 @@ const modalities = [
   { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: false },
   { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false }
 ];
+
+const ALL_TITLES = [
+  { name: 'El Imparable', key: 'titleUnstoppable' },
+  { name: 'Leyenda Galáctica', key: 'titleLegend' },
+  { name: 'Destructor de Asteroides', key: 'titleDestroyer' }
+];
+
+function getTitleKey(titleName) {
+  if (!titleName) return '';
+  const cleanName = titleName.replace('Título: ', '');
+  const title = ALL_TITLES.find(t => t.name === cleanName);
+  return title ? title.key : '';
+}
+
+const getRankName = (level) => {
+    const rankIndex = Math.floor((level || 1) / 10);
+    return t(`friends.ranks.${rankIndex}`);
+};
 
 const matchResult = computed(() => {
   const me = astroStore.user;
@@ -642,9 +663,9 @@ const otherExplorersList = computed(() => {
 });
 
 const opponentName = computed(() => {
-  if (!multiplayerStore.room) return 'Oponente';
+  if (!multiplayerStore.room) return t('multiplayerLobby.opponent');
   const op = multiplayerStore.room.players.find(p => (p.username || p) !== astroStore.user);
-  return op?.username || op || 'Oponente';
+  return op?.username || op || t('multiplayerLobby.opponent');
 });
 
 const opponentTitle = computed(() => {

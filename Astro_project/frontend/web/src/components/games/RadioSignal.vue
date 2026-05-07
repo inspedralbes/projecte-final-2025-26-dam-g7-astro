@@ -7,7 +7,7 @@
 
         <div class="radio-brand">
             <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
-            <div class="brand-subtitle">COMMS RECEIVER</div>
+            <div class="brand-subtitle">{{ $t('radioSignal.commsReceiver') }}</div>
         </div>
 
         <div class="session-hud">
@@ -19,12 +19,12 @@
             <div class="screen-bezel">
                 <div class="wave-panels">
                     <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">TARGET</div>
+                        <div class="screen-label">{{ $t('radioSignal.targetLabel') }}</div>
                         <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
                         <div class="scanline"></div>
                     </div>
                     <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">SIGNAL</div>
+                        <div class="screen-label">{{ $t('radioSignal.signalLabel') }}</div>
                         <canvas ref="currentWaveCanvas" width="260" height="90"></canvas>
                         <div class="scanline"></div>
                     </div>
@@ -77,7 +77,7 @@
                     <button class="replay-btn" @click="speakPhrase(1.0)">
                         <v-icon size="18">mdi-volume-high</v-icon>
                     </button>
-                    <span class="input-label">INCOMING TRANSMISSION</span>
+                    <span class="input-label">{{ $t('radioSignal.incomingTransmission') }}</span>
                 </div>
                 <div class="input-row">
                     <input
@@ -109,10 +109,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { radioSignalData } from '@/data/radioSignalData';
 
+const { t, locale } = useI18n();
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
 
@@ -124,7 +127,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['game-over']);
-const { t, locale } = useI18n();
 
 // Frecuencia objetivo
 const targetFrequency = ref(Math.random() * 90 + 5);
@@ -139,22 +141,12 @@ const timeLeft = ref(60);
 const gameFinished = ref(false);
 let roundTimer = null;
 
-const phrases = [
-    'EL VAIXELL DAURAT BRILLA DE DIA',
-    'EL PETIT PAQUET VA QUEDAR AL PARC',
-    'ELS DRACS BOTEN SOBRE LES PEDRES',
-    'TRES TRISTOS TIGRES MENGEN BLAT',
-    'LA SARA SURT SOLA SEMPRE SENSE BARRET',
-    'EN PEP POSA PERES PER AL PAPA',
-    'EXTRAORDINARI DESCOBRIMENT A LA BIBLIOTECA',
-    'LA NAU ESPACIAL DESPEGA A L\'ALBA',
-    'BASE LUNAR REPORTA BON ESTAT',
-];
+const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es']);
 // Phrases shuffled at start
-const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
+const shuffledPhrases = computed(() => [...phrases.value].sort(() => Math.random() - 0.5).slice(0, 4)); // 4 frases per partida
 const phraseIndex = ref(0); // Frase atual
-const currentPhrase = ref(shuffledPhrases[0]);
-const totalPhrases = shuffledPhrases.length;
+const currentPhrase = ref(shuffledPhrases.value[0]);
+const totalPhrases = computed(() => shuffledPhrases.value.length);
 let speechRepeatTimer = null;
 
 // ---- DIAL ----

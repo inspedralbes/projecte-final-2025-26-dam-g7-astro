@@ -7,14 +7,14 @@
         <v-card class="glass-card pa-6 mb-6">
           <div class="d-flex align-center mb-6">
             <v-icon color="cyan-accent-3" size="32" class="mr-3">mdi-shield-account</v-icon>
-            <h2 class="text-h5 font-weight-bold text-white">PANEL EDUCATIVO</h2>
+            <h2 class="text-h5 font-weight-bold text-white">{{ $t('educational.title') }}</h2>
           </div>
           
           <v-list bg-color="transparent" class="text-white">
             <v-list-item 
               v-if="role === 'CENTER'" 
               prepend-icon="mdi-domain" 
-              title="Gestión de Profesores"
+              :title="$t('educational.manageTeachers')"
               @click="currentTab = 'teachers'"
               :class="{ 'active-item': currentTab === 'teachers' }"
             ></v-list-item>
@@ -22,21 +22,21 @@
             <v-list-item 
               v-if="role === 'TEACHER'" 
               prepend-icon="mdi-school" 
-              title="Mi Clase"
+              :title="$t('educational.myClass')"
               @click="currentTab = 'students'"
               :class="{ 'active-item': currentTab === 'students' }"
             ></v-list-item>
 
             <v-list-item 
               prepend-icon="mdi-chart-areaspline" 
-              title="Estadísticas"
+              :title="$t('educational.stats')"
               @click="currentTab = 'stats'"
               :class="{ 'active-item': currentTab === 'stats' }"
             ></v-list-item>
 
             <v-list-item 
               prepend-icon="mdi-playlist-edit" 
-              title="Editor de Suministros"
+              :title="$t('educational.supplyEditor')"
               @click="currentTab = 'supplies'"
               :class="{ 'active-item': currentTab === 'supplies' }"
             ></v-list-item>
@@ -45,7 +45,7 @@
           <v-divider class="my-6 border-opacity-10"></v-divider>
 
           <v-btn block color="cyan-accent-4" variant="tonal" to="/profile" prepend-icon="mdi-arrow-left">
-            VOLVER AL PERFIL
+            {{ $t('educational.backToProfile') }}
           </v-btn>
         </v-card>
       </v-col>
@@ -57,16 +57,16 @@
           <!-- TAB: GESTIÓN DE PROFESORES (CENTER ONLY) -->
           <div v-if="currentTab === 'teachers' && role === 'CENTER'">
             <div class="d-flex justify-space-between align-center mb-6">
-              <h3 class="text-h4 font-weight-black text-white">PROFESORES</h3>
-              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">AÑADIR PROFESOR</v-btn>
+              <h3 class="text-h4 font-weight-black text-white">{{ $t('educational.teachersTitle') }}</h3>
+              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">{{ $t('educational.addTeacher') }}</v-btn>
             </div>
             
             <v-table class="tech-table">
               <thead>
                 <tr>
-                  <th>PROFESOR</th>
-                  <th>RANGO</th>
-                  <th>ACCIONES</th>
+                  <th>{{ $t('educational.teacher') }}</th>
+                  <th>{{ $t('educational.rank') }}</th>
+                  <th>{{ $t('educational.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -84,16 +84,16 @@
           <!-- TAB: GESTIÓN DE ALUMNOS (TEACHER ONLY) -->
           <div v-if="currentTab === 'students' && role === 'TEACHER'">
             <div class="d-flex justify-space-between align-center mb-6">
-              <h3 class="text-h4 font-weight-black text-white">ALUMNOS DE LA CLASE</h3>
-              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">AÑADIR ALUMNO</v-btn>
+              <h3 class="text-h4 font-weight-black text-white">{{ $t('educational.studentsTitle') }}</h3>
+              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">{{ $t('educational.addStudent') }}</v-btn>
             </div>
             
             <v-table class="tech-table">
               <thead>
                 <tr>
-                  <th>ALUMNO</th>
-                  <th>NIVEL</th>
-                  <th>ACCIONES</th>
+                  <th>{{ $t('educational.student') }}</th>
+                  <th>{{ $t('educational.level') }}</th>
+                  <th>{{ $t('educational.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,30 +110,30 @@
 
           <!-- TAB: ESTADÍSTICAS -->
           <div v-if="currentTab === 'stats'">
-            <h3 class="text-h4 font-weight-black text-white mb-6">TELEMETRÍA DE GRUPO</h3>
+            <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.telemetryTitle') }}</h3>
             
             <v-row v-if="groupStore.currentStats">
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">TOTAL JUEGOS</div>
+                  <div class="text-overline">{{ $t('educational.totalGames') }}</div>
                   <div class="text-h4 text-cyan-accent-3">{{ groupStore.currentStats.totalGames }}</div>
                 </v-card>
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">NIVEL PROMEDIO</div>
+                  <div class="text-overline">{{ $t('educational.avgLevel') }}</div>
                   <div class="text-h4 text-amber-accent-2">{{ groupStore.currentStats.avgLevel.toFixed(1) }}</div>
                 </v-card>
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">TOTAL MIEMBROS</div>
+                  <div class="text-overline">{{ $t('educational.totalMembers') }}</div>
                   <div class="text-h4 text-purple-accent-1">{{ groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers }}</div>
                 </v-card>
               </v-col>
             </v-row>
             
-            <p v-else class="text-grey">No hay datos disponibles para mostrar.</p>
+            <p v-else class="text-grey">{{ $t('educational.noData') }}</p>
           </div>
 
           <!-- TAB: EDITOR DE SUMINISTROS -->
@@ -148,10 +148,10 @@
     <!-- DIALOGO: AÑADIR MIEMBRO -->
     <v-dialog v-model="showAddDialog" max-width="400">
       <v-card class="glass-popup pa-6">
-        <h3 class="text-h5 text-white mb-6">AÑADIR {{ role === 'CENTER' ? 'PROFESOR' : 'ALUMNO' }}</h3>
-        <v-text-field v-model="newName" label="Nombre de Usuario" variant="solo-filled" class="mb-4"></v-text-field>
-        <v-text-field v-model="newPass" label="Contraseña" type="password" variant="solo-filled" class="mb-6"></v-text-field>
-        <v-btn block color="cyan-accent-3" @click="addMember">CONFIRMAR REGISTRO</v-btn>
+        <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: role === 'CENTER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
+        <v-text-field v-model="newName" :label="$t('educational.username')" variant="solo-filled" class="mb-4"></v-text-field>
+        <v-text-field v-model="newPass" :label="$t('educational.password')" type="password" variant="solo-filled" class="mb-6"></v-text-field>
+        <v-btn block color="cyan-accent-3" @click="addMember">{{ $t('educational.confirmReg') }}</v-btn>
       </v-card>
     </v-dialog>
 
