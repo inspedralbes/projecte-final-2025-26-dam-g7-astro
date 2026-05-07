@@ -9,7 +9,6 @@ vi.mock('../stores/astroShared', () => ({
         plan: 'astro_plan',
         rank: 'astro_rank',
         avatar: 'astro_avatar',
-        mascot: 'astro_mascot',
         token: 'astro_token'
     },
     storageGetItem: vi.fn(),

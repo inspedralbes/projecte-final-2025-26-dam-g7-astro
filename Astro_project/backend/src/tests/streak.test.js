@@ -51,4 +51,40 @@ describe('Streak Service', () => {
         const result = await updateStreak('testuser', true);
         expect(result.streak).toBe(6);
     });
+
+    test('debe resetear la racha si han pasado más de 24h sin jugar (sin freeze)', async () => {
+        const User = require('../domain/User');
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+        mockUserRepo.findByUsername.mockResolvedValue(new User({
+            user: 'testuser',
+            streak: 5,
+            lastGame: twoDaysAgo,
+            streakFreezes: 0
+        }));
+
+        const result = await updateStreak('testuser', true);
+        // Al detectar pérdida, el sistema marca needsFreeze=true para avisar, 
+        // pero si jugamos inmediatamente sin aplicar el freeze manualmente (isGame=true), 
+        // la racha empieza de nuevo en 1.
+        expect(result.streak).toBe(1);
+    });
+
+    test('debe marcar needsFreeze si han pasado más de 24h y tiene congeladores', async () => {
+        const User = require('../domain/User');
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+        mockUserRepo.findByUsername.mockResolvedValue(new User({
+            user: 'testuser',
+            streak: 10,
+            lastGame: twoDaysAgo,
+            streakFreezes: 1
+        }));
+
+        const result = await updateStreak('testuser', false); // Solo check de actividad, no juego aún
+        expect(result.needsFreeze).toBe(true);
+        expect(result.streak).toBe(10); // Mantiene la racha mientras decide usar el freeze
+    });
 });

@@ -12,7 +12,6 @@ vi.mock('../stores/astroShared', () => ({
         role: 'astro_role',
         parentId: 'astro_parent_id',
         avatar: 'astro_avatar',
-        mascot: 'astro_mascot',
         token: 'astro_token',
         lastActivity: 'astro_last_activity'
     },
