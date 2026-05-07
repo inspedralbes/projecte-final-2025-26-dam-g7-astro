@@ -698,24 +698,6 @@
         "incomingTransmission": "TRANSMISIÓN ENTRANTE"
     },
     "games": {
-        "SymmetryBreaker": "Simetría Estelar",
-        "symmetry-breaker": "Simetría Estelar",
-        "symmetrybreaker": "Simetría Estelar",
-        "WordConstruction": "Construcción de Palabras",
-        "word-construction": "Construcción de Palabras",
-        "wordconstruction": "Construcción de Palabras",
-        "RhymeSquad": "Escuadrón de Rimas",
-        "rhyme-squad": "Escuadrón de Rimas",
-        "rhymesquad": "Escuadrón de Rimas",
-        "SyllableQuest": "Aventura Silábica",
-        "syllable-quest": "Aventura Silábica",
-        "syllablequest": "Aventura Silábica",
-        "SpelledRosco": "Rosco Estelar",
-        "spelled-rosco": "Rosco Estelar",
-        "spelledrosco": "Rosco Estelar",
-        "RadarScan": "Escáner de Radar",
-        "radar-scan": "Escáner de Radar",
-        "radarscan": "Escáner de Radar",
         "RadioSignal": "Señal de Radio",
         "radio-signal": "Señal de Radio",
         "radiosignal": "Señal de Radio",
@@ -941,5 +923,22 @@
         "Recarga Solar": "Rompedor de Simetrías",
         "Reparación": "Escáner de Radar",
         "Reparación Express": "Escáner de Radar"
-    }
+    },
+    "ranks": [
+        "Cadete Espacial",
+        "Explorador Novato",
+        "Piloto de Pruebas",
+        "Oficial de Enlace",
+        "Navegante Estelar",
+        "Especialista de Misión",
+        "Comandante de Vuelo",
+        "Ingeniero de Sistemas",
+        "Capitán de Navío",
+        "Veterano del Vacío",
+        "Héroe de la Galaxia",
+        "Guardián Cósmico",
+        "Maestro de las Estrellas",
+        "Almirante Supremo",
+        "Leyenda Universal"
+    ]
 }

@@ -946,5 +946,22 @@
         "Recarga Solar": "Rompedor de Simetries",
         "Reparación": "Escàner de Radar",
         "Reparación Express": "Escàner de Radar"
-    }
+    },
+    "ranks": [
+        "Cadet Espacial",
+        "Explorador Novell",
+        "Pilot de Proves",
+        "Oficial d'Enllaç",
+        "Navegant Estelar",
+        "Especialista de Missió",
+        "Comandant de Vol",
+        "Enginyer de Sistemes",
+        "Capità de Navili",
+        "Veterà del Buit",
+        "Heroi de la Galàxia",
+        "Guardià Còsmic",
+        "Mestre de les Estrelles",
+        "Almirall Suprem",
+        "Llegenda Universal"
+    ]
 }

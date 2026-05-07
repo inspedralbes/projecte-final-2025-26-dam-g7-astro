@@ -948,5 +948,22 @@
         "Recarga Solar": "Symmetry Breaker",
         "Reparación": "Radar Scanner",
         "Reparación Express": "Radar Scanner"
-    }
+    },
+    "ranks": [
+        "Space Cadet",
+        "Novice Explorer",
+        "Test Pilot",
+        "Liaison Officer",
+        "Star Navigator",
+        "Mission Specialist",
+        "Flight Commander",
+        "Systems Engineer",
+        "Ship Captain",
+        "Void Veteran",
+        "Galaxy Hero",
+        "Cosmic Guardian",
+        "Master of the Stars",
+        "Supreme Admiral",
+        "Universal Legend"
+    ]
 }

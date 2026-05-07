@@ -372,6 +372,11 @@ const {
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
+const getRankName = (lvl = 1) => {
+    const index = Math.min(Math.floor((lvl - 1) / 10), 14);
+    return t(`ranks.${index}`);
+};
+
 const getRankClass = (lvl = 1) => {
     if (lvl <= 10) return 'rank-tier-1';
     if (lvl <= 30) return 'rank-tier-2';
@@ -445,7 +450,7 @@ const formattedTitle = computed(() => {
     if (selectedTitle.value) {
         return t('shopItems.' + getTitleKey(selectedTitle.value) + '.name');
     }
-    return rank.value || t('profile.defaultRank');
+    return getRankName(level.value);
 })
 
 const playerMetrics = computed(() => ({
