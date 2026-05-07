@@ -140,6 +140,7 @@
         "noSpecialTitles": "No posees títulos especiales. Visita el Bazar Espacial para adquirirlos.",
         "logoutConfirm": "¿Estás seguro de que deseas cerrar la sesión actual? Deberás volver a autenticarte para acceder a tus datos.",
         "accountSettings": "AJUSTES DE CUENTA",
+        "settings": "AJUSTES",
         "changePassword": "CAMBIAR CONTRASEÑA",
         "oldPassword": "Contraseña Actual",
         "newPassword": "Nueva Contraseña",

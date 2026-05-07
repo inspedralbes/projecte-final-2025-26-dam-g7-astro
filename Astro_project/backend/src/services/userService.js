@@ -39,7 +39,8 @@ class UserService {
         const validCredentials = await this.userRepo.findByCredentials(username, oldPassword);
         if (!validCredentials) throw new Error("Contraseña actual incorrecta");
 
-        await this.userRepo.updatePassword(username, newPassword);
+        const updated = await this.userRepo.updatePassword(username, newPassword);
+        if (!updated) throw new Error("No se pudo actualizar la contraseña");
         return true;
     }
 

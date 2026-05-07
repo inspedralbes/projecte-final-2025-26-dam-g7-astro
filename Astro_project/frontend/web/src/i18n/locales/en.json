@@ -146,6 +146,7 @@
         "noSpecialTitles": "You don't have any special titles. Visit the Space Bazaar to acquire them.",
         "logoutConfirm": "Are you sure you want to log out? You will need to authenticate again to access your data.",
         "accountSettings": "ACCOUNT SETTINGS",
+        "settings": "SETTINGS",
         "changePassword": "CHANGE PASSWORD",
         "oldPassword": "Current Password",
         "newPassword": "New Password",
