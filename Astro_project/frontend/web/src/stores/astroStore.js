@@ -187,6 +187,7 @@ export const useAstroStore = defineStore('astro', () => {
     function updateSelectedTitle(title) { sessionStore.updateSelectedTitle(title); }
     async function updateAchievements(achievements) { return achievementsStore.updateAchievements(achievements); }
     async function updatePlan(planType) { return sessionStore.updatePlan(planType); }
+    async function changePassword(oldPassword, newPassword) { return sessionStore.changePassword(oldPassword, newPassword); }
 
     async function useStreakFreeze() {
         const result = await progressStore.useStreakFreeze();
@@ -221,6 +222,6 @@ export const useAstroStore = defineStore('astro', () => {
         buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
         addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, // EXPORTADAS
         connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
-        updatePlan, useStreakFreeze, setCoins, setInventory
+        updatePlan, changePassword, useStreakFreeze, setCoins, setInventory
     };
 });

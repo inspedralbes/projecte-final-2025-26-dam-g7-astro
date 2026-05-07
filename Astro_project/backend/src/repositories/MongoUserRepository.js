@@ -110,6 +110,25 @@ class MongoUserRepository extends UserRepository {
         }));
     }
 
+    async updatePassword(username, newPassword) {
+        if (username === undefined || username === null || !newPassword) return false;
+
+        const filter = {
+            $or: [{ user: username }]
+        };
+
+        const numUser = Number(username);
+        if (!isNaN(numUser) && username !== '') {
+            filter.$or.push({ user: numUser });
+        }
+
+        const result = await this.collection.updateOne(filter, {
+            $set: { pass: newPassword }
+        });
+
+        return result.modifiedCount > 0;
+    }
+
     _toMongoDoc(user) {
         return {
             user: user.username,

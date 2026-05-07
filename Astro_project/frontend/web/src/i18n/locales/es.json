@@ -128,7 +128,18 @@
         "avatar_black": "Negro",
         "avatar_orange": "Naranja",
         "avatar_green": "Verde",
-        "avatar_red": "Rojo"
+        "avatar_red": "Rojo",
+        "settings": "Ajustes",
+        "changePassword": "Cambia la contraseña de tu cuenta",
+        "currentPassword": "Contraseña actual",
+        "newPassword": "Nueva contraseña",
+        "confirmNewPassword": "Confirmar nueva contraseña",
+        "updatePassword": "Actualizar contraseña",
+        "passwordMismatch": "La nueva contraseña y la confirmación no coinciden.",
+        "passwordFieldsRequired": "Todos los campos de contraseña son obligatorios.",
+        "passwordMustDiffer": "La nueva contraseña debe ser diferente de la actual.",
+        "passwordChangeSuccess": "Contraseña actualizada correctamente.",
+        "passwordChangeError": "No se pudo actualizar la contraseña."
     },
     "friends": {
         "title": "Tripulación",

@@ -48,16 +48,26 @@
                                         </div>
                                     </div>
                                 </div>
-                                <v-btn
-                                    color="cyan-accent-4"
-                                    variant="tonal"
-                                    class="history-toggle-btn px-6"
-                                    rounded="lg"
-                                    prepend-icon="mdi-history"
-                                    @click="historyDialog = !historyDialog"
-                                >
-                                    {{ historyDialog ? $t('profile.closeHistory') : $t('profile.openHistory') }}
-                                </v-btn>
+                                <div class="d-flex align-center ga-2 history-actions">
+                                    <v-btn
+                                        color="cyan-accent-4"
+                                        variant="tonal"
+                                        class="history-toggle-btn px-6"
+                                        rounded="lg"
+                                        prepend-icon="mdi-history"
+                                        @click="historyDialog = !historyDialog"
+                                    >
+                                        {{ historyDialog ? $t('profile.closeHistory') : $t('profile.openHistory') }}
+                                    </v-btn>
+                                    <v-btn
+                                        icon="mdi-cog"
+                                        color="cyan-accent-4"
+                                        variant="tonal"
+                                        class="settings-btn"
+                                        rounded="lg"
+                                        @click="openSettingsDialog"
+                                    ></v-btn>
+                                </div>
                             </div>
 
                             <!-- Barra de Progreso XP -->
@@ -314,6 +324,80 @@
             </v-card>
         </v-dialog>
 
+        <!-- Diálogo Ajustes -->
+        <v-dialog v-model="settingsDialog" max-width="520">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    {{ $t('profile.settings') }}
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="closeSettingsDialog"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <p class="text-body-2 text-grey-lighten-1 mb-4">{{ $t('profile.changePassword') }}</p>
+
+                    <v-form @submit.prevent="submitPasswordChange">
+                        <v-text-field
+                            v-model="oldPassword"
+                            :label="$t('profile.currentPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            class="mb-3"
+                            hide-details="auto"
+                        ></v-text-field>
+
+                        <v-text-field
+                            v-model="newPassword"
+                            :label="$t('profile.newPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            class="mb-3"
+                            hide-details="auto"
+                        ></v-text-field>
+
+                        <v-text-field
+                            v-model="confirmNewPassword"
+                            :label="$t('profile.confirmNewPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            :error="confirmNewPassword.length > 0 && !passwordsMatch"
+                            :error-messages="confirmNewPassword.length > 0 && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
+                            class="mb-3"
+                            hide-details="auto"
+                        ></v-text-field>
+
+                        <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-3">
+                            {{ settingsError }}
+                        </v-alert>
+                        <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-3">
+                            {{ settingsSuccess }}
+                        </v-alert>
+
+                        <div class="d-flex justify-end ga-2 mt-2">
+                            <v-btn
+                                variant="outlined"
+                                color="grey-lighten-1"
+                                :disabled="settingsLoading"
+                                @click="closeSettingsDialog"
+                            >
+                                {{ $t('general.cancel') }}
+                            </v-btn>
+                            <v-btn
+                                type="submit"
+                                color="cyan-accent-4"
+                                variant="flat"
+                                :loading="settingsLoading"
+                                :disabled="settingsLoading || !canSubmitPasswordChange"
+                            >
+                                {{ $t('profile.updatePassword') }}
+                            </v-btn>
+                        </div>
+                    </v-form>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
         <!-- Logout Confirmation Dialog -->
         <v-dialog v-model="showLogoutDialog" max-width="400">
             <v-card class="glass-popup pa-6 text-center shadow-xl">
@@ -352,10 +436,17 @@ const selectionDialog = ref(false)
 const avatarDialog = ref(false)
 const historyDialog = ref(false)
 const titleDialog = ref(false)
+const settingsDialog = ref(false)
 const showLogoutDialog = ref(false)
 const currentPage = ref(1)
 const pageSize = 4
 const currentSlotIndex = ref(null)
+const oldPassword = ref('')
+const newPassword = ref('')
+const confirmNewPassword = ref('')
+const settingsLoading = ref(false)
+const settingsError = ref('')
+const settingsSuccess = ref('')
 const { 
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
     avatar, level, coins, xp, partides, inventory,
@@ -451,6 +542,17 @@ const allAchievements = computed(() => {
     }))
 })
 
+const passwordsMatch = computed(() => newPassword.value === confirmNewPassword.value)
+
+const canSubmitPasswordChange = computed(() => {
+    return Boolean(
+        oldPassword.value &&
+        newPassword.value &&
+        confirmNewPassword.value &&
+        passwordsMatch.value
+    )
+})
+
 onMounted(async () => {
     if (!astroStore.user) return
 
@@ -514,6 +616,60 @@ function selectAvatar(file) {
 function selectTitle(titleName) {
     astroStore.updateSelectedTitle(titleName)
     titleDialog.value = false
+}
+
+function clearPasswordForm() {
+    oldPassword.value = ''
+    newPassword.value = ''
+    confirmNewPassword.value = ''
+    settingsError.value = ''
+    settingsSuccess.value = ''
+}
+
+function openSettingsDialog() {
+    clearPasswordForm()
+    settingsDialog.value = true
+}
+
+function closeSettingsDialog() {
+    settingsDialog.value = false
+    clearPasswordForm()
+}
+
+async function submitPasswordChange() {
+    if (settingsLoading.value) return
+
+    settingsError.value = ''
+    settingsSuccess.value = ''
+
+    if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
+        settingsError.value = t('profile.passwordFieldsRequired')
+        return
+    }
+
+    if (!passwordsMatch.value) {
+        settingsError.value = t('profile.passwordMismatch')
+        return
+    }
+
+    if (oldPassword.value === newPassword.value) {
+        settingsError.value = t('profile.passwordMustDiffer')
+        return
+    }
+
+    settingsLoading.value = true
+    const result = await astroStore.changePassword(oldPassword.value, newPassword.value)
+    settingsLoading.value = false
+
+    if (!result?.success) {
+        settingsError.value = result?.message || t('profile.passwordChangeError')
+        return
+    }
+
+    settingsSuccess.value = t('profile.passwordChangeSuccess')
+    oldPassword.value = ''
+    newPassword.value = ''
+    confirmNewPassword.value = ''
 }
 
 watch(historyDialog, async (isOpen) => {
@@ -624,9 +780,24 @@ watch(historyDialog, async (isOpen) => {
     align-items: flex-start !important;
 }
 
+.history-actions {
+    display: flex;
+    align-items: center;
+}
+
 .card-narrow .history-toggle-btn {
+    flex: 1;
+    width: auto;
+    margin-top: 0;
+}
+
+.card-narrow .history-actions {
     width: 100%;
     margin-top: 8px;
+}
+
+.settings-btn {
+    border: 1px solid rgba(0, 229, 255, 0.35) !important;
 }
 
 .rank-chip {
