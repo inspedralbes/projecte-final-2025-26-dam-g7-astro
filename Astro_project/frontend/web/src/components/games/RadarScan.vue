@@ -62,9 +62,12 @@
 
 <script setup>
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useAstroStore } from '@/stores/astroStore';
+import { radarScanData } from '@/data/radarScanData';
 
+const { t, locale } = useI18n();
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
 
@@ -96,17 +99,11 @@ const currentLevel = ref(1);
 const targetIndex = ref(-1);
 
 // --- CONFIGURACIÓ DE NIVELLS ---
-const levels = [
-  { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
-  { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
-  { distractor: 'm', target: 'n', grid: 9, tunnel: 150 },
-  { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },
-  { distractor: 'E', target: 'F', grid: 15, tunnel: 100 }
-];
+const levels = computed(() => radarScanData[locale.value] || radarScanData['es']);
 
 // --- COMPUTADES ---
 const currentConfig = computed(() => {
-  return levels[Math.min(currentLevel.value - 1, levels.length - 1)];
+  return levels.value[Math.min(currentLevel.value - 1, levels.value.length - 1)];
 });
 const currentTunnelSize = computed(() => currentConfig.value.tunnel);
 const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid));

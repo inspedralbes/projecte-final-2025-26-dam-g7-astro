@@ -70,4 +70,30 @@ describe('StatsService', () => {
         expect(stats.dailyMissions.length).toBe(3);
         expect(stats.dailyMissions[0].id).not.toBe('old');
     });
+
+    test('getClassStats hauria de retornar estadístiques dels alumnes del professor', async () => {
+        const teacher = 'Profe1';
+        await userRepo.save(new User({ user: teacher, role: 'TEACHER' }));
+        await userRepo.save(new User({ user: 'Alumne1', role: 'STUDENT', parentId: teacher, level: 2 }));
+        await userRepo.save(new User({ user: 'Alumne2', role: 'STUDENT', parentId: teacher, level: 4 }));
+
+        const classStats = await statsService.getClassStats(teacher);
+
+        expect(classStats.totalStudents).toBe(2);
+        expect(classStats.avgLevel).toBe(3);
+    });
+
+    test('getCenterStats hauria de retornar estadístiques dels professors del centre', async () => {
+        const center = 'Centro1';
+        const teacher = 'Profe1';
+        await userRepo.save(new User({ user: center, role: 'CENTER' }));
+        await userRepo.save(new User({ user: teacher, role: 'TEACHER', parentId: center }));
+        await userRepo.save(new User({ user: 'Alumne1', role: 'STUDENT', parentId: teacher, level: 10 }));
+
+        const centerStats = await statsService.getCenterStats(center);
+
+        expect(centerStats.totalTeachers).toBe(1);
+        expect(centerStats.totalStudents).toBe(1);
+        expect(centerStats.avgLevel).toBe(10);
+    });
 });

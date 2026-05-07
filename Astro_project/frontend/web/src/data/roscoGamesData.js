@@ -138,5 +138,23 @@ export const roscoData = {
         { char: 'B', question: "Instrumento de percusión que se toca con baquetas.", answer: "BATERIA" },
         { char: 'F', question: "Instrumento de viento de madera con agujeros.", answer: "FLAUTA" },
         { char: 'M', question: "Arte de combinar sonidos de forma agradable.", answer: "MUSICA" }
+    ],
+    en: [
+        { char: 'A', question: "Rocky body that orbits around the Sun.", answer: "ASTEROID" },
+        { char: 'C', question: "Ice and dust celestial body with a glowing tail.", answer: "COMET" },
+        { char: 'S', question: "The central star of our solar system.", answer: "SUN" },
+        { char: 'G', question: "Immense system of stars held together by gravity.", answer: "GALAXY" },
+        { char: 'N', question: "Cloud of gas where new stars are born.", answer: "NEBULA" },
+        { char: 'P', question: "Celestial body orbiting a star.", answer: "PLANET" },
+        { char: 'T', question: "Instrument for observing distant objects in space.", answer: "TELESCOPE" },
+        { char: 'U', question: "Everything that exists: matter, energy, space, and time.", answer: "UNIVERSE" },
+        { char: 'O', question: "Curved path of an object in space.", answer: "ORBIT" },
+        { char: 'M', question: "The Earth's natural satellite.", answer: "MOON" },
+        { char: 'R', question: "Programmable machine that can perform tasks automatically.", answer: "ROBOT" },
+        { char: 'I', question: "Global network connecting computers worldwide.", answer: "INTERNET" },
+        { char: 'D', question: "Information stored in computer systems.", answer: "DATA" },
+        { char: 'W', question: "Place on the internet where you can consult information.", answer: "WEB" },
+        { char: 'S', question: "Pocket electronic device with a touch screen.", answer: "SMARTPHONE" },
+        { char: 'E', question: "Capacity to do work or produce a change.", answer: "ENERGY" }
     ]
 };

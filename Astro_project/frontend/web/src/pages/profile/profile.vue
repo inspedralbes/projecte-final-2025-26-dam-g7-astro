@@ -1,235 +1,238 @@
 <template>
     <v-container fluid class="profile-container pa-0">
         <div class="profile-layout-wrapper py-8 px-4 px-md-8">
-            <div class="profile-main-content" :class="{ 'history-open': historyDialog }">
-                <!-- TARJETA DE PERFIL -->
-                <v-card class="profile-card" :class="{ 'card-narrow': historyDialog }" elevation="24">
-                    <!-- BANNER SUPERIOR -->
-                    <div class="banner-section">
-                        <v-img src="/fondo3.jpg" cover height="200" class="banner-image">
-                            <template v-slot:placeholder>
-                                <div class="d-flex align-center justify-center fill-height">
-                                    <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
-                                </div>
-                            </template>
-                            <div class="banner-overlay"></div>
-                        </v-img>
-                    </div>
-
-                    <!-- CABECERA: AVATAR Y DATOS BÁSICOS -->
-                    <div class="profile-header px-6 px-md-10">
-                        <div class="avatar-container">
-                            <div class="main-avatar-wrapper">
-                                <v-avatar size="160" class="avatar-circle">
-                                    <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
-                                </v-avatar>
-                                <v-btn icon="mdi-camera-outline" size="small" color="cyan-accent-3" class="edit-avatar-btn"
-                                    elevation="8" @click="avatarDialog = true"></v-btn>
-                            </div>
+            <v-row justify="center">
+                <!-- COLUMNA PERFIL -->
+                <v-col cols="12" md="10" lg="8">
+                    <v-card class="profile-card elevation-24" height="100%">
+                        <!-- BANNER SUPERIOR -->
+                        <div class="banner-section">
+                            <v-img src="/fondo3.jpg" cover height="200" class="banner-image">
+                                <template v-slot:placeholder>
+                                    <div class="d-flex align-center justify-center fill-height">
+                                        <v-progress-circular indeterminate color="cyan-accent-3"></v-progress-circular>
+                                    </div>
+                                </template>
+                                <div class="banner-overlay"></div>
+                            </v-img>
                         </div>
 
-                        <div class="user-meta mt-4">
-                            <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
-                                <div class="flex-grow-1">
-                                    <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2">
-                                        {{ user || $t('profile.guest') }}
-                                    </h1>
-                                    <div class="d-flex flex-wrap align-center ga-3">
-                                        <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat" @click="titleDialog = true" style="cursor: pointer;">
-                                            {{ formattedTitle }}
-                                        </v-chip>
-                                        <div class="d-flex align-center ga-3 text-grey-lighten-1">
-                                            <span class="text-overline">{{ $t('profile.level', { level: level || 1 }) }}</span>
-                                            <v-divider vertical class="mx-1 my-1 border-opacity-25" color="white"></v-divider>
-                                            <div class="status-indicator d-flex align-center ga-2">
-                                                <div class="status-dot online"></div>
-                                                <span class="text-caption font-weight-bold">{{ $t('profile.online') }}</span>
+                        <!-- CABECERA: AVATAR Y DATOS BÁSICOS -->
+                        <div class="profile-header px-6 px-md-10">
+                            <div class="avatar-container">
+                                <div class="main-avatar-wrapper">
+                                    <v-avatar size="160" class="avatar-circle">
+                                        <v-img :src="`/${avatar}`" alt="Avatar" cover></v-img>
+                                    </v-avatar>
+                                    <v-btn icon="mdi-camera-outline" size="small" color="cyan-accent-3" class="edit-avatar-btn"
+                                        elevation="8" @click="avatarDialog = true"></v-btn>
+                                </div>
+                            </div>
+
+                            <div class="user-meta mt-4">
+                                <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
+                                    <div class="flex-grow-1">
+                                        <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2 d-flex align-center">
+                                            {{ user || $t('profile.guest') }}
+                                            <v-btn icon="mdi-cog-outline" variant="text" color="grey-lighten-1" size="small" @click="openSettingsDialog" class="ml-2"></v-btn>
+                                        </h1>
+                                        <div class="d-flex flex-wrap align-center ga-3">
+                                            <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat" @click="titleDialog = true" style="cursor: pointer;">
+                                                {{ formattedTitle }}
+                                            </v-chip>
+                                            <div class="d-flex align-center ga-3 text-grey-lighten-1">
+                                                <span class="text-overline">{{ $t('profile.level', { level: level || 1 }) }}</span>
+                                                <v-divider vertical class="mx-1 my-1 border-opacity-25" color="white"></v-divider>
+                                                <div class="status-indicator d-flex align-center ga-2">
+                                                    <div class="status-dot online"></div>
+                                                    <span class="text-caption font-weight-bold">{{ $t('profile.online') }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="d-flex align-center ga-2 history-actions">
                                     <v-btn
-                                        color="cyan-accent-4"
+                                        color="cyan-accent-3"
                                         variant="tonal"
-                                        class="history-toggle-btn px-6"
-                                        rounded="lg"
                                         prepend-icon="mdi-history"
-                                        @click="historyDialog = !historyDialog"
-                                    >
-                                        {{ historyDialog ? $t('profile.closeHistory') : $t('profile.openHistory') }}
-                                    </v-btn>
-                                    <v-btn
-                                        icon="mdi-cog"
-                                        color="cyan-accent-4"
-                                        variant="tonal"
-                                        class="settings-btn"
+                                        class="font-weight-black px-6"
                                         rounded="lg"
-                                        @click="openSettingsDialog"
-                                    ></v-btn>
+                                        height="48"
+                                        @click="historyDialog = true"
+                                    >
+                                        {{ $t('profile.flightHistory') }}
+                                    </v-btn>
+                                </div>
+
+                                <!-- Barra de Progreso XP -->
+                                <div class="xp-progress-wrapper mt-6">
+                                    <div class="d-flex justify-space-between align-center mb-1 px-1">
+                                        <span class="text-caption font-weight-bold text-cyan-accent-3">{{ $t('profile.missionProgress') }}</span>
+                                        <span class="text-caption font-weight-black text-white">{{ $t('profile.xpProgress', { xp, req: xpRequired }) }}</span>
+                                    </div>
+                                    <v-progress-linear
+                                        :model-value="(xp / xpRequired) * 100"
+                                        color="cyan-accent-3"
+                                        height="10"
+                                        rounded
+                                        bg-color="rgba(255,255,255,0.05)"
+                                        bg-opacity="1"
+                                        class="xp-bar shadow-cyan"
+                                    ></v-progress-linear>
                                 </div>
                             </div>
 
-                            <!-- Barra de Progreso XP -->
-                            <div class="xp-progress-wrapper mt-6">
-                                <div class="d-flex justify-space-between align-center mb-1 px-1">
-                                    <span class="text-caption font-weight-bold text-cyan-accent-3">{{ $t('profile.missionProgress') }}</span>
-                                    <span class="text-caption font-weight-black text-white">{{ xp }} / {{ xpRequired }} XP</span>
+                            <v-divider class="my-8 border-opacity-10"></v-divider>
+
+                            <!-- ESTADÍSTICAS RÁPIDAS -->
+                            <div class="stats-grid mb-10">
+                                <div class="stat-item">
+                                    <span class="stat-label">{{ $t('profile.planLabel') }}</span>
+                                    <span class="stat-value text-cyan-accent-2">{{ translatedPlan }}</span>
                                 </div>
-                                <v-progress-linear
-                                    :model-value="(xp / xpRequired) * 100"
-                                    color="cyan-accent-3"
-                                    height="10"
-                                    rounded
-                                    bg-color="rgba(255,255,255,0.05)"
-                                    bg-opacity="1"
-                                    class="xp-bar shadow-cyan"
-                                ></v-progress-linear>
+                                <div class="stat-item text-center">
+                                    <span class="stat-label">{{ $t('profile.missionLabel') }}</span>
+                                    <span class="stat-value text-amber-accent-2">{{ currentMissionName }}</span>
+                                </div>
+                                <div class="stat-item text-right">
+                                    <span class="stat-label">{{ $t('profile.systemLabel') }}</span>
+                                    <span class="stat-value">{{ $t('profile.systemValue') }}</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <v-divider class="my-8 border-opacity-10"></v-divider>
-
-                        <!-- ESTADÍSTICAS RÁPIDAS -->
-                        <div class="stats-grid mb-10">
-                            <div class="stat-item">
-                                <span class="stat-label">{{ $t('profile.planLabel') }}</span>
-                                <span class="stat-value text-cyan-accent-2">{{ plan || 'INDIVIDUAL' }}</span>
-                            </div>
-                            <div class="stat-item text-center">
-                                <span class="stat-label">{{ $t('profile.missionLabel') }}</span>
-                                <span class="stat-value text-amber-accent-2">{{ currentMissionName }}</span>
-                            </div>
-                            <div class="stat-item text-right">
-                                <span class="stat-label">{{ $t('profile.systemLabel') }}</span>
-                                <span class="stat-value">{{ $t('profile.systemValue') }}</span>
-                            </div>
-                        </div>
-
-                        <!-- SECCIÓN DE LOGROS -->
-                        <div class="achievements-section mb-10">
-                            <div class="section-header d-flex align-center justify-space-between mb-4">
-                                <h3 class="text-overline font-weight-black text-grey-lighten-2">{{ $t('profile.featuredAchievements') }}</h3>
-                            </div>
-                            <v-row dense>
-                                <v-col v-for="i in 3" :key="i" cols="4">
-                                    <div class="achievement-slot" @click="openSelection(i - 1)">
-                                        <div class="slot-glow" v-if="getAchievement(selectedAchievements[i - 1])"></div>
-                                        <Medal v-if="getAchievement(selectedAchievements[i - 1])"
-                                            :type="getAchievement(selectedAchievements[i - 1]).type"
-                                            :icon="getAchievement(selectedAchievements[i - 1]).icon" 
-                                            :scale="0.7"
-                                            :icon-size="52" />
-                                        <div v-else class="empty-slot">
-                                            <v-icon icon="mdi-plus" color="rgba(255,255,255,0.1)" size="32"></v-icon>
+                            <!-- SECCIÓN DE LOGROS -->
+                            <div class="achievements-section mb-10">
+                                <div class="section-header d-flex align-center justify-space-between mb-4">
+                                    <h3 class="text-overline font-weight-black text-grey-lighten-2">{{ $t('profile.featuredAchievements') }}</h3>
+                                </div>
+                                <v-row dense>
+                                    <v-col v-for="i in 3" :key="i" cols="4">
+                                        <div class="achievement-slot" @click="openSelection(i - 1)">
+                                            <div class="slot-glow" v-if="getAchievement(selectedAchievements[i - 1])"></div>
+                                            <Medal v-if="getAchievement(selectedAchievements[i - 1])"
+                                                :type="getAchievement(selectedAchievements[i - 1]).type"
+                                                :icon="getAchievement(selectedAchievements[i - 1]).icon" 
+                                                :scale="0.7"
+                                                :icon-size="52" />
+                                            <div v-else class="empty-slot">
+                                                <v-icon icon="mdi-plus" color="rgba(255,255,255,0.1)" size="32"></v-icon>
+                                            </div>
                                         </div>
-                                    </div>
-                                </v-col>
-                            </v-row>
-                        </div>
+                                    </v-col>
+                                </v-row>
+                            </div>
 
-                        <!-- ACCIONES -->
-                        <div class="actions-container ga-3 mb-10">
-                            <v-row dense>
-                                <v-col v-if="role === 'CENTER' || role === 'TEACHER'" cols="12">
-                                    <v-btn block color="cyan-accent-4" height="56" rounded="lg" variant="flat" to="/educational"
-                                        class="action-btn font-weight-black mb-2">
-                                        <v-icon start icon="mdi-shield-account" class="mr-2"></v-icon>
-                                        GESTIÓN EDUCATIVA
-                                    </v-btn>
-                                </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="goToInventory"
-                                        class="action-btn font-weight-black">
-                                        <v-icon start icon="mdi-cube-outline" class="mr-2"></v-icon>
-                                        {{ $t('profile.inventoryBtn') }}
-                                    </v-btn>
-                                </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="changePlan"
-                                        class="action-btn font-weight-black">
-                                        <v-icon start icon="mdi-rocket-launch-outline" class="mr-2"></v-icon>
-                                        {{ $t('profile.changePlanBtn') }}
-                                    </v-btn>
-                                </v-col>
-                            </v-row>
-                            <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="showLogoutDialog = true"
-                                class="logout-btn font-weight-black mt-4">
-                                {{ $t('profile.logoutBtn') }}
-                            </v-btn>
+                            <!-- ACCIONES -->
+                            <div class="actions-container ga-3 mb-10">
+                                <v-row dense>
+                                    <v-col v-if="role === 'CENTER' || role === 'TEACHER'" cols="12">
+                                        <v-btn block color="cyan-accent-4" height="56" rounded="lg" variant="flat" to="/educational"
+                                            class="action-btn font-weight-black mb-2">
+                                            <v-icon start icon="mdi-shield-account" class="mr-2"></v-icon>
+                                            {{ $t('profile.eduManagement') }}
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="goToInventory"
+                                            class="action-btn font-weight-black">
+                                            <v-icon start icon="mdi-cube-outline" class="mr-2"></v-icon>
+                                            {{ $t('profile.inventoryBtn') }}
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-btn block color="grey-darken-4" height="56" rounded="lg" variant="flat" @click="changePlan"
+                                            class="action-btn font-weight-black">
+                                            <v-icon start icon="mdi-rocket-launch-outline" class="mr-2"></v-icon>
+                                            {{ $t('profile.changePlanBtn') }}
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                                <v-btn block color="red-darken-4" height="56" rounded="lg" variant="tonal" @click="showLogoutDialog = true"
+                                    class="logout-btn font-weight-black mt-4">
+                                    {{ $t('profile.logoutBtn') }}
+                                </v-btn>
+                            </div>
                         </div>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </div>
+
+        <!-- DIÁLOGO DE HISTORIAL (MÁS COMPACTO) -->
+        <v-dialog v-model="historyDialog" max-width="850" transition="fade-transition">
+            <v-card class="history-popup-card">
+                <div class="history-popup-header pa-4 d-flex align-center justify-space-between">
+                    <div>
+                        <h2 class="text-h5 font-weight-black text-white mb-0">{{ $t('profile.flightHistory') }}</h2>
+                        <p class="text-caption text-cyan-accent-2 mb-0">{{ $t('profile.flightHistorySub') }}</p>
                     </div>
-                </v-card>
+                    <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="historyDialog = false"></v-btn>
+                </div>
 
-                <!-- PANEL DE HISTORIAL (DERECHA/INFERIOR) -->
-                <div v-if="historyDialog" class="history-panel">
-                    <div class="history-header pa-6">
-                        <div class="d-flex align-center justify-space-between mb-2">
-                            <h3 class="text-h6 font-weight-black text-white">{{ $t('profile.flightHistory') }}</h3>
-                            <v-icon icon="mdi-chart-line" color="cyan-accent-3"></v-icon>
-                        </div>
-                        <p class="text-caption text-grey">{{ $t('profile.flightHistorySub') }}</p>
-                    </div>
+                <v-divider class="border-opacity-10"></v-divider>
 
-                    <div class="history-scroll-area pa-6 pt-0">
-                        <!-- TOP MISIONES -->
-                        <div class="mb-8">
-                            <h4 class="text-overline text-amber-accent-3 font-weight-black mb-4 d-flex align-center">
-                                <v-icon size="16" class="mr-2">mdi-star</v-icon> {{ $t('profile.personalRecords') }}
+                <div class="history-popup-content pa-5">
+                    <v-row>
+                        <!-- TOP MISIONES (IZQUIERDA) -->
+                        <v-col cols="12" md="6" class="pr-md-6 border-right-sep">
+                            <h4 class="text-overline text-amber-accent-3 font-weight-black mb-6 d-flex align-center">
+                                <v-icon size="20" class="mr-2">mdi-star</v-icon> {{ $t('profile.personalRecords') }}
                             </h4>
-                            <div v-if="topGames.length > 0" class="top-games-list ga-3 d-flex flex-column">
-                                <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card">
+                            <div v-if="topGames.length > 0" class="top-games-list-popup ga-4 d-flex flex-column">
+                                <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card-popup">
                                     <div class="rank-num">{{ idx + 1 }}</div>
-                                    <div class="game-info">
-                                        <span class="game-name text-capitalize">{{ match.game }}</span>
-                                        <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                                    <div class="game-info flex-grow-1">
+                                        <span class="game-name">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
+                                        <span class="game-date text-caption text-grey ml-3">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
-                                    <div class="game-stats">
-                                        <span class="game-score">{{ match.score }}</span>
-                                        <span class="game-xp">+{{ match.xpEarned }} XP</span>
-                                    </div>
+                                    <div class="game-score-small-popup font-weight-black text-amber-accent-3">{{ match.score }}</div>
                                 </div>
                             </div>
-                            <div v-else class="empty-state">
+                            <div v-else class="empty-state-popup">
+                                <v-icon icon="mdi-trophy-outline" size="48" color="grey-darken-3" class="mb-2"></v-icon>
                                 <span class="text-caption">{{ $t('profile.noEliteRecords') }}</span>
                             </div>
-                        </div>
+                        </v-col>
 
-                        <!-- RECIENTES -->
-                        <div>
-                            <h4 class="text-overline text-grey font-weight-black mb-4">{{ $t('profile.recentIncursions') }}</h4>
-                            <div v-if="gameHistory.length > 0" class="recent-list ga-2 d-flex flex-column">
-                                <div v-for="(match, idx) in paginatedHistory" :key="`hist-${idx}`" class="recent-item">
-                                    <div class="recent-icon">
-                                        <v-icon size="16" color="cyan-accent-2">mdi-sword-cross</v-icon>
+                        <!-- RECIENTES (DERECHA) -->
+                        <v-col cols="12" md="6" class="pl-md-6">
+                            <h4 class="text-overline text-cyan-accent-3 font-weight-black mb-6 d-flex align-center">
+                                <v-icon size="20" class="mr-2">mdi-history</v-icon> {{ $t('profile.recentIncursions') }}
+                            </h4>
+                            <div v-if="gameHistory.length > 0" class="recent-list-popup ga-3 d-flex flex-column">
+                                <div v-for="(match, idx) in paginatedHistory" :key="`hist-${idx}`" class="recent-item-popup">
+                                    <div class="recent-icon-popup">
+                                        <v-icon size="18" color="cyan-accent-2">mdi-sword-cross</v-icon>
                                     </div>
-                                    <div class="game-info">
-                                        <span class="game-name text-capitalize">{{ match.game }}</span>
-                                        <span class="game-date">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                                    <div class="game-info flex-grow-1">
+                                        <span class="game-name font-weight-bold">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
+                                        <span class="game-date text-caption text-grey ml-3">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
-                                    <div class="game-score-small">{{ match.score }}</div>
+                                    <div class="game-score-small-popup font-weight-black text-white">{{ match.score }}</div>
                                 </div>
                             </div>
-                            
-                            <!-- Paginación -->
-                            <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-4 mt-6">
-                                <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-left"
+
+                            <!-- Paginación Mejorada -->
+                            <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-6 mt-8">
+                                <v-btn density="comfortable" variant="tonal" color="cyan-accent-3" icon="mdi-chevron-left"
                                     :disabled="currentPage === 1" @click="currentPage--"></v-btn>
-                                <span class="text-caption font-weight-black text-grey">{{ $t('profile.page', { current: currentPage, total: totalPages }) }}</span>
-                                <v-btn density="comfortable" variant="text" color="cyan-accent-3" icon="mdi-chevron-right"
+                                <div class="text-center">
+                                    <span class="text-h6 font-weight-black text-white">{{ currentPage }}</span>
+                                    <span class="text-caption text-grey ml-1">/ {{ totalPages }}</span>
+                                </div>
+                                <v-btn density="comfortable" variant="tonal" color="cyan-accent-3" icon="mdi-chevron-right"
                                     :disabled="currentPage >= totalPages" @click="currentPage++"></v-btn>
                             </div>
 
-                            <div v-if="gameHistory.length === 0" class="empty-state">
+                            <div v-if="gameHistory.length === 0" class="empty-state-popup">
                                 <span class="text-caption">{{ $t('profile.noRecent') }}</span>
                             </div>
-                        </div>
-                    </div>
+                        </v-col>
+                    </v-row>
                 </div>
-            </div>
-        </div>
+            </v-card>
+        </v-dialog>
 
-        <!-- DIÁLOGOS (Sin cambios significativos en lógica, solo diseño glass) -->
+        <!-- Diálogo Selección Logros -->
         <v-dialog v-model="selectionDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
@@ -282,18 +285,19 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+
         <!-- Diálogo Título -->
         <v-dialog v-model="titleDialog" max-width="500">
             <v-card class="glass-popup pa-4">
                 <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    SELECCIONAR TÍTULO
+                    {{ $t('profile.selectTitle') }}
                     <v-btn icon="mdi-close" variant="text" color="white" @click="titleDialog = false"></v-btn>
                 </v-card-title>
                 <v-card-text>
                     <v-list bg-color="transparent" class="text-white">
                         <v-list-item
-                            title="Por Defecto (Nivel)"
-                            subtitle="Rango basado en tu nivel"
+                            :title="$t('profile.defaultTitle')"
+                            :subtitle="$t('profile.rankBasedOnLevel')"
                             @click="selectTitle(null)"
                             class="mb-2 achievement-list-item"
                             :class="{ 'selected': !selectedTitle }"
@@ -305,8 +309,8 @@
                         <v-list-item
                             v-for="t in ownedTitles"
                             :key="t.id"
-                            :title="t.name.replace('Título: ', '')"
-                            subtitle="Comprado en la tienda"
+                            :title="$t('shopItems.' + getTitleKey(t.name) + '.name')"
+                            :subtitle="$t('profile.boughtInShop')"
                             @click="selectTitle(t.name)"
                             class="mb-2 achievement-list-item"
                             :class="{ 'selected': selectedTitle === t.name }"
@@ -315,96 +319,18 @@
                                 <v-icon :color="t.color" class="mr-3">{{ t.icon }}</v-icon>
                             </template>
                         </v-list-item>
-                        <v-divider v-if="ownedTitles.length === 0" class="my-2 border-opacity-20"></v-divider>
-                        <div v-if="ownedTitles.length === 0" class="text-caption text-grey text-center mt-4">
-                            No posees títulos especiales. Visita el Bazar Espacial para adquirirlos.
-                        </div>
                     </v-list>
                 </v-card-text>
             </v-card>
         </v-dialog>
 
-        <!-- Diálogo Ajustes -->
-        <v-dialog v-model="settingsDialog" max-width="520">
-            <v-card class="glass-popup pa-4">
-                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    {{ $t('profile.settings') }}
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="closeSettingsDialog"></v-btn>
-                </v-card-title>
-                <v-card-text>
-                    <p class="text-body-2 text-grey-lighten-1 mb-4">{{ $t('profile.changePassword') }}</p>
-
-                    <v-form @submit.prevent="submitPasswordChange">
-                        <v-text-field
-                            v-model="oldPassword"
-                            :label="$t('profile.currentPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            class="mb-3"
-                            hide-details="auto"
-                        ></v-text-field>
-
-                        <v-text-field
-                            v-model="newPassword"
-                            :label="$t('profile.newPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            class="mb-3"
-                            hide-details="auto"
-                        ></v-text-field>
-
-                        <v-text-field
-                            v-model="confirmNewPassword"
-                            :label="$t('profile.confirmNewPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            :error="confirmNewPassword.length > 0 && !passwordsMatch"
-                            :error-messages="confirmNewPassword.length > 0 && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
-                            class="mb-3"
-                            hide-details="auto"
-                        ></v-text-field>
-
-                        <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-3">
-                            {{ settingsError }}
-                        </v-alert>
-                        <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-3">
-                            {{ settingsSuccess }}
-                        </v-alert>
-
-                        <div class="d-flex justify-end ga-2 mt-2">
-                            <v-btn
-                                variant="outlined"
-                                color="grey-lighten-1"
-                                :disabled="settingsLoading"
-                                @click="closeSettingsDialog"
-                            >
-                                {{ $t('general.cancel') }}
-                            </v-btn>
-                            <v-btn
-                                type="submit"
-                                color="cyan-accent-4"
-                                variant="flat"
-                                :loading="settingsLoading"
-                                :disabled="settingsLoading || !canSubmitPasswordChange"
-                            >
-                                {{ $t('profile.updatePassword') }}
-                            </v-btn>
-                        </div>
-                    </v-form>
-                </v-card-text>
-            </v-card>
-        </v-dialog>
-
-        <!-- Logout Confirmation Dialog -->
+        <!-- Diálogo Logout -->
         <v-dialog v-model="showLogoutDialog" max-width="400">
             <v-card class="glass-popup pa-6 text-center shadow-xl">
                 <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
                 <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
                 <p class="text-body-2 text-grey-lighten-1 mb-8">
-                    {{ $t('profile.deepSpace', { level: '' }).includes('ESPACIO') ? 'Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?' : 'You are about to disconnect from ASTRO central system. Do you wish to continue?' }}
+                    {{ $t('profile.logoutConfirm') }}
                 </p>
                 <div class="d-flex justify-center mt-4">
                     <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
@@ -414,6 +340,72 @@
                         {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
                     </v-btn>
                 </div>
+            </v-card>
+        </v-dialog>
+        <!-- Diálogo Ajustes (Contraseña) -->
+        <v-dialog v-model="settingsDialog" max-width="500">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    {{ $t('profile.accountSettings') }}
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="closeSettingsDialog"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-4" density="compact">
+                        {{ settingsError }}
+                    </v-alert>
+                    <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-4" density="compact">
+                        {{ settingsSuccess }}
+                    </v-alert>
+
+                    <h4 class="text-overline text-grey-lighten-1 mb-4">{{ $t('profile.changePassword') }}</h4>
+                    
+                    <v-form @submit.prevent="submitPasswordChange">
+                        <v-text-field
+                            v-model="oldPassword"
+                            :label="$t('profile.oldPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-2"
+                        ></v-text-field>
+                        
+                        <v-text-field
+                            v-model="newPassword"
+                            :label="$t('profile.newPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-2"
+                        ></v-text-field>
+                        
+                        <v-text-field
+                            v-model="confirmNewPassword"
+                            :label="$t('profile.confirmNewPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-6"
+                            :error="confirmNewPassword && !passwordsMatch"
+                            :error-messages="confirmNewPassword && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
+                        ></v-text-field>
+                        
+                        <v-btn
+                            block
+                            color="cyan-accent-3"
+                            height="50"
+                            rounded="lg"
+                            type="submit"
+                            :loading="settingsLoading"
+                            :disabled="!canSubmitPasswordChange"
+                            class="font-weight-black"
+                        >
+                            {{ $t('profile.saveChanges') }}
+                        </v-btn>
+                    </v-form>
+                </v-card-text>
             </v-card>
         </v-dialog>
     </v-container>
@@ -434,24 +426,30 @@ const astroStore = useAstroStore()
 
 const selectionDialog = ref(false)
 const avatarDialog = ref(false)
-const historyDialog = ref(false)
 const titleDialog = ref(false)
-const settingsDialog = ref(false)
+const historyDialog = ref(false)
 const showLogoutDialog = ref(false)
-const currentPage = ref(1)
-const pageSize = 4
-const currentSlotIndex = ref(null)
-const oldPassword = ref('')
-const newPassword = ref('')
-const confirmNewPassword = ref('')
+const settingsDialog = ref(false)
 const settingsLoading = ref(false)
 const settingsError = ref('')
 const settingsSuccess = ref('')
+const oldPassword = ref('')
+const newPassword = ref('')
+const confirmNewPassword = ref('')
+const currentPage = ref(1)
+const pageSize = 6
+const currentSlotIndex = ref(null)
+
 const { 
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
     avatar, level, coins, xp, partides, inventory,
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
+
+const getRankName = (lvl = 1) => {
+    const index = Math.min(Math.floor((lvl - 1) / 10), 14);
+    return t(`ranks.${index}`);
+};
 
 const getRankClass = (lvl = 1) => {
     if (lvl <= 10) return 'rank-tier-1';
@@ -476,14 +474,7 @@ const xpRequired = computed(() => {
     return 100 + ((level.value || 1) - 1) * 50;
 })
 
-const missionKeyPrefixes = [
-    'mission_1',
-    'mission_2',
-    'mission_3',
-    'mission_4',
-    'mission_5',
-    'mission_6'
-];
+const missionKeyPrefixes = ['mission_1', 'mission_2', 'mission_3', 'mission_4', 'mission_5', 'mission_6'];
 
 const currentMissionName = computed(() => {
     const currentLvl = level.value || 1;
@@ -491,6 +482,11 @@ const currentMissionName = computed(() => {
         return t(`profile.${missionKeyPrefixes[currentLvl - 1]}`).toUpperCase();
     }
     return t('profile.deepSpace', { level: currentLvl });
+});
+
+const translatedPlan = computed(() => {
+    const p = plan.value || 'individual_free';
+    return t(`plans.${p.toLowerCase()}`).toUpperCase();
 });
 
 const avatarOptions = computed(() => [
@@ -504,10 +500,17 @@ const avatarOptions = computed(() => [
 ])
 
 const ALL_TITLES = [
-    { id: 105, name: 'Título: El Imparable', icon: 'mdi-format-title', color: 'red-accent-3' },
-    { id: 106, name: 'Título: Leyenda Galáctica', icon: 'mdi-format-title', color: 'cyan-accent-3' },
-    { id: 107, name: 'Título: Destructor de Asteroides', icon: 'mdi-format-title', color: 'amber-accent-3' }
+    { id: 105, name: 'El Imparable', key: 'titleUnstoppable', icon: 'mdi-format-title', color: 'red-accent-3' },
+    { id: 106, name: 'Leyenda Galáctica', key: 'titleLegend', icon: 'mdi-format-title', color: 'cyan-accent-3' },
+    { id: 107, name: 'Destructor de Asteroides', key: 'titleDestroyer', icon: 'mdi-format-title', color: 'amber-accent-3' }
 ]
+
+function getTitleKey(titleName) {
+    if (!titleName) return '';
+    const cleanName = titleName.replace('Título: ', '');
+    const title = ALL_TITLES.find(t => t.name === cleanName);
+    return title ? title.key : '';
+}
 
 const ownedTitles = computed(() => {
     if (!inventory.value) return [];
@@ -519,9 +522,9 @@ const ownedTitles = computed(() => {
 
 const formattedTitle = computed(() => {
     if (selectedTitle.value) {
-        return selectedTitle.value.replace('Título: ', '');
+        return t('shopItems.' + getTitleKey(selectedTitle.value) + '.name');
     }
-    return rank.value || 'Cadete de Vuelo';
+    return getRankName(level.value);
 })
 
 const playerMetrics = computed(() => ({
@@ -535,7 +538,6 @@ const playerMetrics = computed(() => ({
 
 const allAchievements = computed(() => {
     const unlockedFromDb = new Set(unlockedAchievements.value || [])
-
     return ACHIEVEMENTS.map(a => ({
         ...a,
         unlocked: (playerMetrics.value[a.metric] || 0) >= (a.goal || 0) || unlockedFromDb.has(a.id)
@@ -555,7 +557,6 @@ const canSubmitPasswordChange = computed(() => {
 
 onMounted(async () => {
     if (!astroStore.user) return
-
     await Promise.all([
         astroStore.fetchUserStats(),
         astroStore.fetchUserInventory(),
@@ -578,17 +579,13 @@ function openSelection(index) {
 }
 
 async function selectAchievement(achievementId) {
-    if (!user.value) {
-        return;
-    }
+    if (!user.value) return;
     selectionDialog.value = false;
     const targetId = achievementId !== null ? Number(achievementId) : null;
     let newSelection = [...selectedAchievements.value];
     if (targetId !== null) {
         const existingIndex = newSelection.findIndex(id => id !== null && Number(id) === targetId);
-        if (existingIndex !== -1) {
-            newSelection[existingIndex] = null;
-        }
+        if (existingIndex !== -1) newSelection[existingIndex] = null;
     }
     newSelection[currentSlotIndex.value] = targetId;
     await astroStore.updateAchievements(newSelection);
@@ -600,13 +597,8 @@ function confirmLogout() {
     router.push('/login')
 }
 
-function changePlan() {
-    router.push('/plans')
-}
-
-function goToInventory() {
-    router.push('/inventory')
-}
+function goToInventory() { router.push('/inventory') }
+function changePlan() { router.push('/plans') }
 
 function selectAvatar(file) {
     astroStore.updateAvatar(file)
@@ -691,22 +683,7 @@ watch(historyDialog, async (isOpen) => {
     width: 100%;
 }
 
-.profile-main-content {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    max-width: 700px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    gap: 0;
-}
-
-.profile-main-content.history-open {
-    max-width: 1100px; /* Ajustado para caber entre sidebars */
-}
-
-/* TARJETA DE PERFIL */
 .profile-card {
-    flex: 1 1 600px;
     background: #0a0c10 !important;
     border: 1px solid rgba(0, 242, 255, 0.1);
     border-radius: 20px !important;
@@ -715,25 +692,11 @@ watch(historyDialog, async (isOpen) => {
     z-index: 2;
 }
 
-.history-open .profile-card {
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-}
-
-.banner-section {
-    position: relative;
-}
-
-.banner-image {
-    filter: brightness(0.8);
-}
-
+.banner-section { position: relative; }
+.banner-image { filter: brightness(0.8); }
 .banner-overlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60%;
+    bottom: 0; left: 0; right: 0; height: 60%;
     background: linear-gradient(to top, #0a0c10, transparent);
 }
 
@@ -743,116 +706,36 @@ watch(historyDialog, async (isOpen) => {
     z-index: 3;
 }
 
-.avatar-container {
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-}
-
-.main-avatar-wrapper {
-    position: relative;
-}
-
+.avatar-container { display: flex; align-items: flex-end; gap: 16px; }
+.main-avatar-wrapper { position: relative; }
 .avatar-circle {
     border: 5px solid #0a0c10;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
-
-.avatar-circle :deep(.v-img__img) {
-    transform: scale(1.1);
-}
-
+.avatar-circle :deep(.v-img__img) { transform: scale(1.1); }
 .edit-avatar-btn {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
+    position: absolute; bottom: 5px; right: 5px;
     border: 3px solid #0a0c10 !important;
 }
-
 
 .user-name {
     letter-spacing: -1px !important;
     text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-.card-narrow .user-meta > .d-flex {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-}
-
-.history-actions {
-    display: flex;
-    align-items: center;
-}
-
-.card-narrow .history-toggle-btn {
-    flex: 1;
-    width: auto;
-    margin-top: 0;
-}
-
-.card-narrow .history-actions {
-    width: 100%;
-    margin-top: 8px;
-}
-
-.settings-btn {
-    border: 1px solid rgba(0, 229, 255, 0.35) !important;
-}
-
 .rank-chip {
     letter-spacing: 1px;
     text-transform: uppercase;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Tier 1: Básico */
+/* Ranks */
 .rank-tier-1 { background: linear-gradient(135deg, #78909c, #455a64) !important; color: white !important; }
-
-/* Tier 2: Avanzado (Cyan) */
-.rank-tier-2 { 
-  background: linear-gradient(135deg, #00acc1, #006064) !important; 
-  color: white !important;
-  border: 1px solid rgba(0, 255, 255, 0.3) !important;
-}
-
-/* Tier 3: Superior (Púrpura) */
-.rank-tier-3 { 
-  background: linear-gradient(135deg, #8e24aa, #4a148c) !important; 
-  color: white !important;
-  border: 1px solid rgba(255, 0, 255, 0.4) !important;
-  box-shadow: 0 0 10px rgba(142, 36, 170, 0.3);
-}
-
-/* Tier 4: Élite (Dorado/Naranja) */
-.rank-tier-4 { 
-  background: linear-gradient(135deg, #ff9800, #e65100) !important; 
-  color: white !important;
-  border: 2px solid rgba(255, 255, 0, 0.5) !important;
-  box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);
-  font-weight: 900 !important;
-}
-
-/* Tier 5: Maestro (Carmesí/Oscuro) */
-.rank-tier-5 { 
-  background: linear-gradient(135deg, #c62828, #1a237e) !important; 
-  color: white !important;
-  border: 2px solid #ff1744 !important;
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
-  text-shadow: 0 0 5px rgba(0,0,0,0.5);
-}
-
-/* Tier 6: Legendario (Cósmico animado) */
-.rank-tier-6 { 
-  background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important;
-  background-size: 400% 400% !important;
-  animation: cosmic-bg 10s ease infinite !important;
-  color: white !important;
-  border: 2px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 0 25px rgba(213, 0, 249, 0.6), inset 0 0 10px rgba(255,255,255,0.3);
-  font-weight: 900 !important;
-}
+.rank-tier-2 { background: linear-gradient(135deg, #00acc1, #006064) !important; color: white !important; border: 1px solid rgba(0, 255, 255, 0.3) !important; }
+.rank-tier-3 { background: linear-gradient(135deg, #8e24aa, #4a148c) !important; color: white !important; border: 1px solid rgba(255, 0, 255, 0.4) !important; }
+.rank-tier-4 { background: linear-gradient(135deg, #ff9800, #e65100) !important; color: white !important; border: 2px solid rgba(255, 255, 0, 0.5) !important; }
+.rank-tier-5 { background: linear-gradient(135deg, #c62828, #1a237e) !important; color: white !important; border: 2px solid #ff1744 !important; }
+.rank-tier-6 { background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important; background-size: 400% 400% !important; animation: cosmic-bg 10s ease infinite !important; }
 
 @keyframes cosmic-bg {
   0% { background-position: 0% 50%; }
@@ -860,61 +743,18 @@ watch(historyDialog, async (isOpen) => {
   100% { background-position: 0% 50%; }
 }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-dot.online { background: #00e676; box-shadow: 0 0 10px #00e676; }
 
-.status-dot.online {
-    background: #00e676;
-    box-shadow: 0 0 10px #00e676;
-}
-
-.xp-bar {
-    filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.3));
-}
-
-/* ESTADÍSTICAS */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 20px;
 }
+.stat-item { display: flex; flex-direction: column; }
+.stat-label { font-family: 'Rajdhani', sans-serif; font-size: 0.65rem; font-weight: 800; color: rgba(255,255,255,0.4); letter-spacing: 2px; }
+.stat-value { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; }
 
-.card-narrow .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.card-narrow .stat-item:nth-child(3) {
-    grid-column: span 2;
-    text-align: center;
-}
-
-.card-narrow .user-name {
-    font-size: 2.25rem !important;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-label {
-    font-family: \'Rajdhani\', sans-serif;
-    font-size: 0.65rem;
-    font-weight: 800;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 2px;
-}
-
-.stat-value {
-    font-family: \'Orbitron\', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-}
-
-/* LOGROS */
 .achievement-slot {
     aspect-ratio: 1;
     background: rgba(255,255,255,0.02);
@@ -925,147 +765,72 @@ watch(historyDialog, async (isOpen) => {
     justify-content: center;
     position: relative;
     cursor: pointer;
-    transition: all 0.3s;
+}
+.achievement-slot:hover { background: rgba(0, 242, 255, 0.05); border-color: rgba(0, 242, 255, 0.2); transform: translateY(-5px); }
+
+/* HISTORY POPUP */
+.history-popup-card {
+    background: #0a0c10 !important;
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 24px !important;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
 }
 
-.achievement-slot:hover {
-    background: rgba(0, 242, 255, 0.05);
-    border-color: rgba(0, 242, 255, 0.2);
-    transform: translateY(-5px);
+.history-popup-content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
 }
 
-.slot-glow {
-    position: absolute;
-    width: 80%;
-    height: 80%;
-    background: radial-gradient(circle, rgba(0, 242, 255, 0.15) 0%, transparent 70%);
-    pointer-events: none;
+.history-popup-content::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* PANEL HISTORIAL */
-.history-panel {
-    flex: 1 1 400px;
-    max-width: 450px;
-    background: rgba(13, 15, 20, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 242, 255, 0.1);
-    border-left: none;
-    border-radius: 0 20px 20px 0;
-    display: flex;
-    flex-direction: column;
-    animation: slideIn 0.4s ease-out;
-    z-index: 1;
+.history-popup-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.2);
+    border-radius: 10px;
+}
+.history-popup-header { background: linear-gradient(to right, #0a0c10, #111827); }
+.top-game-card-popup {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255, 193, 7, 0.03); border: 1px solid rgba(255, 193, 7, 0.1);
+    padding: 10px 16px; border-radius: 10px; transition: all 0.3s;
+}
+.top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.01); }
+
+.recent-item-popup {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;
+}
+.recent-item-popup:hover { background: rgba(255,255,255,0.05); border-color: rgba(0, 242, 255, 0.2); }
+
+.border-right-sep {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-@keyframes slideIn {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+@media (max-width: 960px) {
+    .border-right-sep {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 24px;
+        margin-bottom: 24px;
+    }
 }
 
-.history-scroll-area {
-    overflow-y: auto;
-    max-height: 700px;
-}
-
-.top-game-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(255, 193, 7, 0.05);
-    border: 1px solid rgba(255, 193, 7, 0.1);
-    padding: 12px;
-    border-radius: 12px;
-    transition: all 0.2s;
-}
-
-.top-game-card:hover {
-    background: rgba(255, 193, 7, 0.1);
-    border-color: rgba(255, 193, 7, 0.3);
-}
-
+.game-score-small-popup { font-family: 'Orbitron', sans-serif; color: #00e5ff; font-size: 0.95rem; }
 .rank-num {
-    width: 24px;
-    height: 24px;
-    background: #ffc107;
-    color: #000;
-    font-size: 0.75rem;
-    font-weight: 900;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 28px; height: 28px; background: #ffc107; color: #000;
+    font-weight: 900; font-size: 0.8rem; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
 }
 
-.game-info {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+.empty-state-popup {
+    padding: 40px; text-align: center; background: rgba(255,255,255,0.01);
+    border: 2px dashed rgba(255,255,255,0.05); border-radius: 20px;
+    color: rgba(255,255,255,0.2);
 }
 
-.game-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: white;
-}
-
-.game-date {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.4);
-}
-
-.game-stats {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-}
-
-.game-score {
-    color: #ffc107;
-    font-weight: 800;
-    font-size: 1.1rem;
-}
-
-.game-xp {
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.3);
-}
-
-.recent-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 8px;
-}
-
-.recent-icon {
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 242, 255, 0.05);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.game-score-small {
-    font-family: \'Orbitron\', sans-serif;
-    color: #00e5ff;
-    font-weight: 700;
-}
-
-.empty-state {
-    padding: 20px;
-    text-align: center;
-    background: rgba(255,255,255,0.01);
-    border: 1px dashed rgba(255,255,255,0.1);
-    border-radius: 12px;
-    color: rgba(255,255,255,0.3);
-}
-
-/* DIÁLOGOS */
 .glass-popup {
     background: rgba(10, 12, 16, 0.95) !important;
     backdrop-filter: blur(20px);
@@ -1073,80 +838,23 @@ watch(historyDialog, async (isOpen) => {
     border-radius: 20px !important;
 }
 
-.achievement-list-item {
-    border-radius: 12px;
-    background: rgba(255,255,255,0.02) !important;
-}
+.achievement-list-item { border-radius: 12px; background: rgba(255,255,255,0.02) !important; margin-bottom: 8px; }
+.achievement-list-item.selected { border: 1px solid #00e5ff; background: rgba(0, 229, 255, 0.1) !important; }
 
-.achievement-list-item.selected {
-    border: 1px solid #00e5ff;
-    background: rgba(0, 229, 255, 0.1) !important;
-}
-
-.avatar-option {
-    cursor: pointer;
-    transition: transform 0.2s;
-    border: 2px solid transparent;
-}
-
-.avatar-option:hover {
-    transform: scale(1.1);
-}
-
-.active-avatar {
-    border-color: #00e5ff !important;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-}
-
-
-/* RESPONSIVIDAD */
-@media (max-width: 1200px) {
-    .profile-main-content.history-open {
-        flex-direction: column;
-        max-width: 600px;
-    }
-    
-    .history-panel {
-        border-radius: 0 0 20px 20px;
-        border-left: 1px solid rgba(0, 242, 255, 0.1);
-        border-top: none;
-    }
-    
-    .history-open .profile-card {
-        border-radius: 20px 20px 0 0 !important;
-        border-bottom: none;
-    }
-}
+.avatar-option { cursor: pointer; transition: transform 0.2s; }
+.avatar-option:hover { transform: scale(1.1); }
+.active-avatar { border: 2px solid #00e5ff !important; box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
 
 @media (max-width: 600px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .stat-item {
-        text-align: left !important;
-    }
-    
-    .user-name {
-        font-size: 2rem !important;
-    }
-    
-    .avatar-circle {
-        size: 120px !important;
-    }
-}
-.pulse-error {
-    animation: pulse-red 2s infinite;
+    .stats-grid { grid-template-columns: 1fr; }
+    .user-name { font-size: 2rem !important; }
 }
 
+.pulse-error { animation: pulse-red 2s infinite; }
 @keyframes pulse-red {
     0% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
-    50% { filter: drop-shadow(0 0 15px rgba(255, 82, 82, 0.5)); }
+    50% { filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.5)); }
     100% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
 }
-
-.tracking-tighter {
-    letter-spacing: -2px;
-}
+.tracking-tighter { letter-spacing: -1px; }
 </style>

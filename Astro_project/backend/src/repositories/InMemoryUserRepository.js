@@ -9,6 +9,23 @@ class InMemoryUserRepository extends UserRepository {
         this.users = new Map();
     }
 
+    get collection() {
+        return {
+            find: (query) => ({
+                toArray: async () => {
+                    let results = [...this.users.values()];
+                    if (query.parentId) {
+                        results = results.filter(u => u.parentId === query.parentId);
+                    }
+                    if (query.role) {
+                        results = results.filter(u => u.role === query.role);
+                    }
+                    return results;
+                }
+            })
+        };
+    }
+
     async findByUsername(username) {
         const data = this.users.get(username.toString());
         return data ? new User(data) : null;

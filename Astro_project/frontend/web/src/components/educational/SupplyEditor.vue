@@ -3,7 +3,7 @@
   <div class="supply-editor">
     <!-- SELECCIÓ DE JOC -->
     <div v-if="!selectedGame">
-      <h3 class="text-h4 font-weight-black text-white mb-6">SELECCIONA UN JOC</h3>
+      <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.supplyEditorPage.selectGame') }}</h3>
       <v-row>
         <v-col v-for="game in games" :key="game.id" cols="12" sm="6" lg="4">
           <v-card class="game-select-card pa-6 text-center" @click="selectGame(game)">
@@ -19,14 +19,14 @@
     <div v-else>
       <div class="d-flex align-center mb-6 ga-4 flex-wrap">
         <v-btn icon="mdi-arrow-left" variant="tonal" color="white" @click="selectedGame = null"></v-btn>
-        <h3 class="text-h4 font-weight-black text-white">EDITOR: {{ selectedGame.name }}</h3>
+        <h3 class="text-h4 font-weight-black text-white">{{ $t('educational.supplyEditorPage.editorTitle', { game: selectedGame.name }) }}</h3>
         
         <!-- Filtre per Profe (Només per a CENTRES) -->
         <v-select
           v-if="astroStore.role === 'CENTER'"
           v-model="teacherFilter"
           :items="teacherOptions"
-          label="Filtrar per Professor"
+          :label="$t('educational.supplyEditorPage.filterByTeacher')"
           density="compact"
           hide-details
           class="max-w-xs ml-4"
@@ -34,7 +34,7 @@
         ></v-select>
 
         <v-spacer></v-spacer>
-        <v-btn color="orange-accent-3" prepend-icon="mdi-plus" @click="openNewSetDialog">NOU EXERCICI</v-btn>
+        <v-btn color="orange-accent-3" prepend-icon="mdi-plus" @click="openNewSetDialog">{{ $t('educational.supplyEditorPage.newExercise') }}</v-btn>
       </div>
 
       <!-- LLISTA DE SETS EXISTENTS PER AQUEST JOC -->
@@ -43,12 +43,12 @@
         <v-col cols="12" sm="6" lg="4">
           <v-card class="supply-card default-card" :class="{ 'active-set': !hasActiveCustomSet }">
              <div class="d-flex justify-space-between align-start mb-2">
-              <h4 class="text-h6 font-weight-bold">Contingut per Defecte</h4>
-              <v-chip v-if="!hasActiveCustomSet" color="green" size="x-small">ACTIU</v-chip>
+              <h4 class="text-h6 font-weight-bold">{{ $t('educational.supplyEditorPage.defaultContent') }}</h4>
+              <v-chip v-if="!hasActiveCustomSet" color="green" size="x-small">{{ $t('educational.supplyEditorPage.active') }}</v-chip>
             </div>
-            <p class="text-caption text-grey mb-4">Usa les paraules prefab del sistema (Astronàutica, Tech, etc.).</p>
+            <p class="text-caption text-grey mb-4">{{ $t('educational.supplyEditorPage.defaultDesc') }}</p>
             <v-btn block size="small" :color="!hasActiveCustomSet ? 'grey' : 'cyan'" @click="activateDefault" :disabled="!hasActiveCustomSet">
-                {{ !hasActiveCustomSet ? 'JA ESTÀ ACTIU' : 'TORNAR A PREDETERMINAT' }}
+                {{ !hasActiveCustomSet ? $t('educational.supplyEditorPage.alreadyActive') : $t('educational.supplyEditorPage.backToDefault') }}
             </v-btn>
           </v-card>
         </v-col>
@@ -58,14 +58,14 @@
             <div class="d-flex justify-space-between align-start mb-2">
               <div>
                 <h4 class="text-h6 font-weight-bold">{{ set.name }}</h4>
-                <div class="text-caption text-cyan-accent-1" v-if="astroStore.role === 'CENTER'">Autor: {{ set.ownerId }}</div>
+                <div class="text-caption text-cyan-accent-1" v-if="astroStore.role === 'CENTER'">{{ $t('educational.supplyEditorPage.author', { name: set.ownerId }) }}</div>
               </div>
-              <v-chip v-if="set.active" color="green" size="x-small">ACTIU</v-chip>
+              <v-chip v-if="set.active" color="green" size="x-small">{{ $t('educational.supplyEditorPage.active') }}</v-chip>
             </div>
-            <p class="text-caption text-grey mb-4">{{ set.content.length }} paraules configurades.</p>
+            <p class="text-caption text-grey mb-4">{{ $t('educational.supplyEditorPage.wordsConfigured', { count: set.content.length }) }}</p>
             <div class="d-flex ga-2">
               <v-btn flex-grow-1 size="small" :color="set.active ? 'grey' : 'cyan'" @click="activateSet(set)">
-                {{ set.active ? 'DESACTIVAR' : 'ACTIVAR PER CLASE' }}
+                {{ set.active ? $t('educational.supplyEditorPage.deactivate') : $t('educational.supplyEditorPage.activateForClass') }}
               </v-btn>
               <v-btn icon="mdi-pencil" size="x-small" color="amber" variant="text" @click="editSet(set)"></v-btn>
               <v-btn icon="mdi-delete" size="x-small" color="red-lighten-1" variant="text" @click="deleteSet(set._id)"></v-btn>
@@ -80,9 +80,9 @@
       <v-card class="editor-fullscreen">
         <v-toolbar color="cyan-darken-4">
           <v-btn icon="mdi-close" @click="showDialog = false"></v-btn>
-          <v-toolbar-title>{{ editingId ? 'EDITAR' : 'NOU' }} EXERCICI: {{ selectedGame?.name }}</v-toolbar-title>
+          <v-toolbar-title>{{ editingId ? $t('educational.supplyEditorPage.editTitle', { game: selectedGame?.name }) : $t('educational.supplyEditorPage.newTitle', { game: selectedGame?.name }) }}</v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-btn variant="flat" color="orange-accent-3" @click="saveExercise" :disabled="!isExerciseValid">GUARDAR CANVIS</v-btn>
+          <v-btn variant="flat" color="orange-accent-3" @click="saveExercise" :disabled="!isExerciseValid">{{ $t('educational.supplyEditorPage.saveChanges') }}</v-btn>
         </v-toolbar>
 
         <v-container fluid class="pa-8 bg-editor fill-height align-start">
@@ -90,13 +90,13 @@
             <!-- FASE 1: BANC DE PARAULES -->
             <v-col cols="12" md="6" class="d-flex flex-column">
               <div class="d-flex align-center justify-space-between mb-4">
-                <h4 class="text-h5 font-weight-bold text-cyan-accent-2">1. BANC DE PARAULES</h4>
-                <v-btn size="small" color="cyan-accent-4" @click="addWordToBank">AFEGIR PARAULA</v-btn>
+                <h4 class="text-h5 font-weight-bold text-cyan-accent-2">{{ $t('educational.supplyEditorPage.wordBankTitle') }}</h4>
+                <v-btn size="small" color="cyan-accent-4" @click="addWordToBank">{{ $t('educational.supplyEditorPage.addWord') }}</v-btn>
               </div>
 
               <v-text-field
                 v-model="wordBankSearch"
-                placeholder="Cerca..."
+                :placeholder="$t('educational.supplyEditorPage.searchPlaceholder')"
                 density="compact"
                 variant="solo-filled"
                 prepend-inner-icon="mdi-magnify"
@@ -108,8 +108,8 @@
               <v-card class="bank-area flex-grow-1 pa-4 overflow-y-auto" variant="outlined">
                 <div v-for="(item, idx) in filteredWordBank" :key="idx" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
                    <v-icon icon="mdi-drag-variant" color="grey"></v-icon>
-                   <v-text-field v-model="item.word" label="Paraula" density="compact" hide-details variant="solo-filled"></v-text-field>
-                   <v-text-field v-model="item.hint" label="Pista" density="compact" hide-details variant="solo-filled"></v-text-field>
+                   <v-text-field v-model="item.word" :label="$t('educational.supplyEditorPage.wordLabel')" density="compact" hide-details variant="solo-filled"></v-text-field>
+                   <v-text-field v-model="item.hint" :label="$t('educational.supplyEditorPage.hintLabel')" density="compact" hide-details variant="solo-filled"></v-text-field>
                    <v-btn icon="mdi-delete" size="x-small" color="red" variant="text" @click="removeFromBank(item)"></v-btn>
                    <v-btn icon="mdi-arrow-right-bold" color="cyan" size="small" @click="moveToExercise(item)"></v-btn>
                 </div>
@@ -119,12 +119,12 @@
             <!-- FASE 2: CONSTRUCTOR D'EXERCICI -->
             <v-col cols="12" md="6" class="d-flex flex-column">
               <div class="mb-4">
-                <h4 class="text-h5 font-weight-bold text-orange-accent-2">2. CONFIGURACIÓ DE L'EXERCICI</h4>
-                <v-text-field v-model="exerciseName" label="Nom de l'exercici" variant="underlined" color="orange-accent-2" class="mt-2"></v-text-field>
+                <h4 class="text-h5 font-weight-bold text-orange-accent-2">{{ $t('educational.supplyEditorPage.configExerciseTitle') }}</h4>
+                <v-text-field v-model="exerciseName" :label="$t('educational.supplyEditorPage.exerciseNameLabel')" variant="underlined" color="orange-accent-2" class="mt-2"></v-text-field>
                 
                 <v-text-field
                   v-model="exerciseSearch"
-                  placeholder="Cercar en l'exercici..."
+                  :placeholder="$t('educational.supplyEditorPage.exerciseSearchPlaceholder')"
                   density="compact"
                   variant="solo-filled"
                   prepend-inner-icon="mdi-magnify"
@@ -138,7 +138,7 @@
                   v-if="astroStore.role === 'CENTER' && !editingId"
                   v-model="targetOwner"
                   :items="teacherOptions.filter(o => o.value !== 'all')"
-                  label="Assignar a Professor"
+                  :label="$t('educational.supplyEditorPage.assignToTeacher')"
                   variant="outlined"
                   class="mt-2"
                 ></v-select>
@@ -178,7 +178,7 @@
                     <v-btn icon="mdi-close" size="x-small" color="grey" variant="text" @click="removeFromExercise(element)"></v-btn>
                   </div>
                   <div v-if="filteredExerciseContent.length === 0" class="text-caption text-grey text-center py-4">
-                    Cap resultat per aquesta cerca.
+                    {{ $t('educational.supplyEditorPage.noResults') }}
                   </div>
                 </div>
               </v-card>
@@ -195,16 +195,18 @@ import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { useAstroStore } from '@/stores/astroStore'
 import { useGroupStore } from '@/stores/groupStore'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const astroStore = useAstroStore()
 const groupStore = useGroupStore()
 
-const games = [
-  { id: 'WordConstruction', name: 'Word Construction', icon: 'mdi-hammer-wrench', description: 'Construir paraules desordenades.' },
-  { id: 'SyllableQuest', name: 'Syllable Quest', icon: 'mdi-dots-horizontal', description: 'Dividir en síl·labes.' },
-  { id: 'SpelledRosco', name: 'Spelled Rosco', icon: 'mdi-alpha-a-circle', description: 'Endevinar per lletres.' },
-  { id: 'RhymeSquad', name: 'Rhyme Squad', icon: 'mdi-music-note', description: 'Trobar rimes.' }
-]
+const games = computed(() => [
+  { id: 'WordConstruction', name: t('educational.supplyEditorPage.games.WordConstruction.name'), icon: 'mdi-hammer-wrench', description: t('educational.supplyEditorPage.games.WordConstruction.desc') },
+  { id: 'SyllableQuest', name: t('educational.supplyEditorPage.games.SyllableQuest.name'), icon: 'mdi-dots-horizontal', description: t('educational.supplyEditorPage.games.SyllableQuest.desc') },
+  { id: 'SpelledRosco', name: t('educational.supplyEditorPage.games.SpelledRosco.name'), icon: 'mdi-alpha-a-circle', description: t('educational.supplyEditorPage.games.SpelledRosco.desc') },
+  { id: 'RhymeSquad', name: t('educational.supplyEditorPage.games.RhymeSquad.name'), icon: 'mdi-music-note', description: t('educational.supplyEditorPage.games.RhymeSquad.desc') }
+])
 
 const selectedGame = ref(null)
 const showDialog = ref(false)
@@ -244,7 +246,7 @@ const filteredExerciseContent = computed(() => {
 })
 
 const teacherOptions = computed(() => {
-  const options = [{ title: 'Tots els Profes', value: 'all' }]
+  const options = [{ title: t('educational.supplyEditorPage.allTeachers'), value: 'all' }]
   groupStore.members.forEach(m => {
     options.push({ title: m.username, value: m.username })
   })
@@ -330,7 +332,7 @@ const activateDefault = async () => {
 }
 
 const deleteSet = async (id) => {
-    if (confirm('Eliminar aquest exercici?')) {
+    if (confirm(t('educational.supplyEditorPage.deleteConfirm'))) {
         await groupStore.deleteSupplySet(id)
         refreshSupplies()
     }

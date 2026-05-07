@@ -8,7 +8,7 @@
             <div class="path-container">
                 <template v-for="(level, index) in levelSequence" :key="index">
                     
-                    <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
+                    <div v-if="level.phaseTitleKey" class="phase-divider-wrapper mt-2 mb-4 w-100">
                         <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
                             
                             <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
@@ -37,7 +37,7 @@
                             'pos-right': index % 2 !== 0
                         }">
 
-                            <div v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle" class="path-connector"
+                            <div v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitleKey" class="path-connector"
                                 :class="{ 'connector-flip': index % 2 !== 0 }">
                                 <svg viewBox="0 0 140 140">
                                     <path d="M 0 0 Q 20 70 140 140" class="connector-line"
@@ -77,7 +77,10 @@
 
                             <!-- Viñeta de Previsualización -->
                             <transition name="pop-in">
-                                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
+                                <div v-if="activePreviewIndex === index" 
+                                    class="level-preview-card" 
+                                    :class="index % 2 === 0 ? 'preview-left' : 'preview-right'"
+                                    @click.stop>
                                     <div class="preview-gif-container">
                                         <img :src="level.previewGif || '/previews/placeholder.gif'" alt="Preview" class="preview-gif">
                                         <div class="preview-overlay">
@@ -95,7 +98,7 @@
                                             @click.stop="startGame(index)"
                                         >
                                             <v-icon icon="mdi-play" start></v-icon>
-                                            {{ $t('singleplayer.start') || $t('singleplayer.continue') }}
+                                            {{ $t('singleplayer.start_simple') }}
                                         </v-btn>
                                     </div>
                                     <div class="preview-arrow"></div>
@@ -562,19 +565,39 @@ svg {
 
 .level-preview-card {
     position: absolute;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 220px;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(12px);
-    border: 2px solid rgba(0, 229, 255, 0.3);
-    border-radius: 16px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1);
+    top: 50%;
+    width: 240px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 20px;
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.7),
+        0 0 20px rgba(0, 229, 255, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
     z-index: 100;
     overflow: visible;
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.level-preview-card:hover {
+    border-color: rgba(0, 229, 255, 0.5);
+    box-shadow: 
+        0 30px 60px -12px rgba(0, 0, 0, 0.8),
+        0 0 30px rgba(0, 229, 255, 0.15),
+        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.preview-left {
+    right: 100px;
+    transform: translateY(-50%);
+}
+
+.preview-right {
+    left: 100px;
+    transform: translateY(-50%);
 }
 
 .preview-gif-container {
@@ -605,51 +628,67 @@ svg {
 
 .preview-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0, 229, 255, 0.2);
-    border: 1px solid rgba(0, 229, 255, 0.5);
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 229, 255, 0.15);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 229, 255, 0.4);
     color: #00e5ff;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 0.65rem;
-    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
 }
 
 .preview-content {
-    padding: 12px;
+    padding: 16px;
     text-align: center;
 }
 
 .preview-title {
-    font-size: 0.9rem;
-    font-weight: 800;
+    font-size: 1rem;
+    font-weight: 900;
     color: white;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.5px;
+    line-height: 1.2;
 }
 
 .play-btn-preview {
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+    text-transform: none;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(90deg, #00e5ff 0%, #00b8d4 100%) !important;
 }
 
 .play-btn-preview:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 229, 255, 0.3);
+    filter: brightness(1.1);
 }
 
 .preview-arrow {
     position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translateY(-50%);
     width: 0;
     height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid rgba(15, 23, 42, 0.85);
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+}
+
+.preview-left .preview-arrow {
+    right: -10px;
+    border-left: 10px solid rgba(15, 23, 42, 0.85);
+}
+
+.preview-right .preview-arrow {
+    left: -10px;
+    border-right: 10px solid rgba(15, 23, 42, 0.85);
 }
 
 /* ANIMACIÓN POP-IN */
@@ -664,11 +703,11 @@ svg {
 @keyframes pop-in-kf {
     0% {
         opacity: 0;
-        transform: translateX(-50%) scale(0.5) translateY(20px);
+        transform: translateY(-50%) scale(0.5);
     }
     100% {
         opacity: 1;
-        transform: translateX(-50%) scale(1) translateY(0);
+        transform: translateY(-50%) scale(1);
     }
 }
 </style>
