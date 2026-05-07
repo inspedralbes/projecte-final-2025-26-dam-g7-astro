@@ -213,6 +213,9 @@ class InventoryService {
         user.inventory = normalizedInventory;
         user.streakFreezes = this.getInventoryQuantity(normalizedInventory, 2);
         user.updateLastActivity();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        user.lastGame = yesterday; // Rescatamos la racha marcando actividad "ayer"
 
         await this.userRepo.update(user);
 
@@ -248,10 +251,11 @@ class InventoryService {
         }
 
         normalizedInventory = this.serializeInventory(normalizedInventory);
+        const duration = boosterField === 'sabotageGamesLeft' ? 1 : 3;
         const nextActiveBoosters = this.addBoosterDuration(
             this.normalizeActiveBoosters(user.activeBoosters),
             boosterField,
-            3
+            duration
         );
 
         user.inventory = normalizedInventory;

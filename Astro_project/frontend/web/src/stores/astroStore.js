@@ -17,9 +17,11 @@ export const useAstroStore = defineStore('astro', () => {
 
     const user = computed({ get: () => sessionStore.user, set: (value) => sessionStore.setUser(value) });
     const plan = computed({ get: () => sessionStore.plan, set: (value) => sessionStore.setPlan(value) });
+    const role = computed({ get: () => sessionStore.role, set: (value) => sessionStore.setRole(value) });
+    const parentId = computed({ get: () => sessionStore.parentId, set: (value) => sessionStore.setParentId(value) });
     const rank = computed({ get: () => sessionStore.rank, set: (value) => sessionStore.setRank(value) });
+    const selectedTitle = computed({ get: () => sessionStore.selectedTitle, set: (value) => sessionStore.setSelectedTitle(value) });
     const avatar = computed({ get: () => sessionStore.avatar, set: (value) => sessionStore.setAvatar(value) });
-    const mascot = computed({ get: () => sessionStore.mascot, set: (value) => sessionStore.setMascot(value) });
     const token = computed({ get: () => sessionStore.token, set: (value) => sessionStore.setToken(value) });
 
     const coins = computed({ get: () => progressStore.coins, set: (value) => progressStore.setCoins(value) });
@@ -98,7 +100,7 @@ export const useAstroStore = defineStore('astro', () => {
             if (result.stats.rank) sessionStore.setRank(result.stats.rank);
             if (result.stats.plan) sessionStore.setPlan(result.stats.plan);
             if (result.stats.avatar) sessionStore.setAvatar(result.stats.avatar);
-            if (result.stats.mascot) sessionStore.setMascot(result.stats.mascot);
+            if (result.stats.selectedTitle !== undefined) sessionStore.setSelectedTitle(result.stats.selectedTitle);
 
             // Sincronizar también listas sociales
             socialStore.setFriends(result.stats.friends || []);
@@ -182,7 +184,7 @@ export const useAstroStore = defineStore('astro', () => {
     }
 
     function updateAvatar(seed) { sessionStore.updateAvatar(seed); }
-    function updateMascot(mascotFile) { sessionStore.updateMascot(mascotFile); }
+    function updateSelectedTitle(title) { sessionStore.updateSelectedTitle(title); }
     async function updateAchievements(achievements) { return achievementsStore.updateAchievements(achievements); }
     async function updatePlan(planType) { return sessionStore.updatePlan(planType); }
 
@@ -203,8 +205,8 @@ export const useAstroStore = defineStore('astro', () => {
 
 
     return {
-        user, plan, rank, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
-        inventory, selectedAchievements, unlockedAchievements, avatar, mascot, token, lastActivity, lastGame,
+        user, plan, role, parentId, rank, selectedTitle, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
+        inventory, selectedAchievements, unlockedAchievements, avatar, token, lastActivity, lastGame,
         dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
         
         friendRequests, // EXPORTADO
@@ -218,7 +220,7 @@ export const useAstroStore = defineStore('astro', () => {
         registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
         buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
         addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, // EXPORTADAS
-        connectWebSocket, logout, updateAvatar, updateMascot, updateAchievements,
+        connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
         updatePlan, useStreakFreeze, setCoins, setInventory
     };
 });

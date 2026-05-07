@@ -17,7 +17,7 @@ class AuthService {
         this.normalizeActiveBoosters = normalizeActiveBoosters;
     }
 
-    async register(username, password, rank) {
+    async register(username, password, rank, role = null, plan = 'INDIVIDUAL_FREE') {
         if (!username || username.trim() === '') {
             throw new Error('El nombre de usuario no puede estar vacío.');
         }
@@ -29,7 +29,9 @@ class AuthService {
 
         const newUser = new User({
             user: username,
-            rank: rank || 'Cadete de Vuelo'
+            rank: rank || 'Cadete de Vuelo',
+            role,
+            plan
         });
         
         // Preparem el document per a MongoDB assegurant els noms de camps correctes
@@ -37,6 +39,7 @@ class AuthService {
             user: newUser.username,
             pass: password,
             plan: newUser.plan,
+            role: newUser.role,
             rank: newUser.rank,
             level: newUser.level,
             xp: newUser.xp,

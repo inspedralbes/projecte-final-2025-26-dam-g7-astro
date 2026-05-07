@@ -9,15 +9,23 @@
 
     <!-- Chat drawer global: persiste entre rutas -->
     <ChatDrawer />
+
+    <!-- Popup de desafíos globales -->
+    <ChallengePopup />
+
+    <!-- Diálogo de pérdida de racha -->
+    <StreakLossDialog />
   </v-app>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import LeftSidebar from '@/components/layout/LeftSidebar.vue'
 import RightSidebar from '@/components/layout/RightSidebar.vue'
 import ChatDrawer from '@/components/layout/ChatDrawer.vue'
+import ChallengePopup from '@/components/multiplayer/ChallengePopup.vue'
+import StreakLossDialog from '@/components/layout/StreakLossDialog.vue'
 import { useMultiplayerStore } from '@/stores/multiplayerStore'
 import { useSessionStore } from '@/stores/sessionStore'
 
@@ -25,10 +33,48 @@ const route = useRoute()
 const sessionStore = useSessionStore()
 const multiplayerStore = useMultiplayerStore()
 
-// Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
+// Reconectar WS si el usuario ya tiene sesión activa o acaba de iniciarla
+watch(() => sessionStore.user, (newUser) => {
+  if (newUser && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+    console.log(`🔌 Detectada sesión para ${newUser}, conectando WS...`);
+    multiplayerStore.connect();
+  }
+}, { immediate: true });
+
+// Control de inactividad
+const handleActivity = () => {
+  if (sessionStore.token) {
+    sessionStore.updateLastActivity();
+  }
+}
+
 onMounted(() => {
-  if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
-    multiplayerStore.connect()
+  // Comprobar si la sesión ha expirado al cargar
+  const expired = sessionStore.checkSessionExpiration();
+  if (expired) {
+    window.location.href = '/login';
+    return;
+  }
+
+  // Escuchar eventos de usuario para mantener la sesión viva
+  window.addEventListener('mousemove', handleActivity);
+  window.addEventListener('keydown', handleActivity);
+  window.addEventListener('click', handleActivity);
+  window.addEventListener('scroll', handleActivity);
+
+  // Comprobación periódica cada minuto
+  const interval = setInterval(() => {
+    if (sessionStore.checkSessionExpiration()) {
+      window.location.href = '/login';
+    }
+  }, 60000);
+
+  return () => {
+    window.removeEventListener('mousemove', handleActivity);
+    window.removeEventListener('keydown', handleActivity);
+    window.removeEventListener('click', handleActivity);
+    window.removeEventListener('scroll', handleActivity);
+    clearInterval(interval);
   }
 })
 

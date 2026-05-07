@@ -21,6 +21,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ astroStore.user }}</div>
+                <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ astroStore.selectedTitle.replace('Título: ', '') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
               </div>
             </div>
@@ -50,6 +51,7 @@
               </v-avatar>
               <div class="hud-text">
                 <div class="hud-name">{{ opponentName }}</div>
+                <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ opponentTitle.replace('Título: ', '') }}</div>
                 <div class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
               </div>
             </div>
@@ -131,10 +133,10 @@
             </div>
 
             <v-row class="mb-4">
-              <v-col v-for="player in multiplayerStore.room.players" :key="player" cols="12" sm="6" md="4" lg="3">
+              <v-col v-for="player in multiplayerStore.room.players" :key="player.username || player" cols="12" sm="6" md="4" lg="3">
                 <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
                   <v-badge
-                    v-if="player === multiplayerStore.room.host"
+                    v-if="(player.username || player) === multiplayerStore.room.host"
                     icon="mdi-crown"
                     color="amber-accent-2"
                     location="top right"
@@ -143,15 +145,21 @@
                     offset-y="10"
                   >
                     <v-avatar size="80" class="mb-3 player-glow-avatar">
-                      <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
+                      <v-img :src="getPlayerAvatar(player.username || player)" alt="Avatar" cover></v-img>
                     </v-avatar>
                   </v-badge>
                   <v-avatar v-else size="80" class="mb-3 player-glow-avatar">
-                    <v-img :src="getPlayerAvatar(player)" alt="Avatar" cover></v-img>
+                    <v-img :src="getPlayerAvatar(player.username || player)" alt="Avatar" cover></v-img>
                   </v-avatar>
 
-                  <div class="text-h6 font-weight-bold text-white mb-1">{{ player }}</div>
-                  <v-chip v-if="player === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
+                  <div class="text-h6 font-weight-bold text-white mb-1">{{ player.username || player }}</div>
+                  
+                  <!-- Mostrar nivel y rango si existen (objetos enriquecidos) -->
+                  <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
+                    Nivel {{ player.level }} · {{ player.rank }}
+                  </div>
+
+                  <v-chip v-if="(player.username || player) === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
                     {{ $t('multiplayerLobby.commander') }}
                   </v-chip>
                   <v-chip v-else color="cyan-accent-1" size="x-small" variant="tonal" class="font-weight-bold px-3">
@@ -417,7 +425,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players.includes(explorer.user) || (multiplayerStore.room?.players.length >= multiplayerStore.room?.maxPlayers)"
+                    :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -443,7 +451,7 @@
                     variant="text" 
                     icon="mdi-bullhorn-outline" 
                     size="small"
-                    :disabled="multiplayerStore.room?.players.includes(explorer.user) || (multiplayerStore.room?.players.length >= multiplayerStore.room?.maxPlayers)"
+                    :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
                     @click="multiplayerStore.inviteFriend(explorer.user)"
                   ></v-btn>
                 </template>
@@ -629,7 +637,7 @@ const friendsList = computed(() => {
   if (!astroStore.explorers) return [];
   return astroStore.explorers.filter(e => 
     e.user !== astroStore.user && 
-    astroStore.friends.includes(e.user)
+    astroStore.friends?.includes(e.user)
   );
 });
 
@@ -637,13 +645,21 @@ const otherExplorersList = computed(() => {
   if (!astroStore.explorers) return [];
   return astroStore.explorers.filter(e => 
     e.user !== astroStore.user && 
-    !astroStore.friends.includes(e.user)
+    !astroStore.friends?.includes(e.user)
   );
 });
 
 const opponentName = computed(() => {
-  if (!multiplayerStore.room) return t('multiplayerLobby.opponent');
-  return multiplayerStore.room.players.find(p => p !== astroStore.user) || t('multiplayerLobby.opponent');
+  if (!multiplayerStore.room) return 'Oponente';
+  const op = multiplayerStore.room.players.find(p => (p.username || p) !== astroStore.user);
+  return op?.username || op || 'Oponente';
+});
+
+const opponentTitle = computed(() => {
+  const opName = opponentName.value;
+  if (opName === 'Oponente') return null;
+  const explorer = astroStore.explorers?.find(e => e.user === opName);
+  return explorer?.selectedTitle || null;
 });
 
 // Sincronizar rondas si el host las cambia
@@ -655,19 +671,22 @@ watch(pointsToWin, (newVal) => {
 
 // Helpers para Avatares
 const getAvatarUrl = (avatarName, username) => {
+  // 0. Si el username es un objeto por error, intentamos sacar el nombre
+  const safeUsername = (username && typeof username === 'object') ? (username.name || username.user || 'Astronauta') : username;
+  
   // 1. Si tenemos un nombre de archivo de astronauta válido
-  if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
+  if (avatarName && typeof avatarName === 'string' && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
     return `/${avatarName.trim()}`;
   }
   
   // 2. Si es un seed o nombre, pero parece un astronauta (por si acaso se guardó mal)
-  if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
+  if (avatarName && typeof avatarName === 'string' && avatarName.toLowerCase().startsWith('astronauta')) {
     return `/${avatarName.trim()}`;
   }
 
   // 3. Si no hay nada, pero tenemos el username, usamos DiceBear como fallback robótico
-  if (username) {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+  if (safeUsername && safeUsername !== '[object Object]') {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(safeUsername)}`;
   }
 
   // 4. Fallback final absoluto (Astronauta blanco)

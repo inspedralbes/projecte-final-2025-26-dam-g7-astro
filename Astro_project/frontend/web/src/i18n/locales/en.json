@@ -13,7 +13,8 @@
         "inventory": "Inventory",
         "achievements": "Achievements",
         "friends": "Friends",
-        "profile": "Profile"
+        "profile": "Profile",
+        "educational": "Educational Management"
     },
     "home": {
         "login": "Login",
@@ -65,7 +66,6 @@
         "categories": {
             "all": "All",
             "skin": "Skins",
-            "pets": "Pets",
             "collectible": "Collectibles",
             "trails": "Trails",
             "items": "Items"
@@ -115,7 +115,6 @@
         "selectAchievement": "Select Achievement",
         "removeAchievement": "Remove Achievement",
         "astronautSuit": "Astronaut Suit",
-        "missionCompanion": "Mission Companion",
         "none": "None",
         "loginRequired": "You must log in to save your achievements.",
         "mission_1": "Liftoff",
@@ -507,10 +506,6 @@
             "name": "Cyberpunk Skin",
             "desc": "Robotic appearance."
         },
-        "dron": {
-            "name": "Drone Pet",
-            "desc": "A faithful companion."
-        },
         "neon": {
             "name": "Neon Trail",
             "desc": "Visual effects."
@@ -542,7 +537,6 @@
         "invalidGame": "Invalid game name.",
         "invalidItem": "Invalid item."
     },
-
     "missionsList": {
         "daily": {
             "games": "Play {goal} games",
@@ -554,8 +548,9 @@
         "weekly": {
             "games": "Game Master ({goal} games)",
             "coins": "Gold Digger ({goal} coins)",
-            "level": "Lunar Ascension (Go up {goal} levels)",
-            "streak": "Space Survivor ({goal} day streak)"
+            "xp": "Lunar Ascension (Get {goal} XP)",
+            "streak": "Space Survivor ({goal} day streak)",
+            "item": "Object Interaction ({goal} items)"
         }
     },
     "achievementsList": {

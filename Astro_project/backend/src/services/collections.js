@@ -4,7 +4,8 @@ function createGetCollections(getDB) {
         return {
             users: db.collection('users'),
             partides: db.collection('partides'),
-            rooms: db.collection('rooms')
+            rooms: db.collection('rooms'),
+            supplies: db.collection('supplies')
         };
     };
 }

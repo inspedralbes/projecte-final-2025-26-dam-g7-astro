@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAstroStore } from '@/stores/astroStore'
 import LanguageSelector from '@/components/layout/LanguageSelector.vue'
@@ -66,14 +66,22 @@ const handleLogout = () => {
     router.push('/')
 }
 
-const menuItems = ref([
-    { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
-    { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
-    { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
-    { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
-    { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
-    { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
-])
+const menuItems = computed(() => {
+    const items = [
+        { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
+        { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
+        { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
+        { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
+        { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
+        { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
+    ]
+
+    if (store.role === 'TEACHER' || store.role === 'CENTER') {
+        items.push({ titleKey: 'sidebar.educational', icon: 'mdi-school', to: '/educational' })
+    }
+
+    return items
+})
 </script>
 
 <style scoped>

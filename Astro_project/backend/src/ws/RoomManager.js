@@ -20,10 +20,11 @@ class RoomManager {
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
     }
 
-    init(getCollections, wss) {
-        this.getCollections = getCollections;
+    init(roomRepository, userRepository, wss) {
+        this.roomRepo = roomRepository;
+        this.userRepo = userRepository;
         this.wss = wss;
-        console.log("🛠️ RoomManager inicializado con acceso a DB y WSS");
+        console.log("🛠️ RoomManager inicializado con Repositorios y WSS");
     }
 
     addSession(user, ws) {
@@ -81,10 +82,9 @@ class RoomManager {
     }
 
     async syncGlobalRooms() {
-        if (!this.getCollections) return;
+        if (!this.roomRepo) return;
         try {
-            const { rooms } = this.getCollections();
-            const availableRooms = await rooms.find({ status: 'LOBBY', isPublic: true }).toArray();
+            const availableRooms = await this.roomRepo.findPublicLobbies();
             this.broadcastGlobal({
                 type: 'GLOBAL_ROOMS_UPDATE',
                 rooms: availableRooms
@@ -122,10 +122,9 @@ class RoomManager {
             gameConfig: roomData.gameConfig
         });
 
-        if (this.getCollections) {
+        if (this.roomRepo) {
             try {
-                const { rooms } = this.getCollections();
-                await rooms.insertOne(roomData);
+                await this.roomRepo.save(roomData);
                 console.log(`💾 Sala ${roomId} persistida en DB (Public: ${isPublic})`);
                 await this.syncGlobalRooms();
             } catch (error) {
@@ -150,25 +149,19 @@ class RoomManager {
             room.gameConfig.scores[user] = 0;
         }
 
-        if (this.getCollections) {
+        if (this.roomRepo) {
             try {
-                const { rooms } = this.getCollections();
-                await rooms.updateOne({ id: roomId }, { $addToSet: { players: user } });
+                await this.roomRepo.update({ id: roomId, players: Array.from(room.players) });
                 await this.syncGlobalRooms();
             } catch (error) {
                 console.error("❌ Error actualizando sala en DB:", error);
             }
         }
 
+        const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
             type: 'ROOM_UPDATE',
-            room: {
-                id: roomId,
-                host: room.host,
-                players: Array.from(room.players),
-                maxPlayers: room.maxPlayers,
-                status: room.status
-            }
+            room: roomUpdate
         });
         return { success: true, room };
     }
@@ -182,10 +175,9 @@ class RoomManager {
         if (room.players.size === 0) {
             console.log(`🧹 Sala ${roomId} vacía. Eliminando...`);
             this.rooms.delete(roomId);
-            if (this.getCollections) {
+            if (this.roomRepo) {
                 try {
-                    const { rooms } = this.getCollections();
-                    await rooms.deleteOne({ id: roomId });
+                    await this.roomRepo.deleteById(roomId);
                     console.log(`✅ Sala ${roomId} eliminada de DB`);
                     await this.syncGlobalRooms();
                 } catch (error) {
@@ -200,16 +192,13 @@ class RoomManager {
                 console.log(`👑 Host migrado en sala ${roomId}: ${user} -> ${newHost}`);
             }
 
-            if (this.getCollections) {
+            if (this.roomRepo) {
                 try {
-                    const { rooms } = this.getCollections();
-                    await rooms.updateOne(
-                        { id: roomId },
-                        {
-                            $pull: { players: user },
-                            $set: { host: room.host }
-                        }
-                    );
+                    await this.roomRepo.update({
+                        id: roomId,
+                        players: Array.from(room.players),
+                        host: room.host
+                    });
                     await this.syncGlobalRooms();
                 } catch (error) {
                     console.error("❌ Error actualizando sala en DB al salir:", error);
@@ -217,26 +206,44 @@ class RoomManager {
             }
 
             // Notificar a los que quedan en la sala del cambio
+            const roomUpdate = await this.getRoom(roomId);
             this.broadcastToRoom(roomId, {
                 type: 'ROOM_UPDATE',
-                room: {
-                    id: roomId,
-                    host: room.host,
-                    players: Array.from(room.players),
-                    maxPlayers: room.maxPlayers,
-                    status: room.status
-                }
+                room: roomUpdate
             });
         }
     }
 
-    getRoom(roomId) {
+    async getRoom(roomId) {
         const room = this.rooms.get(roomId);
         if (!room) return null;
+
+        // Enriquecer jugadores con datos de perfil si el repositorio de usuarios está disponible
+        const playerDetails = [];
+        for (const username of room.players) {
+            let details = { username };
+            if (this.userRepo) {
+                try {
+                    const user = await this.userRepo.findByUsername(username);
+                    if (user) {
+                        details = {
+                            username: user.username,
+                            level: user.level || 1,
+                            rank: user.rank || 'Cadete',
+                            avatar: user.avatar || 'default'
+                        };
+                    }
+                } catch (e) {
+                    console.error(`❌ Error enriqueciendo datos para ${username}:`, e);
+                }
+            }
+            playerDetails.push(details);
+        }
+
         return {
             id: roomId,
             host: room.host,
-            players: Array.from(room.players),
+            players: playerDetails,
             maxPlayers: room.maxPlayers,
             status: room.status,
             gameConfig: room.gameConfig
@@ -248,9 +255,10 @@ class RoomManager {
         if (!room) return;
         room.gameConfig = { ...room.gameConfig, ...config };
 
+        const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
             type: 'ROOM_UPDATE',
-            room: this.getRoom(roomId)
+            room: roomUpdate
         });
     }
 
@@ -273,9 +281,10 @@ class RoomManager {
         const firstGame = this.pickNextGame(roomId);
         room.gameConfig.currentGame = firstGame;
 
+        const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
             type: 'MATCH_STARTING',
-            room: this.getRoom(roomId)
+            room: roomUpdate
         });
 
         return { success: true };
@@ -450,11 +459,12 @@ class RoomManager {
             }
 
             room.status = 'GAME_OVER';
-            setTimeout(() => {
+            setTimeout(async () => {
+                const roomUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, {
                     type: 'MATCH_FINISHED',
                     winner: matchWinner,
-                    room: this.getRoom(roomId)
+                    room: roomUpdate
                 });
             }, 3000);
 
@@ -466,10 +476,9 @@ class RoomManager {
                     this.rooms.delete(roomId);
                     this.roundGameScores.delete(roomId);
                     this.roundFinishedPlayers.delete(roomId);
-                    if (this.getCollections) {
+                    if (this.roomRepo) {
                         try {
-                            const { rooms } = this.getCollections();
-                            await rooms.deleteOne({ id: roomId });
+                            await this.roomRepo.deleteById(roomId);
                             await this.syncGlobalRooms();
                         } catch (e) {
                             console.error('❌ Error auto-cleanup sala:', e);
@@ -483,12 +492,13 @@ class RoomManager {
             const nextGame = this.pickNextGame(roomId);
             room.gameConfig.currentGame = nextGame;
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 room.status = 'ROULETTE';
+                const roomUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, {
                     type: 'ROUND_FINISHED',
                     winner,
-                    room: this.getRoom(roomId)
+                    room: roomUpdate
                 });
             }, 3000);
         }
@@ -548,9 +558,10 @@ class RoomManager {
             this.roundFinishedPlayers.delete(roomId);
             this.roundGameScores.delete(roomId);
 
+            const roomUpdate = await this.getRoom(roomId);
             this.broadcastToRoom(roomId, {
                 type: 'ROOM_UPDATE',
-                room: this.getRoom(roomId)
+                room: roomUpdate
             });
         }
     }

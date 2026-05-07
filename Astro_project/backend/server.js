@@ -18,6 +18,8 @@ const AchievementService = require('./src/services/achievementService');
 const SocialService = require('./src/services/socialService');
 const MissionService = require('./src/services/missionService');
 const UserService = require('./src/services/userService');
+const GroupService = require('./src/services/groupService');
+const SupplyService = require('./src/services/supplyService');
 const MultiplayerService = require('./src/services/multiplayerService');
 const { normalizeAchievementIds } = require('./src/utils/achievements');
 const boosterUtils = require('./src/utils/boosters');
@@ -28,6 +30,8 @@ const { registerAuthRoutes } = require('./src/routes/authRoutes');
 const { registerShopRoutes } = require('./src/routes/shopRoutes');
 const { registerAchievementRoutes } = require('./src/routes/achievementRoutes');
 const { registerPlanRoutes } = require('./src/routes/planRoutes');
+const { registerGroupRoutes } = require('./src/routes/groupRoutes');
+const { registerSupplyRoutes } = require('./src/routes/supplyRoutes');
 const { registerInventoryRoutes } = require('./src/routes/inventoryRoutes');
 const { registerMissionRoutes } = require('./src/routes/missionRoutes');
 const { registerFriendRoutes } = require('./src/routes/friendRoutes');
@@ -54,16 +58,8 @@ const userRepository = new MongoUserRepository(() => getCollections().users);
 const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
 const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
 
-roomManager.init(getCollections, wss);
+roomManager.init(roomRepository, userRepository, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
-
-const getUserStats = createGetUserStats({
-    userRepository,
-    partidaRepository,
-    normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
-    getInventoryQuantity: inventoryService.getInventoryQuantity,
-    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
-});
 
 const updateStreak = createUpdateStreak({
     userRepository,
@@ -119,9 +115,29 @@ const userServiceInstance = new UserService({
     userRepository
 });
 
+const groupService = new GroupService({
+    userRepository
+});
+
+const supplyService = new SupplyService({
+    getCollection: () => getCollections().supplies
+});
+
 const multiplayerService = new MultiplayerService({
     roomRepository
 });
+
+// We need to access the StatsService instance. It's currently hidden inside createGetUserStats.
+// Let's instantiate it properly.
+const statsServiceInstance = new (require('./src/services/statsService').StatsService)({
+    userRepository,
+    partidaRepository,
+    normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
+});
+
+const getUserStats = (username) => statsServiceInstance.getUserStats(username);
 
 registerStatsRoutes(app, { getUserStats });
 registerGameRoutes(app, { gameService });
@@ -134,6 +150,8 @@ registerAuthRoutes(app, {
 registerShopRoutes(app, { shopService });
 registerAchievementRoutes(app, { achievementService });
 registerPlanRoutes(app, { userService: userServiceInstance });
+registerGroupRoutes(app, { groupService, statsService: statsServiceInstance });
+registerSupplyRoutes(app, { supplyService, userRepository });
 registerInventoryRoutes(app, { inventoryService: inventoryServiceInstance });
 
 registerMissionRoutes(app, { missionService });
@@ -179,6 +197,22 @@ app.put('/api/user/avatar', async (req, res) => {
         res.json({ success: true, avatar });
     } catch (error) {
         console.error("❌ Error al actualizar avatar en DB:", error);
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
+    }
+});
+
+app.put('/api/user/title', async (req, res) => {
+    const { user, title } = req.body;
+    if (!user) {
+        return res.status(400).json({ message: 'Usuario requerido.' });
+    }
+
+    try {
+        await userServiceInstance.updateSelectedTitle(user, title);
+        console.log(`👤 Título actualizado en DB para ${user}: ${title}`);
+        res.json({ success: true, title });
+    } catch (error) {
+        console.error("❌ Error al actualizar título en DB:", error);
         res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
     }
 });

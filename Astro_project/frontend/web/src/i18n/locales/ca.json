@@ -13,7 +13,8 @@
         "inventory": "Inventari",
         "achievements": "Assoliments",
         "friends": "Amics",
-        "profile": "Perfil"
+        "profile": "Perfil",
+        "educational": "Gestió Educativa"
     },
     "home": {
         "login": "Iniciar sessió",
@@ -65,7 +66,6 @@
         "categories": {
             "all": "Tot",
             "skin": "Aparences",
-            "pets": "Companys",
             "collectible": "Col·leccionables",
             "trails": "Rastres",
             "items": "Objectes"
@@ -506,10 +506,6 @@
             "name": "Skin Cyberpunk",
             "desc": "Aspecte robòtic."
         },
-        "dron": {
-            "name": "Mascota Dron",
-            "desc": "Un company fidel."
-        },
         "neon": {
             "name": "Rastre de Neó",
             "desc": "Efectes visuals."
@@ -552,8 +548,9 @@
         "weekly": {
             "games": "Mestre de Jocs ({goal} partides)",
             "coins": "Buscador d'Or ({goal} monedes)",
-            "level": "Ascensió Lunar (Puja {goal} nivells)",
-            "streak": "Supervivient Espacial (Ratxa {goal} dies)"
+            "xp": "Ascensió Lunar (Guanya {goal} XP)",
+            "streak": "Supervivient Espacial (Ratxa {goal} dies)",
+            "item": "Interacció d'Objectes ({goal} objectes)"
         }
     },
     "achievementsList": {

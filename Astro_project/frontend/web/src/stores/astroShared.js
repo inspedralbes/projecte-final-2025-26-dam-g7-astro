@@ -1,8 +1,8 @@
 const hasWindow = typeof window !== 'undefined';
 
-function getStorage() {
+function getStorage(persistent = false) {
     if (!hasWindow) return null;
-    return window.localStorage;
+    return persistent ? window.localStorage : window.sessionStorage;
 }
 
 export const STORAGE_KEYS = Object.freeze({
@@ -17,25 +17,29 @@ export const STORAGE_KEYS = Object.freeze({
     selectedAchievements: 'astro_selected_achievements',
     unlockedAchievements: 'astro_unlocked_achievements',
     avatar: 'astro_avatar',
-    mascot: 'astro_mascot',
     token: 'astro_token',
+    role: 'astro_role',
+    parentId: 'astro_parent_id',
     lastActivity: 'astro_last_activity',
     lastGame: 'astro_last_game'
 });
 
-export function storageGetItem(key) {
-    const storage = getStorage();
+export const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos en milisegundos
+
+
+export function storageGetItem(key, persistent = false) {
+    const storage = getStorage(persistent);
     return storage ? storage.getItem(key) : null;
 }
 
-export function storageSetItem(key, value) {
-    const storage = getStorage();
+export function storageSetItem(key, value, persistent = false) {
+    const storage = getStorage(persistent);
     if (!storage) return;
     storage.setItem(key, String(value));
 }
 
-export function storageRemoveItem(key) {
-    const storage = getStorage();
+export function storageRemoveItem(key, persistent = false) {
+    const storage = getStorage(persistent);
     if (!storage) return;
     storage.removeItem(key);
 }
@@ -68,8 +72,8 @@ export function readStoredObject(key, fallback = {}) {
     }
 }
 
-export function writeStoredJson(key, value) {
-    storageSetItem(key, JSON.stringify(value));
+export function writeStoredJson(key, value, persistent = false) {
+    storageSetItem(key, JSON.stringify(value), persistent);
 }
 
 export function normalizeSelectedAchievements(values = []) {
@@ -101,7 +105,8 @@ export function normalizeActiveBoosters(values = {}) {
 
     return {
         doubleCoinsGamesLeft: toNonNegativeInteger(source.doubleCoinsGamesLeft),
-        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft)
+        doubleScoreGamesLeft: toNonNegativeInteger(source.doubleScoreGamesLeft),
+        sabotageGamesLeft: toNonNegativeInteger(source.sabotageGamesLeft)
     };
 }
 
@@ -144,6 +149,15 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'items',
         maxQuantity: 99
     },
+    5: {
+        id: 5,
+        name: 'Rayo Saboteador',
+        desc: 'En multijugador, tus aciertos restan el doble de tiempo al rival.',
+        icon: 'mdi-lightning-bolt',
+        color: 'deep-purple-accent-2',
+        cat: 'items',
+        maxQuantity: 99
+    },
     101: {
         id: 101,
         name: 'Pin Comandante',
@@ -162,15 +176,6 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'skin',
         maxQuantity: 1
     },
-    103: {
-        id: 103,
-        name: 'Mascota Dron',
-        desc: 'Un compañero fiel.',
-        icon: 'mdi-quadcopter',
-        color: 'green-accent-3',
-        cat: 'pets',
-        maxQuantity: 1
-    },
     104: {
         id: 104,
         name: 'Rastro de Neón',
@@ -180,10 +185,37 @@ export const INVENTORY_CATALOG = Object.freeze({
         cat: 'trails',
         maxQuantity: 1
     },
+    105: {
+        id: 105,
+        name: 'Título: El Imparable',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'red-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
+    106: {
+        id: 106,
+        name: 'Título: Leyenda Galáctica',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'cyan-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
+    107: {
+        id: 107,
+        name: 'Título: Destructor de Asteroides',
+        desc: 'Etiqueta de texto permanente.',
+        icon: 'mdi-format-title',
+        color: 'amber-accent-3',
+        cat: 'title',
+        maxQuantity: 1
+    },
     201: {
         id: 201,
         name: 'Pin Raro',
-        desc: 'Insignia rara obtenida en la ruleta.',
+        desc: 'Insignia rara de edición limitada.',
         icon: 'mdi-decagram',
         color: 'purple-accent-2',
         cat: 'collectible',
@@ -192,7 +224,7 @@ export const INVENTORY_CATALOG = Object.freeze({
     202: {
         id: 202,
         name: 'Avatar Ninja',
-        desc: 'Aspecto ninja obtenido en la ruleta.',
+        desc: 'Aspecto ninja exclusivo.',
         icon: 'mdi-ninja',
         color: 'blue-accent-2',
         cat: 'skin',
@@ -208,7 +240,6 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Doble Puntuación': 4,
     'Pin Comandante': 101,
     'Skin Cyberpunk': 102,
-    'Mascota Dron': 103,
     'Rastro de Neón': 104,
     'Pin Raro': 201,
     'Avatar Ninja': 202

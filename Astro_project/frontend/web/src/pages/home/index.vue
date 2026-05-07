@@ -2,17 +2,21 @@
   <v-container fluid class="pa-0 main-container">
     <!-- Navbar (Simplified & Professional) -->
     <v-app-bar flat color="transparent" class="px-8 mt-4">
-        <div class="d-flex align-center">
-            <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
-        </div>
+      <v-app-bar-title>
+        <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
+      </v-app-bar-title>
+      
       <v-spacer></v-spacer>
-      <LanguageSelector class="mr-4" />
-      <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
-        {{ $t('home.login') }}
-      </v-btn>
-      <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
-        {{ $t('home.register') }}
-      </v-btn>
+
+      <div class="d-flex align-center">
+        <LanguageSelector class="mr-4" />
+        <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
+          {{ $t('home.login') }}
+        </v-btn>
+        <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
+          {{ $t('home.register') }}
+        </v-btn>
+      </div>
     </v-app-bar>
 
     <!-- Hero Section -->

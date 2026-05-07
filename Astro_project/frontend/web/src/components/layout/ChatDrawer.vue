@@ -70,7 +70,51 @@
               </v-avatar>
 
               <div class="msg-bubble-wrap">
+                <!-- Mensaje de Desafío Especial -->
+                <div v-if="msg.msgType === 'challenge'" class="challenge-msg-card">
+                  <div class="challenge-msg-header">
+                    <v-icon icon="mdi-sword-cross" color="cyan-accent-2" size="18" class="mr-2"></v-icon>
+                    <span>DUELO ESPACIAL</span>
+                  </div>
+                  <div class="challenge-msg-body">
+                    {{ msg.content }}
+                  </div>
+                  <div v-if="msg.from !== myUser" class="challenge-msg-actions">
+                    <template v-if="isLastChallenge(index) && msg.status === 'pending'">
+                      <button class="chat-challenge-btn chat-challenge-btn--accept" @click="respondToChallenge(msg.from, true)">
+                        <v-icon icon="mdi-check" size="14" class="mr-1"></v-icon>
+                        ACEPTAR
+                      </button>
+                      <button class="chat-challenge-btn chat-challenge-btn--decline" @click="respondToChallenge(msg.from, false)">
+                        <v-icon icon="mdi-close" size="14" class="mr-1"></v-icon>
+                        RECHAZAR
+                      </button>
+                    </template>
+                    <div v-else-if="msg.status === 'accepted'" class="challenge-msg-result challenge-msg-result--accepted">
+                      <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                      DUELO ACEPTADO
+                    </div>
+                    <div v-else-if="msg.status === 'rejected'" class="challenge-msg-result challenge-msg-result--rejected">
+                      <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
+                      DUELO RECHAZADO
+                    </div>
+                    <div v-else class="challenge-msg-expired">
+                      <v-icon icon="mdi-history" size="14" class="mr-1"></v-icon>
+                      DESAFÍO CADUCADO
+                    </div>
+                  </div>
+                  <div v-else class="challenge-msg-status">
+                    <span v-if="msg.status === 'accepted'" class="status-accepted">Duelo aceptado</span>
+                    <span v-else-if="msg.status === 'rejected'" class="status-rejected">Duelo rechazado</span>
+                    <span v-else-if="msg.status === 'expired'" class="expired-text">Expirado</span>
+                    <span v-else-if="isLastChallenge(index)">Invitación enviada...</span>
+                    <span v-else class="expired-text">Expirado</span>
+                  </div>
+                </div>
+
+                <!-- Mensaje de Texto Normal -->
                 <div
+                  v-else
                   class="msg-bubble"
                   :class="msg.from === myUser ? 'msg-bubble--mine' : 'msg-bubble--theirs'"
                 >
@@ -124,11 +168,13 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useChatStore } from '@/stores/chatStore';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { useI18n } from 'vue-i18n';
 
 const { t, locale } = useI18n();
 const chatStore = useChatStore();
 const sessionStore = useSessionStore();
+const multiplayerStore = useMultiplayerStore();
 
 const myUser = computed(() => sessionStore.user);
 const activeFriend = computed(() => chatStore.activeFriend);
@@ -137,6 +183,18 @@ const inputText = ref('');
 const messagesContainer = ref(null);
 const inputRef = ref(null);
 const isTyping = ref(false); // reservado para fase 2
+
+const respondToChallenge = (from, accepted) => {
+  multiplayerStore.respondToChallenge(from, accepted);
+};
+
+const isLastChallenge = (index) => {
+  const messages = chatStore.activeMessages;
+  for (let i = messages.length - 1; i > index; i--) {
+    if (messages[i].msgType === 'challenge') return false;
+  }
+  return true;
+};
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -434,6 +492,134 @@ watch(
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: 0.5px;
   padding: 0 4px;
+}
+
+/* Challenge Message Card */
+.challenge-msg-card {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.challenge-msg-header {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: #00e5ff;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+}
+
+.challenge-msg-body {
+  font-size: 0.85rem;
+  color: white;
+  font-weight: 500;
+}
+
+.challenge-msg-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.chat-challenge-btn {
+  flex: 1;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+}
+
+.chat-challenge-btn--accept {
+  background: #4caf50;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.chat-challenge-btn--accept:hover {
+  background: #66bb6a;
+  transform: translateY(-1px);
+}
+
+.chat-challenge-btn--decline {
+  background: #f44336;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.chat-challenge-btn--decline:hover {
+  background: #ef5350;
+  transform: translateY(-1px);
+}
+
+.challenge-msg-status {
+  font-size: 0.7rem;
+  color: rgba(0, 229, 255, 0.5);
+  font-style: italic;
+  text-align: right;
+}
+
+.challenge-msg-expired {
+  flex: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.challenge-msg-result {
+  flex: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.challenge-msg-result--accepted {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.challenge-msg-result--rejected {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.status-accepted { color: #4caf50; font-weight: bold; }
+.status-rejected { color: #f44336; font-weight: bold; }
+
+.expired-text {
+  color: rgba(255, 255, 255, 0.2);
+  text-decoration: line-through;
 }
 
 /* Typing indicator */

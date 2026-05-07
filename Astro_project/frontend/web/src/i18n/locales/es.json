@@ -13,7 +13,8 @@
         "inventory": "Inventario",
         "achievements": "Logros",
         "friends": "Amigos",
-        "profile": "Perfil"
+        "profile": "Perfil",
+        "educational": "Gestión Educativa"
     },
     "home": {
         "login": "Iniciar sesión",
@@ -65,7 +66,6 @@
         "categories": {
             "all": "Todo",
             "skin": "Skins",
-            "pets": "Compañeros",
             "collectible": "Coleccionables",
             "trails": "Rastros",
             "items": "Objetos"
@@ -115,7 +115,6 @@
         "selectAchievement": "Seleccionar Logro",
         "removeAchievement": "Quitar Logro",
         "astronautSuit": "TRAJE DE ASTRONAUTA",
-        "missionCompanion": "COMPAÑERO DE MISIÓN",
         "none": "NINGUNO",
         "loginRequired": "Debes iniciar sesión para guardar tus logros.",
         "mission_1": "Despegue",
@@ -132,11 +131,7 @@
         "levelLabel": "NIVEL",
         "avatar_orange": "Naranja",
         "avatar_green": "Verde",
-        "avatar_red": "Rojo",
-        "mascot_whale": "Ballena",
-        "mascot_alien": "Alien",
-        "mascot_drone": "Dron",
-        "mascot_octopus": "Pulpo"
+        "avatar_red": "Rojo"
     },
     "friends": {
         "title": "Tripulación",
@@ -507,10 +502,6 @@
             "name": "Skin Cyberpunk",
             "desc": "Aspecto robótico."
         },
-        "dron": {
-            "name": "Mascota Dron",
-            "desc": "Un compañero fiel."
-        },
         "neon": {
             "name": "Rastro de Neón",
             "desc": "Efectos visuales."
@@ -554,8 +545,9 @@
         "weekly": {
             "games": "Maestro de Juegos ({goal} partidas)",
             "coins": "Buscador de Oro ({goal} monedas)",
-            "level": "Ascensión Lunar (Sube {goal} niveles)",
-            "streak": "Superviviente Espacial (Racha {goal} días)"
+            "xp": "Ascensión Lunar (Gana {goal} XP)",
+            "streak": "Superviviente Espacial (Racha {goal} días)",
+            "item": "Interacción de Objetos ({goal} objetos)"
         }
     },
     "achievementsList": {

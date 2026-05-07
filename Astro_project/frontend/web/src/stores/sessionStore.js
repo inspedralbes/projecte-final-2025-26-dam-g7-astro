@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import {
     STORAGE_KEYS,
+    SESSION_TIMEOUT_MS,
     requestJson,
     storageGetItem,
     storageRemoveItem,
@@ -20,9 +21,12 @@ export const useSessionStore = defineStore('session', {
         user: storageGetItem(STORAGE_KEYS.user) || null,
         plan: storageGetItem(STORAGE_KEYS.plan) || 'INDIVIDUAL_FREE',
         rank: storageGetItem(STORAGE_KEYS.rank) || null,
+        role: storageGetItem(STORAGE_KEYS.role) || null,
+        parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
-        mascot: storageGetItem(STORAGE_KEYS.mascot) || null,
+        selectedTitle: storageGetItem('astro_selected_title') || null,
         token: storageGetItem(STORAGE_KEYS.token) || null,
+        lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
         error: null
     }),
 
@@ -42,9 +46,39 @@ export const useSessionStore = defineStore('session', {
             persistNullable(STORAGE_KEYS.rank, this.rank);
         },
 
+        setRole(role) {
+            this.role = role || null;
+            persistNullable(STORAGE_KEYS.role, this.role);
+        },
+
+        setParentId(parentId) {
+            this.parentId = parentId || null;
+            persistNullable(STORAGE_KEYS.parentId, this.parentId);
+        },
+
         setToken(token) {
             this.token = token || null;
             persistNullable(STORAGE_KEYS.token, this.token);
+            this.updateLastActivity();
+        },
+
+        updateLastActivity() {
+            this.lastActivity = Date.now();
+            storageSetItem(STORAGE_KEYS.lastActivity, this.lastActivity);
+        },
+
+        checkSessionExpiration() {
+            if (!this.token) return false;
+
+            const lastActivity = Number(storageGetItem(STORAGE_KEYS.lastActivity));
+            const now = Date.now();
+
+            if (lastActivity && (now - lastActivity > SESSION_TIMEOUT_MS)) {
+                console.warn('⚠️ Sesión expirada por inactividad.');
+                this.clearSession();
+                return true;
+            }
+            return false;
         },
 
         setAvatar(avatar) {
@@ -52,9 +86,10 @@ export const useSessionStore = defineStore('session', {
             persistNullable(STORAGE_KEYS.avatar, this.avatar);
         },
 
-        setMascot(mascot) {
-            this.mascot = mascot || null;
-            persistNullable(STORAGE_KEYS.mascot, this.mascot);
+
+        setSelectedTitle(title) {
+            this.selectedTitle = title || null;
+            persistNullable('astro_selected_title', this.selectedTitle);
         },
 
         applyLoginPayload(data = {}) {
@@ -62,14 +97,17 @@ export const useSessionStore = defineStore('session', {
             this.setUser(profile.name ?? this.user);
             this.setPlan(profile.plan ?? this.plan);
             this.setRank(profile.rank ?? this.rank);
+            this.setRole(profile.role ?? this.role);
+            this.setParentId(profile.parentId ?? this.parentId);
             this.setToken(data.token ?? this.token);
 
             if (profile.avatar) {
                 this.setAvatar(profile.avatar);
             }
 
-            if (profile.mascot) {
-                this.setMascot(profile.mascot);
+
+            if (profile.selectedTitle !== undefined) {
+                this.setSelectedTitle(profile.selectedTitle);
             }
         },
 
@@ -111,6 +149,7 @@ export const useSessionStore = defineStore('session', {
                 }
 
                 this.applyLoginPayload(data);
+                this.updateLastActivity();
                 return { success: true, data };
             } catch (error) {
                 console.error('❌ Error en login:', error);
@@ -180,26 +219,49 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
-        updateMascot(mascotFile) {
-            this.setMascot(mascotFile);
-            console.log('🐾 Mascota actualizada localmente:', mascotFile);
+
+        async updateSelectedTitle(title) {
+            this.setSelectedTitle(title);
+            console.log('👑 Título actualizado localmente:', title);
+
+            if (!this.user) return;
+
+            try {
+                const { response, data } = await requestJson('/api/user/title', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: this.user,
+                        title: title
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error al guardar título en servidor');
+                }
+                console.log('✅ Título sincronizado en servidor');
+            } catch (error) {
+                console.error('❌ Error sincronizando título:', error);
+            }
         },
 
         clearSession() {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';
             this.rank = null;
+            this.role = null;
+            this.parentId = null;
             this.avatar = 'Astronauta_blanc.jpg';
-            this.mascot = null;
             this.token = null;
             this.error = null;
 
-            storageRemoveItem(STORAGE_KEYS.token);
-            storageRemoveItem(STORAGE_KEYS.user);
-            storageRemoveItem(STORAGE_KEYS.rank);
-            storageRemoveItem(STORAGE_KEYS.plan);
-            storageRemoveItem(STORAGE_KEYS.avatar);
-            storageRemoveItem(STORAGE_KEYS.mascot);
+            // Limpiar ambos (Persistent y Session) por seguridad
+            [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
+             STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, 
+             STORAGE_KEYS.lastActivity, 'astro_selected_title'].forEach(key => {
+                storageRemoveItem(key, false); // Session
+                storageRemoveItem(key, true);  // Local
+            });
         }
     }
 });

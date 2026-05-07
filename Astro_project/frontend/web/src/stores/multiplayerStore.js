@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useSessionStore } from './sessionStore';
 import { API_BASE_URL, requestJson } from './astroShared';
 import { useChatStore } from './chatStore';
+import { useSocialStore } from './socialStore';
 
 function buildWsUrl() {
     // 1. Reemplazamos 'http' o 'https' por 'ws'
@@ -21,6 +22,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         room: null,
         availableRooms: [],
         invitations: [],
+        challengeRequests: [], // Desafíos recibidos
         error: null,
         lastMessage: null,
         roundScores: {}, // Puntuaciones de la ronda actual en vivo
@@ -64,10 +66,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    console.log(`📩 Mensaje WS recibido: ${data.type}`, data);
+                    // Omitir log ruidoso de salas públicas si no es necesario
+                    if (data.type !== 'GLOBAL_ROOMS_UPDATE') {
+                        console.log(`📩 [WS] Recibido: ${data.type}`, data);
+                    }
                     this.handleMessage(data);
                 } catch (e) {
-                    console.error('Error procesando mensaje:', e);
+                    console.error('❌ Error procesando mensaje WS:', e);
                 }
             };
 
@@ -91,12 +96,39 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.isConnected = false;
             this.room = null;
             this.invitations = [];
+            this.challengeRequests = [];
         },
 
         handleMessage(data) {
+            const sessionStore = this.getSession();
             switch (data.type) {
                 case 'INVITATION_RECEIVED':
                     this.invitations.push({ from: data.from, roomId: data.roomId });
+                    break;
+                case 'CHALLENGE_RECEIVED':
+                    // Evitar duplicados si ya hay uno del mismo usuario
+                    if (!this.challengeRequests.some(r => r.from === data.from)) {
+                        this.challengeRequests.push({ from: data.from });
+                        
+                        // Auto-limpiar el desafío tras 5 segundos si no se ha respondido
+                        setTimeout(() => {
+                            this.challengeRequests = this.challengeRequests.filter(r => r.from !== data.from);
+                        }, 5000);
+                    }
+                    break;
+                case 'CHALLENGE_ACCEPTED':
+                    // Ambos usuarios reciben esto. Redirigir al lobby de la nueva sala.
+                    this.joinRoom(data.roomId);
+                    this.lastMessage = data; // Para que el componente global reaccione y redirija
+                    
+                    // Actualizar estado en el chat si está abierto
+                    useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'accepted');
+                    break;
+                case 'CHALLENGE_REJECTED':
+                    this.lastMessage = data; // Para mostrar notificación de rechazo
+                    
+                    // Actualizar estado en el chat
+                    useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'rejected');
                     break;
                 case 'GLOBAL_ROOMS_UPDATE':
                     console.log('🛰️ [WS] Salas públicas actualizadas:', data.rooms);
@@ -164,6 +196,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                     break;
                 case 'CHAT_UNREAD_COUNTS':
                     useChatStore().handleUnreadCounts(data);
+                    break;
+
+                // ── ACTUALIZACIONES SOCIALES EN TIEMPO REAL ───────────
+                case 'FRIEND_UPDATE':
+                    useSocialStore().setFriends(data.friends);
+                    useSocialStore().fetchAllUsers(); 
+                    break;
+                case 'FRIEND_REQUEST_UPDATE':
+                    useSocialStore().setFriendRequests(data.friendRequests);
+                    useSocialStore().fetchAllUsers();
+                    break;
+                case 'FRIEND_ACCEPT_NOTIF':
+                    useSocialStore().setFriends(data.friends);
+                    useSocialStore().setFriendRequests(data.friendRequests);
+                    useSocialStore().fetchAllUsers();
                     break;
 
                 default:
@@ -259,6 +306,69 @@ export const useMultiplayerStore = defineStore('multiplayer', {
                 to: friendName,
                 roomId: this.room.id
             }));
+        },
+
+        async sendChallenge(friendName) {
+            const sessionStore = this.getSession();
+            
+            console.log(`⚔️ Iniciando desafío para: ${friendName}`);
+
+            if (!this.isConnected || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+                console.log('📡 WS no conectado. Intentando conectar antes de desafiar...');
+                this.connect();
+                
+                // Esperar hasta 3 segundos a que conecte
+                const connected = await new Promise((resolve) => {
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        if (this.isConnected && this.socket?.readyState === WebSocket.OPEN) {
+                            clearInterval(interval);
+                            resolve(true);
+                        }
+                        if (attempts > 30) { // 3 segundos
+                            clearInterval(interval);
+                            resolve(false);
+                        }
+                    }, 100);
+                });
+
+                if (!connected) {
+                    console.error('❌ No se pudo establecer conexión para enviar el desafío.');
+                    this.error = 'Error de conexión. Inténtalo de nuevo.';
+                    return false;
+                }
+            }
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                console.log('📤 Enviando mensaje CHALLENGE via WS...');
+                this.socket.send(JSON.stringify({
+                    type: 'CHALLENGE',
+                    from: sessionStore.user,
+                    to: friendName
+                }));
+                return true;
+            } else {
+                console.error('❌ El socket no está en estado OPEN tras esperar.');
+                return false;
+            }
+        },
+
+        respondToChallenge(challengerName, accepted) {
+            const sessionStore = this.getSession();
+            if (!this.isConnected || !this.socket) return;
+            
+            this.socket.send(JSON.stringify({
+                type: 'CHALLENGE_RESPONSE',
+                from: sessionStore.user,
+                to: challengerName,
+                accepted
+            }));
+            
+            // Actualizar chat localmente para feedback inmediato
+            useChatStore().setChallengeStatus(challengerName, accepted ? 'accepted' : 'rejected');
+            
+            this.challengeRequests = this.challengeRequests.filter(r => r.from !== challengerName);
         },
 
         leaveRoom() {

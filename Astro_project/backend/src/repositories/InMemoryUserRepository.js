@@ -10,21 +10,25 @@ class InMemoryUserRepository extends UserRepository {
     }
 
     async findByUsername(username) {
-        return this.users.get(username.toString()) || null;
+        const data = this.users.get(username.toString());
+        return data ? new User(data) : null;
     }
 
     async findById(id) {
-        return [...this.users.values()].find(u => u.id === id) || null;
+        const data = [...this.users.values()].find(u => (u._id || u.id) === id);
+        return data ? new User(data) : null;
     }
 
     async save(user) {
-        if (!user.id) user.id = Math.random().toString(36).substr(2, 9);
-        this.users.set(user.username.toString(), user);
-        return user;
+        if (!user.id && !user._id) user.id = Math.random().toString(36).substr(2, 9);
+        const data = user instanceof User ? { ...user, user: user.username } : user;
+        this.users.set((data.user || data.username).toString(), data);
+        return user instanceof User ? user : new User(data);
     }
 
     async update(user) {
-        this.users.set(user.username.toString(), user);
+        const data = user instanceof User ? { ...user, user: user.username } : user;
+        this.users.set((data.user || data.username).toString(), data);
         return user;
     }
 }

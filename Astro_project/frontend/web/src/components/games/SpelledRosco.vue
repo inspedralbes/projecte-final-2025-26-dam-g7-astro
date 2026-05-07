@@ -405,7 +405,8 @@ const checkAnswer = async () => {
         // Sabotatge multijugador: +10s per a tu, -15s per al rival
         if (props.isMultiplayer) {
             timeLeft.value = Math.min(timeLeft.value + 10, 999);
-            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
+            const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0;
+            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 30 : 15 });
         }
     } else {
         roscoLetters.value[currentIndex.value].status = 'incorrect';

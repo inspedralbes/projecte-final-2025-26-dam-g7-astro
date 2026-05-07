@@ -1,4 +1,4 @@
-<template>
+º<template>
   <v-container fluid class="friends-container py-8 px-6">
     <div class="mb-8">
       <div class="d-flex align-center justify-center mb-6">
@@ -11,7 +11,8 @@
         <v-tab value="search" class="text-uppercase font-weight-bold px-8">{{ $t('friends.tabs.search') }}</v-tab>
         <v-tab value="requests" class="text-uppercase font-weight-bold px-8">
           {{ $t('friends.tabs.requests') }}
-          <v-chip v-if="friendRequests && friendRequests.length > 0" color="error" size="x-small" class="ml-2 font-weight-black">
+          <v-chip v-if="friendRequests && friendRequests.length > 0" color="error" size="x-small"
+            class="ml-2 font-weight-black">
             {{ friendRequests.length }}
           </v-chip>
         </v-tab>
@@ -21,8 +22,8 @@
     <v-window v-model="tab" class="bg-transparent" :touch="false">
       <!-- PESTAÑA: MIS AMIGOS -->
       <v-window-item value="friends">
-        <v-text-field v-model="searchQuery" :placeholder="$t('friends.searchBar1')" prepend-inner-icon="mdi-magnify" variant="solo"
-          bg-color="rgba(13, 25, 48, 0.4)" class="search-bar w-100 mb-8" hide-details rounded="xl"
+        <v-text-field v-model="searchQuery" :placeholder="$t('friends.searchBar1')" prepend-inner-icon="mdi-magnify"
+          variant="solo" bg-color="rgba(13, 25, 48, 0.4)" class="search-bar w-100 mb-8" hide-details rounded="xl"
           clearable></v-text-field>
 
         <div v-if="loading" class="d-flex justify-center align-center py-10">
@@ -40,17 +41,17 @@
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(friend.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
-                        <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar)" cover></v-img>
-                        <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ friend.user.charAt(0).toUpperCase() }}</span>
+                        <v-img v-if="friend.avatar" :src="getAvatarUrl(friend.avatar, friend.user)" cover></v-img>
+                        <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{
+                          friend.user.charAt(0).toUpperCase() }}</span>
                       </v-avatar>
                     </div>
-                    <v-avatar v-if="friend.mascot" size="32" class="mascot-badge shadow-lg">
-                      <v-img :src="getAvatarUrl(friend.mascot)" cover></v-img>
-                    </v-avatar>
                   </div>
 
                   <div class="text-right">
-                    <div class="text-overline text-cyan-accent-1 lh-1 mb-1">{{ $t('friends.level', { level: friend.level || 1 }) }}</div>
+                    <div class="text-overline text-cyan-accent-1 lh-1 mb-1">{{ $t('friends.level', {
+                      level: friend.level
+                      || 1 }) }}</div>
                     <div class="xp-mini-bar">
                       <v-progress-linear :model-value="65" color="cyan-accent-2" height="4" rounded></v-progress-linear>
                     </div>
@@ -60,7 +61,8 @@
                 <div class="mb-4">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(friend.level)]" size="x-small">
-                    {{ getRankName(friend.level) }}
+                    {{ friend.selectedTitle ? friend.selectedTitle.replace('Título: ', '') : getRankName(friend.level)
+                    }}
                   </v-chip>
                 </div>
 
@@ -70,8 +72,7 @@
                   <div v-for="i in 3" :key="i" class="mini-medal-slot">
                     <Medal v-if="getAchievement(friend.selectedAchievements?.[i - 1])"
                       :type="getAchievement(friend.selectedAchievements[i - 1]).type"
-                      :icon="getAchievement(friend.selectedAchievements[i - 1]).icon" 
-                      :scale="0.25" />
+                      :icon="getAchievement(friend.selectedAchievements[i - 1]).icon" :scale="0.25" />
                     <v-icon v-else icon="mdi-shield-outline" color="rgba(255,255,255,0.05)" size="20"></v-icon>
                   </div>
                 </div>
@@ -79,24 +80,24 @@
                 <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
-                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold">
+                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold"
+                    :loading="challengeCooldowns[friend.user]" :disabled="challengeCooldowns[friend.user]"
+                    @click="challengeFriend(friend.user)">
                     <v-icon start icon="mdi-sword-cross" size="18"></v-icon>
                     {{ $t('friends.challenge') }}
                   </v-btn>
                   <div class="d-flex gap-2">
-                    <v-badge
-                      :model-value="!!chatStore.unreadCounts[friend.user]"
-                      color="error"
+                    <v-badge :model-value="!!chatStore.unreadCounts[friend.user]" color="error"
                       :content="chatStore.unreadCounts[friend.user] > 9 ? '9+' : chatStore.unreadCounts[friend.user]"
-                      floating
-                      class="flex-grow-1 msg-badge"
-                    >
-                      <v-btn color="cyan-accent-2" variant="tonal" class="action-btn font-weight-bold w-100" @click="startChat(friend)">
+                      floating class="flex-grow-1 msg-badge">
+                      <v-btn color="cyan-accent-2" variant="tonal" class="action-btn font-weight-bold w-100"
+                        @click="startChat(friend)">
                         <v-icon start icon="mdi-message-text-outline" size="18"></v-icon>
                         {{ $t('chat.send') }}
                       </v-btn>
                     </v-badge>
-                    <v-btn color="error" variant="tonal" class="action-btn px-0" style="min-width: 48px" @click="removeFriend(friend.user)">
+                    <v-btn color="error" variant="tonal" class="action-btn px-0" style="min-width: 48px"
+                      @click="removeFriend(friend.user)">
                       <v-icon icon="mdi-account-minus-outline" size="20"></v-icon>
                     </v-btn>
                   </div>
@@ -116,11 +117,13 @@
       <!-- PESTAÑA: EXPLORAR GALAXIA -->
       <v-window-item value="search">
         <div class="d-flex flex-column flex-sm-row gap-4 mb-8">
-          <v-text-field v-model="searchExploreQuery" :placeholder="$t('friends.searchExplore')" prepend-inner-icon="mdi-radar" variant="solo"
-            bg-color="rgba(13, 25, 48, 0.4)" class="search-bar flex-grow-1" hide-details rounded="xl"
-            clearable @update:model-value="reloadRandomExplorers"></v-text-field>
+          <v-text-field v-model="searchExploreQuery" :placeholder="$t('friends.searchExplore')"
+            prepend-inner-icon="mdi-radar" variant="solo" bg-color="rgba(13, 25, 48, 0.4)"
+            class="search-bar flex-grow-1" hide-details rounded="xl" clearable
+            @update:model-value="reloadRandomExplorers"></v-text-field>
 
-          <v-btn color="cyan-accent-2" variant="elevated" prepend-icon="mdi-refresh" height="56" class="rounded-pill px-8 font-weight-bold" @click="reloadRandomExplorers" :loading="reloading">
+          <v-btn color="cyan-accent-2" variant="elevated" prepend-icon="mdi-refresh" height="56"
+            class="rounded-pill px-8 font-weight-bold" @click="reloadRandomExplorers" :loading="reloading">
             {{ $t('friends.searchOthersBtn') }}
           </v-btn>
         </div>
@@ -132,21 +135,22 @@
         <v-row v-else-if="randomExplorers.length > 0">
           <v-col v-for="explorer in randomExplorers" :key="explorer.user" cols="12" xl="3" lg="4" md="6">
             <v-card class="friend-card explorer-card detailed-card h-100" variant="flat">
-               <div class="card-header-gradient" :class="getRankClass(explorer.level)"></div>
+              <div class="card-header-gradient" :class="getRankClass(explorer.level)"></div>
 
-               <div class="card-body pa-5 pt-2">
+              <div class="card-body pa-5 pt-2">
                 <div class="d-flex align-start justify-space-between mb-2">
                   <div class="avatar-container mt-n12">
                     <div class="avatar-ring" :class="getRankClass(explorer.level)">
                       <v-avatar size="84" color="#0a192f" class="main-avatar">
-                        <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar)" cover></v-img>
-                        <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ explorer.user.charAt(0).toUpperCase() }}</span>
+                        <v-img v-if="explorer.avatar" :src="getAvatarUrl(explorer.avatar, explorer.user)" cover></v-img>
+                        <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{
+                          explorer.user.charAt(0).toUpperCase() }}</span>
                       </v-avatar>
                     </div>
                   </div>
                   <div class="text-right">
                     <v-chip size="x-small" color="cyan-accent-2" variant="tonal" class="font-weight-black">
-                    {{ $t('profile.level', { level: explorer.level || 1 }) }}
+                      {{ $t('profile.level', { level: explorer.level || 1 }) }}
                     </v-chip>
                   </div>
                 </div>
@@ -154,17 +158,20 @@
                 <div class="mb-6">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
-                    {{ getRankName(explorer.level) }}
+                    {{ explorer.selectedTitle ? explorer.selectedTitle.replace('Título: ', '') :
+                      getRankName(explorer.level) }}
                   </v-chip>
                 </div>
 
                 <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex gap-3">
-                  <v-btn color="white" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg" @click="openProfile(explorer)">
+                  <v-btn color="white" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg"
+                    @click="openProfile(explorer)">
                     {{ $t('friends.viewProfile') }}
                   </v-btn>
-                  <v-btn color="success" variant="elevated" :disabled="hasSentRequest(explorer.user)" class="flex-grow-1 font-weight-bold rounded-lg" @click="sendRequest(explorer.user)">
+                  <v-btn color="success" variant="elevated" :disabled="hasSentRequest(explorer.user)"
+                    class="flex-grow-1 font-weight-bold rounded-lg" @click="sendRequest(explorer.user)">
                     <v-icon start :icon="hasSentRequest(explorer.user) ? 'mdi-check' : 'mdi-plus-thick'"></v-icon>
                     {{ hasSentRequest(explorer.user) ? $t('friends.sentReq') : $t('friends.recruit') }}
                   </v-btn>
@@ -189,14 +196,16 @@
         <v-row v-else-if="requestsList.length > 0">
           <v-col v-for="requester in requestsList" :key="requester.user" cols="12" xl="3" lg="4" md="6">
             <v-card class="friend-card request-card detailed-card h-100" variant="flat">
-               <div class="card-header-gradient bg-requests"></div>
+              <div class="card-header-gradient bg-requests"></div>
 
-               <div class="card-body pa-5 pt-2">
+              <div class="card-body pa-5 pt-2">
                 <div class="avatar-container mt-n12 mb-4">
                   <div class="avatar-ring ring-requests">
                     <v-avatar size="84" color="#0a192f" class="main-avatar">
-                      <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar)" cover></v-img>
-                      <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{ requester.user.charAt(0).toUpperCase() }}</span>
+                      <v-img v-if="requester.avatar" :src="getAvatarUrl(requester.avatar, requester.user)"
+                        cover></v-img>
+                      <span v-else class="text-h4 text-cyan-accent-2 font-weight-bold">{{
+                        requester.user.charAt(0).toUpperCase() }}</span>
                     </v-avatar>
                   </div>
                 </div>
@@ -205,9 +214,12 @@
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.user }}</h2>
                   <div class="d-flex align-center gap-2">
                     <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(requester.level)]" size="x-small">
-                      {{ getRankName(requester.level) }}
+                      {{ requester.selectedTitle ? requester.selectedTitle.replace('Título: ', '') :
+                        getRankName(requester.level) }}
                     </v-chip>
-                    <span class="text-caption text-cyan-accent-1 font-weight-bold">· {{ $t('profile.level', { level: requester.level || 1 }) }}</span>
+                    <span class="text-caption text-cyan-accent-1 font-weight-bold">· {{ $t('profile.level', {
+                      level:
+                      requester.level || 1 }) }}</span>
                   </div>
                 </div>
 
@@ -215,14 +227,17 @@
 
                 <div class="d-flex flex-column gap-2">
                   <div class="d-flex gap-2">
-                    <v-btn color="success" variant="elevated" class="flex-grow-1 font-weight-bold rounded-lg" @click="acceptRequest(requester.user)">
+                    <v-btn color="success" variant="elevated" class="flex-grow-1 font-weight-bold rounded-lg"
+                      @click="acceptRequest(requester.user)">
                       {{ $t('friends.accept') }}
                     </v-btn>
-                    <v-btn color="error" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg" @click="rejectRequest(requester.user)">
+                    <v-btn color="error" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg"
+                      @click="rejectRequest(requester.user)">
                       {{ $t('friends.reject') }}
                     </v-btn>
                   </div>
-                  <v-btn color="white" variant="text" block class="text-caption font-weight-black" @click="openProfile(requester)">
+                  <v-btn color="white" variant="text" block class="text-caption font-weight-black"
+                    @click="openProfile(requester)">
                     {{ $t('friends.viewProfile') }}
                   </v-btn>
                 </div>
@@ -244,28 +259,30 @@
         <div class="d-flex justify-end mb-n4">
           <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="profileDialog.show = false"></v-btn>
         </div>
-        
+
         <div class="text-center">
           <div class="position-relative mb-6 d-inline-block">
             <div class="avatar-ring-large" :class="getRankClass(profileDialog.user?.level)">
               <v-avatar size="140" class="main-avatar bg-black">
-                <v-img v-if="profileDialog.user?.avatar" :src="getAvatarUrl(profileDialog.user.avatar)" cover></v-img>
-                <span v-else class="text-h1 text-cyan-accent-2 font-weight-bold">{{ profileDialog.user?.user?.charAt(0).toUpperCase() }}</span>
+                <v-img v-if="profileDialog.user?.avatar"
+                  :src="getAvatarUrl(profileDialog.user.avatar, profileDialog.user.user)" cover></v-img>
+                <span v-else class="text-h1 text-cyan-accent-2 font-weight-bold">{{
+                  profileDialog.user?.user?.charAt(0).toUpperCase() }}</span>
               </v-avatar>
             </div>
-            <v-avatar v-if="profileDialog.user?.mascot" size="56" class="mascot-badge-large shadow-lg">
-              <v-img :src="getAvatarUrl(profileDialog.user?.mascot)" cover></v-img>
-            </v-avatar>
           </div>
 
           <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
           <div class="mb-6">
             <v-chip :class="['rank-chip font-weight-black px-6', getRankClass(profileDialog.user?.level)]" size="large">
-              {{ getRankName(profileDialog.user?.level) }}
+              {{ profileDialog.user?.selectedTitle ? profileDialog.user?.selectedTitle.replace('Título: ', '') :
+                getRankName(profileDialog.user?.level) }}
             </v-chip>
-            <div class="mt-2 text-overline text-grey-lighten-1">{{ $t('profile.level', { level: profileDialog.user?.level || 1 }) }}</div>
+            <div class="mt-2 text-overline text-grey-lighten-1">{{ $t('profile.level', {
+              level:
+                profileDialog.user?.level || 1 }) }}</div>
           </div>
-          
+
           <v-row class="bg-black-semi pa-4 rounded-lg mb-8" no-gutters>
             <v-col cols="6" class="border-right-dim">
               <div class="text-overline text-grey">{{ $t('profile.levelLabel') }}</div>
@@ -276,20 +293,20 @@
               <div class="text-h5 text-white font-weight-bold">{{ $t('profile.systemValue') }}</div>
             </v-col>
           </v-row>
-          
+
           <div class="section-label-mini mb-4">{{ $t('friends.activeAchievements') }}</div>
           <div class="d-flex justify-center gap-6 mb-8">
-             <div v-for="i in 3" :key="i" class="achievement-display-slot">
-               <Medal v-if="getAchievement(profileDialog.user?.selectedAchievements?.[i - 1])"
+            <div v-for="i in 3" :key="i" class="achievement-display-slot">
+              <Medal v-if="getAchievement(profileDialog.user?.selectedAchievements?.[i - 1])"
                 :type="getAchievement(profileDialog.user.selectedAchievements[i - 1]).type"
-                :icon="getAchievement(profileDialog.user.selectedAchievements[i - 1]).icon" 
-                :scale="0.45" />
-               <v-icon v-else icon="mdi-lock-outline" color="rgba(255,255,255,0.05)" size="32"></v-icon>
-             </div>
+                :icon="getAchievement(profileDialog.user.selectedAchievements[i - 1]).icon" :scale="0.45" />
+              <v-icon v-else icon="mdi-lock-outline" color="rgba(255,255,255,0.05)" size="32"></v-icon>
+            </div>
           </div>
 
-          <v-btn v-if="!isFriend(profileDialog.user?.user) && profileDialog.user?.user !== astroStore.user" 
-            color="success" block size="x-large" :disabled="hasSentRequest(profileDialog.user?.user)" class="rounded-lg font-weight-black action-btn-glow" 
+          <v-btn v-if="!isFriend(profileDialog.user?.user) && profileDialog.user?.user !== astroStore.user"
+            color="success" block size="x-large" :disabled="hasSentRequest(profileDialog.user?.user)"
+            class="rounded-lg font-weight-black action-btn-glow"
             @click="sendRequest(profileDialog.user?.user); profileDialog.show = false;">
             <v-icon start :icon="hasSentRequest(profileDialog.user?.user) ? 'mdi-check' : 'mdi-account-plus'"></v-icon>
             {{ hasSentRequest(profileDialog.user?.user) ? $t('friends.sentReq') : $t('friends.recruit') }}
@@ -312,6 +329,7 @@ import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAstroStore } from '@/stores/astroStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useMultiplayerStore } from '@/stores/multiplayerStore';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import Medal from '@/components/achievements/Medal.vue';
 import { useI18n } from 'vue-i18n';
@@ -319,6 +337,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const astroStore = useAstroStore();
 const chatStore = useChatStore();
+const multiplayerStore = useMultiplayerStore();
 const { explorers, friends, friendRequests } = storeToRefs(astroStore);
 
 const loading = ref(true);
@@ -328,6 +347,7 @@ const searchExploreQuery = ref('');
 const tab = ref('friends');
 const randomExplorers = ref([]);
 const sentRequests = ref([]);
+const challengeCooldowns = ref({}); // Cooldowns por amigo
 
 const profileDialog = ref({
   show: false,
@@ -358,8 +378,13 @@ const getAchievement = (id) => {
   return ACHIEVEMENTS.find(a => a.id === Number(id));
 };
 
-const getAvatarUrl = (avatarStr) => {
-  if (!avatarStr) return '';
+const getAvatarUrl = (avatarStr, username) => {
+  if (!avatarStr || typeof avatarStr !== 'string') {
+    if (username && username !== '[object Object]') {
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`;
+    }
+    return '/Astronauta_blanc.jpg';
+  }
   return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`;
 };
 
@@ -456,6 +481,29 @@ const startChat = (friendObj) => {
   chatStore.openChat(friendObj);
 };
 
+const challengeFriend = async (friendName) => {
+  if (challengeCooldowns.value[friendName]) return;
+
+  showMessage(`Conectando con la flota para desafiar a ${friendName}...`, 'info');
+
+  // Activar cooldown
+  challengeCooldowns.value[friendName] = true;
+
+  const success = await multiplayerStore.sendChallenge(friendName);
+
+  if (success) {
+    showMessage(`¡Desafío enviado a ${friendName}! Prepárate.`);
+  } else {
+    showMessage(`Error: No se pudo enviar el desafío a ${friendName}. Verifica tu conexión.`, 'error');
+    // Si falla, podrías quitar el cooldown, pero mejor dejarlo un poco para evitar spam
+  }
+
+  // Desactivar cooldown tras 3 segundos
+  setTimeout(() => {
+    challengeCooldowns.value[friendName] = false;
+  }, 3000);
+};
+
 const acceptRequest = async (requesterName) => {
   const result = await astroStore.acceptFriendRequest(requesterName);
   if (result?.success) {
@@ -482,8 +530,13 @@ const rejectRequest = async (requesterName) => {
   background: radial-gradient(circle at top center, #0a192f 0%, #020617 100%);
 }
 
-.tracking-wide { letter-spacing: 0.2em; }
-.tracking-widest { letter-spacing: 0.4em; }
+.tracking-wide {
+  letter-spacing: 0.2em;
+}
+
+.tracking-widest {
+  letter-spacing: 0.4em;
+}
 
 .custom-tabs :deep(.v-tab) {
   letter-spacing: 2px;
@@ -526,26 +579,29 @@ const rejectRequest = async (requesterName) => {
 }
 
 /* Tier 1: Básico */
-.rank-tier-1 { background: linear-gradient(135deg, #78909c, #455a64) !important; color: white !important; }
+.rank-tier-1 {
+  background: linear-gradient(135deg, #78909c, #455a64) !important;
+  color: white !important;
+}
 
 /* Tier 2: Avanzado (Cyan) */
-.rank-tier-2 { 
-  background: linear-gradient(135deg, #00acc1, #006064) !important; 
+.rank-tier-2 {
+  background: linear-gradient(135deg, #00acc1, #006064) !important;
   color: white !important;
   border: 1px solid rgba(0, 255, 255, 0.3) !important;
 }
 
 /* Tier 3: Superior (Púrpura) */
-.rank-tier-3 { 
-  background: linear-gradient(135deg, #8e24aa, #4a148c) !important; 
+.rank-tier-3 {
+  background: linear-gradient(135deg, #8e24aa, #4a148c) !important;
   color: white !important;
   border: 1px solid rgba(255, 0, 255, 0.4) !important;
   box-shadow: 0 0 10px rgba(142, 36, 170, 0.3);
 }
 
 /* Tier 4: Élite (Dorado/Naranja) */
-.rank-tier-4 { 
-  background: linear-gradient(135deg, #ff9800, #e65100) !important; 
+.rank-tier-4 {
+  background: linear-gradient(135deg, #ff9800, #e65100) !important;
   color: white !important;
   border: 2px solid rgba(255, 255, 0, 0.5) !important;
   box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);
@@ -553,29 +609,37 @@ const rejectRequest = async (requesterName) => {
 }
 
 /* Tier 5: Maestro (Carmesí/Oscuro) */
-.rank-tier-5 { 
-  background: linear-gradient(135deg, #c62828, #1a237e) !important; 
+.rank-tier-5 {
+  background: linear-gradient(135deg, #c62828, #1a237e) !important;
   color: white !important;
   border: 2px solid #ff1744 !important;
   box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
-  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 /* Tier 6: Legendario (Cósmico animado) */
-.rank-tier-6 { 
+.rank-tier-6 {
   background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important;
   background-size: 400% 400% !important;
   animation: cosmic-bg 10s ease infinite !important;
   color: white !important;
   border: 2px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 0 25px rgba(213, 0, 249, 0.6), inset 0 0 10px rgba(255,255,255,0.3);
+  box-shadow: 0 0 25px rgba(213, 0, 249, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
   font-weight: 900 !important;
 }
 
 @keyframes cosmic-bg {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .rank-chip-mini {
@@ -600,7 +664,9 @@ const rejectRequest = async (requesterName) => {
   justify-content: center;
 }
 
-.ring-requests { background: #4caf50; }
+.ring-requests {
+  background: #4caf50;
+}
 
 .main-avatar {
   border: 3px solid #0a192f;
@@ -689,18 +755,18 @@ const rejectRequest = async (requesterName) => {
 }
 
 .bg-black-semi {
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .border-right-dim {
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .achievement-display-slot {
   width: 90px;
   height: 90px;
-  background: rgba(255,255,255,0.02);
-  border: 1px dashed rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -719,11 +785,25 @@ const rejectRequest = async (requesterName) => {
   box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
 }
 
-.lh-1 { line-height: 1; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
+.lh-1 {
+  line-height: 1;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.gap-6 {
+  gap: 24px;
+}
 
 /* Transitions */
 .v-window-item-active {
@@ -731,8 +811,15 @@ const rejectRequest = async (requesterName) => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Badge de mensajes no leídos */
@@ -747,8 +834,16 @@ const rejectRequest = async (requesterName) => {
 }
 
 @keyframes badge-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-  60%  { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+
+  60% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 </style>

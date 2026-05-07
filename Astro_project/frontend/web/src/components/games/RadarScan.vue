@@ -145,12 +145,13 @@ const checkLetter = (index) => {
     setTimeout(() => {
       correctClicked.value = false;
       
-      // Enviar sabotament en multijugador: -1s al rival
+      // Enviar sabotament en multijugador: -1s al rival (o -2s si tiene el Rayo Saboteador)
       if (props.isMultiplayer) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0;
         multiplayerStore.sendGameAction({
           type: 'SABOTAGE',
           subtype: 'REDUCE_TIME',
-          amount: 1
+          amount: isSaboteurActive ? 2 : 1
         });
       }
 

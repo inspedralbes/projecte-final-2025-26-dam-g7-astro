@@ -165,7 +165,9 @@ export const useChatStore = defineStore('chat', {
                 to: data.to,
                 content: data.content,
                 at: data.at,
-                read: data.from === myUser // nuestros propios mensajes ya los leemos
+                read: data.from === myUser, // nuestros propios mensajes ya los leemos
+                msgType: data.msgType || 'text',
+                status: data.status || (data.msgType === 'challenge' ? 'pending' : undefined)
             });
 
             // Si el mensaje es entrante (de otro) y el chat no está abierto con ese amigo → incrementar badge
@@ -191,6 +193,38 @@ export const useChatStore = defineStore('chat', {
          */
         handleUnreadCounts(data) {
             this.unreadCounts = { ...data.counts };
+        },
+
+        setChallengeStatus(friendUser, status) {
+            if (!friendUser) return;
+            
+            // Buscar la conversación (ignorando mayúsculas/minúsculas)
+            const conversationKey = Object.keys(this.conversations).find(
+                key => key.toLowerCase() === friendUser.toLowerCase()
+            ) || friendUser;
+
+            const messages = this.conversations[conversationKey];
+            if (!messages) {
+                console.log(`⚠️ ChatStore: No se encontró conversación para ${friendUser}`);
+                return;
+            }
+
+            // Encontrar el último mensaje de tipo challenge
+            // Buscamos de atrás hacia adelante
+            for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].msgType === 'challenge') {
+                    // Si ya tiene el mismo estado, no hacemos nada
+                    if (messages[i].status === status) break;
+
+                    // Actualizar el estado
+                    // Usamos una copia del objeto para asegurar que Vue detecte el cambio profundo
+                    const updatedMsg = { ...messages[i], status: status };
+                    messages[i] = updatedMsg;
+                    
+                    console.log(`✅ ChatStore: Estado de desafío [${i}] actualizado a ${status} para ${conversationKey}`);
+                    break; 
+                }
+            }
         },
 
         /** Limpia el estado al cerrar sesión */
