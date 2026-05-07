@@ -34,7 +34,14 @@
                                     <div class="flex-grow-1">
                                         <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2 d-flex align-center">
                                             {{ user || $t('profile.guest') }}
-                                            <v-btn icon="mdi-cog-outline" variant="text" color="grey-lighten-1" size="small" @click="openSettingsDialog" class="ml-2"></v-btn>
+                                            <v-btn
+                                                icon="mdi-pencil-outline"
+                                                variant="text"
+                                                color="grey-lighten-1"
+                                                size="x-small"
+                                                class="ml-1 name-edit-btn"
+                                                title="Canviar nom (properament)"
+                                            ></v-btn>
                                         </h1>
                                         <div class="d-flex flex-wrap align-center ga-3">
                                             <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat" @click="titleDialog = true" style="cursor: pointer;">
@@ -50,17 +57,28 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <v-btn
-                                        color="cyan-accent-3"
-                                        variant="tonal"
-                                        prepend-icon="mdi-history"
-                                        class="font-weight-black px-6"
-                                        rounded="lg"
-                                        height="48"
-                                        @click="historyDialog = true"
-                                    >
-                                        {{ $t('profile.flightHistory') }}
-                                    </v-btn>
+                                    <div class="d-flex align-center ga-2 history-actions">
+                                        <v-btn
+                                            color="cyan-accent-4"
+                                            variant="tonal"
+                                            class="history-toggle-btn px-6"
+                                            rounded="lg"
+                                            prepend-icon="mdi-history"
+                                            @click="historyDialog = !historyDialog"
+                                        >
+                                            {{ historyDialog ? $t('profile.closeHistory') : $t('profile.openHistory') }}
+                                        </v-btn>
+                                        <v-btn
+                                            icon="mdi-cog"
+                                            color="cyan-accent-4"
+                                            variant="tonal"
+                                            class="settings-btn"
+                                            rounded="lg"
+                                            :aria-label="$t('profile.settings')"
+                                            :title="$t('profile.settings')"
+                                            @click="openSettingsDialog"
+                                        ></v-btn>
+                                    </div>
                                 </div>
 
                                 <!-- Barra de Progreso XP -->
@@ -723,6 +741,24 @@ watch(historyDialog, async (isOpen) => {
     text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
+.name-edit-btn {
+    opacity: 0.85;
+}
+
+.history-actions {
+    flex-shrink: 0;
+}
+
+.history-toggle-btn {
+    min-height: 48px;
+    font-weight: 800;
+}
+
+.settings-btn {
+    width: 48px;
+    height: 48px;
+}
+
 .rank-chip {
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -848,6 +884,10 @@ watch(historyDialog, async (isOpen) => {
 @media (max-width: 600px) {
     .stats-grid { grid-template-columns: 1fr; }
     .user-name { font-size: 2rem !important; }
+    .history-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
 
 .pulse-error { animation: pulse-red 2s infinite; }
