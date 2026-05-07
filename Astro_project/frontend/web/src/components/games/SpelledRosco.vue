@@ -1,11 +1,11 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center game-container">
-    
+  <v-container class="fill-height d-flex flex-column align-center justify-center game-container opendyslexic">
+
     <!-- Capçalera -->
-    <v-card width="100%" max-width="800" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
+    <v-card class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" max-width="800" rounded="xl" width="100%">
       <div class="d-flex justify-space-between align-center">
         <div>
-          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar</h2>
+          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">🚀 Rosco Estelar <span v-if="props.isMultiplayer && subRole" class="text-caption text-uppercase">({{ subRole }})</span></h2>
           <div class="text-caption text-grey-lighten-2">
             <span>Puntuació: {{ score }}</span>
             <span class="mx-2">|</span>
@@ -13,38 +13,59 @@
           </div>
         </div>
         <div class="d-flex align-center gap-4">
-          <v-chip v-for="(l, i) in roscoLetters" :key="i" :color="getChipColor(l)" size="small" label class="mx-1 font-weight-bold">
+          <v-chip
+            v-for="(l, i) in roscoLetters"
+            :key="i"
+            class="mx-1 font-weight-bold"
+            :color="getChipColor(l)"
+            label
+            size="small"
+          >
             {{ l.char }}
           </v-chip>
-          <v-btn icon="mdi-close" variant="text" color="grey" @click="emitExit"></v-btn>
+          <v-btn color="grey" icon="mdi-close" variant="text" @click="emitExit" />
         </div>
       </div>
     </v-card>
 
     <!-- Joc Principal -->
     <v-row v-if="!gameFinished" class="w-100 d-flex justify-center align-center" no-gutters>
-      
+
       <!-- Estrella -->
-      <v-col cols="12" md="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-md-0">
+      <v-col class="d-flex justify-center align-center position-relative star-col mb-8 mb-md-0" cols="12" md="6">
         <div class="star-wrapper">
           <svg class="star-svg" viewBox="0 0 400 400">
             <!-- Polígons d'il·luminació interior (Puntes) -->
-            <polygon v-for="(points, i) in tipPolygons" :key="'tip-'+i"
+            <polygon
+              v-for="(points, i) in tipPolygons"
+              :key="'tip-'+i"
+              class="star-tip-fill"
+              :class="{ 'tip-glowing': isTipGlowing(i) }"
               :points="points"
-              class="star-tip-fill" :class="{ 'tip-glowing': isTipGlowing(i) }"
             />
 
             <!-- Línies del contorn -->
-            <line v-for="(seg, i) in starSegments" :key="'line-'+i"
-              :x1="seg.x1" :y1="seg.y1" :x2="seg.x2" :y2="seg.y2"
-              class="star-line" :class="{ 'line-glowing': isSegmentGlowing(i) }"
+            <line
+              v-for="(seg, i) in starSegments"
+              :key="'line-'+i"
+              class="star-line"
+              :class="{ 'line-glowing': isSegmentGlowing(i) }"
+              :x1="seg.x1"
+              :x2="seg.x2"
+              :y1="seg.y1"
+              :y2="seg.y2"
             />
 
             <g v-if="rocketAnimating" class="rocket-trail-group">
-              <circle :cx="rocketPos.x" :cy="rocketPos.y" r="6" fill="url(#rocketGlow)" />
-              <circle v-for="(p, i) in trailParticles" :key="'trail-'+i"
-                :cx="p.x" :cy="p.y" :r="p.r"
-                :fill="p.color" :opacity="p.opacity"
+              <circle :cx="rocketPos.x" :cy="rocketPos.y" fill="url(#rocketGlow)" r="6" />
+              <circle
+                v-for="(p, i) in trailParticles"
+                :key="'trail-'+i"
+                :cx="p.x"
+                :cy="p.y"
+                :fill="p.color"
+                :opacity="p.opacity"
+                :r="p.r"
               />
             </g>
             <defs>
@@ -60,15 +81,15 @@
             </defs>
           </svg>
 
-          <div 
-            v-for="(letter, index) in roscoLetters" 
+          <div
+            v-for="(letter, index) in roscoLetters"
             :key="index"
             class="star-node elevation-8"
             :class="getBubbleClass(letter, index)"
             :style="getStarNodeStyle(index)"
           >
             <span class="node-letter">{{ letter.char }}</span>
-            <div v-if="index === currentIndex && !gameFinished" class="node-pulse"></div>
+            <div v-if="index === currentIndex && !gameFinished" class="node-pulse" />
           </div>
 
           <div class="star-center">
@@ -78,513 +99,774 @@
       </v-col>
 
       <!-- Panell de Pregunta i Resposta -->
-      <v-col cols="12" md="6" class="px-md-8">
-        <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
-          <div class="mb-4">
-            <v-chip color="cyan" label class="mb-2 font-weight-bold">Definició</v-chip>
-            <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+      <v-col class="px-md-8" cols="12" md="6">
+        <v-card border class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl">
+          <div class="mb-4 text-center">
+            <!-- RENDERIZADO CONDICIONAL DE PISTA -->
+            <template v-if="isTranslator">
+              <v-chip class="mb-2 font-weight-bold" color="amber" label>Jeroglífics Alienígenes</v-chip>
+              <div class="hieroglyph-internal-container d-flex justify-center gap-4 pa-4">
+                <div v-for="(emoji, index) in (currentLetter.hieroglyphs || ['❓','❓','❓'])" :key="index" class="hieroglyph-box elevation-10">
+                  <span class="emoji-text">{{ emoji }}</span>
+                </div>
+              </div>
+            </template>
+            <template v-else-if="isSender">
+              <v-chip class="mb-2 font-weight-bold" color="light-blue" label>La Paraula és...</v-chip>
+              <p class="text-h4 text-cyan-accent-2 font-weight-black mb-4">{{ currentLetter.answer }}</p>
+              
+              <!-- EMOJI PICKER INTEGRADO CON BUSCADOR -->
+              <v-card class="pa-4 bg-grey-darken-3 rounded-lg elevation-4 emoji-picker-integrated">
+                <v-text-field
+                  v-model="emojiSearch"
+                  density="compact"
+                  variant="solo-filled"
+                  placeholder="Cerca un emoji..."
+                  prepend-inner-icon="mdi-magnify"
+                  hide-details
+                  class="mb-3 emoji-search-field"
+                  bg-color="grey-darken-4"
+                  rounded="pill"
+                />
+                <div class="emoji-grid-internal custom-scrollbar">
+                  <v-btn
+                    v-for="emoji in filteredEmojiList"
+                    :key="emoji"
+                    icon
+                    variant="text"
+                    class="emoji-btn-internal"
+                    @click="sendEmoji(emoji)"
+                  >
+                    <span class="text-h4">{{ emoji }}</span>
+                  </v-btn>
+                  <div v-if="filteredEmojiList.length === 0" class="text-caption text-grey py-4 w-100 text-center">
+                    Cap emoji trobat 🌌
+                  </div>
+                </div>
+              </v-card>
+            </template>
+            <template v-else-if="isGuesser">
+              <v-chip class="mb-2 font-weight-bold" color="cyan" label>Endevina!</v-chip>
+              
+              <!-- EMOJI HISTORY INTEGRADO -->
+              <div class="emoji-history-internal pa-4 rounded-xl elevation-5 bg-deep-purple-darken-4 border-cyan">
+                <div class="text-caption text-cyan-accent-2 mb-2 font-weight-bold">PISTES DEL COMPANY</div>
+                <div class="d-flex flex-wrap gap-2 justify-center min-chat-bubble-internal">
+                  <div
+                    v-for="(emoji, index) in multiplayerStore.partnerEmojis"
+                    :key="index"
+                    class="emoji-item-internal animate-pop-in"
+                  >
+                    <span class="text-h3">{{ emoji }}</span>
+                  </div>
+                  <div v-if="!multiplayerStore.partnerEmojis || multiplayerStore.partnerEmojis.length === 0" class="text-body-2 text-grey italic">
+                    Esperant pistes...
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <v-chip class="mb-2 font-weight-bold" color="cyan" label>Definició</v-chip>
+              <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+            </template>
           </div>
 
-          <v-divider class="mb-6 border-opacity-25"></v-divider>
+          <v-divider class="mb-6 border-opacity-25" />
 
           <div class="text-center mb-4">
-            <p class="text-overline text-grey-lighten-1 mb-2">ESCRIU LA PARAULA</p>
-            
+            <p class="text-overline text-grey-lighten-1 mb-2">
+              <span v-if="isTranslator">EL TEU COMPANY ESTÀ ESCRIVINT...</span>
+              <span v-else-if="isSender">ENVIA PISTES AMB EMOJIS!</span>
+              <span v-else>ESCRIU LA PARAULA</span>
+            </p>
+
+            <!-- INPUT CONDICIONAL -->
             <v-text-field
+              v-if="!isTranslator && !isSender"
               v-model="rawInput"
-              variant="outlined"
-              color="cyan-accent-3"
               bg-color="#263238"
-              placeholder="Escriu aquí..."
               class="mb-4 spelling-input"
+              color="cyan-accent-3"
+              autofocus
               density="comfortable"
               hide-details
-              autofocus
+              placeholder="Escriu aquí..."
+              variant="outlined"
               @keydown.enter="checkAnswer"
-            ></v-text-field>
+              @input="onTyping"
+            />
+            
+            <!-- GHOST TEXT PARA EL TRADUCTOR -->
+            <div v-else-if="isTranslator" class="ghost-text-container mb-4 pa-4 rounded-lg">
+               <span class="text-h4 text-cyan-accent-2 font-weight-black">{{ multiplayerStore.partnerText || '...' }}</span>
+               <div v-if="multiplayerStore.partnerText" class="typing-indicator mt-2">
+                 <v-progress-linear indeterminate color="cyan" height="2" />
+               </div>
+            </div>
 
-            <div class="d-flex justify-center gap-4 mb-4">
-               <v-btn
+            <div v-if="!isTranslator && !isSender" class="d-flex justify-center gap-4 mb-4">
+              <v-btn
+                class="px-4"
                 color="orange-accent-3"
                 size="x-large"
                 variant="tonal"
-                class="px-4"
                 @click="pasapalabra"
               >
                 Pasapalabra
               </v-btn>
             </div>
 
-             <v-btn
-                color="success"
-                size="large"
-                block
-                rounded="lg"
-                class="font-weight-bold text-white elevation-4"
-                @click="checkAnswer"
-                :disabled="rawInput.length === 0"
-              >
-                Confirmar
-              </v-btn>
-              
-              <v-btn
-                variant="text"
-                color="red-accent-2"
-                class="mt-2"
-                @click="clearInput"
-                size="small"
-              >
-                Esborrar tot
-              </v-btn>
+            <v-btn
+              v-if="!isTranslator && !isSender"
+              block
+              class="font-weight-bold text-white elevation-4"
+              color="success"
+              :disabled="rawInput.length === 0"
+              rounded="lg"
+              size="large"
+              @click="checkAnswer"
+            >
+              Confirmar
+            </v-btn>
+
+            <v-btn
+              v-if="!isTranslator && !isSender"
+              class="mt-2"
+              color="red-accent-2"
+              size="small"
+              variant="text"
+              @click="clearInput"
+            >
+              Esborrar tot
+            </v-btn>
+            
+            <div v-if="isTranslator" class="text-body-2 text-grey-lighten-1">
+              Guia al teu company! Ell no veu els jeroglífics.
+            </div>
+            <div v-if="isSender" class="text-body-2 text-grey-lighten-1">
+              El teu company no sap la paraula. Ajuda'l amb emojis!
+            </div>
           </div>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- Pantalla Final (només en single player) -->
-    <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
+    <v-card
+      v-else-if="!isMultiplayer"
+      class="pa-8 text-center bg-grey-darken-4 border-cyan"
+      max-width="500"
+      rounded="xl"
+      width="100%"
+    >
+      <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-school" size="80" />
       <h2 class="text-h4 text-white mb-2">Rosco Completat!</h2>
       <div class="d-flex justify-space-around my-6">
         <div class="text-center">
-            <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
-            <div class="text-caption">Encerts</div>
+          <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
+          <div class="text-caption">Encerts</div>
         </div>
         <div class="text-center">
-            <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
-            <div class="text-caption">Errors</div>
+          <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
+          <div class="text-caption">Errors</div>
         </div>
       </div>
       <p class="text-h5 text-white mb-2">Puntuació Final: {{ score }}</p>
       <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps Restant: {{ timeLeft }}s</p>
       <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
-      
-      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
+
+      <v-btn
+        color="cyan-accent-3"
+        rounded="pill"
+        size="large"
+        class="text-black font-weight-bold"
+        variant="flat"
+        @click="emitExit"
+      >
         Obtenir Recompensa
       </v-btn>
     </v-card>
 
-    <v-snackbar v-model="showFeedback" :color="feedbackColor" timeout="2000" location="top">
-       {{ feedbackMessage }}
+    <v-snackbar v-model="showFeedback" :color="feedbackColor" location="top" timeout="2000">
+      {{ feedbackMessage }}
     </v-snackbar>
 
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
+  import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { EMOJI_LIBRARY } from '@/constants/emojis'
 
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
+  const multiplayerStore = useMultiplayerStore()
+  const astroStore = useAstroStore()
 
-const props = defineProps({
-  isMultiplayer: {
-    type: Boolean,
-    default: false
+  const emojiSearch = ref('')
+
+  function throttle (func, limit) {
+    let lastRan
+    let lastFunc
+    return function (...args) {
+      if (!lastRan) {
+        func(...args)
+        lastRan = Date.now()
+      } else {
+        clearTimeout(lastFunc)
+        lastFunc = setTimeout(function () {
+          if ((Date.now() - lastRan) >= limit) {
+            func(...args)
+            lastRan = Date.now()
+          }
+        }, limit - (Date.now() - lastRan))
+      }
+    }
   }
-});
 
-const emit = defineEmits(['game-over']);
+  const props = defineProps({
+    isMultiplayer: {
+      type: Boolean,
+      default: false,
+    },
+  })
 
-// --- DADES DEL JOC (temes variats) ---
-const allLettersData = [
-  // 🌌 Espai
-  { char: 'A', question: "Cos rocallós que orbita al voltant del Sol.", answer: "ASTEROIDE" },
-  { char: 'C', question: "Astre de gel i pols amb una cua lluminosa.", answer: "COMETA" },
-  { char: 'E', question: "Esfera de gas que emet llum i calor.", answer: "ESTRELLA" },
-  { char: 'G', question: "Sistema enorme d'estrelles units per la gravetat.", answer: "GALAXIA" },
-  { char: 'N', question: "Núvol de gas on neixen noves estrelles.", answer: "NEBULOSA" },
-  { char: 'P', question: "Cos celest que orbita una estrella.", answer: "PLANETA" },
-  { char: 'S', question: "L'estrella central del nostre sistema.", answer: "SOL" },
-  { char: 'T', question: "Instrument per observar objectes llunyans a l'espai.", answer: "TELESCOPI" },
-  { char: 'U', question: "Tot el que existeix: matèria, energia, espai i temps.", answer: "UNIVERS" },
-  { char: 'O', question: "Trajectòria corba d'un objecte a l'espai.", answer: "ORBITA" },
-  // 🐾 Animals
-  { char: 'G', question: "Felí domèstic molt independent i juganer.", answer: "GAT" },
-  { char: 'A', question: "Au rapinyaire de gran envergadura, símbol de llibertat.", answer: "AGUILA" },
-  { char: 'D', question: "Mamífer marí molt intel·ligent que viu en grups.", answer: "DOLFI" },
-  { char: 'E', question: "El mamífer terrestre més gran del món.", answer: "ELEFANT" },
-  { char: 'L', question: "Gran felí conegut com el rei de la selva.", answer: "LLEO" },
-  { char: 'T', question: "Rèptil amb closca dura que es mou lentament.", answer: "TORTUGA" },
-  { char: 'C', question: "Animal amb vuit tentacles que viu al fons del mar.", answer: "CRANC" },
-  { char: 'P', question: "Ocell tropical de colors vius que pot imitar sons.", answer: "LLORO" },
-  // 🔬 Ciència
-  { char: 'A', question: "La unitat bàsica de la matèria.", answer: "ATOM" },
-  { char: 'C', question: "Unitat bàsica dels éssers vius.", answer: "CELULA" },
-  { char: 'G', question: "Força que atrau els objectes cap al centre de la Terra.", answer: "GRAVETAT" },
-  { char: 'O', question: "Gas essencial per a la respiració dels éssers vius.", answer: "OXIGEN" },
-  { char: 'H', question: "L'element químic més lleuger de l'univers.", answer: "HIDROGEN" },
-  { char: 'E', question: "Capacitat per fer un treball o produir un canvi.", answer: "ENERGIA" },
-  { char: 'M', question: "Aparell que fa que les coses petites es vegin grans.", answer: "MICROSCOPI" },
-  { char: 'V', question: "Rapidesa amb què un objecte canvia de posició.", answer: "VELOCITAT" },
-  // 🌍 Geografia
-  { char: 'M', question: "Gran massa d'aigua salada que cobreix la Terra.", answer: "MAR" },
-  { char: 'V', question: "Muntanya que pot fer erupció amb lava.", answer: "VOLCA" },
-  { char: 'R', question: "Corrent natural d'aigua que desemboca al mar.", answer: "RIU" },
-  { char: 'I', question: "Porció de terra envoltada d'aigua per tots els costats.", answer: "ILLA" },
-  { char: 'D', question: "Zona àrida amb molt poques precipitacions.", answer: "DESERT" },
-  { char: 'S', question: "Gran extensió de bosc tropical amb molta biodiversitat.", answer: "SELVA" },
-  { char: 'L', question: "Massa d'aigua dolça envoltada de terra.", answer: "LLAC" },
-  // 🍎 Aliments
-  { char: 'P', question: "Fruita allargada i groga molt energètica.", answer: "PLATAN" },
-  { char: 'T', question: "Fruita vermella molt usada en amanides i salses.", answer: "TOMAQUET" },
-  { char: 'F', question: "Preparat comestible fet amb llet coagulada.", answer: "FORMATGE" },
-  { char: 'X', question: "Dolç elaborat amb cacau.", answer: "XOCOLATA" },
-  { char: 'P', question: "Plat italià amb base de massa, tomàquet i formatge.", answer: "PIZZA" },
-  { char: 'M', question: "Producte dolç que fan les abelles.", answer: "MEL" },
-  { char: 'A', question: "Fruita vermella o verda que creix als arbres.", answer: "POMA" },
-  // ⚽ Esports
-  { char: 'F', question: "Esport d'equip amb una pilota rodona i porteries.", answer: "FUTBOL" },
-  { char: 'B', question: "Esport on es llança una pilota a una cistella.", answer: "BASQUET" },
-  { char: 'N', question: "Esport aquàtic on es fan braçades a la piscina.", answer: "NATACIO" },
-  { char: 'T', question: "Esport de raqueta amb una pilota sobre una xarxa.", answer: "TENNIS" },
-  { char: 'C', question: "Esport on es pedala amb dues rodes.", answer: "CICLISME" },
-  { char: 'R', question: "Esport d'equip amb una pilota ovalada.", answer: "RUGBY" },
-  { char: 'E', question: "Esport d'hivern on es llisca per la neu.", answer: "ESQUI" },
-  // 💻 Tecnologia
-  { char: 'R', question: "Màquina programable que pot fer tasques automàtiques.", answer: "ROBOT" },
-  { char: 'I', question: "Xarxa global que connecta ordinadors de tot el món.", answer: "INTERNET" },
-  { char: 'P', question: "Acció de crear instruccions perquè un ordinador faci una tasca.", answer: "PROGRAMAR" },
-  { char: 'W', question: "Lloc a internet on pots consultar informació.", answer: "WEB" },
-  { char: 'D', question: "Informació emmagatzemada en sistemes informàtics.", answer: "DADES" },
-  { char: 'S', question: "Dispositiu electrònic de butxaca amb pantalla tàctil.", answer: "SMARTPHONE" },
-  // 🌿 Natura
-  { char: 'B', question: "Gran extensió de terreny cobert d'arbres.", answer: "BOSC" },
-  { char: 'F', question: "Part de la planta que sol ser de colors i atrau insectes.", answer: "FLOR" },
-  { char: 'A', question: "Planta gran amb tronc llenyós i branques.", answer: "ARBRE" },
-  { char: 'P', question: "Precipitació d'aigua que cau dels núvols.", answer: "PLUJA" },
-  { char: 'N', question: "Massa visible de gotes d'aigua al cel.", answer: "NUVOL" },
-  { char: 'L', question: "Font natural de llum que ve del Sol.", answer: "LLUM" },
-  { char: 'V', question: "Moviment de l'aire a l'atmosfera.", answer: "VENT" },
-  // 🏛 Història i Cultura
-  { char: 'C', question: "Edifici fortificat medieval amb torres i muralles.", answer: "CASTELL" },
-  { char: 'M', question: "Lloc on s'exposen obres d'art i objectes històrics.", answer: "MUSEU" },
-  { char: 'L', question: "Conjunt de signes escrits que serveix per comunicar-se.", answer: "LLENGUA" },
-  // 🎵 Música
-  { char: 'G', question: "Instrument de cordes molt popular en el rock.", answer: "GUITARRA" },
-  { char: 'P', question: "Instrument de tecles blanques i negres.", answer: "PIANO" },
-  { char: 'B', question: "Instrument de percussió que es toca amb baquetes.", answer: "BATERIA" },
-  { char: 'F', question: "Instrument de vent de fusta amb forats.", answer: "FLAUTA" },
-  { char: 'M', question: "Art de combinar sons de forma agradable.", answer: "MUSICA" },
-];
+  const emit = defineEmits(['game-over'])
 
-// --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
-const STAR_CENTER = 200;
-const STAR_RADIUS = 150;
-const INNER_RADIUS = 60; 
+  // Roles asimétricos
+  const subRole = computed(() => multiplayerStore.subRole)
+  const isTranslator = computed(() => props.isMultiplayer && subRole.value === 'translator')
+  const isSender = computed(() => props.isMultiplayer && subRole.value === 'sender')
+  const isGuesser = computed(() => props.isMultiplayer && subRole.value === 'guesser')
 
-const starPoints = Array.from({ length: 10 }, (_, i) => {
-  const angle = (i * 36 - 90) * (Math.PI / 180);
-  const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS;
-  return {
-    x: STAR_CENTER + Math.cos(angle) * r,
-    y: STAR_CENTER + Math.sin(angle) * r,
-  };
-});
+  // --- EMOJIS ---
+  const filteredEmojiList = computed(() => {
+    const search = emojiSearch.value?.trim().toLowerCase()
+    if (!search) return EMOJI_LIBRARY.map(e => e.char)
+    
+    const results = EMOJI_LIBRARY
+      .filter(e => e.tags.toLowerCase().includes(search))
+      .map(e => e.char)
 
-const letterPositions = [0, 2, 4, 6, 8];
+    return results.length > 0 ? results : []
+  })
 
-const starSegments = computed(() => {
-  return starPoints.map((point, i) => {
-    const nextIdx = (i + 1) % 10;
+  const sendEmoji = throttle((emoji) => {
+    multiplayerStore.sendEmojiClue(emoji)
+    emojiSearch.value = '' // Limpiar después de enviar
+  }, 500)
+
+  // --- DADES DEL JOC (temes variats) ---
+  const allLettersData = [
+    // 🌌 Espai
+    { char: 'A', question: 'Cos rocallós que orbita al voltant del Sol.', answer: 'ASTEROIDE', hieroglyphs: ['☄️', '🪨', '🌌'] },
+    { char: 'C', question: 'Astre de gel i pols amb una cua lluminosa.', answer: 'COMETA', hieroglyphs: ['☄️', '❄️', '✨'] },
+    { char: 'E', question: 'Esfera de gas que emet llum i calor.', answer: 'ESTRELLA', hieroglyphs: ['⭐', '🔥', '✨'] },
+    { char: 'G', question: 'Sistema enorme d\'estrelles units per la gravetat.', answer: 'GALAXIA', hieroglyphs: ['🌀', '🌌', '✨'] },
+    { char: 'N', question: 'Núvol de gas on neixen noves estrelles.', answer: 'NEBULOSA', hieroglyphs: ['☁️', '🌈', '👶'] },
+    { char: 'P', question: 'Cos celest que orbita una estrella.', answer: 'PLANETA', hieroglyphs: ['🌍', '💫', '☀️'] },
+    { char: 'S', question: 'L\'estrella central del nostre sistema.', answer: 'SOL', hieroglyphs: ['☀️', '🔥', '🦁'] },
+    { char: 'T', question: 'Instrument per observar objectes llunyans a l\'espai.', answer: 'TELESCOPI', hieroglyphs: ['🔭', '👁️', '🌌'] },
+    { char: 'U', question: 'Tot el que existeix: matèria, energia, espai i temps.', answer: 'UNIVERS', hieroglyphs: ['🌌', '♾️', '⚛️'] },
+    { char: 'O', question: 'Trajectòria corba d\'un objecte a l\'espai.', answer: 'ORBITA', hieroglyphs: ['🔄', '🌍', '🌌'] },
+    // 🐾 Animals
+    { char: 'G', question: 'Felí domèstic molt independent i juganer.', answer: 'GAT', hieroglyphs: ['🐱', '🏠', '🧶'] },
+    { char: 'A', question: 'Au rapinyaire de gran envergadura, símbol de llibertat.', answer: 'AGUILA', hieroglyphs: ['🦅', '🏔️', '🗽'] },
+    { char: 'D', question: 'Mamífer marí molt intel·ligent que viu en grups.', answer: 'DOLFI', hieroglyphs: ['🐬', '🌊', '🧠'] },
+    { char: 'E', question: 'El mamífer terrestre més gran del món.', answer: 'ELEFANT', hieroglyphs: ['🐘', '🌳', '🐘'] },
+    { char: 'L', question: 'Gran felí conegut com el rei de la selva.', answer: 'LLEO', hieroglyphs: ['🦁', '👑', '🌿'] },
+    { char: 'T', question: 'Rèptil amb closca dura que es mou lentament.', answer: 'TORTUGA', hieroglyphs: ['🐢', '🐚', '🐌'] },
+    { char: 'C', question: 'Animal amb vuit tentacles que viu al fons del mar.', answer: 'CRANC', hieroglyphs: ['🦀', '🐚', '🏖️'] },
+    { char: 'P', question: 'Ocell tropical de colors vius que pot imitar sons.', answer: 'LLORO', hieroglyphs: ['🦜', '🌴', '🗣️'] },
+    // 🔬 Ciència
+    { char: 'A', question: 'La unitat bàsica de la matèria.', answer: 'ATOM', hieroglyphs: ['⚛️', '🔬', '1️⃣'] },
+    { char: 'C', question: 'Unitat bàsica dels éssers vius.', answer: 'CELULA', hieroglyphs: ['🧬', '🔬', '🥚'] },
+    { char: 'G', question: 'Força que atrau els objectes cap al centre de la Terra.', answer: 'GRAVETAT', hieroglyphs: ['🍎', '⬇️', '🌍'] },
+    { char: 'O', question: 'Gas esencial per a la respiració dels éssers vius.', answer: 'OXIGEN', hieroglyphs: ['💨', '🫁', '🌳'] },
+    { char: 'H', question: 'L\'element químic més lleuger de l\'univers.', answer: 'HIDROGEN', hieroglyphs: ['🎈', '1️⃣', '💧'] },
+    { char: 'E', question: 'Capacitat per fer un treball o produir un canvi.', answer: 'ENERGIA', hieroglyphs: ['⚡', '🔋', '🔥'] },
+    { char: 'M', question: 'Aparell que fa que les coses petites es vegin grans.', answer: 'MICROSCOPI', hieroglyphs: ['🔬', '👁️', '🤏'] },
+    { char: 'V', question: 'Rapidesa amb què un objecte canvia de posició.', answer: 'VELOCITAT', hieroglyphs: ['🏃', '💨', '⏱️'] },
+    // 🌍 Geografia
+    { char: 'M', question: 'Gran massa d\'aigua salada que cobreix la Terra.', answer: 'MAR', hieroglyphs: ['🌊', '⛵', '🧂'] },
+    { char: 'V', question: 'Muntanya que pot fer erupció amb lava.', answer: 'VOLCA', hieroglyphs: ['🌋', '🔥', '🏔️'] },
+    { char: 'R', question: 'Corrent natural d\'aigua que desemboca al mar.', answer: 'RIU', hieroglyphs: ['💧', '🏞️', '🐟'] },
+    { char: 'I', question: 'Porció de terra envoltada d\'aigua per tots els costats.', answer: 'ILLA', hieroglyphs: ['🏝️', '🌊', '🌴'] },
+    { char: 'D', question: 'Zona àrida amb molt poques precipitacions.', answer: 'DESERT', hieroglyphs: ['🏜️', '☀️', '🌵'] },
+    { char: 'S', question: 'Gran extensió de bosc tropical amb molta biodiversitat.', answer: 'SELVA', hieroglyphs: ['🌳', '🐒', '🦜'] },
+    { char: 'L', question: 'Massa d\'aigua dolça envoltada de terra.', answer: 'LLAC', hieroglyphs: ['💧', '🌲', '🦢'] },
+    // 🍎 Aliments
+    { char: 'P', question: 'Fruita allargada i groga molt energètica.', answer: 'PLATAN', hieroglyphs: ['🍌', '🟡', '🐒'] },
+    { char: 'T', question: 'Fruita vermella molt usada en amanides i salses.', answer: 'TOMAQUET', hieroglyphs: ['🍅', '🥗', '🍝'] },
+    { char: 'F', question: 'Preparat comestible fet amb llet coagulada.', answer: 'FORMATGE', hieroglyphs: ['🧀', '🧀', '🐭'] },
+    { char: 'X', question: 'Dolç elaborat amb cacau.', answer: 'XOCOLATA', hieroglyphs: ['🍫', '🍫', '😋'] },
+    { char: 'P', question: 'Plat italià amb base de massa, tomàquet i formatge.', answer: 'PIZZA', hieroglyphs: ['🍕', '🇮🇹', '🍕'] },
+    { char: 'M', question: 'Producte dolç que fan las abelles.', answer: 'MEL', hieroglyphs: ['🍯', '🐝', '🍯'] },
+    { char: 'A', question: 'Fruita vermella o verda que creix als arbres.', answer: 'POMA', hieroglyphs: ['🍎', '🍏', '🌳'] },
+    // ⚽ Esports
+    { char: 'F', question: 'Esport d\'equip amb una pilota rodona i porteries.', answer: 'FUTBOL', hieroglyphs: ['⚽', '🥅', '🏟️'] },
+    { char: 'B', question: 'Esport on es llança una pilota a una cistella.', answer: 'BASQUET', hieroglyphs: ['🏀', '🗑️', '🏀'] },
+    { char: 'N', question: 'Esport aquàtic on es fan braçades a la piscina.', answer: 'NATACIO', hieroglyphs: ['🏊', '🌊', '🏊'] },
+    { char: 'T', question: 'Esport de raqueta amb una pilota sobre una xarxa.', answer: 'TENNIS', hieroglyphs: ['🎾', '🏸', '🎾'] },
+    { char: 'C', question: 'Esport on es pedala amb dues rodes.', answer: 'CICLISME', hieroglyphs: ['🚴', '🚲', '🚴'] },
+    { char: 'R', question: 'Esport d\'equip amb una pilota ovalada.', answer: 'RUGBY', hieroglyphs: ['🏉', '🏉', '🏟️'] },
+    { char: 'E', question: 'Esport d\'hivern on es llisca per la neu.', answer: 'ESQUI', hieroglyphs: ['⛷️', '❄️', '🏔️'] },
+    // 💻 Tecnologia
+    { char: 'R', question: 'Màquina programable que pot fer tasques automàtiques.', answer: 'ROBOT', hieroglyphs: ['🤖', '⚙️', '⚡'] },
+    { char: 'I', question: 'Xarxa global que connecta ordinadors de tot el món.', answer: 'INTERNET', hieroglyphs: ['🌐', '💻', '📶'] },
+    { char: 'P', question: 'Acció de crear instruccions perquè un ordinador faci una tasca.', answer: 'PROGRAMAR', hieroglyphs: ['💻', '⌨️', '📜'] },
+    { char: 'W', question: 'Lloc a internet on pots consultar informació.', answer: 'WEB', hieroglyphs: ['🕸️', '💻', '🔍'] },
+    { char: 'D', question: 'Informació emmagatzemada en sistemes informàtics.', answer: 'DADES', hieroglyphs: ['📊', '📁', '💾'] },
+    { char: 'S', question: 'Dispositiu electrònic de butxaca amb pantalla tàctil.', answer: 'SMARTPHONE', hieroglyphs: ['📱', '🤳', '📲'] },
+    // 🌿 Natura
+    { char: 'B', question: 'Gran extensió de terreny cobert d\'arbres.', answer: 'BOSC', hieroglyphs: ['🌲', '🌳', '🦌'] },
+    { char: 'F', question: 'Part de la planta que sol ser de colors i atrau insectes.', answer: 'FLOR', hieroglyphs: ['🌸', '🐝', '💐'] },
+    { char: 'A', question: 'Planta gran amb tronc llenyós i branques.', answer: 'ARBRE', hieroglyphs: ['🌳', '🪵', '🍃'] },
+    { char: 'P', question: 'Precipitació d\'aigua que cau dels núvols.', answer: 'PLUJA', hieroglyphs: ['🌧️', '☔', '💧'] },
+    { char: 'N', question: 'Massa visible de gotes d\'aigua al cer.', answer: 'NUVOL', hieroglyphs: ['☁️', '☁️', '🌈'] },
+    { char: 'L', question: 'Font natural de llum que ve del Sol.', answer: 'LLUM', hieroglyphs: ['💡', '☀️', '🔦'] },
+    { char: 'V', question: 'Moviment de l\'aire a l\'atmosfera.', answer: 'VENT', hieroglyphs: ['🌬️', '🍃', '🪁'] },
+    // 🏛 Història i Cultura
+    { char: 'C', question: 'Edifici fortificat medieval amb torres i muralles.', answer: 'CASTELL', hieroglyphs: ['🏰', '🛡️', '👑'] },
+    { char: 'M', question: 'Lloc on s\'exposen obres d\'art i objectes històrics.', answer: 'MUSEU', hieroglyphs: ['🏛️', '🖼️', '🗿'] },
+    { char: 'L', question: 'Conjunt de signes escrits que serveix per comunicar-se.', answer: 'LLENGUA', hieroglyphs: ['👅', '🗣️', '📜'] },
+    // 🎵 Música
+    { char: 'G', question: 'Instrument de cordes molt popular en el rock.', answer: 'GUITARRA', hieroglyphs: ['🎸', '🎶', '🤘'] },
+    { char: 'P', question: 'Instrument de tecles blanques i negres.', answer: 'PIANO', hieroglyphs: ['🎹', '🎶', '🎹'] },
+    { char: 'B', question: 'Instrument de percussió que es toca amb baquetes.', answer: 'BATERIA', hieroglyphs: ['🥁', '🎶', '🥁'] },
+    { char: 'F', question: 'Instrument de vent de fusta amb forats.', answer: 'FLAUTA', hieroglyphs: ['🎶', '🌬️', '🦯'] },
+    { char: 'M', question: 'Art de combinar sons de forma agradable.', answer: 'MUSICA', hieroglyphs: ['🎶', '🎼', '🎧'] },
+  ]
+
+  // --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
+  const STAR_CENTER = 200
+  const STAR_RADIUS = 150
+  const INNER_RADIUS = 60
+
+  const starPoints = Array.from({ length: 10 }, (_, i) => {
+    const angle = (i * 36 - 90) * (Math.PI / 180)
+    const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
     return {
-      x1: point.x, y1: point.y,
-      x2: starPoints[nextIdx].x, y2: starPoints[nextIdx].y,
-    };
-  });
-});
+      x: STAR_CENTER + Math.cos(angle) * r,
+      y: STAR_CENTER + Math.sin(angle) * r,
+    }
+  })
 
-const tipPolygons = computed(() => {
-  // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
-  return letterPositions.map(pos => {
-    const pPrev = starPoints[(pos - 1 + 10) % 10];
-    const pCurr = starPoints[pos];
-    const pNext = starPoints[(pos + 1) % 10];
-    const pCenter = { x: STAR_CENTER, y: STAR_CENTER };
-    // Formem un rombe o triangle des del centre per omplir la punta
-    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`;
-  });
-});
+  const letterPositions = [0, 2, 4, 6, 8]
 
-// Estat del joc
-const roscoLetters = ref([]); 
-const currentIndex = ref(0);
-const rawInput = ref('');
-const gameFinished = ref(false);
-const score = ref(0);
-const showFeedback = ref(false);
-const feedbackMessage = ref('');
-const feedbackColor = ref('info');
-const isChecking = ref(false);
-const totalTime = 90;
-const timeLeft = ref(totalTime);
-const isWaitingForOthers = ref(false);
-let timerInterval = null;
+  const starSegments = computed(() => {
+    return starPoints.map((point, i) => {
+      const nextIdx = (i + 1) % 10
+      return {
+        x1: point.x, y1: point.y,
+        x2: starPoints[nextIdx].x, y2: starPoints[nextIdx].y,
+      }
+    })
+  })
 
-// Rocket animation state
-const rocketAnimating = ref(false);
-const rocketPos = reactive({ x: 0, y: 0 });
-const trailParticles = ref([]);
-const visitedSegments = ref(new Set());
+  const tipPolygons = computed(() => {
+    // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
+    return letterPositions.map(pos => {
+      const pPrev = starPoints[(pos - 1 + 10) % 10]
+      const pCurr = starPoints[pos]
+      const pNext = starPoints[(pos + 1) % 10]
+      const pCenter = { x: STAR_CENTER, y: STAR_CENTER }
+      // Formem un rombe o triangle des del centre per omplir la punta
+      return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
+    })
+  })
 
-// Computed
-const currentLetter = computed(() => {
-    if (roscoLetters.value.length === 0) return { char: '?', question: '' };
-    return roscoLetters.value[currentIndex.value];
-});
+  // Estat del joc
+  const roscoLetters = ref([])
+  const currentIndex = ref(0)
+  const rawInput = ref('')
+  const gameFinished = ref(false)
+  const score = ref(0)
+  const showFeedback = ref(false)
+  const feedbackMessage = ref('')
+  const feedbackColor = ref('info')
+  const isChecking = ref(false)
+  const totalTime = 90
+  const timeLeft = ref(totalTime)
+  const isWaitingForOthers = ref(false)
+  const attempts = ref(0) // NUEVO: Contador de intentos
+  let timerInterval = null
 
-const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length);
-const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
-const finalReward = computed(() => score.value + timeLeft.value);
+  // Rocket animation state
+  const rocketAnimating = ref(false)
+  const rocketPos = reactive({ x: 0, y: 0 })
+  const trailParticles = ref([])
+  const visitedSegments = ref(new Set())
 
-// Helper: normalize string (remove accents, uppercase, trim spaces)
-const normalize = (str) => {
-    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-};
+  // Computed
+  const currentLetter = computed(() => {
+    if (roscoLetters.value.length === 0) return { char: '?', question: '', hieroglyphs: [] }
+    return roscoLetters.value[currentIndex.value]
+  })
 
-// Initialization - pick 5 random
-onMounted(() => {
-    const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
-    roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
-    startTimer();
-});
+  const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length)
+  const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length)
+  const finalReward = computed(() => score.value + timeLeft.value)
 
-// Listener para eventos multijugador
-watch(() => multiplayerStore.lastMessage, (msg) => {
-    if (!msg) return;
+  // Helper: normalize string (remove accents, uppercase, trim spaces)
+  function normalize (str) {
+    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036F]/g, '')
+  }
+
+  // Initialization - use server data
+  function initRosco () {
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData) {
+      const teamId = multiplayerStore.room.gameConfig.teams[astroStore.user]
+      const data = multiplayerStore.room.gameConfig.roscoData[teamId] || multiplayerStore.room.gameConfig.roscoData.default
+      if (data && roscoLetters.value.length === 0) {
+        roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
+        console.log('Rosco inicializado con datos del servidor:', roscoLetters.value)
+      }
+    } else if (!props.isMultiplayer && roscoLetters.value.length === 0) {
+      const shuffled = [...allLettersData].sort(() => Math.random() - 0.5)
+      roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
+    }
+  }
+
+  onMounted(() => {
+    initRosco()
+    startTimer()
+  })
+
+  // Asegurar que si los datos llegan tarde, se inicialice el rosco
+  watch(() => multiplayerStore.room, (newRoom) => {
+    if (newRoom?.gameConfig?.roscoData) {
+      initRosco()
+    }
+  }, { deep: true })
+
+  // Sincronización de escritura con throttle
+  const emitTyping = throttle((text) => {
+    if (props.isMultiplayer && !isTranslator.value && !isSender.value) {
+      multiplayerStore.sendGameAction({
+        type: 'TYPING_SYNC',
+        text
+      })
+    }
+  }, 150)
+
+  function onTyping () {
+    emitTyping(rawInput.value)
+  }
+
+  // Listener para eventos multijugador
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        gameFinished.value = true;
-        emitExit();
+      gameFinished.value = true
+      emitExit()
+    }
+
+    // Recibir avance de letra del compañero (Guesser -> Sender/Translator)
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ADVANCE_LETTER') {
+      if (isSender.value || isTranslator.value) {
+         const { index, status, score: newScore } = msg.action
+         roscoLetters.value[index].status = status
+         score.value = newScore
+         advanceTurn()
+      }
     }
 
     // Rebre sabotatge del rival: restar temps
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
     }
-});
-
-// Notificar puntuación al servidor en modo multijugador
-watch(score, (newScore) => {
-    if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-            type: 'SCORE_UPDATE',
-            score: newScore
-        });
+    
+    // Feedback visual de cambio de rol
+    if (msg.type === 'GAME_ROLES_SWAPPED') {
+      feedbackMessage.value = '¡CAMBIO DE ROLES!'
+      feedbackColor.value = 'warning'
+      showFeedback.value = true
+      setTimeout(() => { showFeedback.value = false }, 2000)
     }
-});
+  })
 
-onUnmounted(() => {
+  // Notificar puntuación al servidor en modo multijugador
+  watch(score, newScore => {
+    if (props.isMultiplayer && !isTranslator.value && !isSender.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SCORE_UPDATE',
+        score: newScore,
+      })
+    }
+  })
+
+  onUnmounted(() => {
     if (timerInterval) {
-        clearInterval(timerInterval);
+      clearInterval(timerInterval)
     }
-});
+  })
 
-const clearInput = () => { rawInput.value = ''; };
+  function clearInput () {
+    rawInput.value = ''
+    onTyping()
+  }
 
-// Rocket Animation - Following the outline
-const animateRocket = (fromIdx, toIdx) => {
-  return new Promise((resolve) => {
-    // fromIdx i toIdx són índexs de lletres (0..4)
-    // Els convertim a índexs de starPoints (multiplicant per 2)
-    const startPointIdx = letterPositions[fromIdx];
-    const endPointIdx = letterPositions[toIdx];
-    
-    // Determinem el camí més curt pel contorn
-    const path = [];
-    let curr = startPointIdx;
-    while(curr !== endPointIdx) {
-      curr = (curr + 1) % 10;
-      path.push(starPoints[curr]);
-    }
-    
-    rocketAnimating.value = true;
-    trailParticles.value = [];
-    
-    const durationPerStep = 200;
-    const animateStep = (stepIdx) => {
-      if (stepIdx >= path.length) {
-        setTimeout(() => {
-          rocketAnimating.value = false;
-          trailParticles.value = [];
-          resolve();
-        }, 50);
-        return;
+  // Rocket Animation - Following the outline
+  function animateRocket (fromIdx, toIdx) {
+    return new Promise(resolve => {
+      // fromIdx i toIdx són índexs de lletres (0..4)
+      // Els convertim a índexs de starPoints (multiplicant per 2)
+      const startPointIdx = letterPositions[fromIdx]
+      const endPointIdx = letterPositions[toIdx]
+
+      // Determinem el camí més curt pel contorn
+      const path = []
+      let curr = startPointIdx
+      while (curr !== endPointIdx) {
+        curr = (curr + 1) % 10
+        path.push(starPoints[curr])
       }
-      
-      const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1];
-      const to = path[stepIdx];
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / durationPerStep, 1);
-        const eased = progress; // Linear per a camins llargs
-        
-        rocketPos.x = from.x + (to.x - from.x) * eased;
-        rocketPos.y = from.y + (to.y - from.y) * eased;
-        
-        if (progress < 1) {
-          trailParticles.value.push({
-            x: rocketPos.x + (Math.random() - 0.5) * 8,
-            y: rocketPos.y + (Math.random() - 0.5) * 8,
-            r: Math.random() * 3 + 1,
-            color: '#00e5ff',
-            opacity: 1,
-          });
-          if (trailParticles.value.length > 20) trailParticles.value.shift();
-          requestAnimationFrame(animate);
-        } else {
-          animateStep(stepIdx + 1);
+
+      rocketAnimating.value = true
+      trailParticles.value = []
+
+      const durationPerStep = 200
+      const animateStep = stepIdx => {
+        if (stepIdx >= path.length) {
+          setTimeout(() => {
+            rocketAnimating.value = false
+            trailParticles.value = []
+            resolve()
+          }, 50)
+          return
         }
-      };
-      requestAnimationFrame(animate);
-    };
-    
-    animateStep(0);
-  });
-};
 
-const isTipGlowing = (tipIdx) => {
-  return roscoLetters.value[tipIdx]?.status === 'correct';
-};
+        const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1]
+        const to = path[stepIdx]
+        const startTime = Date.now()
 
-const isSegmentGlowing = (segIdx) => {
-  // Cada lletra i (0..4) està associada als segments (i*2-1) i (i*2)
-  return roscoLetters.value.some((l, i) => {
-    if (l.status !== 'correct') return false;
-    const seg1 = i * 2;
-    const seg0 = (i * 2 - 1 + 10) % 10;
-    return segIdx === seg1 || segIdx === seg0;
-  });
-};
+        const animate = () => {
+          const elapsed = Date.now() - startTime
+          const progress = Math.min(elapsed / durationPerStep, 1)
+          const eased = progress // Linear per a camins llargs
 
-const isSegmentVisited = (segIdx) => false; // Ja no usem visitedSegments per a les línies
+          rocketPos.x = from.x + (to.x - from.x) * eased
+          rocketPos.y = from.y + (to.y - from.y) * eased
 
-// Game Logic
-const checkAnswer = async () => {
-    if (rawInput.value.trim() === '' || isChecking.value) return;
-    
-    isChecking.value = true;
-    const userAnswer = normalize(rawInput.value);
-    const correctAnswer = normalize(currentLetter.value.answer);
+          if (progress < 1) {
+            trailParticles.value.push({
+              x: rocketPos.x + (Math.random() - 0.5) * 8,
+              y: rocketPos.y + (Math.random() - 0.5) * 8,
+              r: Math.random() * 3 + 1,
+              color: '#00e5ff',
+              opacity: 1,
+            })
+            if (trailParticles.value.length > 20) trailParticles.value.shift()
+            requestAnimationFrame(animate)
+          } else {
+            animateStep(stepIdx + 1)
+          }
+        }
+        requestAnimationFrame(animate)
+      }
+
+      animateStep(0)
+    })
+  }
+
+  function isTipGlowing (tipIdx) {
+    return roscoLetters.value[tipIdx]?.status === 'correct'
+  }
+
+  function isSegmentGlowing (segIdx) {
+    // Cada lletra i (0..4) està associada als segments (i*2-1) i (i*2)
+    return roscoLetters.value.some((l, i) => {
+      if (l.status !== 'correct') return false
+      const seg1 = i * 2
+      const seg0 = (i * 2 - 1 + 10) % 10
+      return segIdx === seg1 || segIdx === seg0
+    })
+  }
+
+  const isSegmentVisited = segIdx => false // Ja no usem visitedSegments per a les línies
+
+  // Game Logic
+  async function checkAnswer () {
+    if (rawInput.value.trim() === '' || isChecking.value) return
+    if (isTranslator.value || isSender.value) return // Traductor y Sender no pueden enviar respuestas
+
+    isChecking.value = true
+    const userAnswer = normalize(rawInput.value)
+    const correctAnswer = normalize(currentLetter.value.answer)
 
     if (userAnswer === correctAnswer) {
-        roscoLetters.value[currentIndex.value].status = 'correct';
-        score.value += 100;
-        feedbackMessage.value = "Correcte! Molt bé!";
-        feedbackColor.value = 'success';
-        // Sabotatge multijugador: +10s per a tu, -15s per al rival
-        if (props.isMultiplayer) {
-            timeLeft.value = Math.min(timeLeft.value + 10, 999);
-            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 });
-        }
+      roscoLetters.value[currentIndex.value].status = 'correct'
+      score.value += 100
+      attempts.value = 0 // Reset intentos
+      feedbackMessage.value = 'Correcte! Molt bé!'
+      feedbackColor.value = 'success'
+      // Sabotatge multijugador: +10s per a tu, -15s per al rival
+      if (props.isMultiplayer) {
+        timeLeft.value = Math.min(timeLeft.value + 10, 999)
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 })
+      }
+      showFeedback.value = true
+      syncAndAdvance('correct')
     } else {
-        roscoLetters.value[currentIndex.value].status = 'incorrect';
-        feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;
-        feedbackColor.value = 'error';
+      attempts.value++
+      if (attempts.value >= 3) {
+        roscoLetters.value[currentIndex.value].status = 'incorrect'
+        attempts.value = 0
+        feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`
+        feedbackColor.value = 'error'
+        showFeedback.value = true
+        syncAndAdvance('incorrect')
+      } else {
+        feedbackMessage.value = `Incorrecte! Intent ${attempts.value}/3`
+        feedbackColor.value = 'warning'
+        showFeedback.value = true
+        isChecking.value = false
+        setTimeout(() => { showFeedback.value = false }, 1000)
+      }
+    }
+  }
+
+  function syncAndAdvance (status) {
+    // Sincronizar con el compañero antes de avanzar
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'ADVANCE_LETTER',
+        index: currentIndex.value,
+        status: status,
+        score: score.value
+      })
     }
 
-    showFeedback.value = true;
-    
     setTimeout(async () => {
-        showFeedback.value = false;
-        rawInput.value = '';
-        await advanceTurn();
-        isChecking.value = false;
-    }, 1200);
-};
+      showFeedback.value = false
+      rawInput.value = ''
+      onTyping() // Reset partner text
+      await advanceTurn()
+      isChecking.value = false
+    }, 1200)
+  }
 
-const pasapalabra = () => {
-    if (isChecking.value) return;
-    rawInput.value = '';
-    advanceTurn();
-};
-
-const advanceTurn = async () => {
-    const prevIndex = currentIndex.value;
-    let nextIdx = -1;
+  function pasapalabra () {
+    if (isChecking.value || isTranslator.value || isSender.value) return
+    rawInput.value = ''
+    attempts.value = 0 // Reset intentos al pasar
+    onTyping()
     
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'ADVANCE_LETTER',
+        index: currentIndex.value,
+        status: 'pending',
+        score: score.value
+      })
+    }
+    
+    advanceTurn()
+  }
+
+  async function advanceTurn () {
+    const prevIndex = currentIndex.value
+    let nextIdx = -1
+
     for (let i = currentIndex.value + 1; i < roscoLetters.value.length; i++) {
-        if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
+      if (roscoLetters.value[i].status === 'pending') {
+        nextIdx = i; break
+      }
     }
 
     if (nextIdx === -1) {
-        for (let i = 0; i < currentIndex.value; i++) {
-            if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
+      for (let i = 0; i < currentIndex.value; i++) {
+        if (roscoLetters.value[i].status === 'pending') {
+          nextIdx = i; break
         }
+      }
     }
 
-    if (nextIdx !== -1) {
-        visitedSegments.value.add(prevIndex);
-        await animateRocket(prevIndex, nextIdx);
-        currentIndex.value = nextIdx;
+    // Notificar progreso al servidor para posibles swaps
+    if (props.isMultiplayer && !isTranslator.value && !isSender.value) {
+      multiplayerStore.sendGameAction({
+        type: 'ROSCO_PROGRESS_UPDATE',
+        letterIndex: roscoLetters.value.filter(l => l.status !== 'pending').length,
+        errors: incorrectCount.value
+      })
+    }
+
+    if (nextIdx === -1) {
+      finishGame()
     } else {
-        finishGame();
+      visitedSegments.value.add(prevIndex)
+      await animateRocket(prevIndex, nextIdx)
+      currentIndex.value = nextIdx
     }
-};
+  }
 
-const finishGame = (silent = false) => {
-    if (gameFinished.value) return;
-    
+  function finishGame (silent = false) {
+    if (gameFinished.value) return
+
     if (props.isMultiplayer && !silent) {
-        if (timerInterval) clearInterval(timerInterval);
-        multiplayerStore.submitRoundResult();
-        return;
+      if (timerInterval) clearInterval(timerInterval)
+      multiplayerStore.submitRoundResult()
+      return
     }
 
-    gameFinished.value = true;
+    gameFinished.value = true
     if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
+      clearInterval(timerInterval)
+      timerInterval = null
     }
-};
+  }
 
-const startTimer = () => {
+  function startTimer () {
     if (timerInterval) {
-        clearInterval(timerInterval);
+      clearInterval(timerInterval)
     }
 
     timerInterval = setInterval(() => {
-        if (gameFinished.value) return;
-        timeLeft.value = Math.max(0, timeLeft.value - 1);
-        if (timeLeft.value === 0) {
-            finishGame();
-        }
-    }, 1000);
-};
+      if (gameFinished.value) return
+      timeLeft.value = Math.max(0, timeLeft.value - 1)
+      if (timeLeft.value === 0) {
+        finishGame()
+      }
+    }, 1000)
+  }
 
-const emitExit = () => { emit('game-over', finalReward.value); };
+  function emitExit () {
+    emit('game-over', finalReward.value)
+  }
 
-// Visual Helpers
-const getBubbleClass = (letter, index) => {
-    if (index === currentIndex.value && !gameFinished.value) return 'node-current';
-    if (letter.status === 'correct') return 'node-correct';
-    if (letter.status === 'incorrect') return 'node-incorrect';
-    return 'node-pending';
-};
+  // Visual Helpers
+  function getBubbleClass (letter, index) {
+    if (index === currentIndex.value && !gameFinished.value) return 'node-current'
+    if (letter.status === 'correct') return 'node-correct'
+    if (letter.status === 'incorrect') return 'node-incorrect'
+    return 'node-pending'
+  }
 
-const getStarNodeStyle = (index) => {
-    const pointIdx = letterPositions[index];
-    const point = starPoints[pointIdx];
+  function getStarNodeStyle (index) {
+    const pointIdx = letterPositions[index]
+    const point = starPoints[pointIdx]
     return {
-        left: `${(point.x / 400) * 100}%`,
-        top: `${(point.y / 400) * 100}%`,
-    };
-};
+      left: `${(point.x / 400) * 100}%`,
+      top: `${(point.y / 400) * 100}%`,
+    }
+  }
 
-const getChipColor = (letter) => {
-    if (letter.status === 'correct') return 'success';
-    if (letter.status === 'incorrect') return 'error';
-    return 'grey';
-};
+  function getChipColor (letter) {
+    if (letter.status === 'correct') return 'success'
+    if (letter.status === 'incorrect') return 'error'
+    return 'grey'
+  }
 </script>
 
 <style scoped>
 .game-container {
     background-color: #0b0f19;
+}
+
+.opendyslexic {
+    font-family: 'OpenDyslexic', sans-serif !important;
 }
 
 .star-col {
@@ -736,5 +1018,81 @@ const getChipColor = (letter) => {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 3px;
+    font-family: 'OpenDyslexic', sans-serif !important;
+}
+
+.ghost-text-container {
+    background: rgba(0, 229, 255, 0.05);
+    border: 2px dashed rgba(0, 229, 255, 0.3);
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.typing-indicator {
+    width: 60%;
+    opacity: 0.7;
+}
+
+/* EMOJI CHAT INTERNAL STYLES */
+.hieroglyph-internal-container {
+  perspective: 1000px;
+}
+.hieroglyph-box {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, #263238 0%, #102027 100%);
+  border: 2px solid #00e5ff;
+  border-radius: 12px;
+  display: flex; justify-content: center; align-items: center;
+}
+.emoji-text { font-size: 2rem; }
+
+.emoji-grid-internal {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.5);
+}
+
+.emoji-btn-internal { width: 40px; height: 40px; }
+
+.emoji-history-internal {
+  min-height: 80px;
+  border: 2px solid rgba(0, 229, 255, 0.3);
+  background: rgba(49, 27, 146, 0.4);
+}
+.min-chat-bubble-internal { min-height: 50px; align-items: center; }
+.emoji-item-internal {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px;
+  border-radius: 8px;
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  80% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in {
+  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 </style>

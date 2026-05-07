@@ -3,75 +3,86 @@
     <!-- Ribbon -->
     <div :class="['ribbon-system', type]">
       <div class="ribbon-main">
-        <div class="ribbon-texture"></div>
+        <div class="ribbon-texture" />
       </div>
-      <div class="ribbon-connector"></div>
+      <div class="ribbon-connector" />
     </div>
 
     <!-- Medal Body -->
     <div :class="['medal-body', type]">
       <!-- Metallic Shine Layer -->
-      <div class="medal-shine"></div>
-      
+      <div class="medal-shine" />
+
       <!-- Internal Border -->
-      <div class="medal-inner-ring"></div>
+      <div class="medal-inner-ring" />
 
       <!-- Icon Content -->
       <div class="medal-content d-flex flex-column align-center justify-center">
-        <v-icon 
-          :icon="locked ? 'mdi-lock' : icon" 
-          :size="iconSize"
-          :color="locked ? 'grey-darken-1' : 'white'"
+        <v-icon
           :class="['medal-icon', { 'icon-unlocked': !locked }]"
-        ></v-icon>
+          :color="locked ? 'grey-darken-1' : 'white'"
+          :icon="locked ? 'mdi-lock' : icon"
+          :size="iconSize"
+        />
       </div>
 
       <!-- Rank Accents (Stars) -->
       <div class="medal-rank-accents">
-        <v-icon v-for="n in rankStars" :key="n" icon="mdi-star" size="14" class="rank-star"></v-icon>
+        <v-icon
+          v-for="n in rankStars"
+          :key="n"
+          class="rank-star"
+          icon="mdi-star"
+          size="14"
+        />
       </div>
 
       <!-- Outer Rim -->
-      <div class="medal-rim"></div>
+      <div class="medal-rim" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+  import { computed } from 'vue'
 
-const props = defineProps({
-  type: {
-    type: String,
-    default: 'bronze'
-  },
-  icon: {
-    type: String,
-    default: 'mdi-star'
-  },
-  locked: {
-    type: Boolean,
-    default: false
-  },
-  scale: {
-    type: Number,
-    default: 1
-  },
-  iconSize: {
-    type: Number,
-    default: 42
-  }
-})
+  const props = defineProps({
+    type: {
+      type: String,
+      default: 'bronze',
+    },
+    icon: {
+      type: String,
+      default: 'mdi-star',
+    },
+    locked: {
+      type: Boolean,
+      default: false,
+    },
+    scale: {
+      type: Number,
+      default: 1,
+    },
+    iconSize: {
+      type: Number,
+      default: 42,
+    },
+  })
 
-const rankStars = computed(() => {
-  switch (props.type) {
-    case 'bronze': return 1
-    case 'silver': return 2
-    case 'gold': return 3
-    case 'platinum': return 4
-    default: return 0
-  }
-})
+  const rankStars = computed(() => {
+    switch (props.type) {
+      case 'bronze': { return 1
+      }
+      case 'silver': { return 2
+      }
+      case 'gold': { return 3
+      }
+      case 'platinum': { return 4
+      }
+      default: { return 0
+      }
+    }
+  })
 </script>
 
 <style scoped>
@@ -159,7 +170,7 @@ const rankStars = computed(() => {
   align-items: center;
   justify-content: center;
   z-index: 3;
-  box-shadow: 
+  box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.5),
     inset 0 4px 8px rgba(255, 255, 255, 0.3),
     inset 0 -4px 8px rgba(0, 0, 0, 0.3);
@@ -233,10 +244,10 @@ const rankStars = computed(() => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.6) 0%, 
-    rgba(255, 255, 255, 0) 40%, 
-    rgba(0, 0, 0, 0) 60%, 
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(0, 0, 0, 0) 60%,
     rgba(255, 255, 255, 0.2) 100%);
   z-index: 4;
   pointer-events: none;

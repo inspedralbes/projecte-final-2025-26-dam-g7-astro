@@ -1,189 +1,207 @@
 <template>
-    <div class="scroll-container space-background">
-        <v-container fluid class="pa-4 pa-md-8 content-wrapper">
-            <v-row>
-                <!-- Cabecera -->
-                <v-col cols="12" class="text-center mb-8">
-                    <div class="d-flex align-center justify-center mb-2">
-                        <v-icon color="cyan-accent-3" size="40" class="mr-3">mdi-archive-outline</v-icon>
-                        <h1 class="text-h2 font-weight-bold tracking-wide text-white">MI INVENTARIO</h1>
-                    </div>
-                    <p class="text-h6 text-cyan-accent-1 opacity-75">Gestiona tu equipo y personaliza tu presencia
-                        estelar</p>
-                </v-col>
+  <div class="scroll-container space-background">
+    <v-container class="pa-4 pa-md-8 content-wrapper" fluid>
+      <v-row>
+        <!-- Cabecera -->
+        <v-col class="text-center mb-8" cols="12">
+          <div class="d-flex align-center justify-center mb-2">
+            <v-icon class="mr-3" color="cyan-accent-3" size="40">mdi-archive-outline</v-icon>
+            <h1 class="text-h2 font-weight-bold tracking-wide text-white">MI INVENTARIO</h1>
+          </div>
+          <p class="text-h6 text-cyan-accent-1 opacity-75">Gestiona tu equipo y personaliza tu presencia
+            estelar</p>
+        </v-col>
 
-                <!-- Categorías -->
-                <v-col cols="12" md="3">
-                    <v-list class="glass-sidebar pa-2 rounded-xl" bg-color="transparent">
-                        <v-list-item v-for="cat in categories" :key="cat.id" :prepend-icon="cat.icon" :title="cat.name"
-                            v-model="activeCategory" :value="cat.id" class="mb-2 rounded-lg category-item"
-                            :class="{ 'active-cat': activeCategory === cat.id }"
-                            @click="activeCategory = cat.id"></v-list-item>
-                    </v-list>
-                </v-col>
+        <!-- Categorías -->
+        <v-col cols="12" md="3">
+          <v-list bg-color="transparent" class="glass-sidebar pa-2 rounded-xl">
+            <v-list-item
+              v-for="cat in categories"
+              :key="cat.id"
+              v-model="activeCategory"
+              class="mb-2 rounded-lg category-item"
+              :class="{ 'active-cat': activeCategory === cat.id }"
+              :prepend-icon="cat.icon"
+              :title="cat.name"
+              :value="cat.id"
+              @click="activeCategory = cat.id"
+            />
+          </v-list>
+        </v-col>
 
-                <!-- Malla de Items -->
-                <v-col cols="12" md="9">
-                    <v-row v-if="filteredItems.length">
-                        <v-col v-for="item in filteredItems" :key="item.id" cols="12" sm="6" lg="4">
-                            <v-card class="item-card glass-card h-100 pa-4 d-flex flex-column align-center"
-                                rounded="xl">
-                                <v-avatar size="90" :style="{ backgroundColor: item.color + '20' }"
-                                    class="mb-4 medal-glow">
-                                    <v-icon size="45" :color="item.color">{{ item.icon }}</v-icon>
-                                </v-avatar>
-                                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ item.name }}</h3>
-                                <v-chip size="small" color="cyan-accent-3" variant="tonal" class="mb-2">
-                                    x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
-                                </v-chip>
-                                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
-                                <v-chip
-                                    v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
-                                    size="x-small"
-                                    color="green-accent-3"
-                                    variant="tonal"
-                                    class="mb-2"
-                                >
-                                    ACTIVO: {{ getBoosterGamesLeft(item) }} partidas
-                                </v-chip>
-                                <v-spacer></v-spacer>
-                                <v-btn
-                                    block
-                                    :color="getItemActionColor(item)"
-                                    :variant="getItemActionVariant(item)"
-                                    rounded="pill"
-                                    class="font-weight-bold text-black"
-                                    :disabled="isItemActionDisabled(item)"
-                                    @click="handleItemAction(item)"
-                                >
-                                    {{ getItemActionLabel(item) }}
-                                </v-btn>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                    <v-row v-else justify="center" align="center" style="min-height: 300px;">
-                        <v-col cols="12" class="text-center">
-                            <v-icon size="80" color="grey-darken-2" class="mb-4">mdi-package-variant</v-icon>
-                            <h3 class="text-h5 text-grey">Aún no tienes equipo en esta categoría</h3>
-                            <v-btn color="cyan-accent-3" variant="text" class="mt-4" to="/shop">
-                                Visitar la Tienda
-                            </v-btn>
-                        </v-col>
-                    </v-row>
-                </v-col>
-            </v-row>
-        </v-container>
-    </div>
+        <!-- Malla de Items -->
+        <v-col cols="12" md="9">
+          <v-row v-if="filteredItems.length > 0">
+            <v-col
+              v-for="item in filteredItems"
+              :key="item.id"
+              cols="12"
+              lg="4"
+              sm="6"
+            >
+              <v-card
+                class="item-card glass-card h-100 pa-4 d-flex flex-column align-center"
+                rounded="xl"
+              >
+                <v-avatar
+                  class="mb-4 medal-glow"
+                  size="90"
+                  :style="{ backgroundColor: item.color + '20' }"
+                >
+                  <v-icon :color="item.color" size="45">{{ item.icon }}</v-icon>
+                </v-avatar>
+                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ item.name }}</h3>
+                <v-chip class="mb-2" color="cyan-accent-3" size="small" variant="tonal">
+                  x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
+                </v-chip>
+                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
+                <v-chip
+                  v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
+                  class="mb-2"
+                  color="green-accent-3"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  ACTIVO: {{ getBoosterGamesLeft(item) }} partidas
+                </v-chip>
+                <v-spacer />
+                <v-btn
+                  block
+                  class="font-weight-bold text-black"
+                  :color="getItemActionColor(item)"
+                  :disabled="isItemActionDisabled(item)"
+                  rounded="pill"
+                  :variant="getItemActionVariant(item)"
+                  @click="handleItemAction(item)"
+                >
+                  {{ getItemActionLabel(item) }}
+                </v-btn>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else align="center" justify="center" style="min-height: 300px;">
+            <v-col class="text-center" cols="12">
+              <v-icon class="mb-4" color="grey-darken-2" size="80">mdi-package-variant</v-icon>
+              <h3 class="text-h5 text-grey">Aún no tienes equipo en esta categoría</h3>
+              <v-btn class="mt-4" color="cyan-accent-3" to="/shop" variant="text">
+                Visitar la Tienda
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
+  import { computed, onMounted, ref } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const astroStore = useAstroStore();
-const activeCategory = ref('all');
-const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
+  const astroStore = useAstroStore()
+  const activeCategory = ref('all')
+  const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4])
 
-const categories = [
+  const categories = [
     { id: 'all', name: 'Todo', icon: 'mdi-apps' },
     { id: 'skin', name: 'Skins', icon: 'mdi-palette' },
     { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
     { id: 'collectible', name: 'Coleccionables', icon: 'mdi-trophy' },
     { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
-    { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' }
-];
+    { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' },
+  ]
 
-// Usamos SIEMPRE el estado global de Pinia
-const inventoryItems = computed(() => astroStore.inventory || []);
+  // Usamos SIEMPRE el estado global de Pinia
+  const inventoryItems = computed(() => astroStore.inventory || [])
 
-const filteredItems = computed(() => {
-    if (activeCategory.value === 'all') return inventoryItems.value;
-    return inventoryItems.value.filter(item => item.cat === activeCategory.value);
-});
+  const filteredItems = computed(() => {
+    if (activeCategory.value === 'all') return inventoryItems.value
+    return inventoryItems.value.filter(item => item.cat === activeCategory.value)
+  })
 
-// Solo un onMounted para traer los datos al cargar la vista
-onMounted(async () => {
+  // Solo un onMounted para traer los datos al cargar la vista
+  onMounted(async () => {
     if (astroStore.user) {
-        await astroStore.fetchUserInventory();
+      await astroStore.fetchUserInventory()
     }
-});
+  })
 
-async function toggleEquip(item) {
-    if (!isEquipable(item)) return;
+  async function toggleEquip (item) {
+    if (!isEquipable(item)) return
 
     // 1. Usamos la variable de entorno. Si no existe, usa localhost como backup.
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
     try {
-        // 2. Reemplazamos la URL fija por el Template Literal
-        const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user: astroStore.user,
-                itemId: Number(item.id)
-            })
-        });
+      // 2. Reemplazamos la URL fija por el Template Literal
+      const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user: astroStore.user,
+          itemId: Number(item.id),
+        }),
+      })
 
-        const data = await response.json();
-        if (data.success) {
-            // Actualizamos el estado global con el inventario devuelto por el servidor
-            astroStore.setInventory(data.inventory || []);
-        }
+      const data = await response.json()
+      if (data.success) {
+        // Actualizamos el estado global con el inventario devuelto por el servidor
+        astroStore.setInventory(data.inventory || [])
+      }
     } catch (error) {
-        console.error("Error al equipar item:", error);
+      console.error('Error al equipar item:', error)
     }
-}
+  }
 
-function isEquipable(item) {
-    return item?.cat !== 'items';
-}
+  function isEquipable (item) {
+    return item?.cat !== 'items'
+  }
 
-function isUsableBooster(item) {
-    return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id));
-}
+  function isUsableBooster (item) {
+    return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id))
+  }
 
-function getBoosterGamesLeft(item) {
-    const itemId = Number(item?.id);
-    if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0;
-    if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0;
-    return 0;
-}
+  function getBoosterGamesLeft (item) {
+    const itemId = Number(item?.id)
+    if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0
+    if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0
+    return 0
+  }
 
-function getItemActionLabel(item) {
-    if (isUsableBooster(item)) return 'UTILIZAR';
-    if (!isEquipable(item)) return 'NO EQUIPABLE';
-    return item.equipped ? 'EQUIPADO' : 'EQUIPAR';
-}
+  function getItemActionLabel (item) {
+    if (isUsableBooster(item)) return 'UTILIZAR'
+    if (!isEquipable(item)) return 'NO EQUIPABLE'
+    return item.equipped ? 'EQUIPADO' : 'EQUIPAR'
+  }
 
-function getItemActionColor(item) {
-    if (isUsableBooster(item)) return 'amber-accent-3';
-    if (!isEquipable(item)) return 'grey-darken-2';
-    return item.equipped ? 'success' : 'cyan-accent-3';
-}
+  function getItemActionColor (item) {
+    if (isUsableBooster(item)) return 'amber-accent-3'
+    if (!isEquipable(item)) return 'grey-darken-2'
+    return item.equipped ? 'success' : 'cyan-accent-3'
+  }
 
-function getItemActionVariant(item) {
-    if (isUsableBooster(item)) return 'flat';
-    if (!isEquipable(item)) return 'outlined';
-    return item.equipped ? 'tonal' : 'flat';
-}
+  function getItemActionVariant (item) {
+    if (isUsableBooster(item)) return 'flat'
+    if (!isEquipable(item)) return 'outlined'
+    return item.equipped ? 'tonal' : 'flat'
+  }
 
-function isItemActionDisabled(item) {
-    if (isUsableBooster(item)) return Number(item?.quantity) <= 0;
-    return !isEquipable(item);
-}
+  function isItemActionDisabled (item) {
+    if (isUsableBooster(item)) return Number(item?.quantity) <= 0
+    return !isEquipable(item)
+  }
 
-async function handleItemAction(item) {
+  async function handleItemAction (item) {
     if (isUsableBooster(item)) {
-        const result = await astroStore.useInventoryItem(item.id);
-        if (!result.success) {
-            alert(result.message || 'No se pudo usar el objeto.');
-        }
-        return;
+      const result = await astroStore.useInventoryItem(item.id)
+      if (!result.success) {
+        alert(result.message || 'No se pudo usar el objeto.')
+      }
+      return
     }
 
-    await toggleEquip(item);
-}
+    await toggleEquip(item)
+  }
 </script>
 
 <style scoped>

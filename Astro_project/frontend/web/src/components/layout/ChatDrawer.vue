@@ -7,17 +7,17 @@
 
     <!-- Panel del Chat -->
     <Transition name="chat-drawer">
-      <div v-if="chatStore.isOpen" class="chat-drawer" role="dialog" aria-label="Chat privado">
+      <div v-if="chatStore.isOpen" aria-label="Chat privado" class="chat-drawer" role="dialog">
 
         <!-- ── HEADER ──────────────────────────────────────── -->
         <div class="chat-header">
           <div class="chat-header-left">
             <div class="friend-avatar-wrap">
-              <v-avatar size="40" color="#0a192f" class="friend-avatar">
+              <v-avatar class="friend-avatar" color="#0a192f" size="40">
                 <v-img
                   v-if="activeFriend?.avatar"
-                  :src="getAvatarUrl(activeFriend.avatar)"
                   cover
+                  :src="getAvatarUrl(activeFriend.avatar)"
                 />
                 <span v-else class="avatar-initial">
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
@@ -31,16 +31,16 @@
             </div>
           </div>
 
-          <button class="close-btn" @click="chatStore.closeChat()" title="Cerrar comunicación">
+          <button class="close-btn" title="Cerrar comunicación" @click="chatStore.closeChat()">
             <v-icon icon="mdi-close" size="20" />
           </button>
         </div>
 
         <!-- ── MENSAJES ───────────────────────────────────── -->
-        <div class="chat-messages" ref="messagesContainer">
+        <div ref="messagesContainer" class="chat-messages">
           <!-- Estado vacío -->
           <div v-if="chatStore.activeMessages.length === 0" class="chat-empty">
-            <v-icon icon="mdi-satellite-variant" size="48" color="rgba(0,229,255,0.3)" />
+            <v-icon color="rgba(0,229,255,0.3)" icon="mdi-satellite-variant" size="48" />
             <p class="chat-empty-text">Canal abierto.<br>Inicia la transmisión.</p>
           </div>
 
@@ -55,14 +55,14 @@
               <!-- Avatar del amigo (solo en mensajes del amigo) -->
               <v-avatar
                 v-if="msg.from !== myUser"
-                size="28"
-                color="#0a192f"
                 class="msg-avatar"
+                color="#0a192f"
+                size="28"
               >
                 <v-img
                   v-if="activeFriend?.avatar"
-                  :src="getAvatarUrl(activeFriend.avatar)"
                   cover
+                  :src="getAvatarUrl(activeFriend.avatar)"
                 />
                 <span v-else class="msg-avatar-initial">
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
@@ -96,18 +96,18 @@
               ref="inputRef"
               v-model="inputText"
               class="chat-input"
+              maxlength="500"
               placeholder="Transmitir mensaje..."
               rows="1"
-              maxlength="500"
-              @keydown.enter.exact.prevent="sendMessage"
               @input="autoResize"
+              @keydown.enter.exact.prevent="sendMessage"
             />
             <button
               class="send-btn"
               :class="{ 'send-btn--active': inputText.trim() }"
               :disabled="!inputText.trim()"
-              @click="sendMessage"
               title="Enviar (Enter)"
+              @click="sendMessage"
             >
               <v-icon icon="mdi-send" size="18" />
             </button>
@@ -121,91 +121,91 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
-import { useChatStore } from '@/stores/chatStore';
-import { useSessionStore } from '@/stores/sessionStore';
+  import { computed, nextTick, ref, watch } from 'vue'
+  import { useChatStore } from '@/stores/chatStore'
+  import { useSessionStore } from '@/stores/sessionStore'
 
-const chatStore = useChatStore();
-const sessionStore = useSessionStore();
+  const chatStore = useChatStore()
+  const sessionStore = useSessionStore()
 
-const myUser = computed(() => sessionStore.user);
-const activeFriend = computed(() => chatStore.activeFriend);
+  const myUser = computed(() => sessionStore.user)
+  const activeFriend = computed(() => chatStore.activeFriend)
 
-const inputText = ref('');
-const messagesContainer = ref(null);
-const inputRef = ref(null);
-const isTyping = ref(false); // reservado para fase 2
+  const inputText = ref('')
+  const messagesContainer = ref(null)
+  const inputRef = ref(null)
+  const isTyping = ref(false) // reservado para fase 2
 
-/* ── Helpers ─────────────────────────────────────────────── */
+  /* ── Helpers ─────────────────────────────────────────────── */
 
-const getAvatarUrl = (avatarStr) => {
-  if (!avatarStr) return '';
-  return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`;
-};
-
-const formatTime = (isoString) => {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-};
-
-const autoResize = () => {
-  const el = inputRef.value;
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-};
-
-/* ── Enviar mensaje ───────────────────────────────────────── */
-
-const sendMessage = () => {
-  const text = inputText.value.trim();
-  if (!text) return;
-  chatStore.sendMessage(text);
-  inputText.value = '';
-  nextTick(() => {
-    if (inputRef.value) {
-      inputRef.value.style.height = 'auto';
-      inputRef.value.focus();
-    }
-  });
-};
-
-/* ── Auto-scroll al último mensaje ───────────────────────── */
-
-const scrollToBottom = (smooth = true) => {
-  nextTick(() => {
-    const el = messagesContainer.value;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
-  });
-};
-
-// Scroll cuando llegan mensajes nuevos
-watch(
-  () => chatStore.activeMessages.length,
-  (newLen, oldLen) => {
-    if (newLen !== oldLen) scrollToBottom(newLen > oldLen);
+  function getAvatarUrl (avatarStr) {
+    if (!avatarStr) return ''
+    return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`
   }
-);
 
-// Scroll inmediato al abrir el chat (historial cargado)
-watch(
-  () => chatStore.isOpen,
-  (open) => {
-    if (open) {
-      scrollToBottom(false);
-      nextTick(() => inputRef.value?.focus());
-    }
+  function formatTime (isoString) {
+    if (!isoString) return ''
+    const date = new Date(isoString)
+    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
-);
 
-// Scroll al recibir historial
-watch(
-  () => chatStore.activeMessages,
-  () => scrollToBottom(false),
-  { deep: false }
-);
+  function autoResize () {
+    const el = inputRef.value
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }
+
+  /* ── Enviar mensaje ───────────────────────────────────────── */
+
+  function sendMessage () {
+    const text = inputText.value.trim()
+    if (!text) return
+    chatStore.sendMessage(text)
+    inputText.value = ''
+    nextTick(() => {
+      if (inputRef.value) {
+        inputRef.value.style.height = 'auto'
+        inputRef.value.focus()
+      }
+    })
+  }
+
+  /* ── Auto-scroll al último mensaje ───────────────────────── */
+
+  function scrollToBottom (smooth = true) {
+    nextTick(() => {
+      const el = messagesContainer.value
+      if (!el) return
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' })
+    })
+  }
+
+  // Scroll cuando llegan mensajes nuevos
+  watch(
+    () => chatStore.activeMessages.length,
+    (newLen, oldLen) => {
+      if (newLen !== oldLen) scrollToBottom(newLen > oldLen)
+    },
+  )
+
+  // Scroll inmediato al abrir el chat (historial cargado)
+  watch(
+    () => chatStore.isOpen,
+    open => {
+      if (open) {
+        scrollToBottom(false)
+        nextTick(() => inputRef.value?.focus())
+      }
+    },
+  )
+
+  // Scroll al recibir historial
+  watch(
+    () => chatStore.activeMessages,
+    () => scrollToBottom(false),
+    { deep: false },
+  )
 </script>
 
 <style scoped>

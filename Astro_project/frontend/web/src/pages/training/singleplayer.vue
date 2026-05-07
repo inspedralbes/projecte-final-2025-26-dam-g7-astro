@@ -1,213 +1,264 @@
 <template>
-    <v-container fluid class="space-map pa-0">
+  <v-container class="space-map pa-0" fluid>
 
-        <div v-if="!activeGameComponent" class="map-scroll-container" @click="activePreviewIndex = null">
+    <div v-if="!activeGameComponent" class="map-scroll-container" @click="activePreviewIndex = null">
 
-            <div class="start-spacer"></div>
+      <div class="start-spacer" />
 
-            <div class="path-container">
-                <template v-for="(level, index) in levelSequence" :key="index">
-                    
-                    <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
-                        <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
-                            
-                            <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
-                                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
-                                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
-                                    {{ level.phaseTitle }}
-                                </h2>
-                            </div>
+      <div class="path-container">
+        <template v-for="(level, index) in levelSequence" :key="index">
 
-                            <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
-                                <v-divider class="border-cyan opacity-40"></v-divider>
-                                <div class="phase-center-node mx-2"></div>
-                                <v-divider class="border-cyan opacity-40"></v-divider>
-                            </div>
+          <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
+            <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
 
-                            <div class="phase-icon-box text-center">
-                                <v-icon :icon="level.phaseIcon" size="90" class="phase-watermark"></v-icon>
-                            </div>
+              <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
+                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
+                  {{ level.phaseTitle }}
+                </h2>
+              </div>
 
-                        </div>
-                    </div>
+              <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
+                <v-divider class="border-cyan opacity-40" />
+                <div class="phase-center-node mx-2" />
+                <v-divider class="border-cyan opacity-40" />
+              </div>
 
-                    <div class="path-row">
-                        <div class="node-wrapper" :class="{
-                            'pos-left': index % 2 === 0,
-                            'pos-right': index % 2 !== 0
-                        }">
+              <div class="phase-icon-box text-center">
+                <v-icon class="phase-watermark" :icon="level.phaseIcon" size="90" />
+              </div>
 
-                            <div v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle" class="path-connector"
-                                :class="{ 'connector-flip': index % 2 !== 0 }">
-                                <svg viewBox="0 0 140 140">
-                                    <path d="M 0 0 Q 20 70 140 140" class="connector-line"
-                                        :class="{ 'line-active': index + 1 < astroStore.mapLevel }" />
-                                </svg>
-                            </div>
-
-                            <div v-if="index + 1 <= astroStore.mapLevel" class="floating-label"
-                                :class="getLevelState(index)">
-                                {{ level.name }}
-                            </div>
-
-                            <div v-if="getLevelState(index) === 'current'" class="target-score-label">
-                                Meta: {{ level.minScore }} pts
-                            </div>
-
-                            <button class="node-btn" :class="[
-                                `state-${getLevelState(index)}`,
-                                { 'is-interactive': index + 1 <= astroStore.mapLevel }
-                            ]" @click.stop="handleLevelClick(index)" v-ripple>
-                                <div class="icon-layer">
-                                    <v-icon v-if="getLevelState(index) === 'completed'" icon="mdi-check-bold" size="32"
-                                        class="icon-completed" />
-
-                                    <v-icon v-else-if="getLevelState(index) === 'current'" icon="mdi-rocket-launch"
-                                        size="34" class="icon-current" />
-
-                                    <v-icon v-else icon="mdi-lock" size="28" class="icon-locked" />
-                                </div>
-
-                                <div class="shine-effect"></div>
-
-                                <div v-if="getLevelState(index) === 'current'" class="stars-particles">
-                                    <span>✦</span><span>✦</span>
-                                </div>
-                            </button>
-
-                            <!-- Viñeta de Previsualización -->
-                            <transition name="pop-in">
-                                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
-                                    <div class="preview-gif-container">
-                                        <img :src="level.previewGif || '/previews/placeholder.gif'" alt="Preview" class="preview-gif">
-                                        <div class="preview-overlay">
-                                            <div class="preview-badge">{{ level.minScore }} pts</div>
-                                        </div>
-                                    </div>
-                                    <div class="preview-content">
-                                        <h3 class="preview-title">{{ level.name }}</h3>
-                                        <v-btn
-                                            color="cyan-accent-3"
-                                            class="play-btn-preview font-weight-black"
-                                            block
-                                            rounded="lg"
-                                            elevation="8"
-                                            @click.stop="startGame(index)"
-                                        >
-                                            <v-icon icon="mdi-play" start></v-icon>
-                                            ¡JUGAR!
-                                        </v-btn>
-                                    </div>
-                                    <div class="preview-arrow"></div>
-                                </div>
-                            </transition>
-
-                        </div>
-                    </div>
-                </template>
             </div>
+          </div>
 
-            <div class="end-spacer"></div>
+          <div class="path-row">
+            <div
+              class="node-wrapper"
+              :class="{
+                'pos-left': index % 2 === 0,
+                'pos-right': index % 2 !== 0
+              }"
+            >
+
+              <div
+                v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle"
+                class="path-connector"
+                :class="{ 'connector-flip': index % 2 !== 0 }"
+              >
+                <svg viewBox="0 0 140 140">
+                  <path
+                    class="connector-line"
+                    :class="{ 'line-active': index + 1 < astroStore.mapLevel }"
+                    d="M 0 0 Q 20 70 140 140"
+                  />
+                </svg>
+              </div>
+
+              <div
+                v-if="index + 1 <= astroStore.mapLevel"
+                class="floating-label"
+                :class="getLevelState(index)"
+              >
+                {{ level.name }}
+              </div>
+
+              <div v-if="getLevelState(index) === 'current'" class="target-score-label">
+                Meta: {{ level.minScore }} pts
+              </div>
+
+              <button
+                v-ripple
+                class="node-btn"
+                :class="[
+                  `state-${getLevelState(index)}`,
+                  { 'is-interactive': index + 1 <= astroStore.mapLevel }
+                ]"
+                @click.stop="handleLevelClick(index)"
+              >
+                <div class="icon-layer">
+                  <v-icon
+                    v-if="getLevelState(index) === 'completed'"
+                    class="icon-completed"
+                    icon="mdi-check-bold"
+                    size="32"
+                  />
+
+                  <v-icon
+                    v-else-if="getLevelState(index) === 'current'"
+                    class="icon-current"
+                    icon="mdi-rocket-launch"
+                    size="34"
+                  />
+
+                  <v-icon v-else class="icon-locked" icon="mdi-lock" size="28" />
+                </div>
+
+                <div class="shine-effect" />
+
+                <div v-if="getLevelState(index) === 'current'" class="stars-particles">
+                  <span>✦</span><span>✦</span>
+                </div>
+              </button>
+
+              <!-- Viñeta de Previsualización -->
+              <transition name="pop-in">
+                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
+                  <div class="preview-gif-container">
+                    <img alt="Preview" class="preview-gif" :src="level.previewGif || '/previews/placeholder.gif'">
+                    <div class="preview-overlay">
+                      <div class="preview-badge">{{ level.minScore }} pts</div>
+                    </div>
+                  </div>
+                  <div class="preview-content">
+                    <h3 class="preview-title">{{ level.name }}</h3>
+                    <v-btn
+                      block
+                      class="play-btn-preview font-weight-black"
+                      color="cyan-accent-3"
+                      elevation="8"
+                      rounded="lg"
+                      @click.stop="startGame(index)"
+                    >
+                      <v-icon icon="mdi-play" start />
+                      ¡JUGAR!
+                    </v-btn>
+                  </div>
+                  <div class="preview-arrow" />
+                </div>
+              </transition>
+
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="end-spacer" />
+    </div>
+
+    <transition name="fade-zoom">
+      <div v-if="activeGameComponent" class="game-overlay">
+        <v-btn
+          class="close-game-btn"
+          color="white"
+          icon="mdi-close"
+          variant="tonal"
+          @click="activeGameComponent = null"
+        />
+        <component :is="activeGameComponent" @game-over="handleGameOver" />
+      </div>
+    </transition>
+
+    <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
+      <v-card
+        class="text-center pa-8 rounded-xl elevation-24"
+        style="background: #020617; border: 2px solid #00e5ff; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);"
+      >
+
+        <div class="glow-icon-wrapper mb-4">
+          <v-icon class="animate-bounce" color="cyan-accent-3" icon="mdi-chevron-double-up" size="90" />
         </div>
 
-        <transition name="fade-zoom">
-            <div v-if="activeGameComponent" class="game-overlay">
-                <v-btn icon="mdi-close" variant="tonal" color="white" class="close-game-btn"
-                    @click="activeGameComponent = null" />
-                <component :is="activeGameComponent" @game-over="handleGameOver" />
-            </div>
-        </transition>
+        <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
+          ¡NIVELL {{ newLevelData.level }}!
+        </h2>
 
-        <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl elevation-24" 
-                style="background: #020617; border: 2px solid #00e5ff; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);">
-                
-                <div class="glow-icon-wrapper mb-4">
-                    <v-icon icon="mdi-chevron-double-up" color="cyan-accent-3" size="90" class="animate-bounce"></v-icon>
-                </div>
+        <div
+          v-if="newLevelData.rankChanged"
+          class="my-5 pa-4 rounded-lg"
+          style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;"
+        >
+          <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
+          <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
+        </div>
 
-                <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
-                    ¡NIVELL {{ newLevelData.level }}!
-                </h2>
+        <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
+          Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
+          <br>i ets un pas més a prop de dominar la galàxia.
+        </p>
 
-                <div v-if="newLevelData.rankChanged" class="my-5 pa-4 rounded-lg"
-                    style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;">
-                    <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
-                    <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
-                </div>
+        <v-btn
+          block
+          color="cyan-accent-3"
+          rounded="xl"
+          class="font-weight-black text-black"
+          size="x-large"
+          variant="elevated"
+          @click="showLevelUpDialog = false"
+        >
+          CONTINUAR EXPLORACIÓ
+        </v-btn>
+      </v-card>
+    </v-dialog>
 
-                <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
-                    Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
-                    <br>i ets un pas més a prop de dominar la galàxia.
-                </p>
-                
-                <v-btn color="cyan-accent-3" variant="elevated" block rounded="xl" size="x-large"
-                    class="font-weight-black text-black" @click="showLevelUpDialog = false">
-                    CONTINUAR EXPLORACIÓ
-                </v-btn>
-            </v-card>
-        </v-dialog>
+    <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
+      <v-card
+        class="text-center pa-8 rounded-xl elevation-24"
+        style="background: #0f0505; border: 2px solid #ff5252; box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);"
+      >
 
-        <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
-            <v-card class="text-center pa-8 rounded-xl elevation-24" 
-                style="background: #0f0505; border: 2px solid #ff5252; box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);">
-                
-                <v-icon icon="mdi-alert-octagon" color="red-accent-2" size="80" class="mb-4 pulse-red"></v-icon>
+        <v-icon class="mb-4 pulse-red" color="red-accent-2" icon="mdi-alert-octagon" size="80" />
 
-                <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
+        <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
 
-                <div class="py-4">
-                    <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
-                    <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
+        <div class="py-4">
+          <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
+          <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
 
-                    <v-divider class="border-red-accent-2 opacity-30 mb-6"></v-divider>
+          <v-divider class="border-red-accent-2 opacity-30 mb-6" />
 
-                    <p class="text-body-1 text-blue-grey-lighten-2">
-                        Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
-                        para desbloquear este sector.
-                    </p>
-                </div>
+          <p class="text-body-1 text-blue-grey-lighten-2">
+            Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
+            para desbloquear este sector.
+          </p>
+        </div>
 
-                <v-btn color="red-accent-2" variant="flat" block rounded="xl" size="x-large"
-                    class="font-weight-bold text-white mt-4" @click="showFailDialog = false" 
-                    style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;">
-                    REINTENTAR MISIÓN
-                </v-btn>
-            </v-card>
-        </v-dialog>
+        <v-btn
+          block
+          color="red-accent-2"
+          rounded="xl"
+          class="font-weight-bold text-white mt-4"
+          size="x-large"
+          style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;"
+          variant="flat"
+          @click="showFailDialog = false"
+        >
+          REINTENTAR MISIÓN
+        </v-btn>
+      </v-card>
+    </v-dialog>
 
-    </v-container>
+  </v-container>
 </template>
 
 <script setup>
-import { ref, shallowRef } from 'vue';
-import { useAstroStore } from '@/stores/astroStore'; 
+  import { ref, shallowRef } from 'vue'
+  import RadarScan from '@/components/games/RadarScan.vue'
 
-import WordConstruction from '@/components/games/WordConstruction.vue';
-import SpelledRosco from '@/components/games/SpelledRosco.vue';
-import RadarScan from '@/components/games/RadarScan.vue';
-import RadioSignal from '@/components/games/RadioSignal.vue';
-import RhymeSquad from '@/components/games/RhymeSquad.vue';
-import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue';
+  import RadioSignal from '@/components/games/RadioSignal.vue'
+  import RhymeSquad from '@/components/games/RhymeSquad.vue'
+  import SpelledRosco from '@/components/games/SpelledRosco.vue'
+  import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
+  import WordConstruction from '@/components/games/WordConstruction.vue'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const astroStore = useAstroStore();
-const activeGameComponent = shallowRef(null);
-const currentPlayingIndex = ref(null); 
-const activePreviewIndex = ref(null);
+  const astroStore = useAstroStore()
+  const activeGameComponent = shallowRef(null)
+  const currentPlayingIndex = ref(null)
+  const activePreviewIndex = ref(null)
 
-const showLevelUpDialog = ref(false);
-const showFailDialog = ref(false);
+  const showLevelUpDialog = ref(false)
+  const showFailDialog = ref(false)
 
-const lastScore = ref(0);
-const requiredScore = ref(0);
+  const lastScore = ref(0)
+  const requiredScore = ref(0)
 
-const newLevelData = ref({
+  const newLevelData = ref({
     level: 1,
     rank: '',
-    rankChanged: false
-});
+    rankChanged: false,
+  })
 
-const levelSequence = [
+  const levelSequence = [
     { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
     { name: '¡Despegue!', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
     { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
@@ -216,75 +267,70 @@ const levelSequence = [
     { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
     { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
     { name: 'Reparación Express', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
-];
+  ]
 
-const getLevelState = (index) => {
-    const levelNum = index + 1;
-    const currentMap = astroStore.mapLevel || 1; 
-    if (levelNum === currentMap) return 'current';
-    if (levelNum < currentMap) return 'completed';
-    return 'locked';
-};
+  function getLevelState (index) {
+    const levelNum = index + 1
+    const currentMap = astroStore.mapLevel || 1
+    if (levelNum === currentMap) return 'current'
+    if (levelNum < currentMap) return 'completed'
+    return 'locked'
+  }
 
-const handleLevelClick = (index) => {
-    const state = getLevelState(index);
+  function handleLevelClick (index) {
+    const state = getLevelState(index)
     if (state !== 'locked') {
-        if (activePreviewIndex.value === index) {
-            activePreviewIndex.value = null;
-        } else {
-            activePreviewIndex.value = index;
-        }
+      activePreviewIndex.value = activePreviewIndex.value === index ? null : index
     }
-};
+  }
 
-const startGame = (index) => {
-    activePreviewIndex.value = null;
-    currentPlayingIndex.value = index;
-    activeGameComponent.value = levelSequence[index].component;
-};
+  function startGame (index) {
+    activePreviewIndex.value = null
+    currentPlayingIndex.value = index
+    activeGameComponent.value = levelSequence[index].component
+  }
 
-const handleGameOver = async (finalScore) => {
-    const levelIndex = currentPlayingIndex.value;
-    const gameName = levelSequence[levelIndex]?.name || 'Minijuego';
+  async function handleGameOver (finalScore) {
+    const levelIndex = currentPlayingIndex.value
+    const gameName = levelSequence[levelIndex]?.name || 'Minijuego'
 
-    activeGameComponent.value = null;
-    lastScore.value = finalScore;
+    activeGameComponent.value = null
+    lastScore.value = finalScore
 
     if (astroStore.user && levelIndex !== null) {
-        try {
-            const levelConfig = levelSequence[levelIndex];
+      try {
+        const levelConfig = levelSequence[levelIndex]
 
-            if (levelConfig && finalScore < levelConfig.minScore) {
-                requiredScore.value = levelConfig.minScore;
-                showFailDialog.value = true;
-                return;
-            }
-
-            const previousAccountLevel = astroStore.level;
-            const currentMap = astroStore.mapLevel || 1;
-            
-            const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null;
-
-            const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete);
-
-            if (!result.success) throw new Error(result.message);
-
-            if (astroStore.level > previousAccountLevel) {
-                newLevelData.value = {
-                    level: astroStore.level,
-                    rank: result.data.newRank || 'Explorador',
-                    rankChanged: !!result.data.newRank
-                };
-                showLevelUpDialog.value = true;
-            }
-
-        } catch (error) {
-            console.error("❌ Error al registrar la partida:", error);
-        } finally {
-            currentPlayingIndex.value = null;
+        if (levelConfig && finalScore < levelConfig.minScore) {
+          requiredScore.value = levelConfig.minScore
+          showFailDialog.value = true
+          return
         }
+
+        const previousAccountLevel = astroStore.level
+        const currentMap = astroStore.mapLevel || 1
+
+        const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null
+
+        const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete)
+
+        if (!result.success) throw new Error(result.message)
+
+        if (astroStore.level > previousAccountLevel) {
+          newLevelData.value = {
+            level: astroStore.level,
+            rank: result.data.newRank || 'Explorador',
+            rankChanged: !!result.data.newRank,
+          }
+          showLevelUpDialog.value = true
+        }
+      } catch (error) {
+        console.error('❌ Error al registrar la partida:', error)
+      } finally {
+        currentPlayingIndex.value = null
+      }
     }
-};
+  }
 </script>
 
 <style scoped>
@@ -454,15 +500,15 @@ svg {
 }
 
 .target-score-label {
-    position: absolute; 
-    bottom: -25px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    background: rgba(0,0,0,0.6); 
-    color: #00E5FF; 
-    padding: 2px 6px; 
-    border-radius: 4px; 
-    font-size: 10px; 
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: #00E5FF;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
     white-space: nowrap;
 }
 

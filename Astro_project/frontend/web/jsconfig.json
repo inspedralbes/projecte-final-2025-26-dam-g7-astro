@@ -25,6 +25,9 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/pages/training/multiplayer.vue"
+    "src/pages/training/multiplayer.vue",
+    "src/components/games/EmojiHistory.vue",
+    "src/components/games/EmojiPicker.vue",
+    "src/components/games/HieroglyphDisplay.vue"
   ]
 }

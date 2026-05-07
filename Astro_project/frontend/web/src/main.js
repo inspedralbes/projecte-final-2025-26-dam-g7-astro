@@ -2,15 +2,15 @@
  * main.js
  */
 
+import { createPinia } from 'pinia' // - Importación directa
+// Composables
+import { createApp } from 'vue'
+
 // Plugins
 import { registerPlugins } from '@/plugins'
-import { createPinia } from 'pinia' // - Importación directa
 
 // Components
 import App from './App.vue'
-
-// Composables
-import { createApp } from 'vue'
 
 // Styles
 import 'unfonts.css'

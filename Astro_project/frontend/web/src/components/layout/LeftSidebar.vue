@@ -1,75 +1,108 @@
 <template>
-    <v-navigation-drawer app permanent width="280" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
-        <div class="menu-header d-flex flex-column justify-center align-center py-12">
-            <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
-            <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
-        </div>
+  <v-navigation-drawer
+    app
+    class="sidebar left-sidebar"
+    elevation="0"
+    mobile-breakpoint="md"
+    permanent
+    width="280"
+  >
+    <div class="menu-header d-flex flex-column justify-center align-center py-12">
+      <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
+      <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
+    </div>
 
-        <v-list class="pa-2 bg-transparent" nav>
-            <v-list-item v-for="(item, index) in menuItems" :key="index" :to="item.to" link
-                class="menu-item mb-2 rounded-lg px-4" active-class="active-menu-item" min-height="56">
-                <template v-slot:prepend>
-                    <v-icon :icon="item.icon" size="22" class="mr-4 item-icon"></v-icon>
-                </template>
-                <v-list-item-title class="text-subtitle-1 font-weight-bold">
-                    {{ item.title }}
-                </v-list-item-title>
-            </v-list-item>
-        </v-list>
-
-        <template v-slot:append>
-            <div class="pa-4">
-                <v-btn block variant="text" color="grey-lighten-1" @click="showLogoutDialog = true" prepend-icon="mdi-logout" class="logout-btn">
-                    Desconectarse
-                </v-btn>
-            </div>
+    <v-list class="pa-2 bg-transparent" nav>
+      <v-list-item
+        v-for="(item, index) in menuItems"
+        :key="index"
+        active-class="active-menu-item"
+        class="menu-item mb-2 rounded-lg px-4"
+        link
+        min-height="56"
+        :to="item.to"
+      >
+        <template #prepend>
+          <v-icon class="mr-4 item-icon" :icon="item.icon" size="22" />
         </template>
+        <v-list-item-title class="text-subtitle-1 font-weight-bold">
+          {{ item.title }}
+        </v-list-item-title>
+      </v-list-item>
+    </v-list>
 
-        <!-- Logout Confirmation Dialog -->
-        <v-dialog v-model="showLogoutDialog" max-width="400">
-            <v-card class="glass-panel pa-6 text-center shadow-xl">
-                <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
-                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">¿CERRAR SESIÓN?</h2>
-                <p class="text-body-2 text-grey-lighten-1 mb-8">
-                    Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?
-                </p>
-                <div class="d-flex justify-center mt-4">
-                    <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
-                        CANCELAR
-                    </v-btn>
-                    <v-btn variant="flat" color="error" @click="handleLogout" class="rounded-lg flex-grow-1 ml-2" height="48">
-                        DESCONECTAR
-                    </v-btn>
-                </div>
-            </v-card>
-        </v-dialog>
-    </v-navigation-drawer>
+    <template #append>
+      <div class="pa-4">
+        <v-btn
+          block
+          class="logout-btn"
+          color="grey-lighten-1"
+          prepend-icon="mdi-logout"
+          variant="text"
+          @click="showLogoutDialog = true"
+        >
+          Desconectarse
+        </v-btn>
+      </div>
+    </template>
+
+    <!-- Logout Confirmation Dialog -->
+    <v-dialog v-model="showLogoutDialog" max-width="400">
+      <v-card class="glass-panel pa-6 text-center shadow-xl">
+        <v-icon class="mb-4 pulse-error" color="error" icon="mdi-alert-circle-outline" size="64" />
+        <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">¿CERRAR SESIÓN?</h2>
+        <p class="text-body-2 text-grey-lighten-1 mb-8">
+          Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?
+        </p>
+        <div class="d-flex justify-center mt-4">
+          <v-btn
+            class="rounded-lg flex-grow-1 mr-2"
+            color="grey-lighten-1"
+            height="48"
+            variant="outlined"
+            @click="showLogoutDialog = false"
+          >
+            CANCELAR
+          </v-btn>
+          <v-btn
+            class="rounded-lg flex-grow-1 ml-2"
+            color="error"
+            height="48"
+            variant="flat"
+            @click="handleLogout"
+          >
+            DESCONECTAR
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+  </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAstroStore } from '@/stores/astroStore'
+  import { ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const router = useRouter()
-const store = useAstroStore()
+  const router = useRouter()
+  const store = useAstroStore()
 
-const showLogoutDialog = ref(false)
+  const showLogoutDialog = ref(false)
 
-const handleLogout = () => {
+  function handleLogout () {
     showLogoutDialog.value = false
     store.logout()
     router.push('/')
-}
+  }
 
-const menuItems = ref([
+  const menuItems = ref([
     { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
     { title: 'Multijugador', icon: 'mdi-sword-cross', to: '/multiplayer' },
     { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
     { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
     { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
     { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
-])
+  ])
 </script>
 
 <style scoped>

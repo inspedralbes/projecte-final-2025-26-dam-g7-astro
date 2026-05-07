@@ -1,11 +1,17 @@
 <template>
-    <v-container fluid class="fill-height d-flex flex-column justify-center align-center">
-        <h1 class="text-h2 mb-6 font-weight-bold tracking-wide">Modo Multijugador</h1>
-        <p class="text-h5 mb-10 text-grey-lighten-1">Página en desarrollo...</p>
-        <v-btn to="/" color="cyan-accent-3" variant="outlined" rounded="xl" size="large">
-            Volver al Menú
-        </v-btn>
-    </v-container>
+  <v-container class="fill-height d-flex flex-column justify-center align-center" fluid>
+    <h1 class="text-h2 mb-6 font-weight-bold tracking-wide">Modo Multijugador</h1>
+    <p class="text-h5 mb-10 text-grey-lighten-1">Página en desarrollo...</p>
+    <v-btn
+      color="cyan-accent-3"
+      rounded="xl"
+      size="large"
+      to="/"
+      variant="outlined"
+    >
+      Volver al Menú
+    </v-btn>
+  </v-container>
 </template>
 
 <script setup>

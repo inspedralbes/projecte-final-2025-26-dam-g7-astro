@@ -1,15 +1,15 @@
 <template>
   <div class="match-result-screen d-flex flex-column align-center justify-center">
     <!-- Partículas decorativas -->
-    <div class="stars-bg"></div>
+    <div class="stars-bg" />
 
     <!-- Icono principal -->
     <div class="result-icon-wrapper mb-6">
       <v-icon
+        class="result-icon"
+        :color="isWin ? 'amber' : (isTie ? 'cyan-accent-2' : 'red-lighten-1')"
         :icon="isWin ? 'mdi-trophy' : (isTie ? 'mdi-handshake' : 'mdi-skull-outline')"
         :size="160"
-        :color="isWin ? 'amber' : (isTie ? 'cyan-accent-2' : 'red-lighten-1')"
-        class="result-icon"
       />
     </div>
 
@@ -25,7 +25,7 @@
     <div class="score-board d-flex align-center mb-12">
       <!-- TÚ -->
       <div class="player-result text-center" :class="{ 'winner-glow': isWin }">
-        <v-avatar size="80" class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'">
+        <v-avatar class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'" size="80">
           <v-img :src="getPlayerAvatar(myName)" />
         </v-avatar>
         <div class="text-overline text-cyan-accent-2 mb-1">TÚ</div>
@@ -34,17 +34,23 @@
         </div>
         <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
         <div class="mt-4">
-          <v-chip v-if="isWin" color="amber" size="small" class="font-weight-black text-black">GANADOR</v-chip>
-          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">PERDEDOR</v-chip>
-          
+          <v-chip v-if="isWin" class="font-weight-black text-black" color="amber" size="small">GANADOR</v-chip>
+          <v-chip
+            v-else-if="!isTie"
+            class="font-weight-bold"
+            color="red-lighten-1"
+            size="small"
+            variant="tonal"
+          >PERDEDOR</v-chip>
+
           <!-- Estado de retorno -->
           <div class="mt-2 status-container">
             <v-chip
               v-if="multiplayerStore.returnedPlayers.includes(myName)"
               color="success"
+              prepend-icon="mdi-check-circle"
               size="x-small"
               variant="flat"
-              prepend-icon="mdi-check-circle"
             >
               PREPARADO
             </v-chip>
@@ -68,7 +74,7 @@
 
       <!-- OPONENTE -->
       <div class="player-result text-center" :class="{ 'winner-glow': !isWin && !isTie }">
-        <v-avatar size="80" class="mb-3 player-avatar" :class="!isWin && !isTie ? 'border-gold' : 'border-cyan'">
+        <v-avatar class="mb-3 player-avatar" :class="!isWin && !isTie ? 'border-gold' : 'border-cyan'" size="80">
           <v-img :src="getPlayerAvatar(opponentName)" />
         </v-avatar>
         <div class="text-overline text-cyan-accent-2 mb-1">{{ opponentName }}</div>
@@ -77,17 +83,23 @@
         </div>
         <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
         <div class="mt-4">
-          <v-chip v-if="!isWin && !isTie" color="amber" size="small" class="font-weight-black text-black">GANADOR</v-chip>
-          <v-chip v-else-if="!isTie" color="red-lighten-1" size="small" variant="tonal" class="font-weight-bold">PERDEDOR</v-chip>
-          
+          <v-chip v-if="!isWin && !isTie" class="font-weight-black text-black" color="amber" size="small">GANADOR</v-chip>
+          <v-chip
+            v-else-if="!isTie"
+            class="font-weight-bold"
+            color="red-lighten-1"
+            size="small"
+            variant="tonal"
+          >PERDEDOR</v-chip>
+
           <!-- Estado de retorno oponente -->
           <div class="mt-2 status-container">
             <v-chip
               v-if="multiplayerStore.returnedPlayers.includes(opponentName)"
               color="success"
+              prepend-icon="mdi-check-circle"
               size="x-small"
               variant="flat"
-              prepend-icon="mdi-check-circle"
             >
               PREPARADO
             </v-chip>
@@ -109,17 +121,38 @@
       <div class="text-overline text-grey-darken-1 mb-4 text-center">HISTORIAL DE LA MISIÓN</div>
       <v-row dense justify="center">
         <v-col v-for="h in multiplayerStore.room.gameConfig.roundHistory" :key="h.round" cols="12">
-          <v-card class="round-history-card pa-3 mb-2 rounded-lg" variant="flat" color="rgba(255,255,255,0.03)">
+          <v-card class="round-history-card pa-3 mb-2 rounded-lg" color="rgba(255,255,255,0.03)" variant="flat">
             <div class="d-flex align-center justify-space-between">
               <div class="round-num text-caption font-weight-black text-cyan-accent-2 mr-4">RD {{ h.round }}</div>
               <div class="game-info d-flex align-center flex-grow-1">
-                <v-icon icon="mdi-controller" size="18" class="mr-2 text-grey-darken-1"></v-icon>
+                <v-icon class="mr-2 text-grey-darken-1" icon="mdi-controller" size="18" />
                 <div class="text-body-2 font-weight-bold text-white">{{ h.game }}</div>
               </div>
               <div class="round-winner-indicator mx-4">
-                <v-chip v-if="h.winner === myName" color="success" size="x-small" density="compact" variant="flat" class="font-weight-black">VICTORIA</v-chip>
-                <v-chip v-else-if="h.winner === opponentName" color="error" size="x-small" density="compact" variant="flat" class="font-weight-black">DERROTA</v-chip>
-                <v-chip v-else color="grey-darken-1" size="x-small" density="compact" variant="tonal" class="font-weight-black">EMPATE</v-chip>
+                <v-chip
+                  v-if="h.winner === myName"
+                  class="font-weight-black"
+                  color="success"
+                  density="compact"
+                  size="x-small"
+                  variant="flat"
+                >VICTORIA</v-chip>
+                <v-chip
+                  v-else-if="h.winner === opponentName"
+                  class="font-weight-black"
+                  color="error"
+                  density="compact"
+                  size="x-small"
+                  variant="flat"
+                >DERROTA</v-chip>
+                <v-chip
+                  v-else
+                  class="font-weight-black"
+                  color="grey-darken-1"
+                  density="compact"
+                  size="x-small"
+                  variant="tonal"
+                >EMPATE</v-chip>
               </div>
               <div class="round-scores text-caption text-grey-lighten-1 font-weight-bold">
                 {{ h.scores[myName] || 0 }} - {{ h.scores[opponentName] || 0 }}
@@ -134,16 +167,16 @@
     <div class="d-flex flex-column align-center gap-4">
       <v-btn
         v-if="!hasMeReturned"
-        color="success"
-        size="x-large"
-        rounded="xl"
         class="font-weight-black px-12 pulse-button"
+        color="success"
+        rounded="xl"
+        size="x-large"
         @click="handleReturn"
       >
         <v-icon start>mdi-reply</v-icon> VOLVER A LA SALA
       </v-btn>
       <div v-else class="text-center">
-        <v-progress-circular indeterminate color="cyan-accent-2" size="40" class="mb-2" />
+        <v-progress-circular class="mb-2" color="cyan-accent-2" indeterminate size="40" />
         <p class="text-cyan-accent-2 font-weight-bold italic">Esperando que el equipo regrese...</p>
       </div>
     </div>
@@ -151,57 +184,57 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
+  import { computed } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-const props = defineProps({
-  scores: { type: Object, default: () => ({}) },
-  winner: { type: String, default: null },      // null = empate
-  isTie: { type: Boolean, default: false },
-  totalRounds: { type: Number, default: 0 },
-  opponentName: { type: String, default: 'Oponente' },
-  isHost: { type: Boolean, default: false }
-});
+  const props = defineProps({
+    scores: { type: Object, default: () => ({}) },
+    winner: { type: String, default: null }, // null = empate
+    isTie: { type: Boolean, default: false },
+    totalRounds: { type: Number, default: 0 },
+    opponentName: { type: String, default: 'Oponente' },
+    isHost: { type: Boolean, default: false },
+  })
 
-const emit = defineEmits(['return-to-lobby']);
+  const emit = defineEmits(['return-to-lobby'])
 
-const astroStore = useAstroStore();
-const multiplayerStore = useMultiplayerStore();
+  const astroStore = useAstroStore()
+  const multiplayerStore = useMultiplayerStore()
 
-const myName = computed(() => astroStore.user);
-const isWin = computed(() => !props.isTie && props.winner === myName.value);
-const hasMeReturned = computed(() => multiplayerStore.returnedPlayers.includes(myName.value));
+  const myName = computed(() => astroStore.user)
+  const isWin = computed(() => !props.isTie && props.winner === myName.value)
+  const hasMeReturned = computed(() => multiplayerStore.returnedPlayers.includes(myName.value))
 
-const handleReturn = () => {
-  multiplayerStore.returnToLobby();
-  emit('return-to-lobby');
-};
-
-const getAvatarUrl = (avatarName, username) => {
-  if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
-    return `/${avatarName.trim()}`;
+  function handleReturn () {
+    multiplayerStore.returnToLobby()
+    emit('return-to-lobby')
   }
-  if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
-    return `/${avatarName.trim()}`;
-  }
-  if (username) {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
-  }
-  return '/Astronauta_blanc.jpg';
-};
 
-const getPlayerAvatar = (username) => {
-  if (!username) return '/Astronauta_blanc.jpg';
-  if (username === astroStore.user) {
-    return getAvatarUrl(astroStore.avatar, username);
+  function getAvatarUrl (avatarName, username) {
+    if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
+      return `/${avatarName.trim()}`
+    }
+    if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
+      return `/${avatarName.trim()}`
+    }
+    if (username) {
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+    }
+    return '/Astronauta_blanc.jpg'
   }
-  const explorer = astroStore.explorers?.find(e => e.user === username);
-  if (explorer) {
-    return getAvatarUrl(explorer.avatar, username);
+
+  function getPlayerAvatar (username) {
+    if (!username) return '/Astronauta_blanc.jpg'
+    if (username === astroStore.user) {
+      return getAvatarUrl(astroStore.avatar, username)
+    }
+    const explorer = astroStore.explorers?.find(e => e.user === username)
+    if (explorer) {
+      return getAvatarUrl(explorer.avatar, username)
+    }
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
   }
-  return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
-};
 </script>
 
 <style scoped>

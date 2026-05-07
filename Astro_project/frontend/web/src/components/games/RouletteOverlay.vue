@@ -5,96 +5,96 @@
         <h2 class="text-h4 font-weight-black text-cyan-accent-2 mb-8 tracking-widest">
           SELECCIONANDO MISIÓN...
         </h2>
-        
+
         <div class="slot-machine-wrapper mb-8">
           <div class="slot-window">
-             <div class="slot-reel" :style="reelStyle">
-                <div v-for="(game, index) in extendedGames" :key="index" class="slot-item py-4" :class="{ 'selected-glow': !isSpinning && game === targetGame }">
-                   <v-icon :icon="getGameIcon(game)" size="x-large" :color="!isSpinning && game === targetGame ? 'cyan-accent-2' : 'white'" class="mb-2"></v-icon>
-                   <div class="text-h5 font-weight-bold" :class="!isSpinning && game === targetGame ? 'text-cyan-accent-2' : 'text-white'">{{ game }}</div>
-                </div>
-             </div>
+            <div class="slot-reel" :style="reelStyle">
+              <div v-for="(game, index) in extendedGames" :key="index" class="slot-item py-4" :class="{ 'selected-glow': !isSpinning && game === targetGame }">
+                <v-icon class="mb-2" :color="!isSpinning && game === targetGame ? 'cyan-accent-2' : 'white'" :icon="getGameIcon(game)" size="x-large" />
+                <div class="text-h5 font-weight-bold" :class="!isSpinning && game === targetGame ? 'text-cyan-accent-2' : 'text-white'">{{ game }}</div>
+              </div>
+            </div>
           </div>
         </div>
 
         <v-progress-linear
-          indeterminate
-          color="cyan-accent-2"
-          rounded
-          height="6"
           class="mt-4"
-        ></v-progress-linear>
+          color="cyan-accent-2"
+          height="6"
+          indeterminate
+          rounded
+        />
       </div>
     </div>
   </v-fade-transition>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+  import { computed, onMounted, ref, watch } from 'vue'
 
-const props = defineProps({
-  show: Boolean,
-  targetGame: String,
-  games: Array
-});
+  const props = defineProps({
+    show: Boolean,
+    targetGame: String,
+    games: Array,
+  })
 
-const emit = defineEmits(['finished']);
+  const emit = defineEmits(['finished'])
 
-const reelPosition = ref(0);
-const duration = 3000; // 3 segundos de animación
+  const reelPosition = ref(0)
+  const duration = 3000 // 3 segundos de animación
 
-// Duplicamos la lista para crear el efecto infinito
-const extendedGames = computed(() => {
-  return [...props.games, ...props.games, ...props.games, ...props.games];
-});
+  // Duplicamos la lista para crear el efecto infinito
+  const extendedGames = computed(() => {
+    return [...props.games, ...props.games, ...props.games, ...props.games]
+  })
 
-const getGameIcon = (name) => {
+  function getGameIcon (name) {
     const icons = {
-        'RadarScan': 'mdi-radar',
-        'RadioSignal': 'mdi-waveform',
-        'RhymeSquad': 'mdi-microphone-variant',
-        'SpelledRosco': 'mdi-alphabetical-variant',
-        'SymmetryBreaker': 'mdi-reflect-horizontal',
-        'WordConstruction': 'mdi-hammer-wrench'
-    };
-    return icons[name] || 'mdi-controller';
-};
-
-const reelStyle = computed(() => ({
-  transform: `translateY(-${reelPosition.value}px)`,
-  transition: isSpinning.value ? `transform ${duration}ms cubic-bezier(0.15, 0, 0.15, 1)` : 'none'
-}));
-
-const isSpinning = ref(false);
-
-const startSpin = () => {
-  if (isSpinning.value) return;
-  
-  isSpinning.value = true;
-  const itemHeight = 100; // Altura de cada slot item
-  const targetIndex = props.games.indexOf(props.targetGame);
-  
-  // Girar varias vueltas y aterrizar en el target
-  const extraLaps = 2;
-  const totalItems = props.games.length;
-  const finalIndex = (extraLaps * totalItems) + targetIndex;
-  
-  setTimeout(() => {
-    reelPosition.value = finalIndex * itemHeight;
-  }, 100);
-
-  setTimeout(() => {
-    isSpinning.value = false;
-    emit('finished');
-  }, duration + 500);
-};
-
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    reelPosition.value = 0;
-    setTimeout(startSpin, 500);
+      RadarScan: 'mdi-radar',
+      RadioSignal: 'mdi-waveform',
+      RhymeSquad: 'mdi-microphone-variant',
+      SpelledRosco: 'mdi-alphabetical-variant',
+      SymmetryBreaker: 'mdi-reflect-horizontal',
+      WordConstruction: 'mdi-hammer-wrench',
+    }
+    return icons[name] || 'mdi-controller'
   }
-});
+
+  const reelStyle = computed(() => ({
+    transform: `translateY(-${reelPosition.value}px)`,
+    transition: isSpinning.value ? `transform ${duration}ms cubic-bezier(0.15, 0, 0.15, 1)` : 'none',
+  }))
+
+  const isSpinning = ref(false)
+
+  function startSpin () {
+    if (isSpinning.value) return
+
+    isSpinning.value = true
+    const itemHeight = 100 // Altura de cada slot item
+    const targetIndex = props.games.indexOf(props.targetGame)
+
+    // Girar varias vueltas y aterrizar en el target
+    const extraLaps = 2
+    const totalItems = props.games.length
+    const finalIndex = (extraLaps * totalItems) + targetIndex
+
+    setTimeout(() => {
+      reelPosition.value = finalIndex * itemHeight
+    }, 100)
+
+    setTimeout(() => {
+      isSpinning.value = false
+      emit('finished')
+    }, duration + 500)
+  }
+
+  watch(() => props.show, newVal => {
+    if (newVal) {
+      reelPosition.value = 0
+      setTimeout(startSpin, 500)
+    }
+  })
 </script>
 
 <style scoped>

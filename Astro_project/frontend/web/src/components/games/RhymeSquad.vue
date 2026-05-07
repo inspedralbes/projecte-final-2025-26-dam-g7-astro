@@ -1,21 +1,41 @@
 <template>
   <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
-    
-    <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="100" class="mb-6 animate-bounce"></v-icon>
+
+    <v-card
+      v-if="!isPlaying && !isGameOver"
+      class="pa-10 text-center bg-grey-darken-4 border-cyan"
+      max-width="800"
+      rounded="xl"
+      width="100%"
+    >
+      <v-icon class="mb-6 animate-bounce" color="cyan-accent-3" icon="mdi-timer-sand" size="100" />
       <h1 class="text-h2 font-weight-black text-white mb-6">Escuadrón de Rimas</h1>
       <p class="text-h5 text-grey-lighten-1 mb-10">
         Tienes <span class="text-cyan-accent-3 font-weight-bold">60 SEGUNDOS</span>. Atrapa rimas para sumar 1 segundo extra. <br>
         <span class="text-red-accent-2 mt-2 d-block">¡Si fallas o dejas que una rima caiga al vacío, perderás vidas!</span>
       </p>
-      <v-btn color="cyan-accent-3" size="x-large" height="60" block rounded="pill" class="font-weight-black text-black text-h6" @click="startGame">
+      <v-btn
+        block
+        class="font-weight-black text-black text-h6"
+        color="cyan-accent-3"
+        height="60"
+        rounded="pill"
+        size="x-large"
+        @click="startGame"
+      >
         INICIAR MISIÓN
       </v-btn>
     </v-card>
 
     <template v-else-if="isPlaying">
-      
-      <v-card width="100%" max-width="1200" class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0" rounded="xl" style="z-index: 10;">
+
+      <v-card
+        class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0"
+        max-width="1200"
+        rounded="xl"
+        style="z-index: 10;"
+        width="100%"
+      >
         <div class="d-flex justify-space-between align-center">
           <div>
             <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadrón Fonológico</h2>
@@ -36,61 +56,87 @@
           </div>
 
           <div class="d-flex align-center gap-6">
-            <v-chip v-if="combo > 0" :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'" size="x-large" class="font-weight-bold text-h6" :class="{ 'animate-pulse': isTurbo }">
+            <v-chip
+              v-if="combo > 0"
+              class="font-weight-bold text-h6"
+              :class="{ 'animate-pulse': isTurbo }"
+              :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'"
+              size="x-large"
+            >
               COMBO x{{ combo }} {{ isTurbo ? '🔥' : '' }}
             </v-chip>
-            <v-btn icon="mdi-close" size="large" variant="text" color="grey" @click="forceEndGame"></v-btn>
+            <v-btn
+              color="grey"
+              icon="mdi-close"
+              size="large"
+              variant="text"
+              @click="forceEndGame"
+            />
           </div>
         </div>
       </v-card>
 
-      <div 
-        class="play-area position-relative rounded-xl overflow-hidden w-100" 
+      <div
+        class="play-area position-relative rounded-xl overflow-hidden w-100"
         :class="{ 'turbo-mode': isTurbo }"
-        @click.self="missClick" 
         style="max-width: 1200px; height: 75vh; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
+        @click.self="missClick"
       >
-        <div class="nebula-bg" v-if="isTurbo"></div>
-        
+        <div v-if="isTurbo" class="nebula-bg" />
+
         <transition-group name="fade">
-          <div 
-            v-for="word in activeWords" 
+          <div
+            v-for="word in activeWords"
             :key="word.id"
             class="falling-word"
             :class="getWordStatusClass(word.status)"
             :style="{ left: word.x + '%', animationDuration: word.speed + 's' }"
-            @mousedown="catchWord(word)"
             @animationend="removeWord(word.id, false)"
+            @mousedown="catchWord(word)"
           >
             {{ word.text }}
           </div>
         </transition-group>
-        
+
         <transition name="fade-up">
           <div v-if="showTimeBonus" class="time-bonus-feedback text-h2 font-weight-black text-green-accent-3">+1s</div>
         </transition>
       </div>
     </template>
 
-    <v-card v-else-if="isGameOver && !isMultiplayer" width="100%" max-width="600" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" size="100" class="mb-4"></v-icon>
+    <v-card
+      v-else-if="isGameOver && !isMultiplayer"
+      class="pa-10 text-center bg-grey-darken-4 border-cyan"
+      max-width="600"
+      rounded="xl"
+      width="100%"
+    >
+      <v-icon class="mb-4" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" size="100" />
       <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
-      
+
       <div class="d-flex justify-space-around my-8">
         <div class="text-center">
-            <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
-            <div class="text-subtitle-1">Rimas Atrapadas</div>
+          <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
+          <div class="text-subtitle-1">Rimas Atrapadas</div>
         </div>
         <div class="text-center">
-            <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
-            <div class="text-subtitle-1">Errors y Omisiones</div>
+          <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
+          <div class="text-subtitle-1">Errors y Omisiones</div>
         </div>
       </div>
-      
+
       <p class="text-h4 text-white mb-2">Puntuación Final: {{ score }}</p>
       <p class="text-h6 text-grey-lighten-1 mb-8">Combo Máximo: x{{ maxCombo }}</p>
-      
-      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="x-large" height="60" rounded="pill" class="text-black font-weight-bold text-h6 block w-100">
+
+      <v-btn
+        color="cyan-accent-3"
+        height="60"
+        size="x-large"
+        rounded="pill"
+        variant="flat"
+        class="text-black font-weight-bold text-h6 block w-100"
+        @click="emitExit"
+      >
         Obtener Recompensa
       </v-btn>
     </v-card>
@@ -98,7 +144,7 @@
     <!-- Overlay de Espera Multijugador -->
     <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
-        <v-progress-circular indeterminate color="cyan-accent-3" size="64" class="mb-4"></v-progress-circular>
+        <v-progress-circular class="mb-4" color="cyan-accent-3" indeterminate size="64" />
         <h2 class="text-h4 font-weight-bold text-white mb-2">Muntant resultats...</h2>
         <p class="text-body-1 text-grey-lighten-1">Esperant que el company acabi la seva missió.</p>
       </v-card>
@@ -108,267 +154,266 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
+  import { onMounted, onUnmounted, ref, watch } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
+  const multiplayerStore = useMultiplayerStore()
+  const astroStore = useAstroStore()
 
-const props = defineProps({
-  isMultiplayer: {
-    type: Boolean,
-    default: false
-  }
-});
+  const props = defineProps({
+    isMultiplayer: {
+      type: Boolean,
+      default: false,
+    },
+  })
 
-const emit = defineEmits(['game-over']);
+  const emit = defineEmits(['game-over'])
 
-// DICCIONARIO ESTRUCTURADO
-const dictionary = [
-  { word: 'BOTÓN', ending: 'ÓN', rhymes: ['LEÓN', 'AVIÓN', 'CAMIÓN', 'BALÓN', 'MELÓN', 'RATÓN', 'CORAZÓN'], fakes: ['CASA', 'PERRO', 'MESA', 'GATO', 'LIBRO', 'SILLA', 'COCHE'] },
-  { word: 'CUNA', ending: 'UNA', rhymes: ['LUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'ACEITUNA', 'NINGUNA'], fakes: ['SOL', 'MAR', 'TIERRA', 'FUEGO', 'AIRE', 'AGUA', 'CIELO'] },
-  { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BAILAR', 'VOLAR', 'PENSAR', 'LLORAR', 'AMAR'], fakes: ['CORRER', 'DORMIR', 'VIVIR', 'REIR', 'COMER', 'BEBER', 'LEER'] },
-  { word: 'QUESO', ending: 'ESO', rhymes: ['HUESO', 'PESO', 'BESO', 'ESPESO', 'ACCESO', 'ILESO'], fakes: ['PAN', 'AGUA', 'VINO', 'LECHE', 'FRUTA', 'CARNE', 'SOPA'] },
-  { word: 'ESPEJO', ending: 'EJO', rhymes: ['CONEJO', 'CANGREJO', 'VIEJO', 'REFLEJO', 'CONSEJO'], fakes: ['CRISTAL', 'PARED', 'PUERTA', 'VENTANA', 'SUELO'] }
-];
+  // DICCIONARIO ESTRUCTURADO
+  const dictionary = [
+    { word: 'BOTÓN', ending: 'ÓN', rhymes: ['LEÓN', 'AVIÓN', 'CAMIÓN', 'BALÓN', 'MELÓN', 'RATÓN', 'CORAZÓN'], fakes: ['CASA', 'PERRO', 'MESA', 'GATO', 'LIBRO', 'SILLA', 'COCHE'] },
+    { word: 'CUNA', ending: 'UNA', rhymes: ['LUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'ACEITUNA', 'NINGUNA'], fakes: ['SOL', 'MAR', 'TIERRA', 'FUEGO', 'AIRE', 'AGUA', 'CIELO'] },
+    { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BAILAR', 'VOLAR', 'PENSAR', 'LLORAR', 'AMAR'], fakes: ['CORRER', 'DORMIR', 'VIVIR', 'REIR', 'COMER', 'BEBER', 'LEER'] },
+    { word: 'QUESO', ending: 'ESO', rhymes: ['HUESO', 'PESO', 'BESO', 'ESPESO', 'ACCESO', 'ILESO'], fakes: ['PAN', 'AGUA', 'VINO', 'LECHE', 'FRUTA', 'CARNE', 'SOPA'] },
+    { word: 'ESPEJO', ending: 'EJO', rhymes: ['CONEJO', 'CANGREJO', 'VIEJO', 'REFLEJO', 'CONSEJO'], fakes: ['CRISTAL', 'PARED', 'PUERTA', 'VENTANA', 'SUELO'] },
+  ]
 
-// ESTADOS
-const isPlaying = ref(false);
-const isGameOver = ref(false);
-const score = ref(0);
-const lives = ref(3);
-const timeLeft = ref(60);
-const combo = ref(0);
-const maxCombo = ref(0);
-const correctHits = ref(0);
-const incorrectHits = ref(0);
-const isTurbo = ref(false);
-const showTimeBonus = ref(false);
+  // ESTADOS
+  const isPlaying = ref(false)
+  const isGameOver = ref(false)
+  const score = ref(0)
+  const lives = ref(3)
+  const timeLeft = ref(60)
+  const combo = ref(0)
+  const maxCombo = ref(0)
+  const correctHits = ref(0)
+  const incorrectHits = ref(0)
+  const isTurbo = ref(false)
+  const showTimeBonus = ref(false)
 
-const currentTarget = ref(dictionary[0]);
-const activeWords = ref([]);
+  const currentTarget = ref(dictionary[0])
+  const activeWords = ref([])
 
-// CONTROLES INTERNOS
-let gameLoopInterval = null;
-let timerInterval = null;
-let wordIdCounter = 0;
-let currentSpawnRate = 1200; 
-let currentSpeed = 5; 
-let bonusTimeout = null;
+  // CONTROLES INTERNOS
+  let gameLoopInterval = null
+  let timerInterval = null
+  let wordIdCounter = 0
+  let currentSpawnRate = 1200
+  let currentSpeed = 5
+  let bonusTimeout = null
 
-const startGame = () => {
-  score.value = 0;
-  lives.value = 3;
-  timeLeft.value = 60;
-  combo.value = 0;
-  maxCombo.value = 0;
-  correctHits.value = 0;
-  incorrectHits.value = 0;
-  isTurbo.value = false;
-  activeWords.value = [];
-  
-  isPlaying.value = true;
-  isGameOver.value = false;
-  currentSpawnRate = 1200; 
-  currentSpeed = 5; 
-  
-  pickNewTarget();
-  gameLoopInterval = setInterval(spawnWord, currentSpawnRate);
-  
-  timerInterval = setInterval(() => {
-    if (!isPlaying.value) return;
-    timeLeft.value--;
-    if (timeLeft.value <= 0) {
-      timeLeft.value = 0;
-      endGame();
-    }
-  }, 1000);
-};
+  function startGame () {
+    score.value = 0
+    lives.value = 3
+    timeLeft.value = 60
+    combo.value = 0
+    maxCombo.value = 0
+    correctHits.value = 0
+    incorrectHits.value = 0
+    isTurbo.value = false
+    activeWords.value = []
 
-const pickNewTarget = () => {
-  const randomIndex = Math.floor(Math.random() * dictionary.length);
-  currentTarget.value = dictionary[randomIndex];
-};
+    isPlaying.value = true
+    isGameOver.value = false
+    currentSpawnRate = 1200
+    currentSpeed = 5
 
-const spawnWord = () => {
-  if (!isPlaying.value) return;
+    pickNewTarget()
+    gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
 
-  let wordsToSpawn = 1;
-  if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2;
-  if (isTurbo.value && Math.random() < 0.25) wordsToSpawn = 3;
-
-  const zones = [
-    { min: 5, max: 25 },   // Izquierda
-    { min: 35, max: 55 },  // Centro
-    { min: 65, max: 85 }   // Derecha
-  ];
-  zones.sort(() => Math.random() - 0.5);
-
-  for (let i = 0; i < wordsToSpawn; i++) {
-    const isRhyme = Math.random() < 0.35; 
-    const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes;
-    const wordText = wordList[Math.floor(Math.random() * wordList.length)];
-
-    const targetZone = zones[i % zones.length];
-    const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min;
-
-    activeWords.value.push({
-      id: wordIdCounter++,
-      text: wordText,
-      isRhyme: isRhyme,
-      status: 'falling', 
-      x: posX,
-      speed: isTurbo.value ? currentSpeed * 0.75 : currentSpeed
-    });
+    timerInterval = setInterval(() => {
+      if (!isPlaying.value) return
+      timeLeft.value--
+      if (timeLeft.value <= 0) {
+        timeLeft.value = 0
+        endGame()
+      }
+    }, 1000)
   }
 
-  if (currentSpawnRate > 500) {
-    clearInterval(gameLoopInterval);
-    currentSpawnRate -= 20;
-    currentSpeed -= 0.05;
-    gameLoopInterval = setInterval(spawnWord, currentSpawnRate);
+  function pickNewTarget () {
+    const randomIndex = Math.floor(Math.random() * dictionary.length)
+    currentTarget.value = dictionary[randomIndex]
   }
-};
 
-const catchWord = (word) => {
-  if (!isPlaying.value || word.status !== 'falling') return;
+  function spawnWord () {
+    if (!isPlaying.value) return
 
-  if (word.isRhyme) {
-    word.status = 'correct';
-    correctHits.value++;
-    
-    // MODIFICACIÓN: Sumar 1 segundo en lugar de 2
-    timeLeft.value += 1;
-    triggerTimeBonusVisual();
+    let wordsToSpawn = 1
+    if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2
+    if (isTurbo.value && Math.random() < 0.25) wordsToSpawn = 3
 
-    const points = isTurbo.value ? 20 : 10;
-    score.value += points;
-    combo.value += 1;
-    if (combo.value > maxCombo.value) maxCombo.value = combo.value;
-    
-    if (combo.value >= 10 && !isTurbo.value) {
-      isTurbo.value = true;
+    const zones = [
+      { min: 5, max: 25 }, // Izquierda
+      { min: 35, max: 55 }, // Centro
+      { min: 65, max: 85 }, // Derecha
+    ]
+    zones.sort(() => Math.random() - 0.5)
+
+    for (let i = 0; i < wordsToSpawn; i++) {
+      const isRhyme = Math.random() < 0.35
+      const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes
+      const wordText = wordList[Math.floor(Math.random() * wordList.length)]
+
+      const targetZone = zones[i % zones.length]
+      const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min
+
+      activeWords.value.push({
+        id: wordIdCounter++,
+        text: wordText,
+        isRhyme: isRhyme,
+        status: 'falling',
+        x: posX,
+        speed: isTurbo.value ? currentSpeed * 0.75 : currentSpeed,
+      })
     }
 
-    if (combo.value % 5 === 0) pickNewTarget();
-
-  } else {
-    word.status = 'incorrect';
-    incorrectHits.value++;
-    takeDamage();
+    if (currentSpawnRate > 500) {
+      clearInterval(gameLoopInterval)
+      currentSpawnRate -= 20
+      currentSpeed -= 0.05
+      gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
+    }
   }
 
-  setTimeout(() => {
-    removeWord(word.id, true);
-  }, 350);
-};
+  function catchWord (word) {
+    if (!isPlaying.value || word.status !== 'falling') return
 
-const triggerTimeBonusVisual = () => {
-    showTimeBonus.value = true;
-    if(bonusTimeout) clearTimeout(bonusTimeout);
+    if (word.isRhyme) {
+      word.status = 'correct'
+      correctHits.value++
+
+      // MODIFICACIÓN: Sumar 1 segundo en lugar de 2
+      timeLeft.value += 1
+      triggerTimeBonusVisual()
+
+      const points = isTurbo.value ? 20 : 10
+      score.value += points
+      combo.value += 1
+      if (combo.value > maxCombo.value) maxCombo.value = combo.value
+
+      if (combo.value >= 10 && !isTurbo.value) {
+        isTurbo.value = true
+      }
+
+      if (combo.value % 5 === 0) pickNewTarget()
+    } else {
+      word.status = 'incorrect'
+      incorrectHits.value++
+      takeDamage()
+    }
+
+    setTimeout(() => {
+      removeWord(word.id, true)
+    }, 350)
+  }
+
+  function triggerTimeBonusVisual () {
+    showTimeBonus.value = true
+    if (bonusTimeout) clearTimeout(bonusTimeout)
     bonusTimeout = setTimeout(() => {
-        showTimeBonus.value = false;
-    }, 500);
-};
+      showTimeBonus.value = false
+    }, 500)
+  }
 
-const removeWord = (id, clicked) => {
-  const wordIndex = activeWords.value.findIndex(w => w.id === id);
-  if (wordIndex > -1) {
-    const word = activeWords.value[wordIndex];
-    
-    // Eliminamos la palabra del DOM primero
-    activeWords.value.splice(wordIndex, 1);
+  function removeWord (id, clicked) {
+    const wordIndex = activeWords.value.findIndex(w => w.id === id)
+    if (wordIndex !== -1) {
+      const word = activeWords.value[wordIndex]
 
-    // MODIFICACIÓN: Si NO se clicó, era la correcta (isRhyme) y seguía cayendo... cuenta como fallo total
-    if (!clicked && word.isRhyme && word.status === 'falling') {
-      incorrectHits.value++;
-      takeDamage();
+      // Eliminamos la palabra del DOM primero
+      activeWords.value.splice(wordIndex, 1)
+
+      // MODIFICACIÓN: Si NO se clicó, era la correcta (isRhyme) y seguía cayendo... cuenta como fallo total
+      if (!clicked && word.isRhyme && word.status === 'falling') {
+        incorrectHits.value++
+        takeDamage()
+      }
     }
   }
-};
 
-const missClick = () => {
-  if (!isPlaying.value) return;
-  combo.value = 0;
-  isTurbo.value = false;
-};
-
-const takeDamage = () => {
-  lives.value -= 1;
-  combo.value = 0;
-  isTurbo.value = false;
-  
-  if (lives.value <= 0) {
-    endGame();
-  }
-};
-
-const forceEndGame = () => {
-  endGame();
-};
-
-const endGame = (silent = false) => {
-  if (props.isMultiplayer && !silent) {
-    isPlaying.value = false;
-    isGameOver.value = false; // No mostrar el overlay de single player
-    clearInterval(gameLoopInterval);
-    clearInterval(timerInterval);
-    activeWords.value = [];
-    multiplayerStore.submitRoundResult();
-    return;
+  function missClick () {
+    if (!isPlaying.value) return
+    combo.value = 0
+    isTurbo.value = false
   }
 
-  isPlaying.value = false;
-  isGameOver.value = true;
-  clearInterval(gameLoopInterval);
-  clearInterval(timerInterval);
-  activeWords.value = [];
-};
+  function takeDamage () {
+    lives.value -= 1
+    combo.value = 0
+    isTurbo.value = false
 
-const emitExit = () => { 
-    emit('game-over', score.value); 
-};
-
-onMounted(() => {
-  if (props.isMultiplayer) {
-    startGame();
+    if (lives.value <= 0) {
+      endGame()
+    }
   }
-});
 
-// Listener para eventos multijugador
-watch(() => multiplayerStore.lastMessage, (msg) => {
-  if (!msg) return;
-
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
-    isPlaying.value = false;
-    isGameOver.value = true;
-    emitExit();
+  function forceEndGame () {
+    endGame()
   }
-});
 
-// Notificar puntuación al servidor en modo multijugador
-watch(score, (newScore) => {
-  if (props.isMultiplayer) {
-    multiplayerStore.sendGameAction({
-      type: 'SCORE_UPDATE',
-      score: newScore
-    });
+  function endGame (silent = false) {
+    if (props.isMultiplayer && !silent) {
+      isPlaying.value = false
+      isGameOver.value = false // No mostrar el overlay de single player
+      clearInterval(gameLoopInterval)
+      clearInterval(timerInterval)
+      activeWords.value = []
+      multiplayerStore.submitRoundResult()
+      return
+    }
+
+    isPlaying.value = false
+    isGameOver.value = true
+    clearInterval(gameLoopInterval)
+    clearInterval(timerInterval)
+    activeWords.value = []
   }
-});
 
-onUnmounted(() => {
-  clearInterval(gameLoopInterval);
-  clearInterval(timerInterval);
-  if(bonusTimeout) clearTimeout(bonusTimeout);
-});
+  function emitExit () {
+    emit('game-over', score.value)
+  }
 
-const getWordStatusClass = (status) => {
-    if (status === 'correct') return 'word-correct';
-    if (status === 'incorrect') return 'word-incorrect';
-    return 'word-falling';
-};
+  onMounted(() => {
+    if (props.isMultiplayer) {
+      startGame()
+    }
+  })
+
+  // Listener para eventos multijugador
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (!msg) return
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+      // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
+      isPlaying.value = false
+      isGameOver.value = true
+      emitExit()
+    }
+  })
+
+  // Notificar puntuación al servidor en modo multijugador
+  watch(score, newScore => {
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'SCORE_UPDATE',
+        score: newScore,
+      })
+    }
+  })
+
+  onUnmounted(() => {
+    clearInterval(gameLoopInterval)
+    clearInterval(timerInterval)
+    if (bonusTimeout) clearTimeout(bonusTimeout)
+  })
+
+  function getWordStatusClass (status) {
+    if (status === 'correct') return 'word-correct'
+    if (status === 'incorrect') return 'word-incorrect'
+    return 'word-falling'
+  }
 </script>
 
 <style scoped>

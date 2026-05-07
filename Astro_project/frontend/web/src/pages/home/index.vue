@@ -1,15 +1,15 @@
 <template>
-  <v-container fluid class="pa-0 main-container">
+  <v-container class="pa-0 main-container" fluid>
     <!-- Navbar (Simplified & Professional) -->
-    <v-app-bar flat color="transparent" class="px-8 mt-4">
-        <div class="d-flex align-center">
-            <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
-        </div>
-      <v-spacer></v-spacer>
-      <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
+    <v-app-bar class="px-8 mt-4" color="transparent" flat>
+      <div class="d-flex align-center">
+        <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
+      </div>
+      <v-spacer />
+      <v-btn class="text-white mx-2 font-weight-bold" to="/login" variant="text">
         LOGIN
       </v-btn>
-      <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
+      <v-btn class="mx-2 px-6 rounded-pill font-weight-black" color="primary" to="/register" variant="flat">
         UNIRSE
       </v-btn>
     </v-app-bar>
@@ -17,55 +17,60 @@
     <!-- Hero Section -->
     <section class="hero-section d-flex align-center justify-center text-center">
       <!-- Background Elements for Depth -->
-      <div class="background-glow"></div>
-      
+      <div class="background-glow" />
+
       <div class="content-wrapper px-4">
         <div class="system-status mb-6">
-            <span class="pulse-dot"></span>
-            SYSTEM ONLINE: NEURAL TRAINING INTERFACE
+          <span class="pulse-dot" />
+          SYSTEM ONLINE: NEURAL TRAINING INTERFACE
         </div>
-        
+
         <h1 class="hero-title mb-4">
           PROYECTO <span class="primary-gradient-text">ASTRO</span>
         </h1>
-        
+
         <p class="hero-subtitle mb-10 mx-auto">
           Plataforma de entrenamiento neurocognitivo de alto rendimiento.<br>
           Optimiza tu capacidad de procesamiento visual y agilidad mental.
         </p>
 
         <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
-            <v-btn size="x-large" color="primary" variant="flat" class="action-button px-12 py-6 rounded-lg"
-              :to="isLoggedIn ? '/singleplayer' : '/register'">
-              {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
-              <v-icon end icon="mdi-chevron-right" class="ms-2"></v-icon>
-            </v-btn>
+          <v-btn
+            class="action-button px-12 py-6 rounded-lg"
+            color="primary"
+            size="x-large"
+            :to="isLoggedIn ? '/singleplayer' : '/register'"
+            variant="flat"
+          >
+            {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
+            <v-icon class="ms-2" end icon="mdi-chevron-right" />
+          </v-btn>
 
-            <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg">
-                SABER MÁS
-            </v-btn>
+          <v-btn class="action-button px-12 py-6 rounded-lg" color="white" size="x-large" variant="outlined">
+            SABER MÁS
+          </v-btn>
         </div>
       </div>
     </section>
 
     <!-- Visual Footer Decoration -->
     <div class="footer-decoration">
-        <div class="line"></div>
-        <div class="status-codes d-flex justify-space-between px-10">
-            <span>TX_READY: 0x44FF2</span>
-            <span>OS_ASTRO_KERNEL: LOADED</span>
-            <span>NEURAL_LINK: ACTIVE</span>
-        </div>
+      <div class="line" />
+      <div class="status-codes d-flex justify-space-between px-10">
+        <span>TX_READY: 0x44FF2</span>
+        <span>OS_ASTRO_KERNEL: LOADED</span>
+        <span>NEURAL_LINK: ACTIVE</span>
+      </div>
     </div>
   </v-container>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+  import { computed } from 'vue'
 
-const isLoggedIn = computed(() => {
-  return !!localStorage.getItem('user-session');
-});
+  const isLoggedIn = computed(() => {
+    return !!localStorage.getItem('user-session')
+  })
 </script>
 
 <style scoped>

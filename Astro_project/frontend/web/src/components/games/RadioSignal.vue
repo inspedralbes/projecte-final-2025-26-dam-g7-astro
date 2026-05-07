@@ -1,144 +1,207 @@
 <template>
-    <div class="radio-cabinet">
-        <div class="screw screw-tl"></div>
-        <div class="screw screw-tr"></div>
-        <div class="screw screw-bl"></div>
-        <div class="screw screw-br"></div>
+  <div class="radio-cabinet" :class="{ 'dyslexic-font': accessibilityMode }">
+    <div class="screw screw-tl" />
+    <div class="screw screw-tr" />
+    <div class="screw screw-bl" />
+    <div class="screw screw-br" />
 
-        <div class="radio-brand">
-            <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
-            <div class="brand-subtitle">COMMS RECEIVER</div>
-        </div>
-
-        <div class="session-hud">
-            <div class="hud-pill">Punts: {{ score }}</div>
-            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
-        </div>
-
-        <div class="screen-housing">
-            <div class="screen-bezel">
-                <div class="wave-panels">
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">TARGET</div>
-                        <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
-                        <div class="scanline"></div>
-                    </div>
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">SIGNAL</div>
-                        <canvas ref="currentWaveCanvas" width="260" height="90"></canvas>
-                        <div class="scanline"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="indicator-strip">
-            <div class="freq-display">
-                <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
-                <div class="freq-unit">MHz</div>
-            </div>
-            <div class="indicator-lights">
-                <div class="indicator-dot" :class="isTuned ? 'dot-green' : 'dot-off'"></div>
-                <div class="indicator-dot" :class="!isTuned ? 'dot-red' : 'dot-off'"></div>
-            </div>
-            <div class="status-display">
-                <span :class="isTuned ? 'status-sync' : 'status-lost'">
-                    {{ isTuned ? '● LOCKED' : '○ SCANNING' }}
-                </span>
-            </div>
-        </div>
-
-        <div class="dial-housing">
-            <div class="dial-markings">
-                <span v-for="n in 11" :key="n" class="dial-mark" 
-                    :style="{ left: ((n-1) * 10) + '%' }">
-                    {{ (n-1) * 10 }}
-                </span>
-            </div>
-            <div class="dial-track">
-                <div class="dial-indicator" :style="{ left: currentFrequency + '%' }"></div>
-            </div>
-            <div class="knob-row">
-                <div
-                    class="knob-container"
-                    @mousedown="startRotating"
-                    @touchstart.prevent="startRotating"
-                >
-                    <div class="knob-body" :style="{ transform: `rotate(${knobRotation}deg)` }">
-                        <div class="knob-line"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="input-housing">
-            <div v-if="isTuned" class="input-active">
-                <div class="input-header">
-                    <button class="replay-btn" @click="speakPhrase(1.0)">
-                        <v-icon size="18">mdi-volume-high</v-icon>
-                    </button>
-                    <span class="input-label">INCOMING TRANSMISSION</span>
-                </div>
-                <div class="input-row">
-                    <input
-                        v-model="userGuess"
-                        class="radio-input"
-                        placeholder="Escriu la frase..."
-                        @keyup.enter="checkPhrase"
-                        autofocus
-                    />
-                    <button class="send-btn" @click="checkPhrase">
-                        SEND
-                    </button>
-                </div>
-            </div>
-            <div v-else class="input-placeholder">
-                <v-icon size="18" color="#444">mdi-antenna</v-icon>
-                <span>ESPERANT SENYAL...</span>
-            </div>
-        </div>
-
-        <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
-            ✗ DADES INCORRECTES - TORNA A INTENTAR
-        </v-snackbar>
-
-        <v-snackbar v-model="showSuccess" color="success" timeout="2000" location="top">
-            ✓ SENYAL DESXIFRADA! +150 PTS | +15s
-        </v-snackbar>
+    <div class="radio-brand">
+      <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
+      <div class="brand-subtitle">COMMS RECEIVER</div>
+      <button
+        class="access-toggle"
+        @click="accessibilityMode = !accessibilityMode"
+        :title="accessibilityMode ? 'Desactivar modo lectura fácil' : 'Activar modo lectura fácil'"
+      >
+        <v-icon size="14" :color="accessibilityMode ? '#00E5FF' : '#555'">mdi-format-font</v-icon>
+      </button>
     </div>
+
+    <!-- Guía Visual de Roles -->
+    <div v-if="isMultiplayer" class="role-guidance">
+      <div v-if="subRole === 'listener'" class="guidance-pill listener">
+        <v-icon size="14" color="white">mdi-ear-hearing</v-icon> TU ESCUCHAS
+      </div>
+      <div v-if="subRole === 'writer'" class="guidance-pill writer">
+        <v-icon size="14" color="white">mdi-keyboard</v-icon> TU ESCRIBES
+      </div>
+    </div>
+
+    <div class="session-hud">
+      <div class="hud-pill">Punts: {{ score }}</div>
+      <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
+    </div>
+
+    <div class="screen-housing">
+      <div class="screen-bezel">
+        <div class="wave-panels">
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <div class="screen-label">TARGET</div>
+            <canvas ref="targetWaveCanvas" height="90" width="260" />
+            <div class="scanline" />
+          </div>
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <div class="screen-label">SIGNAL</div>
+            <canvas ref="currentWaveCanvas" height="90" width="260" />
+            <div class="scanline" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="indicator-strip">
+      <div class="freq-display">
+        <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
+        <div class="freq-unit">MHz</div>
+      </div>
+      <div class="indicator-lights">
+        <div class="indicator-dot" :class="isTuned ? 'dot-green' : 'dot-off'" />
+        <div class="indicator-dot" :class="!isTuned ? 'dot-red' : 'dot-off'" />
+      </div>
+      <div class="status-display">
+        <span :class="isTuned ? 'status-sync' : 'status-lost'">
+          {{ isTuned ? '● LOCKED' : '○ SCANNING' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Solo el Oyente (o en single player) tiene acceso al Dial -->
+    <div v-if="!isMultiplayer || subRole === 'listener'" class="dial-housing">
+      <div class="dial-markings">
+        <span
+          v-for="n in 11"
+          :key="n"
+          class="dial-mark"
+          :style="{ left: ((n-1) * 10) + '%' }"
+        >
+          {{ (n-1) * 10 }}
+        </span>
+      </div>
+      <div class="dial-track">
+        <div class="dial-indicator" :style="{ left: currentFrequency + '%' }" />
+      </div>
+      <div class="knob-row">
+        <div
+          class="knob-container"
+          @mousedown="startRotating"
+          @touchstart.prevent="startRotating"
+        >
+          <div class="knob-body" :style="{ transform: `rotate(${knobRotation}deg)` }">
+            <div class="knob-line" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="subRole === 'writer'" class="writer-placeholder">
+      <v-icon color="#00E5FF" size="48">mdi-signal-variant</v-icon>
+      <div class="placeholder-text">SINTONIZANDO SEÑAL...</div>
+      <div class="placeholder-sub">Espera a que tu compañero encuentre la frecuencia</div>
+    </div>
+
+    <div class="input-housing">
+      <!-- El escritor siempre ve el input, el oyente lo ve bloqueado -->
+      <div v-if="isTuned || (isMultiplayer && subRole === 'writer')" class="input-active">
+        <div class="input-header">
+          <button v-if="!isMultiplayer || subRole === 'listener'" class="replay-btn" @click="speakPhrase(1.0)">
+            <v-icon size="18">mdi-volume-high</v-icon>
+          </button>
+          <span class="input-label">
+            {{ (isMultiplayer && subRole === 'listener') ? 'COMUNICACIÓN ACTIVA' : 'INCOMING TRANSMISSION' }}
+          </span>
+        </div>
+        <div class="input-row">
+          <input
+            v-model="userGuess"
+            :disabled="isMultiplayer && subRole === 'listener'"
+            autofocus
+            class="radio-input"
+            :placeholder="(isMultiplayer && subRole === 'listener') ? 'El compañero está escribiendo...' : 'Escriu la frase...'"
+            @keyup.enter="checkPhrase"
+          >
+          <button v-if="!isMultiplayer || subRole === 'writer'" class="send-btn" @click="checkPhrase">
+            SEND
+          </button>
+        </div>
+        <!-- Feedback de lo que escribe el compañero -->
+        <div v-if="isMultiplayer && subRole === 'listener' && partnerText" class="partner-typing-indicator">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="partner-preview">"{{ partnerText }}"</span>
+        </div>
+      </div>
+      <div v-else class="input-placeholder">
+        <v-icon color="#444" size="18">mdi-antenna</v-icon>
+        <span>ESPERANT SENYAL...</span>
+      </div>
+    </div>
+
+    <v-snackbar v-model="showError" color="error" location="top" timeout="1500">
+      ✗ DADES INCORRECTES - TORNA A INTENTAR
+    </v-snackbar>
+
+    <v-snackbar v-model="showSuccess" color="success" location="top" timeout="2000">
+      ✓ SENYAL DESXIFRADA! +150 PTS | +15s
+    </v-snackbar>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
+  import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
+  const multiplayerStore = useMultiplayerStore()
+  const astroStore = useAstroStore()
 
-const props = defineProps({
+  const props = defineProps({
     isMultiplayer: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  const emit = defineEmits(['game-over'])
+
+  // Roles y Sincronización Cooperativa
+  const subRole = computed(() => multiplayerStore.subRole)
+  const partnerText = computed(() => multiplayerStore.partnerText)
+  const accessibilityMode = ref(false)
+
+  // Frecuencia objetivo
+  const targetFrequency = ref(Math.random() * 90 + 5)
+  const currentFrequency = ref(Math.random() * 20)
+  const tuningThreshold = 2
+  const userGuess = ref('')
+  const isTuned = ref(false)
+  const showError = ref(false)
+  const showSuccess = ref(false) // NUEVO: Feedback de éxito
+  const score = ref(0)
+  const timeLeft = ref(60)
+  const gameFinished = ref(false)
+  let roundTimer = null
+
+  // Sincronización de onda (Listener -> Writer)
+  watch(currentFrequency, (newFreq) => {
+    if (props.isMultiplayer && subRole.value === 'listener' && !gameFinished.value) {
+      multiplayerStore.sendGameAction({
+        type: 'FREQ_SYNC',
+        frequency: newFreq,
+      })
     }
-});
+  })
 
-const emit = defineEmits(['game-over']);
+  // Recibir frecuencia del compañero
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (msg?.type === 'GAME_ACTION' && msg.action?.type === 'FREQ_SYNC' && subRole.value === 'writer') {
+      currentFrequency.value = msg.action.frequency
+      // El escritor detecta automáticamente si el compañero ha sintonizado
+      const dist = Math.abs(currentFrequency.value - targetFrequency.value)
+      isTuned.value = dist < tuningThreshold
+    }
+  })
 
-// Frecuencia objetivo
-const targetFrequency = ref(Math.random() * 90 + 5);
-const currentFrequency = ref(Math.random() * 20); 
-const tuningThreshold = 2.0;
-const userGuess = ref('');
-const isTuned = ref(false);
-const showError = ref(false);
-const showSuccess = ref(false); // NUEVO: Feedback de éxito
-const score = ref(0);
-const timeLeft = ref(60);
-const gameFinished = ref(false);
-let roundTimer = null;
-
-const phrases = [
+  const phrases = [
     'EL VAIXELL DAURAT BRILLA DE DIA',
     'EL PETIT PAQUET VA QUEDAR AL PARC',
     'ELS DRACS BOTEN SOBRE LES PEDRES',
@@ -148,311 +211,343 @@ const phrases = [
     'EXTRAORDINARI DESCOBRIMENT A LA BIBLIOTECA',
     'LA NAU ESPACIAL DESPEGA A L\'ALBA',
     'BASE LUNAR REPORTA BON ESTAT',
-];
-// Phrases shuffled at start
-const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4); // 4 frases per partida
-const phraseIndex = ref(0); // Frase atual
-const currentPhrase = ref(shuffledPhrases[0]);
-const totalPhrases = shuffledPhrases.length;
-let speechRepeatTimer = null;
+  ]
+  // Phrases shuffled at start
+  const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4) // 4 frases per partida
+  const phraseIndex = ref(0) // Frase atual
+  const currentPhrase = ref(shuffledPhrases[0])
+  const totalPhrases = shuffledPhrases.length
+  let speechRepeatTimer = null
 
-// ---- DIAL ----
-const knobRotation = ref(0);
-let isDragging = false;
-let startAngle = 0;
-let currentKnobRotation = 0;
+  // ---- DIAL ----
+  const knobRotation = ref(0)
+  let isDragging = false
+  let startAngle = 0
+  let currentKnobRotation = 0
 
-const removeDragListeners = () => {
-    window.removeEventListener('mousemove', onRotating);
-    window.removeEventListener('mouseup', stopRotating);
-    window.removeEventListener('touchmove', onRotating);
-    window.removeEventListener('touchend', stopRotating);
-};
+  function removeDragListeners () {
+    window.removeEventListener('mousemove', onRotating)
+    window.removeEventListener('mouseup', stopRotating)
+    window.removeEventListener('touchmove', onRotating)
+    window.removeEventListener('touchend', stopRotating)
+  }
 
-knobRotation.value = (currentFrequency.value / 100) * 360;
-currentKnobRotation = knobRotation.value;
+  knobRotation.value = (currentFrequency.value / 100) * 360
+  currentKnobRotation = knobRotation.value
 
-const startRotating = (e) => {
-    if (gameFinished.value) return;
-    isDragging = true;
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const knob = e.currentTarget.getBoundingClientRect();
-    const cx = knob.left + knob.width / 2;
-    const cy = knob.top + knob.height / 2;
-    startAngle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) - currentKnobRotation;
-    window.addEventListener('mousemove', onRotating);
-    window.addEventListener('mouseup', stopRotating);
-    window.addEventListener('touchmove', onRotating, { passive: false });
-    window.addEventListener('touchend', stopRotating);
-    initAudio();
-};
+  function startRotating (e) {
+    if (gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+    isDragging = true
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
+    const knob = e.currentTarget.getBoundingClientRect()
+    const cx = knob.left + knob.width / 2
+    const cy = knob.top + knob.height / 2
+    startAngle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) - currentKnobRotation
+    window.addEventListener('mousemove', onRotating)
+    window.addEventListener('mouseup', stopRotating)
+    window.addEventListener('touchmove', onRotating, { passive: false })
+    window.addEventListener('touchend', stopRotating)
+    initAudio()
+  }
 
-const onRotating = (e) => {
-    if (!isDragging || gameFinished.value) return;
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const knob = document.querySelector('.knob-container').getBoundingClientRect();
-    const cx = knob.left + knob.width / 2;
-    const cy = knob.top + knob.height / 2;
-    const angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI);
-    let rotation = angle - startAngle;
-    while (rotation < 0) rotation += 360;
-    while (rotation >= 360) rotation -= 360;
-    currentKnobRotation = rotation;
-    knobRotation.value = rotation;
-    currentFrequency.value = (rotation / 360) * 100;
-    updateNoise();
-    if (isTuned.value) { isTuned.value = false; stopSpeechLoop(); }
-};
+  function onRotating (e) {
+    if (!isDragging || gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
+    const knob = document.querySelector('.knob-container').getBoundingClientRect()
+    const cx = knob.left + knob.width / 2
+    const cy = knob.top + knob.height / 2
+    const angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI)
+    let rotation = angle - startAngle
+    while (rotation < 0) rotation += 360
+    while (rotation >= 360) rotation -= 360
+    currentKnobRotation = rotation
+    knobRotation.value = rotation
+    currentFrequency.value = (rotation / 360) * 100
+    updateNoise()
+    if (isTuned.value) {
+      isTuned.value = false; stopSpeechLoop()
+    }
+  }
 
-const stopRotating = () => {
-    if (gameFinished.value) return;
-    isDragging = false;
-    removeDragListeners();
-    const distance = Math.abs(currentFrequency.value - targetFrequency.value);
+  function stopRotating () {
+    if (gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+    isDragging = false
+    removeDragListeners()
+    const distance = Math.abs(currentFrequency.value - targetFrequency.value)
     if (distance < tuningThreshold) {
-        isTuned.value = true;
-        if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1);
-        startSpeechLoop();
+      isTuned.value = true
+      if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1)
+      startSpeechLoop()
     } else {
-        isTuned.value = false;
-        stopSpeechLoop();
+      isTuned.value = false
+      stopSpeechLoop()
     }
-};
+  }
 
-// ---- AUDIO ----
-let audioCtx = null;
-let noiseNode = null;
-let gainNode = null;
-let filterNode = null;
+  // ---- AUDIO ----
+  let audioCtx = null
+  let noiseNode = null
+  let gainNode = null
+  let filterNode = null
 
-const initAudio = async () => {
-    if (audioCtx) { if (audioCtx.state === 'suspended') await audioCtx.resume(); return; }
+  async function initAudio () {
+    if (audioCtx) {
+      if (audioCtx.state === 'suspended') await audioCtx.resume(); return
+    }
+    // Solo inicializar audio si eres el oyente
+    if (props.isMultiplayer && subRole.value !== 'listener') return
+
     try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = audioCtx.createBuffer(1, 2 * audioCtx.sampleRate, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-        noiseNode = audioCtx.createBufferSource();
-        noiseNode.buffer = buf; noiseNode.loop = true;
-        filterNode = audioCtx.createBiquadFilter();
-        filterNode.type = 'bandpass'; filterNode.frequency.value = 800; filterNode.Q.value = 1.2;
-        gainNode = audioCtx.createGain(); gainNode.gain.value = 0.15;
-        noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination);
-        noiseNode.start();
-    } catch (e) { console.warn('Audio error'); }
-};
-
-const updateNoise = () => {
-    if (!gainNode || !audioCtx) return;
-    const dist = Math.abs(currentFrequency.value - targetFrequency.value);
-    gainNode.gain.setTargetAtTime(Math.max(0.01, Math.min(dist / 15, 0.2)), audioCtx.currentTime, 0.1);
-};
-
-// ---- ONDAS ----
-const targetWaveCanvas = ref(null);
-const currentWaveCanvas = ref(null);
-let animationFrame = null;
-let time = 0;
-
-const drawWaves = () => {
-    time += 0.04;
-    if (targetWaveCanvas.value && currentWaveCanvas.value) {
-        renderWave(targetWaveCanvas.value, true);
-        renderWave(currentWaveCanvas.value, false);
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const buf = audioCtx.createBuffer(1, 2 * audioCtx.sampleRate, audioCtx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+      noiseNode = audioCtx.createBufferSource()
+      noiseNode.buffer = buf; noiseNode.loop = true
+      filterNode = audioCtx.createBiquadFilter()
+      filterNode.type = 'bandpass'; filterNode.frequency.value = 800; filterNode.Q.value = 1.2
+      gainNode = audioCtx.createGain(); gainNode.gain.value = 0.15
+      noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination)
+      noiseNode.start()
+    } catch {
+      console.warn('Audio error')
     }
-    animationFrame = requestAnimationFrame(drawWaves);
-};
+  }
 
-const renderWave = (canvas, isTarget) => {
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+  function updateNoise () {
+    if (!gainNode || !audioCtx || (props.isMultiplayer && subRole.value !== 'listener')) return
+    const dist = Math.abs(currentFrequency.value - targetFrequency.value)
+    gainNode.gain.setTargetAtTime(Math.max(0.01, Math.min(dist / 15, 0.2)), audioCtx.currentTime, 0.1)
+  }
 
-    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5;
-    for (let i = 0; i < w; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
-    for (let i = 0; i < h; i += 18) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
-    ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+  // ---- ONDAS ----
+  const targetWaveCanvas = ref(null)
+  const currentWaveCanvas = ref(null)
+  let animationFrame = null
+  let time = 0
 
-    const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time;
+  function drawWaves () {
+    time += 0.04
+    if (targetWaveCanvas.value && currentWaveCanvas.value) {
+      renderWave(targetWaveCanvas.value, true)
+      renderWave(currentWaveCanvas.value, false)
+    }
+    animationFrame = requestAnimationFrame(drawWaves)
+  }
+
+  function renderWave (canvas, isTarget) {
+    const ctx = canvas.getContext('2d')
+    const w = canvas.width, h = canvas.height
+    ctx.clearRect(0, 0, w, h)
+
+    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5
+    for (let i = 0; i < w; i += 18) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke()
+    }
+    for (let i = 0; i < h; i += 18) {
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke()
+    }
+    ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1
+    ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+
+    const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time
 
     if (isTarget) {
-        ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#FF9800'; ctx.setLineDash([]);
-        for (let x = 0; x < w; x++) {
-            const y = h/2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp;
-            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        if (isTuned.value) { ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0; }
+      ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#FF9800'; ctx.setLineDash([])
+      for (let x = 0; x < w; x++) {
+        const y = h / 2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      if (isTuned.value) {
+        ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0
+      }
     } else {
-        const dist = Math.abs(currentFrequency.value - targetFrequency.value);
-        const prox = Math.max(0, 1 - (dist / 50));
-        ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`;
-        for (let x = 0; x < w; x++) {
-            const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp;
-            const c1 = Math.sin(x * 0.23 + time * 1.5) * 18;
-            const c2 = Math.sin(x * 0.07 + time * 0.7) * 12;
-            const c3 = Math.sin(x * 0.35 + time * 2.3) * 8;
-            const noise = (Math.random() - 0.5) * 10 * (1 - prox);
-            const y = h/2 + clean * prox + (c1 + c2*0.5 + c3*0.3 + noise) * (1 - prox);
-            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        if (prox > 0.8) { ctx.shadowBlur = 10 * prox; ctx.shadowColor = '#00E5FF'; ctx.stroke(); ctx.shadowBlur = 0; }
+      const dist = Math.abs(currentFrequency.value - targetFrequency.value)
+      const prox = Math.max(0, 1 - (dist / 50))
+      ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`
+      for (let x = 0; x < w; x++) {
+        const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
+        const c1 = Math.sin(x * 0.23 + time * 1.5) * 18
+        const c2 = Math.sin(x * 0.07 + time * 0.7) * 12
+        const c3 = Math.sin(x * 0.35 + time * 2.3) * 8
+        const noise = (Math.random() - 0.5) * 10 * (1 - prox)
+        const y = h / 2 + clean * prox + (c1 + c2 * 0.5 + c3 * 0.3 + noise) * (1 - prox)
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      if (prox > 0.8) {
+        ctx.shadowBlur = 10 * prox; ctx.shadowColor = '#00E5FF'; ctx.stroke(); ctx.shadowBlur = 0
+      }
     }
-};
+  }
 
-// ---- VOZ ----
-const startSpeechLoop = () => {
-    if (!isTuned.value || gameFinished.value) return;
-    speakPhrase(1.0);
-};
+  // ---- VOZ ----
+  function startSpeechLoop () {
+    if (!isTuned.value || gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+    speakPhrase(1)
+  }
 
-const stopSpeechLoop = () => {
+  function stopSpeechLoop () {
     if (speechRepeatTimer) {
-        clearTimeout(speechRepeatTimer);
-        speechRepeatTimer = null;
+      clearTimeout(speechRepeatTimer)
+      speechRepeatTimer = null
     }
-    window.speechSynthesis.cancel();
-};
+    window.speechSynthesis.cancel()
+  }
 
-const speakPhrase = (volume = 1.0) => {
-    if (!window.speechSynthesis || gameFinished.value) return;
-    
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(currentPhrase.value);
-    
+  function speakPhrase (volume = 1) {
+    if (!window.speechSynthesis || gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+
+    // Cancel·lar qualsevol alocució prèvia immediatament
+    window.speechSynthesis.cancel()
+    if (speechRepeatTimer) clearTimeout(speechRepeatTimer)
+
+    const u = new SpeechSynthesisUtterance(currentPhrase.value)
+
     // Configurar veus
-    const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(v => v.lang.includes('ca')) ||
-              voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
-              voices.find(v => v.lang.includes('es')) || voices[0];
-    
-    if (v) u.voice = v;
-    u.lang = 'ca-ES';
-    u.rate = 0.8;
-    u.pitch = 0.8;
-    u.volume = volume;
+    const voices = window.speechSynthesis.getVoices()
+    const v = voices.find(v => v.lang.includes('ca'))
+      || voices.find(v => v.lang.includes('es') && v.name.includes('Google'))
+      || voices.find(v => v.lang.includes('es')) || voices[0]
 
-    // Lògica de repetició robusta: quan acaba, espera 1s i torna a parlar si seguim afinats
+    if (v) u.voice = v
+    u.lang = 'ca-ES'
+    u.rate = 0.9 // Una mica més ràpid per millorar la sensació de fluïdesa
+    u.pitch = 0.9
+    u.volume = volume
+
+    // Lògica de repetició: reduïm l'espera a 500ms
     u.onend = () => {
-        if (isTuned.value && !gameFinished.value) {
-            speechRepeatTimer = setTimeout(() => {
-                if (isTuned.value && !gameFinished.value) speakPhrase(volume);
-            }, 1000);
-        }
-    };
-
-    window.speechSynthesis.speak(u);
-};
-
-// LÓGICA CORE CORREGIDA
-const checkPhrase = () => {
-    if (gameFinished.value) return;
-    const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-    
-    if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
-        score.value += 150;
-        timeLeft.value += 15;
-        userGuess.value = '';
-        showSuccess.value = true;
-        
-        // Generamos nueva señal objetivo
-        currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
-        targetFrequency.value = Math.random() * 90 + 5;
-        
-        // Reseteamos el estado para que vuelva a buscar
-        isTuned.value = false;
-        stopSpeechLoop();
-        updateNoise();
-    } else { 
-        showError.value = true; 
-        userGuess.value = ''; 
+      if (isTuned.value && !gameFinished.value) {
+        speechRepeatTimer = setTimeout(() => {
+          if (isTuned.value && !gameFinished.value) speakPhrase(volume)
+        }, 500)
+      }
     }
-};
 
-const startTimer = () => {
+    window.speechSynthesis.speak(u)
+  }
+
+  // LÓGICA CORE CORREGIDA
+  function checkPhrase () {
+    if (gameFinished.value || (props.isMultiplayer && subRole.value === 'listener')) return
+    const norm = s => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+
+    if (norm(userGuess.value) === norm(currentPhrase.value)) {
+      // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
+      score.value += 150
+      timeLeft.value += 15
+      userGuess.value = ''
+      showSuccess.value = true
+
+      // Si es multijugador, el servidor debería mandar la nueva frase/frecuencia
+      // De momento regeneramos localmente pero el servidor es la fuente de verdad al inicio
+      currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)]
+      targetFrequency.value = Math.random() * 90 + 5
+
+      // Reseteamos el estado para que vuelva a buscar
+      isTuned.value = false
+      stopSpeechLoop()
+      updateNoise()
+    } else {
+      showError.value = true
+      userGuess.value = ''
+    }
+  }
+
+  function startTimer () {
     if (roundTimer) {
-        clearInterval(roundTimer);
+      clearInterval(roundTimer)
     }
 
     roundTimer = setInterval(() => {
-        if (gameFinished.value) return;
-        timeLeft.value = Math.max(0, timeLeft.value - 1);
-        if (timeLeft.value === 0) {
-            finishGame();
-        }
-    }, 1000);
-};
+      if (gameFinished.value) return
+      timeLeft.value = Math.max(0, timeLeft.value - 1)
+      if (timeLeft.value === 0) {
+        finishGame()
+      }
+    }, 1000)
+  }
 
-const finishGame = (silent = false) => {
-    if (gameFinished.value) return;
-    
+  function finishGame (silent = false) {
+    if (gameFinished.value) return
+
     if (props.isMultiplayer && !silent) {
-        multiplayerStore.submitRoundResult();
-        return;
+      multiplayerStore.submitRoundResult()
+      return
     }
 
-    gameFinished.value = true;
-    isDragging = false;
-    removeDragListeners();
+    gameFinished.value = true
+    isDragging = false
+    removeDragListeners()
     if (roundTimer) {
-        clearInterval(roundTimer);
-        roundTimer = null;
+      clearInterval(roundTimer)
+      roundTimer = null
     }
-    const reward = score.value + timeLeft.value;
-    stopSpeechLoop();
-    stopAudio();
-    emit('game-over', reward);
-};
+    const reward = score.value + timeLeft.value
+    stopSpeechLoop()
+    stopAudio()
+    emit('game-over', reward)
+  }
 
-const stopAudio = () => {
-    stopSpeechLoop();
-    if (noiseNode) try { noiseNode.stop(); } catch(e) {}
-    if (audioCtx) audioCtx.close();
-    noiseNode = null;
-    filterNode = null;
-    gainNode = null;
-    audioCtx = null;
-};
+  function stopAudio () {
+    stopSpeechLoop()
+    if (noiseNode) try {
+      noiseNode.stop()
+    } catch {}
+    if (audioCtx) audioCtx.close()
+    noiseNode = null
+    filterNode = null
+    gainNode = null
+    audioCtx = null
+  }
 
-onMounted(() => {
-    drawWaves();
-    startTimer();
-});
+  onMounted(() => {
+    // Sincronizar datos iniciales desde el servidor si están disponibles
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.radioData) {
+      const teamId = multiplayerStore.room.gameConfig.teams[astroStore.user]
+      const data = multiplayerStore.room.gameConfig.radioData[teamId] || multiplayerStore.room.gameConfig.radioData['default']
+      if (data) {
+        targetFrequency.value = data.frequency
+        currentPhrase.value = data.phrase
+      }
+    }
+    drawWaves()
+    startTimer()
+  })
 
-// Listener para eventos multijugador (Mantenemos de HEAD)
-watch(() => multiplayerStore.lastMessage, (msg) => {
-    if (!msg) return;
+  // Listener para eventos multijugador (Mantenemos de HEAD)
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        // Alguien ganó la ronda, cerrar este juego formalmente
-        gameFinished.value = true; 
-        emit('game-over', score.value + timeLeft.value);
+      // Alguien ganó la ronda, cerrar este juego formalmente
+      gameFinished.value = true
+      emit('game-over', score.value + timeLeft.value)
     }
-});
+  })
 
-// Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
-watch(score, (newScore) => {
+  // Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
+  watch(score, newScore => {
     if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-            type: 'SCORE_UPDATE',
-            score: newScore
-        });
+      multiplayerStore.sendGameAction({
+        type: 'SCORE_UPDATE',
+        score: newScore,
+      })
     }
-});
+  })
 
-onUnmounted(() => {
-    isDragging = false;
-    removeDragListeners();
-    if (roundTimer) clearInterval(roundTimer);
-    stopSpeechLoop();
-    stopAudio();
-    if (animationFrame) cancelAnimationFrame(animationFrame);
-});
+  onUnmounted(() => {
+    isDragging = false
+    removeDragListeners()
+    if (roundTimer) clearInterval(roundTimer)
+    stopSpeechLoop()
+    stopAudio()
+    if (animationFrame) cancelAnimationFrame(animationFrame)
+  })
 </script>
 
 <style scoped>
@@ -492,7 +587,7 @@ onUnmounted(() => {
 .screw-br { bottom: 8px; right: 8px; }
 
 .radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
-.brand-text { 
+.brand-text {
     font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
     color: #ccc; letter-spacing: 6px; text-shadow: 0 0 8px rgba(200,200,200,0.15);
 }
@@ -669,5 +764,118 @@ canvas { display: block; width: 100%; height: auto; }
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     height: 70px; gap: 6px;
     font-size: 10px; color: #333; letter-spacing: 2px; font-family: 'Courier New', monospace;
+}
+
+/* --- NUEVOS ESTILOS COOPERATIVOS Y ACCESIBILIDAD --- */
+
+.dyslexic-font {
+  font-family: 'OpenDyslexic', 'Courier New', monospace !important;
+}
+
+.access-toggle {
+  position: absolute;
+  top: 8px;
+  right: 40px;
+  background: #1a1e26;
+  border: 1px solid #333;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.access-toggle:hover {
+  background: #2a2e36;
+  border-color: #00E5FF;
+}
+
+.role-guidance {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.guidance-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  animation: pulse 2s infinite;
+}
+.guidance-pill.listener { background: #1976d2; border: 1px solid #2196f3; }
+.guidance-pill.writer { background: #e65100; border: 1px solid #ff9800; }
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.writer-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  background: #0a0c10;
+  border: 2px dashed #1a1e26;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  color: #334;
+}
+.placeholder-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #00E5FF;
+  margin-top: 10px;
+  letter-spacing: 2px;
+}
+.placeholder-sub {
+  font-size: 10px;
+  color: #444;
+  margin-top: 4px;
+}
+
+.partner-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 229, 255, 0.05);
+  border-radius: 4px;
+}
+
+.partner-preview {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #00E5FF;
+  font-style: italic;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 3px;
+}
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  background: #00E5FF;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(-4px); opacity: 1; }
 }
 </style>

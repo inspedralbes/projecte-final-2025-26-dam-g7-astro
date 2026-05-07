@@ -13,35 +13,35 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import LeftSidebar from '@/components/layout/LeftSidebar.vue'
-import RightSidebar from '@/components/layout/RightSidebar.vue'
-import ChatDrawer from '@/components/layout/ChatDrawer.vue'
-import { useMultiplayerStore } from '@/stores/multiplayerStore'
-import { useSessionStore } from '@/stores/sessionStore'
+  import { computed, onMounted } from 'vue'
+  import { useRoute } from 'vue-router'
+  import ChatDrawer from '@/components/layout/ChatDrawer.vue'
+  import LeftSidebar from '@/components/layout/LeftSidebar.vue'
+  import RightSidebar from '@/components/layout/RightSidebar.vue'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { useSessionStore } from '@/stores/sessionStore'
 
-const route = useRoute()
-const sessionStore = useSessionStore()
-const multiplayerStore = useMultiplayerStore()
+  const route = useRoute()
+  const sessionStore = useSessionStore()
+  const multiplayerStore = useMultiplayerStore()
 
-// Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
-onMounted(() => {
-  if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
-    multiplayerStore.connect()
-  }
-})
+  // Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
+  onMounted(() => {
+    if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+      multiplayerStore.connect()
+    }
+  })
 
-// Define routes where sidebars should be hidden
-const showLayoutElements = computed(() => {
-  const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
-  const hiddenNames = ['index', 'register', 'login', 'Plans']
+  // Define routes where sidebars should be hidden
+  const showLayoutElements = computed(() => {
+    const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
+    const hiddenNames = ['index', 'register', 'login', 'Plans']
 
-  const isHidden = hiddenPaths.includes(route.path) ||
-    (route.name && hiddenNames.includes(route.name))
+    const isHidden = hiddenPaths.includes(route.path)
+      || (route.name && hiddenNames.includes(route.name))
 
-  return !isHidden
-})
+    return !isHidden
+  })
 </script>
 
 <style>

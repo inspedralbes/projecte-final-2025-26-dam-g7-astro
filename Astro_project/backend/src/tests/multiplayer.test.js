@@ -14,6 +14,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
             insertOne: jest.fn().mockResolvedValue({}),
             updateOne: jest.fn().mockResolvedValue({}),
             deleteOne: jest.fn().mockResolvedValue({}),
+            deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
             find: jest.fn().mockReturnValue({
                 toArray: jest.fn().mockResolvedValue([])
             })

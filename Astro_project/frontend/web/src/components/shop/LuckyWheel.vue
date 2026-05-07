@@ -1,119 +1,117 @@
 <template>
   <div class="wheel-wrapper">
-    <v-icon size="60" color="amber-accent-4" class="wheel-pointer">mdi-map-marker-down</v-icon>
-    
+    <v-icon class="wheel-pointer" color="amber-accent-4" size="60">mdi-map-marker-down</v-icon>
+
     <div class="wheel" :style="wheelStyle">
-      <div 
-        v-for="(item, index) in items" 
+      <div
+        v-for="(item, index) in items"
         :key="index"
         class="wheel-segment"
         :style="getSegmentStyle(index)"
       >
-        <v-icon color="white" size="36" class="segment-icon">{{ item.icon }}</v-icon>
+        <v-icon class="segment-icon" color="white" size="36">{{ item.icon }}</v-icon>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+  import { computed, ref } from 'vue'
 
-const getSegmentStyle = (index) => {
-  const degreePerItem = 360 / items.length;
-  const rotation = index * degreePerItem + (degreePerItem / 2);
-  return {
-    // Hem ajustat a -115px perquè quedi exactament al centre òptic del segment
-    transform: `rotate(${rotation}deg) translateY(-115px) rotate(-${rotation}deg)` 
-  };
-};
+  function getSegmentStyle (index) {
+    const degreePerItem = 360 / items.length
+    const rotation = index * degreePerItem + (degreePerItem / 2)
+    return {
+      // Hem ajustat a -115px perquè quedi exactament al centre òptic del segment
+      transform: `rotate(${rotation}deg) translateY(-115px) rotate(-${rotation}deg)`,
+    }
+  }
 
-const props = defineProps({
-  user: { type: String, required: true, default: "" }
-});
+  const props = defineProps({
+    user: { type: String, required: true, default: '' },
+  })
 
-const emit = defineEmits(['win', 'update-balance', 'update-inventory', 'update-tickets', 'spin-start', 'spin-end']);
+  const emit = defineEmits(['win', 'update-balance', 'update-inventory', 'update-tickets', 'spin-start', 'spin-end'])
 
-const isSpinning = ref(false);
-const currentRotation = ref(0);
+  const isSpinning = ref(false)
+  const currentRotation = ref(0)
 
-const items = [
+  const items = [
     { id: 0, icon: 'mdi-heart', color: '#FF5252' },
     { id: 1, icon: 'mdi-decagram', color: '#9C27B0' },
     { id: 2, icon: 'mdi-ninja', color: '#2196F3' },
     { id: 3, icon: 'mdi-currency-usd', color: '#FFC107' },
-    { id: 4, icon: 'mdi-emoticon-sad', color: '#795548' }
-];
+    { id: 4, icon: 'mdi-emoticon-sad', color: '#795548' },
+  ]
 
-const wheelStyle = computed(() => {
-  const degrees = 360 / items.length;
-  let gradient = items.map((item, i) => 
-    `${item.color} ${i * degrees}deg ${(i + 1) * degrees}deg`
-  ).join(', ');
-  
-  return {
-    background: `conic-gradient(${gradient})`,
-    transform: `rotate(${currentRotation.value}deg)`,
-    transition: isSpinning.value ? 'transform 4s cubic-bezier(0.1, 0, 0.2, 1)' : 'none'
-  };
-});
+  const wheelStyle = computed(() => {
+    const degrees = 360 / items.length
+    const gradient = items.map((item, i) =>
+      `${item.color} ${i * degrees}deg ${(i + 1) * degrees}deg`,
+    ).join(', ')
 
+    return {
+      background: `conic-gradient(${gradient})`,
+      transform: `rotate(${currentRotation.value}deg)`,
+      transition: isSpinning.value ? 'transform 4s cubic-bezier(0.1, 0, 0.2, 1)' : 'none',
+    }
+  })
 
-async function spin() {
-  if (isSpinning.value || !props.user) return;
-  isSpinning.value = true;
-  emit('spin-start');
+  async function spin () {
+    if (isSpinning.value || !props.user) return
+    isSpinning.value = true
+    emit('spin-start')
 
-  // 1. Definimos la URL base usando la variable de entorno de Vite/Astro
-  // Si la variable no existe, usará localhost por defecto para que no se rompa nada
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    // 1. Definimos la URL base usando la variable de entorno de Vite/Astro
+    // Si la variable no existe, usará localhost por defecto para que no se rompa nada
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
-  try {
-    // 2. Usamos la variable API_BASE en lugar del texto fijo
-    const response = await fetch(`${API_BASE}/api/shop/spin`, {
+    try {
+      // 2. Usamos la variable API_BASE en lugar del texto fijo
+      const response = await fetch(`${API_BASE}/api/shop/spin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: props.user }) 
-    });
-    
-    const data = await response.json();
+        body: JSON.stringify({ user: props.user }),
+      })
 
-    if (!response.ok || !data.success) throw new Error(data.message || "Error al girar");
+      const data = await response.json()
 
-    const winnerIndex = items.findIndex(i => i.id === data.prize.id);
-    if (winnerIndex === -1) throw new Error("El servidor ha retornat un premi desconegut.");
+      if (!response.ok || !data.success) throw new Error(data.message || 'Error al girar')
 
-    const degreePerItem = 360 / items.length;
-    const targetAngle = 360 - (winnerIndex * degreePerItem) - (degreePerItem / 2);
+      const winnerIndex = items.findIndex(i => i.id === data.prize.id)
+      if (winnerIndex === -1) throw new Error('El servidor ha retornat un premi desconegut.')
 
-    const currentSpins = Math.floor(currentRotation.value / 360);
-    const extraSpins = 5;
+      const degreePerItem = 360 / items.length
+      const targetAngle = 360 - (winnerIndex * degreePerItem) - (degreePerItem / 2)
 
-    currentRotation.value = (currentSpins + extraSpins) * 360 + targetAngle;
+      const currentSpins = Math.floor(currentRotation.value / 360)
+      const extraSpins = 5
 
-    setTimeout(() => {
-      isSpinning.value = false;
-      emit('spin-end');
-      emit('win', {
-        ...data.prize,
-        color: items[winnerIndex].color,
-        rewardMessage: data.rewardMessage || null,
-        prizeApplied: !!data.prizeApplied
-      });
-      if (data.newBalance !== undefined) emit('update-balance', data.newBalance);
-      if (Array.isArray(data.inventory)) emit('update-inventory', data.inventory);
-      if (data.newTickets !== undefined) emit('update-tickets', data.newTickets);
-    }, 4000);
+      currentRotation.value = (currentSpins + extraSpins) * 360 + targetAngle
 
-  } catch (e) {
-    console.error("❌ Error en la ruleta:", e);
-    isSpinning.value = false;
-    emit('spin-end');
-    alert(e.message || "Error de comunicació");
+      setTimeout(() => {
+        isSpinning.value = false
+        emit('spin-end')
+        emit('win', {
+          ...data.prize,
+          color: items[winnerIndex].color,
+          rewardMessage: data.rewardMessage || null,
+          prizeApplied: !!data.prizeApplied,
+        })
+        if (data.newBalance !== undefined) emit('update-balance', data.newBalance)
+        if (Array.isArray(data.inventory)) emit('update-inventory', data.inventory)
+        if (data.newTickets !== undefined) emit('update-tickets', data.newTickets)
+      }, 4000)
+    } catch (error) {
+      console.error('❌ Error en la ruleta:', error)
+      isSpinning.value = false
+      emit('spin-end')
+      alert(error.message || 'Error de comunicació')
+    }
   }
-}
 
-// Això permet que el pare (shop.vue) pugui executar aquesta funció
-defineExpose({ spin });
+  // Això permet que el pare (shop.vue) pugui executar aquesta funció
+  defineExpose({ spin })
 </script>
 
 <style scoped>
@@ -161,6 +159,6 @@ defineExpose({ spin });
   left: 50%;
   width: 0;
   height: 0;
-  display: flex; 
+  display: flex;
 }
 </style>
