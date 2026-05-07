@@ -156,37 +156,34 @@
             </v-row>
         </div>
 
-        <!-- DIÁLOGO DE HISTORIAL (MAXIMIZADO) -->
-        <v-dialog v-model="historyDialog" max-width="1000" transition="dialog-bottom-transition">
+        <!-- DIÁLOGO DE HISTORIAL (MÁS COMPACTO) -->
+        <v-dialog v-model="historyDialog" max-width="850" transition="fade-transition">
             <v-card class="history-popup-card">
-                <div class="history-popup-header pa-6 d-flex align-center justify-space-between">
+                <div class="history-popup-header pa-4 d-flex align-center justify-space-between">
                     <div>
-                        <h2 class="text-h4 font-weight-black text-white mb-1">{{ $t('profile.flightHistory') }}</h2>
-                        <p class="text-caption text-cyan-accent-2">{{ $t('profile.flightHistorySub') }}</p>
+                        <h2 class="text-h5 font-weight-black text-white mb-0">{{ $t('profile.flightHistory') }}</h2>
+                        <p class="text-caption text-cyan-accent-2 mb-0">{{ $t('profile.flightHistorySub') }}</p>
                     </div>
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="historyDialog = false"></v-btn>
+                    <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="historyDialog = false"></v-btn>
                 </div>
 
                 <v-divider class="border-opacity-10"></v-divider>
 
-                <div class="history-popup-content pa-8">
+                <div class="history-popup-content pa-5">
                     <v-row>
                         <!-- TOP MISIONES (IZQUIERDA) -->
-                        <v-col cols="12" md="5">
+                        <v-col cols="12" md="6" class="pr-md-6 border-right-sep">
                             <h4 class="text-overline text-amber-accent-3 font-weight-black mb-6 d-flex align-center">
                                 <v-icon size="20" class="mr-2">mdi-star</v-icon> {{ $t('profile.personalRecords') }}
                             </h4>
                             <div v-if="topGames.length > 0" class="top-games-list-popup ga-4 d-flex flex-column">
                                 <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card-popup">
                                     <div class="rank-num">{{ idx + 1 }}</div>
-                                    <div class="game-info">
+                                    <div class="game-info flex-grow-1">
                                         <span class="game-name">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
-                                        <span class="game-date text-grey">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                                        <span class="game-date text-caption text-grey ml-3">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
                                     </div>
-                                    <div class="game-stats text-right">
-                                        <div class="game-score text-h6 font-weight-black text-cyan-accent-3">{{ match.score }}</div>
-                                        <div class="game-xp text-caption text-amber-accent-2">+{{ match.xpEarned }} XP</div>
-                                    </div>
+                                    <div class="game-score-small-popup font-weight-black text-amber-accent-3">{{ match.score }}</div>
                                 </div>
                             </div>
                             <div v-else class="empty-state-popup">
@@ -196,7 +193,7 @@
                         </v-col>
 
                         <!-- RECIENTES (DERECHA) -->
-                        <v-col cols="12" md="7">
+                        <v-col cols="12" md="6" class="pl-md-6">
                             <h4 class="text-overline text-cyan-accent-3 font-weight-black mb-6 d-flex align-center">
                                 <v-icon size="20" class="mr-2">mdi-history</v-icon> {{ $t('profile.recentIncursions') }}
                             </h4>
@@ -633,26 +630,54 @@ watch(historyDialog, async (isOpen) => {
     border: 1px solid rgba(0, 242, 255, 0.2);
     border-radius: 24px !important;
     overflow: hidden;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
+}
+
+.history-popup-content {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
+}
+
+.history-popup-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-popup-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.2);
+    border-radius: 10px;
 }
 .history-popup-header { background: linear-gradient(to right, #0a0c10, #111827); }
 .top-game-card-popup {
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; gap: 12px;
     background: rgba(255, 193, 7, 0.03); border: 1px solid rgba(255, 193, 7, 0.1);
-    padding: 16px; border-radius: 16px; transition: all 0.3s;
+    padding: 10px 16px; border-radius: 10px; transition: all 0.3s;
 }
-.top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.02); }
+.top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.01); }
 
 .recent-item-popup {
-    display: flex; align-items: center; gap: 16px;
-    padding: 14px 20px; background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;
 }
 .recent-item-popup:hover { background: rgba(255,255,255,0.05); border-color: rgba(0, 242, 255, 0.2); }
 
-.game-score-small-popup { font-family: 'Orbitron', sans-serif; color: #00e5ff; font-size: 1.1rem; }
+.border-right-sep {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 960px) {
+    .border-right-sep {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 24px;
+        margin-bottom: 24px;
+    }
+}
+
+.game-score-small-popup { font-family: 'Orbitron', sans-serif; color: #00e5ff; font-size: 0.95rem; }
 .rank-num {
-    width: 32px; height: 32px; background: #ffc107; color: #000;
-    font-weight: 900; border-radius: 50%; display: flex;
+    width: 28px; height: 28px; background: #ffc107; color: #000;
+    font-weight: 900; font-size: 0.8rem; border-radius: 50%; display: flex;
     align-items: center; justify-content: center; flex-shrink: 0;
 }
 
