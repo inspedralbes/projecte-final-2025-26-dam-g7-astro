@@ -7,11 +7,34 @@ import { useProgressStore } from '../stores/progressStore';
 // Mock de astroShared
 vi.mock('../stores/astroShared', () => ({
     API_BASE_URL: 'http://localhost',
-    STORAGE_KEYS: {},
+    STORAGE_KEYS: {
+        level: 'astro_level',
+        xp: 'astro_xp',
+        streak: 'astro_streak',
+        streakFreezes: 'astro_streak_freezes',
+        activeBoosters: 'astro_active_boosters',
+        lastActivity: 'astro_last_activity',
+        lastGame: 'astro_last_game',
+        user: 'astro_user',
+        plan: 'astro_plan',
+        rank: 'astro_rank',
+        token: 'astro_token',
+        role: 'astro_role',
+        parentId: 'astro_parent_id'
+    },
     storageGetItem: vi.fn(),
     storageSetItem: vi.fn(),
     storageRemoveItem: vi.fn(),
-    requestJson: vi.fn()
+    requestJson: vi.fn(),
+    normalizeActiveBoosters: vi.fn(v => v || {
+        doubleCoinsGamesLeft: 0,
+        doubleScoreGamesLeft: 0,
+        sabotageGamesLeft: 0
+    }),
+    readStoredObject: vi.fn(() => ({})),
+    readStoredArray: vi.fn(() => []),
+    normalizeSelectedAchievements: vi.fn(v => v || [null, null, null]),
+    normalizeUnlockedAchievements: vi.fn(v => v || [])
 }));
 
 describe('Astro Store', () => {

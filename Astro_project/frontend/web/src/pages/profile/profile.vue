@@ -32,8 +32,9 @@
                             <div class="user-meta mt-4">
                                 <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
                                     <div class="flex-grow-1">
-                                        <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2">
+                                        <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2 d-flex align-center">
                                             {{ user || $t('profile.guest') }}
+                                            <v-btn icon="mdi-cog-outline" variant="text" color="grey-lighten-1" size="small" @click="openSettingsDialog" class="ml-2"></v-btn>
                                         </h1>
                                         <div class="d-flex flex-wrap align-center ga-3">
                                             <v-chip :class="['rank-chip font-weight-black', getRankClass(level)]" size="small" variant="flat" @click="titleDialog = true" style="cursor: pointer;">
@@ -341,6 +342,72 @@
                 </div>
             </v-card>
         </v-dialog>
+        <!-- Diálogo Ajustes (Contraseña) -->
+        <v-dialog v-model="settingsDialog" max-width="500">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    {{ $t('profile.accountSettings') }}
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="closeSettingsDialog"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-4" density="compact">
+                        {{ settingsError }}
+                    </v-alert>
+                    <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-4" density="compact">
+                        {{ settingsSuccess }}
+                    </v-alert>
+
+                    <h4 class="text-overline text-grey-lighten-1 mb-4">{{ $t('profile.changePassword') }}</h4>
+                    
+                    <v-form @submit.prevent="submitPasswordChange">
+                        <v-text-field
+                            v-model="oldPassword"
+                            :label="$t('profile.oldPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-2"
+                        ></v-text-field>
+                        
+                        <v-text-field
+                            v-model="newPassword"
+                            :label="$t('profile.newPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-2"
+                        ></v-text-field>
+                        
+                        <v-text-field
+                            v-model="confirmNewPassword"
+                            :label="$t('profile.confirmNewPassword')"
+                            type="password"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-6"
+                            :error="confirmNewPassword && !passwordsMatch"
+                            :error-messages="confirmNewPassword && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
+                        ></v-text-field>
+                        
+                        <v-btn
+                            block
+                            color="cyan-accent-3"
+                            height="50"
+                            rounded="lg"
+                            type="submit"
+                            :loading="settingsLoading"
+                            :disabled="!canSubmitPasswordChange"
+                            class="font-weight-black"
+                        >
+                            {{ $t('profile.saveChanges') }}
+                        </v-btn>
+                    </v-form>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -362,6 +429,13 @@ const avatarDialog = ref(false)
 const titleDialog = ref(false)
 const historyDialog = ref(false)
 const showLogoutDialog = ref(false)
+const settingsDialog = ref(false)
+const settingsLoading = ref(false)
+const settingsError = ref('')
+const settingsSuccess = ref('')
+const oldPassword = ref('')
+const newPassword = ref('')
+const confirmNewPassword = ref('')
 const currentPage = ref(1)
 const pageSize = 6
 const currentSlotIndex = ref(null)

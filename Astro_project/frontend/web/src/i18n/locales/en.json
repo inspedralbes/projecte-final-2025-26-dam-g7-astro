@@ -143,7 +143,19 @@
         "defaultTitle": "Default (Level)",
         "rankBasedOnLevel": "Rank based on your level",
         "boughtInShop": "Bought in the shop",
-        "noSpecialTitles": "You don't have any special titles. Visit the Space Bazaar to acquire them."
+        "noSpecialTitles": "You don't have any special titles. Visit the Space Bazaar to acquire them.",
+        "logoutConfirm": "Are you sure you want to log out? You will need to authenticate again to access your data.",
+        "accountSettings": "ACCOUNT SETTINGS",
+        "changePassword": "CHANGE PASSWORD",
+        "oldPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmNewPassword": "Confirm New Password",
+        "saveChanges": "SAVE CHANGES",
+        "passwordMismatch": "Passwords do not match",
+        "passwordFieldsRequired": "All fields are required",
+        "passwordMustDiffer": "The new password must be different from the current one",
+        "passwordChangeSuccess": "Password updated successfully!",
+        "passwordChangeError": "Error updating password"
     },
     "friends": {
         "title": "Crew",

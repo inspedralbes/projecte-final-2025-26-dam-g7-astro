@@ -137,7 +137,19 @@
         "defaultTitle": "Por Defecto (Nivel)",
         "rankBasedOnLevel": "Rango basado en tu nivel",
         "boughtInShop": "Comprado en la tienda",
-        "noSpecialTitles": "No posees títulos especiales. Visita el Bazar Espacial para adquirirlos."
+        "noSpecialTitles": "No posees títulos especiales. Visita el Bazar Espacial para adquirirlos.",
+        "logoutConfirm": "¿Estás seguro de que deseas cerrar la sesión actual? Deberás volver a autenticarte para acceder a tus datos.",
+        "accountSettings": "AJUSTES DE CUENTA",
+        "changePassword": "CAMBIAR CONTRASEÑA",
+        "oldPassword": "Contraseña Actual",
+        "newPassword": "Nueva Contraseña",
+        "confirmNewPassword": "Confirmar Nueva Contraseña",
+        "saveChanges": "GUARDAR CAMBIOS",
+        "passwordMismatch": "Las contraseñas no coinciden",
+        "passwordFieldsRequired": "Todos los campos son obligatorios",
+        "passwordMustDiffer": "La nueva contraseña debe ser diferente a la actual",
+        "passwordChangeSuccess": "¡Contraseña actualizada con éxito!",
+        "passwordChangeError": "Error al actualizar la contraseña"
     },
     "friends": {
         "title": "Tripulación",

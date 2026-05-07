@@ -142,7 +142,19 @@
         "defaultTitle": "Per Defecte (Nivell)",
         "rankBasedOnLevel": "Rang basat en el teu nivell",
         "boughtInShop": "Comprat a la botiga",
-        "noSpecialTitles": "No tens títols especials. Visita el Basar Espacial per adquirir-los."
+        "noSpecialTitles": "No tens títols especials. Visita el Basar Espacial per adquirir-los.",
+        "logoutConfirm": "Estàs segur que vols tancar la sessió actual? Hauràs de tornar a autenticar-te per accedir a les teves dades.",
+        "accountSettings": "AJUSTOS DE COMPTE",
+        "changePassword": "CANVIAR CONTRASSENYA",
+        "oldPassword": "Contrasenya Actual",
+        "newPassword": "Nova Contrasenya",
+        "confirmNewPassword": "Confirmar Nova Contrasenya",
+        "saveChanges": "GUARDAR CANVIS",
+        "passwordMismatch": "Les contrasenyes no coincideixen",
+        "passwordFieldsRequired": "Tots els camps són obligatoris",
+        "passwordMustDiffer": "La nova contrasenya ha de ser diferent de l'actual",
+        "passwordChangeSuccess": "Contrasenya actualitzada amb èxit!",
+        "passwordChangeError": "Error en actualitzar la contrasenya"
     },
     "friends": {
         "title": "Tripulació",
