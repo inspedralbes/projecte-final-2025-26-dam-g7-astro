@@ -85,7 +85,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const astroStore = useAstroStore();
 const activeCategory = ref('all');
-const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4]);
+const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4, 5]);
 
 const categories = [
     { id: 'all', name: t('inventory.categories.all'), icon: 'mdi-apps' },
@@ -150,6 +150,7 @@ function getBoosterGamesLeft(item) {
     const itemId = Number(item?.id);
     if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0;
     if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0;
+    if (itemId === 5) return Number(astroStore.activeBoosters?.sabotageGamesLeft) || 0;
     return 0;
 }
 
