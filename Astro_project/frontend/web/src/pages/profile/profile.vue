@@ -1098,11 +1098,6 @@ watch(historyDialog, async (isOpen) => {
     box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
-    .profile-main-content.history-open {
-        flex-direction: column;
-        max-width: 600px;
-    }
-
 
 /* RESPONSIVIDAD */
 @media (max-width: 1200px) {

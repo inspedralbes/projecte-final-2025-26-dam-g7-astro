@@ -19,7 +19,7 @@ function registerAuthRoutes(app, {
         } catch (error) {
             console.error('❌ Error en registro:', error);
             res.status(error.message === 'El ID de tripulante ya existe.' ? 409 : 500)
-               .json({ message: error.message || 'Error en el sistema de registro.' });
+                .json({ message: error.message || 'Error en el sistema de registro.' });
         }
     });
 
@@ -31,7 +31,7 @@ function registerAuthRoutes(app, {
             const { user, streakResult, freezeUnits, normalizedInventory } = await authService.login(username, password);
 
             console.log(`🚀 Sesión iniciada: ${user.username}`);
-            
+
             res.json({
                 status: 'Sincronización completada',
                 token: 'session_token_' + Math.random().toString(36).substr(2),
@@ -68,7 +68,7 @@ function registerAuthRoutes(app, {
         } catch (error) {
             console.error('❌ Error en login:', error);
             res.status(error.message === 'Credenciales no reconocidas' ? 401 : 500)
-               .json({ status: 'Error', message: error.message || 'Error interno en el login' });
+                .json({ status: 'Error', message: error.message || 'Error interno en el login' });
         }
     });
 }
