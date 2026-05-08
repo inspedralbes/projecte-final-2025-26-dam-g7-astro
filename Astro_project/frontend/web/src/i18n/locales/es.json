@@ -189,6 +189,7 @@
         "level": "Nivel {level}",
         "viewProfile": "Ver Perfil",
         "challenge": "Desafiar",
+        "chat": "Mensajes",
         "noSearchMatch": "No tienes amigos que coincidan con la búsqueda.",
         "emptyCrew": "Tu tripulación está vacía. ¡Busca nuevos reclutas!",
         "searchExplore": "Buscar exploradores en la galaxia...",
@@ -210,24 +211,7 @@
         "accepted": "Has aceptado a {name} en tu tripulación",
         "errAccept": "Error al aceptar solicitud",
         "rejected": "Has rechazado a {name}",
-        "errReject": "Error al rechazar solicitud",
-        "ranks": {
-            "0": "Cadete",
-            "1": "Explorador",
-            "2": "Navegante",
-            "3": "Capitán",
-            "4": "Comandante",
-            "5": "Almirante",
-            "6": "Centinela",
-            "7": "Guardián",
-            "8": "Forjador",
-            "9": "Maestro",
-            "10": "Arconte",
-            "11": "Soberano",
-            "12": "Arquitecto",
-            "13": "Deidad",
-            "14": "Omnisciente"
-        }
+        "errReject": "Error al rechazar solicitud"
     },
     "auth": {
         "abortCmd": "ABORTAR / VOLVER A BASE",
@@ -925,21 +909,21 @@
         "Reparación Express": "Escáner de Radar"
     },
     "ranks": [
-        "Cadete Espacial",
-        "Explorador Novato",
-        "Piloto de Pruebas",
-        "Oficial de Enlace",
-        "Navegante Estelar",
-        "Especialista de Misión",
-        "Comandante de Vuelo",
-        "Ingeniero de Sistemas",
-        "Capitán de Navío",
-        "Veterano del Vacío",
-        "Héroe de la Galaxia",
-        "Guardián Cósmico",
-        "Maestro de las Estrellas",
-        "Almirante Supremo",
-        "Leyenda Universal"
+        "Cadete de Vuelo",
+        "Explorador Estelar",
+        "Navegante Galáctico",
+        "Capitán de Flota",
+        "Comandante Cósmico",
+        "Almirante del Universo",
+        "Centinela del Vacío",
+        "Guardián de Nebulosas",
+        "Forjador de Estrellas",
+        "Maestro de Quásares",
+        "Arconte Interdimensional",
+        "Soberano del Multiverso",
+        "Arquitecto de Realidades",
+        "Deidad de la Singularidad",
+        "Omnisciente del Cosmos"
     ],
     "missionsList": {
         "daily": {

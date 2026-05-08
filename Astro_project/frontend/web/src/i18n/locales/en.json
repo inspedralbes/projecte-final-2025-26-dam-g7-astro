@@ -195,6 +195,7 @@
         "level": "Level {level}",
         "viewProfile": "View Profile",
         "challenge": "Challenge",
+        "chat": "Messages",
         "noSearchMatch": "No friends matching the search found.",
         "emptyCrew": "Your crew is empty. Search for new recruits!",
         "searchExplore": "Search for explorers in the galaxy...",
@@ -216,24 +217,7 @@
         "accepted": "You have accepted {name} into your crew",
         "errAccept": "Error accepting request",
         "rejected": "You have rejected {name}",
-        "errReject": "Error rejecting request",
-        "ranks": {
-            "0": "Cadet",
-            "1": "Explorer",
-            "2": "Navigator",
-            "3": "Captain",
-            "4": "Commander",
-            "5": "Admiral",
-            "6": "Sentinel",
-            "7": "Guardian",
-            "8": "Forger",
-            "9": "Master",
-            "10": "Archon",
-            "11": "Sovereign",
-            "12": "Architect",
-            "13": "Deity",
-            "14": "Omniscient"
-        }
+        "errReject": "Error rejecting request"
     },
     "auth": {
         "abortCmd": "ABORT / RETURN TO BASE",
@@ -951,21 +935,21 @@
         "Reparación Express": "Radar Scanner"
     },
     "ranks": [
-        "Space Cadet",
-        "Novice Explorer",
-        "Test Pilot",
-        "Liaison Officer",
-        "Star Navigator",
-        "Mission Specialist",
-        "Flight Commander",
-        "Systems Engineer",
-        "Ship Captain",
-        "Void Veteran",
-        "Galaxy Hero",
-        "Cosmic Guardian",
-        "Master of the Stars",
-        "Supreme Admiral",
-        "Universal Legend"
+        "Flight Cadet",
+        "Stellar Explorer",
+        "Galactic Navigator",
+        "Fleet Captain",
+        "Cosmic Commander",
+        "Admiral of the Universe",
+        "Void Sentinel",
+        "Guardian of Nebulas",
+        "Star Forger",
+        "Quasar Master",
+        "Interdimensional Archon",
+        "Sovereign of the Multiverse",
+        "Architect of Realities",
+        "Deity of the Singularity",
+        "Omniscient of the Cosmos"
     ],
     "missionsList": {
         "daily": {
