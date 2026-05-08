@@ -1,21 +1,25 @@
-## 1. Backend: Gestión de Salas y Usuarios
+## 1. RhymeSquad (Anti-Kick Fix)
 
-- [x] 1.1 Modificar `createRoom` en `RoomManager.js` para forzar `leaveRoom` si el usuario ya tiene una sesión registrada.
-- [x] 1.2 Modificar `joinRoom` en `RoomManager.js` para aplicar la misma lógica de salida automática.
-- [x] 1.3 Asegurar que `leaveRoom` elimina la sala de `this.rooms` si el número de jugadores llega a cero.
+- [x] 1.1 Modificar la función `endGame` para que solo el Host emita `submitRoundResult`
+- [x] 1.2 Actualizar el watcher de `multiplayerStore.lastMessage` para manejar la transición silenciosa en el Guest
+- [x] 1.3 Verificar que el Guest no emita `emitExit` prematuramente al finalizar el tiempo local
 
-## 2. Frontend: RadarScan Cooperativo
+## 2. Word Construction (Rediseño de Sincronización)
 
-- [x] 2.1 Implementar el renderizado del cursor remoto del compañero en `RadarScan.vue` usando `multiplayerStore.remoteCursors`.
-- [x] 2.2 Corregir la lógica de visualización del marcador para ocultar el separador "VS" si ambos jugadores están en el mismo equipo.
+- [x] 2.1 Implementar sistema de coordenadas normalizadas (0-1000) en el tablero
+- [x] 2.2 Refactorizar `shuffleCurrentLetters` para que el Host envíe el estado inicial vía `BOARD_SYNC`
+- [x] 2.3 Actualizar `onMouseMove` para enviar `ELEMENT_MOVE` con coordenadas normalizadas y throttle
+- [x] 2.4 Implementar lógica de Snap sincronizada: al detectar snap local, emitir `ELEMENT_PLACED`
+- [x] 2.5 Corregir Z-Index de piezas en arrastre y solucionar duplicación visual de cursores remotos
 
-## 3. Frontend: Emojis y Buscador
+## 3. RadarScan (Tablero e Iluminación Compartida)
 
-- [x] 3.1 Añadir traducciones al catalán en el campo `tags` de los emojis en `frontend/web/src/constants/emojis.js`.
-- [x] 3.2 Refactorizar la propiedad computada `filteredEmojiList` en `SpelledRosco.vue` para que devuelva `[]` en caso de no haber coincidencias.
+- [x] 3.1 Asegurar que el Host genere el tablero y lo sincronice vía `BOARD_SYNC` al inicio de cada ronda
+- [x] 3.2 Implementar la "Linterna Compartida" en `flashlightStyle` usando múltiples gradientes radiales
+- [x] 3.3 Configurar `mix-blend-mode` en el overlay de iluminación para sumar luz de ambos jugadores
 
-## 4. Verificación y Pruebas
+## 4. Symmetry Breaker (Limpieza y Puntuación)
 
-- [x] 4.1 Verificar que no se pueden crear salas duplicadas para un mismo usuario.
-- [x] 4.2 Probar RadarScan con 2 jugadores y confirmar la visibilidad de ambas linternas.
-- [x] 4.3 Confirmar que la búsqueda de emojis en catalán (ej. "gos") funciona correctamente.
+- [x] 4.1 Eliminar funciones duplicadas de `update`, `draw` y `gameLoop` en el código fuente
+- [x] 4.2 Asegurar que el incremento de `score` ocurra exclusivamente dentro de `lockTarget`
+- [x] 4.3 Verificar que no existan fugas de memoria por múltiples `requestAnimationFrame`

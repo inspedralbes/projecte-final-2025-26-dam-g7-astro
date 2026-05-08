@@ -143,6 +143,7 @@
   const mouseX = ref(0)
   const mouseY = ref(0)
   const isFiring = ref(false)
+  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
   const holdProgressMs = ref(0)
   const holdRequiredMs = ref(1000)
 
@@ -198,39 +199,17 @@
     }
   }
 
-  function getHorizontalMenuOverlap () {
-    if (!gameArea.value) return { left: 0, right: 0 }
-
-    const areaRect = gameArea.value.getBoundingClientRect()
-    const leftMenu = document.querySelector('.left-sidebar')
-    const rightMenu = document.querySelector('.right-sidebar')
-
-    const overlapWith = menuEl => {
-      if (!menuEl) return 0
-      const menuRect = menuEl.getBoundingClientRect()
-      const overlap = Math.min(areaRect.right, menuRect.right) - Math.max(areaRect.left, menuRect.left)
-      return Math.max(0, overlap)
-    }
-
-    return {
-      left: overlapWith(leftMenu),
-      right: overlapWith(rightMenu),
-    }
-  }
-
   function getPlayBounds (size) {
-    const menuOverlap = getHorizontalMenuOverlap()
-    const rawMinX = size / 2 + EDGE_PADDING + menuOverlap.left
-    const rawMaxX = gameCanvas.value.width - size / 2 - EDGE_PADDING - menuOverlap.right
-    const minX = Math.min(rawMinX, rawMaxX)
-    const maxX = Math.max(rawMinX, rawMaxX)
+    // Coordenadas lógicas 1000x1000
+    const padding = 20
+    const rawMinX = size / 2 + padding
+    const rawMaxX = 1000 - size / 2 - padding
 
-    const rawMinY = Math.max(HUD_SAFE_TOP, size / 2 + EDGE_PADDING)
-    const rawMaxY = gameCanvas.value.height - size / 2 - EDGE_PADDING
-    const minY = Math.min(rawMinY, rawMaxY)
-    const maxY = Math.max(rawMinY, rawMaxY)
+    const safeTop = 180 // Hud safe top lógico
+    const rawMinY = Math.max(safeTop, size / 2 + padding)
+    const rawMaxY = 1000 - size / 2 - padding
 
-    return { minX, maxX, minY, maxY }
+    return { minX: rawMinX, maxX: rawMaxX, minY: rawMinY, maxY: rawMaxY }
   }
 
   function resizeCanvas () {
@@ -305,6 +284,47 @@
     holdProgressMs.value = 0
   }
 
+  function handlePointerMove (e) {
+    if (!gameArea.value) return
+    const rect = gameArea.value.getBoundingClientRect()
+    mouseX.value = ((e.clientX - rect.left) / rect.width) * 1000
+    mouseY.value = ((e.clientY - rect.top) / rect.height) * 1000
+
+    if (props.isMultiplayer) {
+      sendMouseMove(mouseX.value, mouseY.value)
+    }
+  }
+
+  // Throttle per enviar posició del rató al servidor (cada 50ms)
+  function throttle (func, limit) {
+    let lastRan
+    let lastFunc
+    return function (...args) {
+      if (lastRan) {
+        clearTimeout(lastFunc)
+        lastFunc = setTimeout(function () {
+          if ((Date.now() - lastRan) >= limit) {
+            func(...args)
+            lastRan = Date.now()
+          }
+        }, limit - (Date.now() - lastRan))
+      } else {
+        func(...args)
+        lastRan = Date.now()
+      }
+    }
+  }
+
+  const sendMouseMove = throttle((x, y) => {
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'MOUSE_MOVE',
+        x: Math.round(x),
+        y: Math.round(y),
+      })
+    }
+  }, 50)
+
   function update (dt) {
     if (!isPlaying.value) return
 
@@ -316,6 +336,22 @@
         break
       }
     }
+
+    // Co-op logic: check teammate cursor
+    let isPeerHovering = false
+    if (props.isMultiplayer && hoveredTarget) {
+      const cursors = Object.values(multiplayerStore.remoteCursors)
+      for (const c of cursors) {
+        // En multiplayer, enviamos de 0-1000, cursors almacena en 0-1000
+        const dist = Math.hypot(c.x - hoveredTarget.x, c.y - hoveredTarget.y)
+        if (dist < hoveredTarget.size / 2) {
+          isPeerHovering = true
+          break
+        }
+      }
+    }
+
+    const isCoopLocked = props.isMultiplayer ? (isFiring.value && hoveredTarget?.isTarget && isPeerHovering) : (isFiring.value && hoveredTarget?.isTarget)
 
     const hasPenaltyShot = isFiring.value && (!hoveredTarget || !hoveredTarget.isTarget)
     const timePenalty = hasPenaltyShot ? 2 : 1
@@ -341,7 +377,7 @@
       }
     }
 
-    if (isFiring.value && hoveredTarget && hoveredTarget.isTarget) {
+    if (isCoopLocked) {
       holdProgressMs.value = Math.min(holdRequiredMs.value, holdProgressMs.value + dt * 1000)
       if (holdProgressMs.value >= holdRequiredMs.value) {
         holdProgressMs.value = holdRequiredMs.value
@@ -352,6 +388,9 @@
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_OUTSIDE))
     } else if (isFiring.value && hoveredTarget && !hoveredTarget.isTarget) {
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_ON_DECOY))
+    } else if (props.isMultiplayer && isFiring.value && hoveredTarget?.isTarget && !isPeerHovering) {
+      // Si yo disparo pero mi compañero no, el progreso no avanza (o decae ligeramente)
+      holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * 200))
     }
   }
 
@@ -361,7 +400,20 @@
     successfulLocks.value += 1
     timeLeft.value = Math.min(99, timeLeft.value + 3)
     round.value++
-    generateTargets()
+
+    // In multiplayer, the host handles board generation to keep it synced
+    if (props.isMultiplayer) {
+      if (isHost.value) {
+        generateTargets()
+        multiplayerStore.sendGameAction({
+          type: 'SYMMETRY_BOARD_SYNC',
+          targets: targets.value,
+          challenge: currentChallenge.value,
+        })
+      }
+    } else {
+      generateTargets()
+    }
 
     // Sabotatge: -2s al rival en multiplayer
     if (props.isMultiplayer) {
@@ -373,14 +425,28 @@
     }
   }
 
+  function toPxX (logicalX) {
+    return (logicalX / 1000) * gameCanvas.value.width
+  }
+  function toPxY (logicalY) {
+    return (logicalY / 1000) * gameCanvas.value.height
+  }
+  function toPxSize (logicalSize) {
+    return (logicalSize / 1000) * Math.min(gameCanvas.value.width, gameCanvas.value.height)
+  }
+
   function draw () {
-    if (!ctx) return
+    if (!ctx || !gameCanvas.value) return
     ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height)
 
+    const pxMouseX = toPxX(mouseX.value)
+    const pxMouseY = toPxY(mouseY.value)
+
+    // Dibuixar làser local
     if (isFiring.value) {
       ctx.beginPath()
       ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
-      ctx.lineTo(mouseX.value, mouseY.value)
+      ctx.lineTo(pxMouseX, pxMouseY)
       ctx.strokeStyle = isPenaltyActive.value ? '#ff5252' : '#00e5ff'
       ctx.lineWidth = 3
       ctx.shadowBlur = 15
@@ -389,12 +455,31 @@
       ctx.shadowBlur = 0
     }
 
+    // Dibuixar làsers remots
+    if (props.isMultiplayer) {
+      const cursors = Object.values(multiplayerStore.remoteCursors)
+      for (const c of cursors) {
+        ctx.beginPath()
+        ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
+        ctx.lineTo(toPxX(c.x), toPxY(c.y))
+        ctx.strokeStyle = 'rgba(255, 193, 7, 0.6)'
+        ctx.lineWidth = 2
+        ctx.setLineDash([5, 5])
+        ctx.stroke()
+        ctx.setLineDash([])
+      }
+    }
+
     const drawEntity = t => {
       ctx.save()
-      ctx.translate(t.x, t.y)
+      const pxX = toPxX(t.x)
+      const pxY = toPxY(t.y)
+      const pxSize = toPxSize(t.size)
+
+      ctx.translate(pxX, pxY)
 
       ctx.beginPath()
-      ctx.arc(0, 0, t.size / 2, 0, Math.PI * 2)
+      ctx.arc(0, 0, pxSize / 2, 0, Math.PI * 2)
       ctx.fillStyle = t.fillColor || 'rgba(10, 20, 40, 0.85)'
       ctx.fill()
       ctx.lineWidth = t.isTarget ? 3 : 2
@@ -404,7 +489,7 @@
       const textLength = String(t.text || '').length
       const fontScale = textLength <= 1 ? 0.36 : (textLength <= 4 ? 0.3 : 0.25)
       ctx.fillStyle = '#fff'
-      ctx.font = `bold ${t.size * fontScale}px 'Roboto Mono'`
+      ctx.font = `bold ${pxSize * fontScale}px 'Roboto Mono'`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(t.text, 0, 0)
@@ -416,10 +501,21 @@
     if (mainTarget) drawEntity(mainTarget)
 
     ctx.beginPath()
-    ctx.arc(mouseX.value, mouseY.value, 18, 0, Math.PI * 2)
+    ctx.arc(pxMouseX, pxMouseY, toPxSize(18), 0, Math.PI * 2)
     ctx.strokeStyle = isFiring.value ? '#00e5ff' : '#ffffff'
     ctx.lineWidth = 2
     ctx.stroke()
+
+    // Remote cursor indicators
+    if (props.isMultiplayer) {
+      const cursors = Object.values(multiplayerStore.remoteCursors)
+      for (const c of cursors) {
+        ctx.beginPath()
+        ctx.arc(toPxX(c.x), toPxY(c.y), toPxSize(12), 0, Math.PI * 2)
+        ctx.strokeStyle = '#ffc107'
+        ctx.stroke()
+      }
+    }
   }
 
   function gameLoop (ts) {
@@ -429,13 +525,6 @@
     update(dt)
     draw()
     animationFrame = requestAnimationFrame(gameLoop)
-  }
-
-  function handlePointerMove (e) {
-    if (!gameArea.value) return
-    const rect = gameArea.value.getBoundingClientRect()
-    mouseX.value = e.clientX - rect.left
-    mouseY.value = e.clientY - rect.top
   }
 
   function beginFiring () {
@@ -457,9 +546,22 @@
     holdProgressMs.value = 0
     isPlaying.value = true
     resizeCanvas()
-    mouseX.value = gameCanvas.value.width / 2
-    mouseY.value = gameCanvas.value.height * 0.75
-    generateTargets()
+    mouseX.value = 500
+    mouseY.value = 750
+
+    if (props.isMultiplayer) {
+      if (isHost.value) {
+        generateTargets()
+        multiplayerStore.sendGameAction({
+          type: 'SYMMETRY_BOARD_SYNC',
+          targets: targets.value,
+          challenge: currentChallenge.value,
+        })
+      }
+    } else {
+      generateTargets()
+    }
+
     lastFrameTs = performance.now()
     animationFrame = requestAnimationFrame(gameLoop)
   }
@@ -469,7 +571,10 @@
       isPlaying.value = false
       isFiring.value = false
       cancelAnimationFrame(animationFrame)
-      multiplayerStore.submitRoundResult()
+      // Solo el host tiene autoridad para cerrar la ronda
+      if (isHost.value) {
+        multiplayerStore.submitRoundResult()
+      }
       return
     }
 
@@ -504,10 +609,19 @@
       returnToMenu()
     }
 
-    // Rebre sabotatge del rival: restar temps al propi rellotge
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
-      if (timeLeft.value <= 0 && isPlaying.value) endGame()
+    if (msg.type === 'GAME_ACTION') {
+      // Rebre sabotatge del rival: restar temps al propi rellotge
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (timeLeft.value <= 0 && isPlaying.value) endGame()
+      }
+
+      if (msg.action?.type === 'SYMMETRY_BOARD_SYNC') {
+        targets.value = msg.action.targets // Ya vienen en coords lógicas
+        currentChallenge.value = msg.action.challenge
+        triggerRoundHint(currentChallenge.value.target)
+        holdProgressMs.value = 0
+      }
     }
   })
 

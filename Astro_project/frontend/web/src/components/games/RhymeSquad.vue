@@ -8,20 +8,31 @@
       rounded="xl"
       width="100%"
     >
-      <v-icon class="mb-6 animate-bounce" color="cyan-accent-3" icon="mdi-timer-sand" size="100" />
-      <h1 class="text-h2 font-weight-black text-white mb-6">Escuadrón de Rimas</h1>
-      <p class="text-h5 text-grey-lighten-1 mb-10">
-        Tienes <span class="text-cyan-accent-3 font-weight-bold">60 SEGUNDOS</span>. Atrapa rimas para sumar 1 segundo extra. <br>
-        <span class="text-red-accent-2 mt-2 d-block">¡Si fallas o dejas que una rima caiga al vacío, perderás vidas!</span>
-      </p>
+      <!-- AVISOS DE ROLES MULTIJUGADOR -->
+      <div v-if="isMultiplayer && subRole === 'catcher'" class="mb-6 p-4 rounded-lg bg-green-darken-4">
+        <h2 class="text-h3 font-weight-black text-green-accent-3 mb-2">ERES EL RECOLECTOR</h2>
+        <p class="text-h5 text-white">¡Atrapa solo las palabras que rimen con la pista!</p>
+      </div>
+
+      <div v-if="isMultiplayer && subRole === 'sniper'" class="mb-6 p-4 rounded-lg bg-red-darken-4">
+        <h2 class="text-h3 font-weight-black text-red-accent-3 mb-2">ERES EL DESTRUCTOR</h2>
+        <p class="text-h5 text-white">¡Destruye las palabras que NO rimen para proteger a tu compañero!</p>
+      </div>
+
+      <div v-if="isMultiplayer && !isHost" class="mt-8 text-center">
+        <v-progress-circular color="cyan-accent-3" indeterminate size="32"></v-progress-circular>
+        <p class="text-h6 text-cyan-accent-3 mt-4">Esperando a que el Comandante inicie la misión...</p>
+      </div>
+
       <v-btn
+        v-if="!isMultiplayer || isHost"
         block
-        class="font-weight-black text-black text-h6"
+        class="font-weight-black text-black text-h6 mt-4"
         color="cyan-accent-3"
         height="60"
         rounded="pill"
         size="x-large"
-        @click="startGame"
+        @click="handleStartClick"
       >
         INICIAR MISIÓN
       </v-btn>
@@ -154,7 +165,7 @@
 </template>
 
 <script setup>
-  import { onMounted, onUnmounted, ref, watch } from 'vue'
+  import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
@@ -169,6 +180,30 @@
   })
 
   const emit = defineEmits(['game-over'])
+
+  // ROLES COOPERATIVOS
+  const subRole = computed(() => multiplayerStore.subRole) // 'catcher' o 'sniper'
+  const remoteCursors = computed(() => multiplayerStore.remoteCursors)
+  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+
+  function handleStartClick() {
+    if (props.isMultiplayer && isHost.value) {
+      multiplayerStore.sendGameAction({ type: 'RHYME_START' })
+    }
+    startGame()
+  }
+
+  function onMouseMove (e) {
+    if (!props.isMultiplayer || !isPlaying.value) return
+    const area = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - area.left) / area.width) * 100
+    const y = ((e.clientY - area.top) / area.height) * 100
+
+    multiplayerStore.sendGameAction({
+      type: 'MOUSE_MOVE',
+      x, y,
+    })
+  }
 
   // DICCIONARIO ESTRUCTURADO
   const dictionary = [
@@ -376,9 +411,7 @@
   }
 
   onMounted(() => {
-    if (props.isMultiplayer) {
-      startGame()
-    }
+    // En multijugador cooperativo, el usuario espera al HOST para iniciar
   })
 
   // Listener para eventos multijugador
@@ -390,6 +423,12 @@
       isPlaying.value = false
       isGameOver.value = true
       emitExit()
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'RHYME_START') {
+      if (!isHost.value) {
+        startGame()
+      }
     }
   })
 

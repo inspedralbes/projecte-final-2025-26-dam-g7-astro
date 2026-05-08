@@ -120,7 +120,7 @@
     <div v-if="multiplayerStore.room?.gameConfig?.roundHistory?.length" class="round-history-section w-100 max-width-600 mb-8">
       <div class="text-overline text-grey-darken-1 mb-4 text-center">HISTORIAL DE LA MISIÓN</div>
       <v-row dense justify="center">
-        <v-col v-for="h in multiplayerStore.room.gameConfig.roundHistory" :key="h.round" cols="12">
+        <v-col v-for="h in multiplayerStore.room?.gameConfig?.roundHistory" :key="h.round" cols="12">
           <v-card class="round-history-card pa-3 mb-2 rounded-lg" color="rgba(255,255,255,0.03)" variant="flat">
             <div class="d-flex align-center justify-space-between">
               <div class="round-num text-caption font-weight-black text-cyan-accent-2 mr-4">RD {{ h.round }}</div>

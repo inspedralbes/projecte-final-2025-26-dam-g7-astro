@@ -9,40 +9,76 @@
       </div>
 
       <template v-if="!gameFinished">
-        <div class="text-h4 mb-2">{{ currentWord.text }}</div>
-        <div class="text-caption text-grey-lighten-1 mb-6">Paraula {{ currentWordIndex + 1 }} / {{ words.length }}</div>
+        <div v-if="!isMultiplayer">
+          <div class="text-h4 mb-2">{{ currentWord.text }}</div>
+          <div class="text-caption text-grey-lighten-1 mb-6">Paraula {{ currentWordIndex + 1 }} / {{ words.length }}</div>
 
-        <div class="d-flex justify-center gap-4 mb-8">
-          <v-avatar
-            v-for="n in currentWord.syllables"
-            :key="n"
-            class="elevation-4"
-            :color="userSyllables >= n ? 'amber-accent-3' : 'grey-darken-3'"
-            size="60"
+          <div class="d-flex justify-center gap-4 mb-8">
+            <v-avatar
+              v-for="n in currentWord.syllables"
+              :key="n"
+              class="elevation-4"
+              :color="userSyllables >= n ? 'amber-accent-3' : 'grey-darken-3'"
+              size="60"
+            >
+              <v-icon v-if="userSyllables >= n">mdi-music-note</v-icon>
+            </v-avatar>
+          </div>
+
+          <v-btn
+            class="mb-4"
+            color="amber-accent-3"
+            icon="mdi-hand-clap"
+            size="x-large"
+            @click="addSyllable"
+          />
+
+          <p class="text-subtitle-1 mb-4">Fes un "clic" per cada síl·laba!</p>
+
+          <v-btn
+            block
+            class="font-weight-bold"
+            color="success"
+            rounded="lg"
+            @click="checkSyllables"
           >
-            <v-icon v-if="userSyllables >= n">mdi-music-note</v-icon>
-          </v-avatar>
+            Comprovar
+          </v-btn>
         </div>
 
-        <v-btn
-          class="mb-4"
-          color="amber-accent-3"
-          icon="mdi-hand-clap"
-          size="x-large"
-          @click="addSyllable"
-        />
+        <!-- REDISSENY MULTIPLAYER: ORDENAR FRASES -->
+        <div v-else>
+          <div class="text-h5 mb-4 text-amber-accent-2 font-weight-bold">Ordena la frase!</div>
 
-        <p class="text-subtitle-1 mb-4">Fes un "clic" per cada síl·laba!</p>
+          <div class="phrase-display mb-8 pa-4 bg-slate-800 rounded-lg min-height-100 d-flex flex-wrap justify-center ga-2 border-dashed">
+            <v-chip
+              v-for="(word, idx) in correctWordsInOrder"
+              :key="'correct-'+idx"
+              class="text-h6 font-weight-bold"
+              color="success"
+              label
+            >
+              {{ word }}
+            </v-chip>
+            <div v-if="correctWordsInOrder.length === 0" class="text-grey-darken-1 align-self-center">
+              Fes clic a les paraules en l'ordre correcte...
+            </div>
+          </div>
 
-        <v-btn
-          block
-          class="font-weight-bold"
-          color="success"
-          rounded="lg"
-          @click="checkSyllables"
-        >
-          Comprovar
-        </v-btn>
+          <div class="d-flex flex-wrap justify-center ga-3 mb-6">
+            <v-btn
+              v-for="(word, idx) in shuffledWords"
+              :key="'word-'+idx"
+              class="text-none font-weight-bold"
+              color="amber-accent-3"
+              :disabled="usedWordIndices.has(idx)"
+              rounded="pill"
+              @click="handleWordClick(idx)"
+            >
+              {{ word }}
+            </v-btn>
+          </div>
+        </div>
 
         <v-alert v-if="message" class="mt-4" :type="messageType" variant="tonal">
           {{ message }}
@@ -87,6 +123,7 @@
     },
   })
 
+  // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
   const words = [
     { text: 'OR-DI-NA-DOR', syllables: 4 },
     { text: 'GA-LÀ-XI-A', syllables: 4 },
@@ -95,8 +132,118 @@
   ]
 
   const currentWordIndex = ref(0)
-  const currentWord = computed(() => words[currentWordIndex.value])
+  const currentWord = ref(words[0])
+  const remoteWord = ref(null) // Mantingut per retrocompatibilitat si cal, però no s'usa en el nou disseny
+  const totalSyllablesGoal = computed(() => {
+    if (!props.isMultiplayer || !remoteWord.value) return currentWord.value.syllables
+    return currentWord.value.syllables + remoteWord.value.syllables
+  })
+
   const userSyllables = ref(0)
+  const sharedSyllables = ref(0)
+
+  // --- LÒGICA MULTIPLAYER (ORDENAR FRASES) ---
+  const multiplayerPhrases = [
+    'LA INTEL·LIGÈNCIA ARTIFICIAL ENS AJUDA A PROGRAMAR MILLOR',
+    'L\'ESPAI ÉS UN LLOC IMMENS I PLE DE MISTERIS',
+    'EL SISTEMA SOLAR TÉ VUIT PLANETES I UN SOL',
+    'LA LLUNA ÉS EL NOSTRE SATÈL·LIT NATURAL',
+    'LES ESTRELLES BRILLEN EN LA NIT FOSCA',
+  ]
+  const currentPhraseIndex = ref(0)
+  const currentPhrase = computed(() => multiplayerPhrases[currentPhraseIndex.value])
+  const originalWords = computed(() => currentPhrase.value.split(' '))
+  const shuffledWords = ref([])
+  const usedWordIndices = ref(new Set())
+  const correctWordsInOrder = ref([])
+
+  function shuffleArray (array) {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
+  function handleWordClick (index) {
+    if (gameFinished.value) return
+    const clickedWord = shuffledWords.value[index]
+    const nextCorrectWord = originalWords.value[correctWordsInOrder.value.length]
+
+    if (clickedWord === nextCorrectWord) {
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+          type: 'PHRASE_CLICK',
+          index: index,
+          word: clickedWord,
+          correct: true,
+        })
+      } else {
+        // En teoria no s'arriba aquí si no és multiplayer, però per si de cas
+        processCorrectClick(index, clickedWord)
+      }
+    } else {
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+          type: 'PHRASE_CLICK',
+          index: index,
+          word: clickedWord,
+          correct: false,
+        })
+      } else {
+        processIncorrectClick()
+      }
+    }
+  }
+
+  function processCorrectClick (index, word) {
+    usedWordIndices.value.add(index)
+    correctWordsInOrder.value.push(word)
+
+    if (correctWordsInOrder.value.length === originalWords.value.length) {
+      score.value += 100
+      message.value = 'Frase completada!'
+      messageType.value = 'success'
+
+      setTimeout(() => {
+        if (currentPhraseIndex.value < multiplayerPhrases.length - 1) {
+          currentPhraseIndex.value++
+          if (isHost.value) syncPhrase()
+        } else {
+          finishGame()
+        }
+      }, 1500)
+    }
+  }
+
+  function processIncorrectClick () {
+    message.value = 'Ordre incorrecte! Reiniciant frase...'
+    messageType.value = 'error'
+    timeLeft.value = Math.max(0, timeLeft.value - 3)
+
+    setTimeout(() => {
+      usedWordIndices.value.clear()
+      correctWordsInOrder.value = []
+      message.value = ''
+    }, 1000)
+  }
+
+  function syncPhrase () {
+    const shuffled = shuffleArray(originalWords.value)
+    shuffledWords.value = shuffled
+    usedWordIndices.value.clear()
+    correctWordsInOrder.value = []
+
+    multiplayerStore.sendGameAction({
+      type: 'PHRASE_SYNC',
+      shuffled: shuffled,
+      phraseIndex: currentPhraseIndex.value,
+    })
+  }
+
+  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+
   const score = ref(0)
   const timeLeft = ref(60)
   const gameFinished = ref(false)
@@ -107,6 +254,17 @@
 
   function addSyllable () {
     if (gameFinished.value) return
+
+    if (props.isMultiplayer) {
+      // Això ja no s'hauria d'usar pel redisseny, però ho mantenim per si de cas
+      multiplayerStore.sendGameAction({
+        type: 'SYLLABLE_CLICK',
+        user: astroStore.user,
+      })
+      userSyllables.value = (userSyllables.value + 1) % 9
+      return
+    }
+
     if (userSyllables.value < 8) userSyllables.value++
   }
 
@@ -130,7 +288,10 @@
   function checkSyllables () {
     if (gameFinished.value) return
 
-    if (userSyllables.value === currentWord.value.syllables) {
+    const currentGoal = totalSyllablesGoal.value
+    const currentCount = props.isMultiplayer ? sharedSyllables.value : userSyllables.value
+
+    if (currentCount === currentGoal) {
       score.value += 60
       message.value = 'Correcte!'
       messageType.value = 'success'
@@ -143,11 +304,15 @@
 
       currentWordIndex.value++
       userSyllables.value = 0
+      sharedSyllables.value = 0
     } else {
       score.value = Math.max(0, score.value - 10)
       message.value = 'Incorrecte, torna a provar.'
       messageType.value = 'error'
       userSyllables.value = 0
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({ type: 'SYLLABLE_RESET' })
+      }
     }
   }
 
@@ -171,10 +336,8 @@
 
   onMounted(() => {
     startTimer()
-    if (props.isMultiplayer) {
-    // En multijugador no necesitamos botón de "Obtener Recompensa"
-    // Pero este juego ya empieza el timer al montar,
-    // así que solo lo dejamos así.
+    if (props.isMultiplayer && isHost.value) {
+      syncPhrase()
     }
   })
 
@@ -183,9 +346,35 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
       gameFinished.value = true
       emitExit()
+    }
+
+    if (msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'PHRASE_SYNC') {
+        shuffledWords.value = msg.action.shuffled
+        currentPhraseIndex.value = msg.action.phraseIndex
+        usedWordIndices.value.clear()
+        correctWordsInOrder.value = []
+      }
+
+      if (msg.action?.type === 'PHRASE_CLICK') {
+        if (msg.action.correct) {
+          processCorrectClick(msg.action.index, msg.action.word)
+        } else {
+          processIncorrectClick()
+        }
+      }
+
+      // Mantenim handlers antics per si de cas, tot i que el redisseny els ignora
+      if (msg.action?.type === 'SYLLABLE_CLICK') {
+        sharedSyllables.value++
+      }
+
+      if (msg.action?.type === 'SYLLABLE_RESET') {
+        sharedSyllables.value = 0
+        userSyllables.value = 0
+      }
     }
   })
 

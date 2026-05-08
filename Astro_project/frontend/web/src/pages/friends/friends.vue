@@ -31,10 +31,10 @@
           v-model="searchQuery"
           bg-color="rgba(13, 25, 48, 0.4)"
           class="search-bar w-100 mb-8"
+          clearable
           hide-details
           placeholder="Buscar por nombre en la flota..."
           prepend-inner-icon="mdi-magnify"
-          clearable
           rounded="xl"
           variant="solo"
         />
@@ -149,10 +149,10 @@
             v-model="searchExploreQuery"
             bg-color="rgba(13, 25, 48, 0.4)"
             class="search-bar flex-grow-1"
+            clearable
             hide-details
             placeholder="Escanear frecuencia de nuevos pilotos..."
             prepend-inner-icon="mdi-radar"
-            clearable
             rounded="xl"
             variant="solo"
             @update:model-value="reloadRandomExplorers"

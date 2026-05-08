@@ -10,20 +10,20 @@
       <div class="brand-subtitle">COMMS RECEIVER</div>
       <button
         class="access-toggle"
-        @click="accessibilityMode = !accessibilityMode"
         :title="accessibilityMode ? 'Desactivar modo lectura fácil' : 'Activar modo lectura fácil'"
+        @click="accessibilityMode = !accessibilityMode"
       >
-        <v-icon size="14" :color="accessibilityMode ? '#00E5FF' : '#555'">mdi-format-font</v-icon>
+        <v-icon :color="accessibilityMode ? '#00E5FF' : '#555'" size="14">mdi-format-font</v-icon>
       </button>
     </div>
 
     <!-- Guía Visual de Roles -->
     <div v-if="isMultiplayer" class="role-guidance">
       <div v-if="subRole === 'listener'" class="guidance-pill listener">
-        <v-icon size="14" color="white">mdi-ear-hearing</v-icon> TU ESCUCHAS
+        <v-icon color="white" size="14">mdi-ear-hearing</v-icon> TU ESCUCHAS | FRASE: {{ currentPhrase }}
       </div>
       <div v-if="subRole === 'writer'" class="guidance-pill writer">
-        <v-icon size="14" color="white">mdi-keyboard</v-icon> TU ESCRIBES
+        <v-icon color="white" size="14">mdi-keyboard</v-icon> TU ESCRIBES
       </div>
     </div>
 
@@ -93,9 +93,21 @@
       </div>
     </div>
     <div v-else-if="subRole === 'writer'" class="writer-placeholder">
-      <v-icon color="#00E5FF" size="48">mdi-signal-variant</v-icon>
-      <div class="placeholder-text">SINTONIZANDO SEÑAL...</div>
-      <div class="placeholder-sub">Espera a que tu compañero encuentre la frecuencia</div>
+      <v-icon color="#00E5FF" size="48">mdi-radio-tower</v-icon>
+      <div class="placeholder-text">FREQ. REQUERIDA: <span class="text-white">{{ targetFrequency.toFixed(1) }} MHz</span></div>
+      <div class="placeholder-sub">Informa al teu company per a que sintonitzi</div>
+    </div>
+
+    <!-- MINI CHAT INTEGRADO -->
+    <div v-if="isMultiplayer" class="radio-mini-chat custom-scrollbar mb-2">
+      <div v-for="(m, i) in multiplayerStore.coopChatMessages" :key="i" class="chat-msg" :class="{ 'msg-me': m.from === astroStore.user }">
+        <span class="msg-sender">{{ m.from === astroStore.user ? 'TU' : 'COMP' }}:</span>
+        <span class="msg-text">{{ m.text }}</span>
+      </div>
+      <div class="chat-input-row">
+        <input v-model="chatInput" class="mini-chat-input" placeholder="Missatge..." @keyup.enter="sendRadioChat">
+        <button class="mini-chat-send" @click="sendRadioChat"><v-icon color="white" size="14">mdi-send</v-icon></button>
+      </div>
     </div>
 
     <div class="input-housing">
@@ -112,9 +124,9 @@
         <div class="input-row">
           <input
             v-model="userGuess"
-            :disabled="isMultiplayer && subRole === 'listener'"
             autofocus
             class="radio-input"
+            :disabled="isMultiplayer && subRole === 'listener'"
             :placeholder="(isMultiplayer && subRole === 'listener') ? 'El compañero está escribiendo...' : 'Escriu la frase...'"
             @keyup.enter="checkPhrase"
           >
@@ -125,7 +137,7 @@
         <!-- Feedback de lo que escribe el compañero -->
         <div v-if="isMultiplayer && subRole === 'listener' && partnerText" class="partner-typing-indicator">
           <div class="typing-dots">
-            <span></span><span></span><span></span>
+            <span /><span /><span />
           </div>
           <span class="partner-preview">"{{ partnerText }}"</span>
         </div>
@@ -147,7 +159,7 @@
 </template>
 
 <script setup>
-  import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
@@ -168,6 +180,19 @@
   const partnerText = computed(() => multiplayerStore.partnerText)
   const accessibilityMode = ref(false)
 
+  // Mini-chat de Radio
+  const chatInput = ref('')
+  const radioMessages = ref([])
+
+  function sendRadioChat () {
+    if (!chatInput.value.trim()) return
+    multiplayerStore.sendGameAction({
+      type: 'COOP_CHAT',
+      text: chatInput.value.trim(),
+    })
+    chatInput.value = ''
+  }
+
   // Frecuencia objetivo
   const targetFrequency = ref(Math.random() * 90 + 5)
   const currentFrequency = ref(Math.random() * 20)
@@ -182,7 +207,7 @@
   let roundTimer = null
 
   // Sincronización de onda (Listener -> Writer)
-  watch(currentFrequency, (newFreq) => {
+  watch(currentFrequency, newFreq => {
     if (props.isMultiplayer && subRole.value === 'listener' && !gameFinished.value) {
       multiplayerStore.sendGameAction({
         type: 'FREQ_SYNC',
@@ -508,8 +533,8 @@
   onMounted(() => {
     // Sincronizar datos iniciales desde el servidor si están disponibles
     if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.radioData) {
-      const teamId = multiplayerStore.room.gameConfig.teams[astroStore.user]
-      const data = multiplayerStore.room.gameConfig.radioData[teamId] || multiplayerStore.room.gameConfig.radioData['default']
+      const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user]
+      const data = multiplayerStore.room?.gameConfig?.radioData[teamId] || multiplayerStore.room?.gameConfig?.radioData['default']
       if (data) {
         targetFrequency.value = data.frequency
         currentPhrase.value = data.phrase
@@ -527,6 +552,15 @@
       // Alguien ganó la ronda, cerrar este juego formalmente
       gameFinished.value = true
       emit('game-over', score.value + timeLeft.value)
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'RADIO_CHAT') {
+      radioMessages.value.push({
+        text: msg.action.text,
+        sender: msg.action.sender,
+        isMe: msg.action.sender === astroStore.user,
+      })
+      if (radioMessages.value.length > 5) radioMessages.value.shift()
     }
   })
 
@@ -877,5 +911,49 @@ canvas { display: block; width: 100%; height: auto; }
 @keyframes typing {
   0%, 100% { transform: translateY(0); opacity: 0.4; }
   50% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* RADIO MINI CHAT */
+.radio-mini-chat {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d424d;
+  border-radius: 4px;
+  padding: 6px;
+  max-height: 100px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-msg {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  color: #aaa;
+}
+.msg-me { color: #00E5FF; }
+.msg-sender { font-weight: bold; margin-right: 4px; }
+.chat-input-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.mini-chat-input {
+  flex: 1;
+  background: #0a0c10;
+  border: 1px solid #2d3139;
+  border-radius: 2px;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 10px;
+}
+.mini-chat-send {
+  background: #3d424d;
+  border: none;
+  border-radius: 2px;
+  padding: 0 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

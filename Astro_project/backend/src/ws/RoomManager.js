@@ -448,8 +448,10 @@ class RoomManager {
 
                 if (firstGame === 'SpelledRosco') {
                     room.gameConfig.subRoles[p] = (index % 2 === 0) ? ROSCO_ROLES.SENDER : ROSCO_ROLES.GUESSER;
+                } else if (firstGame === 'RhymeSquad') {
+                    room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'catcher' : 'sniper';
                 } else {
-                    // Para RadioSignal, RhymeSquad, RadarScan, usamos los roles tradicionales
+                    // Para RadioSignal, RadarScan, usamos los roles tradicionales
                     room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'listener' : 'writer';
                 }
             } else {
@@ -526,6 +528,8 @@ class RoomManager {
                         room.gameConfig.teams[p] = `team-${pairIndex + 1}`;
                         if (currentGame === 'SpelledRosco') {
                             room.gameConfig.subRoles[p] = (index % 2 === 0) ? ROSCO_ROLES.SENDER : ROSCO_ROLES.GUESSER;
+                        } else if (currentGame === 'RhymeSquad') {
+                            room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'catcher' : 'sniper';
                         } else {
                             room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'listener' : 'writer';
                         }

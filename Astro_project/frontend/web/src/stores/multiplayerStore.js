@@ -25,6 +25,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     lastMessage: null,
     roundScores: {}, // Puntuaciones de la ronda actual en vivo
     remoteCursors: {}, // Coordenadas de compañeros { user: { x, y } }
+    coopChatMessages: [], // AÑADIDO: Mensajes del mini-chat cooperativo
     subRole: null, // AÑADIDO: 'listener' o 'writer'
     partnerText: '', // AÑADIDO: Texto que está escribiendo el compañero
     partnerEmojis: [], // AÑADIDO: Emojis enviados por el compañero
@@ -112,7 +113,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
 
     handleMessage (data) {
       const sessionStore = this.getSession()
-      
+
       switch (data.type) {
         case 'INVITATION_RECEIVED': {
           this.invitations.push({ from: data.from, roomId: data.roomId })
@@ -145,11 +146,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.partnerText = '' // Reset texto
           this.partnerEmojis = [] // Reset emojis
           this.room = data.room
-          
+
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
-          
+
           console.log('¡LA PARTIDA COMIENZA!', data.room.gameConfig.currentGame)
           break
         }
@@ -176,7 +177,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
               y: data.action.y,
             }
           }
-          
+
           // AÑADIDO: Manejar texto del compañero
           if (data.action?.type === 'PARTNER_TYPING') {
             this.partnerText = data.action.text
@@ -186,7 +187,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           if (data.action?.type === 'PARTNER_EMOJI') {
             this.partnerEmojis.push(data.action.emoji)
           }
-          
+
+          // AÑADIDO: Manejar chat cooperativo
+          if (data.action?.type === 'COOP_CHAT') {
+            this.coopChatMessages.push({
+              from: data.from,
+              text: data.action.text,
+              timestamp: Date.now(),
+            })
+          }
+
+          // AÑADIDO: Manejar destrucción de palabras (RhymeSquad)
+          if (data.action?.type === 'WORD_DESTROYED') {
+            this.lastMessage = data // Para que el componente RhymeSquad reaccione
+          }
+
           this.lastMessage = data // Para que los componentes reaccionen (sabotaje)
           break
         }
@@ -196,11 +211,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.partnerText = ''
           this.partnerEmojis = []
           this.room = data.room
-          
+
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
-          
+
           console.log('Ronda terminada. Ganador:', data.winner)
           break
         }

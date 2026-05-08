@@ -1,29 +1,34 @@
 ## Why
 
-Existen inconsistencias graves en el multijugador que afectan la experiencia del usuario y la estabilidad del servidor: salas vacías que persisten en memoria ("zombies"), falta de feedback visual en juegos cooperativos como RadarScan, y un buscador de emojis incompleto y propenso a errores en el idioma principal del proyecto.
+Existen bugs críticos en la sincronización del multijugador que rompen la experiencia de juego en varios minijuegos. Estos problemas incluyen desincronizaciones en el fin de ronda que expulsan a jugadores, tableros inconsistentes entre compañeros y funciones duplicadas que impiden la estabilidad del sistema.
 
 ## What Changes
 
-- **BACKEND (RoomManager.js)**: Implementación de una política estricta de exclusividad de sala (un usuario, una sala). El servidor forzará la salida de cualquier sala previa antes de permitir el ingreso a una nueva.
-- **BACKEND (RoomManager.js)**: Limpieza automática de salas al quedar con 0 jugadores para evitar fugas de memoria.
-- **FRONTEND (RadarScan.vue)**: Integración de los cursores remotos para mostrar la posición del compañero de equipo como una linterna secundaria.
-- **FRONTEND (RadarScan.vue)**: Corrección de la lógica de UI para no mostrar comparativas competitivas ("VS") en partidas de un solo equipo cooperativo.
-- **CONSTANTS (emojis.js)**: Adición de traducciones al catalán en las etiquetas de búsqueda de los emojis.
-- **FRONTEND (SpelledRosco.vue)**: Corrección de la lógica de filtrado de emojis para manejar correctamente las búsquedas sin coincidencias.
+- **RhymeSquad (Anti-Kick Logic)**: Se centraliza el fin de ronda en el Host. El Guest dejará de ejecutar `submitRoundResult` o `emitExit` por su cuenta para evitar desincronizaciones que resultan en la expulsión de la sala.
+- **Word Construction (Tablero Absoluto y Sincronizado)**:
+  - Rediseño completo para usar un sistema de coordenadas absolutas dictado por el Host.
+  - Sincronización en tiempo real de `ELEMENT_MOVE` (x, y, id) con throttle.
+  - Implementación de lógica de "Snap" (encaje en cajas de destino) sincronizada.
+  - Corrección de Z-Index para que las piezas floten sobre la interfaz.
+  - Arreglo de duplicación de pantalla en el componente de cursor remoto.
+- **RadarScan (Sincronización de Tablero e Iluminación)**:
+  - El Host genera y sincroniza el tablero completo (letras e intruso) con el Guest.
+  - Implementación de "Linterna Compartida": las coordenadas del compañero se visualizan como un gradiente CSS dinámico, permitiendo ver qué zona está iluminando el otro.
+- **Symmetry Breaker (Limpieza y Corrección de Puntuación)**:
+  - Eliminación de funciones duplicadas (`update`, `draw`) para asegurar la estabilidad del componente Vue.
+  - Corrección de la lógica de puntuación para que se incremente solo al capturar el objetivo, no de forma continua por frame.
 
 ## Capabilities
 
 ### New Capabilities
-- `multiplayer-user-exclusivity`: Garantiza que un usuario no pueda tener sesiones activas en múltiples salas simultáneamente.
-- `remote-cursor-visualization`: Proporciona feedback visual en tiempo real de la posición del puntero de otros miembros del equipo.
-- `multilingual-emoji-search`: Soporte para múltiples idiomas (incluyendo catalán) en el sistema de etiquetas del selector de emojis.
-
-### Modified Capabilities
-<!-- No existen specs previas en openspec/specs -->
+- `rhymesquad-host-authority`: Centralización de la transición de fin de juego en el host de la sala.
+- `word-construction-sync-v2`: Sistema de sincronización de piezas con coordenadas absolutas y snap-to-target.
+- `radarscan-shared-state`: Sincronización determinista del tablero y visualización de iluminación remota.
+- `symmetry-breaker-stability`: Limpieza de lógica duplicada y corrección del sistema de scoring.
 
 ## Impact
 
-- **Backend**: `RoomManager.js` centralizará la lógica de limpieza y exclusividad.
-- **Frontend**: `RadarScan.vue` y `SpelledRosco.vue` sufrirán actualizaciones en sus componentes y lógica reactiva.
-- **Memoria**: Se espera una reducción en el uso de memoria a largo plazo al eliminar salas vacías.
-- **UX**: Mejora significativa en la fluidez de los minijuegos cooperativos y la precisión del selector de pistas.
+- `frontend/web/src/components/games/RhymeSquad.vue`: Cambio en el flujo de finalización del juego.
+- `frontend/web/src/components/games/WordConstruction.vue`: Refactorización mayor de la lógica de arrastre y sincronización de red.
+- `frontend/web/src/components/games/RadarScan.vue`: Implementación de sincronización de tablero y efectos visuales de linterna.
+- `frontend/web/src/components/games/SymmetryBreaker.vue`: Limpieza de código y corrección de lógica de puntos.

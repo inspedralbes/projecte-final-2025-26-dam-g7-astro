@@ -368,8 +368,8 @@
               class="tech-input-green"
               color="green-accent-3"
               :error-messages="newGroupPassword !== newGroupPasswordConfirm ? '!' : ''"
-              placeholder="REPETIR CÓDIGO"
               hide-details
+              placeholder="REPETIR CÓDIGO"
               prepend-inner-icon="mdi-key-check"
               type="password"
               variant="solo-filled"

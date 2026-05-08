@@ -178,9 +178,9 @@
 
         <v-btn
           block
+          class="font-weight-black text-black"
           color="cyan-accent-3"
           rounded="xl"
-          class="font-weight-black text-black"
           size="x-large"
           variant="elevated"
           @click="showLevelUpDialog = false"
@@ -214,9 +214,9 @@
 
         <v-btn
           block
+          class="font-weight-bold text-white mt-4"
           color="red-accent-2"
           rounded="xl"
-          class="font-weight-bold text-white mt-4"
           size="x-large"
           style="background: linear-gradient(45deg, #ff5252, #b71c1c) !important;"
           variant="flat"

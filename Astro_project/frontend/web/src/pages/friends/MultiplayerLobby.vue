@@ -116,7 +116,7 @@
                 <v-icon class="mr-4" color="cyan-accent-2" icon="mdi-shield-star" size="36" />
                 <div>
                   <div class="text-overline text-cyan-accent-2 line-height-1">Misión en curso</div>
-                  <h2 class="text-h4 font-weight-black text-white tracking-widest">SALA {{ multiplayerStore.room.id }}</h2>
+                  <h2 class="text-h4 font-weight-black text-white tracking-widest">SALA {{ multiplayerStore.room?.id }}</h2>
                 </div>
               </div>
               <v-btn
@@ -140,7 +140,7 @@
 
               <v-row class="mb-4">
                 <v-col
-                  v-for="player in multiplayerStore.room.players"
+                  v-for="player in multiplayerStore.room?.players"
                   :key="player"
                   cols="12"
                   lg="3"
@@ -149,7 +149,7 @@
                 >
                   <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
                     <v-badge
-                      v-if="player === multiplayerStore.room.host"
+                      v-if="player === multiplayerStore.room?.host"
                       color="amber-accent-2"
                       icon="mdi-crown"
                       location="top right"
@@ -167,7 +167,7 @@
 
                     <div class="text-h6 font-weight-bold text-white mb-1">{{ player }}</div>
                     <v-chip
-                      v-if="player === multiplayerStore.room.host"
+                      v-if="player === multiplayerStore.room?.host"
                       class="text-black font-weight-black px-3"
                       color="amber-accent-2"
                       size="x-small"
@@ -189,14 +189,14 @@
 
                 <!-- Huecos Vacíos -->
                 <v-col
-                  v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room.players?.length || 0))"
+                  v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room?.players?.length || 0))"
                   :key="'empty-' + n"
                   cols="12"
                   lg="3"
                   md="4"
                   sm="6"
                 >
-                  <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100" min-height="180" variant="dashed">
+                  <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100 border-dashed" min-height="180" variant="outlined">
                     <v-icon class="mb-2" color="grey-darken-1" icon="mdi-account-plus-outline" size="32" />
                     <div class="text-body-2 text-grey-darken-1">Esperando...</div>
                   </v-card>
@@ -564,7 +564,6 @@
 
   const astroStore = useAstroStore()
   const multiplayerStore = useMultiplayerStore()
-  const { friends } = storeToRefs(astroStore)
 
   const snackbar = ref({ show: false, text: '', color: 'success' })
   const isPublic = ref(true)
@@ -598,23 +597,27 @@
   })
 
   watch(() => multiplayerStore.room?.status, newStatus => {
+    if (!newStatus) return
+
+    // Forçar arrencada immediata si el joc ja ha de ser actiu
+    if (newStatus === 'PLAYING' || newStatus === 'MATCH_STARTING') {
+      showRoulette.value = false
+      roundWinner.value = null
+      showRoundResults.value = false
+
+      const gameName = multiplayerStore.room?.gameConfig?.currentGame
+      if (gameName && gameComponents[gameName]) {
+        activeGameComponent.value = gameComponents[gameName]
+      }
+      return
+    }
+
     switch (newStatus) {
       case 'ROULETTE': {
         showRoulette.value = true
         roundWinner.value = null
         showRoundResults.value = false
-        activeGameComponent.value = null // Importantísimo para cambiar de juego
-
-        break
-      }
-      case 'PLAYING': {
-        showRoulette.value = false
-        roundWinner.value = null
-        showRoundResults.value = false
-        const gameName = multiplayerStore.room?.gameConfig?.currentGame
-        if (gameName && gameComponents[gameName]) {
-          activeGameComponent.value = gameComponents[gameName]
-        }
+        activeGameComponent.value = null
 
         break
       }
@@ -639,12 +642,21 @@
 
         break
       }
-    // No default
     }
-  })
+  }, { immediate: true })
 
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
+
+    // Sincronització crítica: Si arriba MATCH_STARTING, forçar muntatge del joc
+    if (msg.type === 'MATCH_STARTING') {
+      showRoulette.value = false
+      activeGameComponent.value = null // Reset per assegurar remuntatge
+      const gameName = msg.room?.gameConfig?.currentGame
+      if (gameName && gameComponents[gameName]) {
+        activeGameComponent.value = gameComponents[gameName]
+      }
+    }
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       roundWinner.value = msg.winner
@@ -723,13 +735,13 @@
 
   const opponentName = computed(() => {
     if (!multiplayerStore.room) return 'Oponente'
-    return multiplayerStore.room.players.find(p => p !== astroStore.user) || 'Oponente'
+    return multiplayerStore.room?.players.find(p => p !== astroStore.user) || 'Oponente'
   })
 
   const isTeammate = computed(() => {
-    if (!multiplayerStore.room || !multiplayerStore.room.gameConfig?.teams) return false
-    const myTeam = multiplayerStore.room.gameConfig.teams[astroStore.user]
-    const opponentTeam = multiplayerStore.room.gameConfig.teams[opponentName.value]
+    if (!multiplayerStore.room || !multiplayerStore.room?.gameConfig?.teams) return false
+    const myTeam = multiplayerStore.room?.gameConfig.teams[astroStore.user]
+    const opponentTeam = multiplayerStore.room?.gameConfig.teams[opponentName.value]
     return myTeam && myTeam === opponentTeam
   })
 
@@ -784,9 +796,9 @@
   }
 
   function createRoom () {
-    const initialConfig = { 
+    const initialConfig = {
       pointsToWin: pointsToWin.value,
-      modality: selectedModality.value
+      modality: selectedModality.value,
     }
     multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value, initialConfig)
   }
@@ -814,7 +826,7 @@
     }
   }
 
-  function onGameFinished (score) {
+  function onGameFinished (_score) {
     // En multijugador enviamos al server que hemos terminado
     // Solo el primero que envíe ganará el punto
     multiplayerStore.submitRoundResult()
@@ -885,8 +897,11 @@
 
 .crew-card-empty {
   background: rgba(0, 0, 0, 0.2) !important;
-  border: 2px dashed rgba(255, 255, 255, 0.05) !important;
   opacity: 0.6;
+}
+
+.border-dashed {
+  border: 2px dashed rgba(255, 255, 255, 0.2) !important;
 }
 
 .player-glow-avatar {

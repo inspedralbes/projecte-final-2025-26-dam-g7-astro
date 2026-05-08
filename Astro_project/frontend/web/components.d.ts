@@ -19,6 +19,7 @@ declare module 'vue' {
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
     RadioSignal: typeof import('./src/components/games/RadioSignal.vue')['default']
+    RemoteCursor: typeof import('./src/components/RemoteCursor.vue')['default']
     RhymeSquad: typeof import('./src/components/games/RhymeSquad.vue')['default']
     RightSidebar: typeof import('./src/components/layout/RightSidebar.vue')['default']
     RouletteOverlay: typeof import('./src/components/games/RouletteOverlay.vue')['default']

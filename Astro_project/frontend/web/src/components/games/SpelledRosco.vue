@@ -114,40 +114,48 @@
             <template v-else-if="isSender">
               <v-chip class="mb-2 font-weight-bold" color="light-blue" label>La Paraula és...</v-chip>
               <p class="text-h4 text-cyan-accent-2 font-weight-black mb-4">{{ currentLetter.answer }}</p>
-              
-              <!-- EMOJI PICKER INTEGRADO CON BUSCADOR -->
-              <v-card class="pa-4 bg-grey-darken-3 rounded-lg elevation-4 emoji-picker-integrated">
+
+              <!-- TEXT-BASED HINT INPUT (Sustituye Emoji Picker) -->
+              <v-card class="pa-4 bg-grey-darken-3 rounded-lg elevation-4">
+                <div class="text-caption text-grey-lighten-1 mb-2">ESCRIU UNA PISTA (ANTI-TRAMPES ACTIVAT)</div>
                 <v-text-field
-                  v-model="emojiSearch"
-                  density="compact"
-                  variant="solo-filled"
-                  placeholder="Cerca un emoji..."
-                  prepend-inner-icon="mdi-magnify"
-                  hide-details
-                  class="mb-3 emoji-search-field"
+                  v-model="textHint"
                   bg-color="grey-darken-4"
-                  rounded="pill"
+                  class="mb-3 hint-text-field"
+                  density="comfortable"
+                  hide-details
+                  placeholder="Escriu una pista..."
+                  prepend-inner-icon="mdi-chat-processing"
+                  rounded="lg"
+                  variant="solo-filled"
+                  @keydown.enter="sendTextHint"
                 />
-                <div class="emoji-grid-internal custom-scrollbar">
-                  <v-btn
-                    v-for="emoji in filteredEmojiList"
-                    :key="emoji"
-                    icon
-                    variant="text"
-                    class="emoji-btn-internal"
-                    @click="sendEmoji(emoji)"
-                  >
-                    <span class="text-h4">{{ emoji }}</span>
-                  </v-btn>
-                  <div v-if="filteredEmojiList.length === 0" class="text-caption text-grey py-4 w-100 text-center">
-                    Cap emoji trobat 🌌
-                  </div>
-                </div>
+                <v-btn
+                  block
+                  class="text-black font-weight-bold"
+                  color="cyan-accent-3"
+                  :disabled="!textHint.trim()"
+                  @click="sendTextHint"
+                >
+                  ENVIAR PISTA
+                </v-btn>
               </v-card>
             </template>
             <template v-else-if="isGuesser">
               <v-chip class="mb-2 font-weight-bold" color="cyan" label>Endevina!</v-chip>
-              
+
+              <!-- Pistas inteligentes (Categoría y Tipo) -->
+              <div class="d-flex justify-center gap-2 mb-4">
+                <v-chip class="font-weight-black elevation-2" color="amber-darken-3" size="small" variant="flat">
+                  <v-icon icon="mdi-tag" size="14" start />
+                  {{ currentHints.category }}
+                </v-chip>
+                <v-chip class="font-weight-black elevation-2" color="indigo-accent-2" size="small" variant="flat">
+                  <v-icon icon="mdi-shape" size="14" start />
+                  {{ currentHints.type }}
+                </v-chip>
+              </div>
+
               <!-- EMOJI HISTORY INTEGRADO -->
               <div class="emoji-history-internal pa-4 rounded-xl elevation-5 bg-deep-purple-darken-4 border-cyan">
                 <div class="text-caption text-cyan-accent-2 mb-2 font-weight-bold">PISTES DEL COMPANY</div>
@@ -184,24 +192,24 @@
             <v-text-field
               v-if="!isTranslator && !isSender"
               v-model="rawInput"
+              autofocus
               bg-color="#263238"
               class="mb-4 spelling-input"
               color="cyan-accent-3"
-              autofocus
               density="comfortable"
               hide-details
               placeholder="Escriu aquí..."
               variant="outlined"
-              @keydown.enter="checkAnswer"
               @input="onTyping"
+              @keydown.enter="checkAnswer"
             />
-            
+
             <!-- GHOST TEXT PARA EL TRADUCTOR -->
             <div v-else-if="isTranslator" class="ghost-text-container mb-4 pa-4 rounded-lg">
-               <span class="text-h4 text-cyan-accent-2 font-weight-black">{{ multiplayerStore.partnerText || '...' }}</span>
-               <div v-if="multiplayerStore.partnerText" class="typing-indicator mt-2">
-                 <v-progress-linear indeterminate color="cyan" height="2" />
-               </div>
+              <span class="text-h4 text-cyan-accent-2 font-weight-black">{{ multiplayerStore.partnerText || '...' }}</span>
+              <div v-if="multiplayerStore.partnerText" class="typing-indicator mt-2">
+                <v-progress-linear color="cyan" height="2" indeterminate />
+              </div>
             </div>
 
             <div v-if="!isTranslator && !isSender" class="d-flex justify-center gap-4 mb-4">
@@ -239,7 +247,7 @@
             >
               Esborrar tot
             </v-btn>
-            
+
             <div v-if="isTranslator" class="text-body-2 text-grey-lighten-1">
               Guia al teu company! Ell no veu els jeroglífics.
             </div>
@@ -276,10 +284,10 @@
       <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
 
       <v-btn
+        class="text-black font-weight-bold"
         color="cyan-accent-3"
         rounded="pill"
         size="large"
-        class="text-black font-weight-bold"
         variant="flat"
         @click="emitExit"
       >
@@ -296,23 +304,30 @@
 
 <script setup>
   import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+  import { EMOJI_CATEGORIES, EMOJI_LIBRARY } from '@/constants/emojis'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
-  import { EMOJI_LIBRARY } from '@/constants/emojis'
+  import { isValidHint } from '@/utils/hintValidator'
+  import { getWordCategory, getWordType } from '@/utils/roscoHints'
 
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
   const emojiSearch = ref('')
+  const selectedEmojiCategory = ref('faces')
+  const textHint = ref('') // AÑADIDO: Pista de texto para el modo sender
+
+  // Pistas inteligentes para el modo cooperativo
+  const currentHints = reactive({
+    category: '',
+    type: '',
+  })
 
   function throttle (func, limit) {
     let lastRan
     let lastFunc
     return function (...args) {
-      if (!lastRan) {
-        func(...args)
-        lastRan = Date.now()
-      } else {
+      if (lastRan) {
         clearTimeout(lastFunc)
         lastFunc = setTimeout(function () {
           if ((Date.now() - lastRan) >= limit) {
@@ -320,6 +335,9 @@
             lastRan = Date.now()
           }
         }, limit - (Date.now() - lastRan))
+      } else {
+        func(...args)
+        lastRan = Date.now()
       }
     }
   }
@@ -342,19 +360,44 @@
   // --- EMOJIS ---
   const filteredEmojiList = computed(() => {
     const search = emojiSearch.value?.trim().toLowerCase()
-    if (!search) return EMOJI_LIBRARY.map(e => e.char)
-    
-    const results = EMOJI_LIBRARY
-      .filter(e => e.tags.toLowerCase().includes(search))
-      .map(e => e.char)
 
-    return results.length > 0 ? results : []
+    // Si hay búsqueda, buscamos en toda la librería por tags
+    if (search) {
+      return EMOJI_LIBRARY
+        .filter(e => e.tags.toLowerCase().includes(search))
+        .map(e => e.char)
+    }
+
+    // Si no hay búsqueda, filtramos por la categoría seleccionada
+    return EMOJI_LIBRARY
+      .filter(e => e.category === selectedEmojiCategory.value)
+      .map(e => e.char)
   })
 
-  const sendEmoji = throttle((emoji) => {
+  const sendEmoji = throttle(emoji => {
     multiplayerStore.sendEmojiClue(emoji)
     emojiSearch.value = '' // Limpiar después de enviar
   }, 500)
+
+  // --- PISTAS DE TEXTO (SENDER) ---
+  function sendTextHint () {
+    const hint = textHint.value?.trim()
+    if (!hint) return
+
+    if (!isValidHint(hint, currentLetter.value.answer)) {
+      feedbackMessage.value = '❌ TRAMPA DETECTADA! No pots enviar la paraula o variants.'
+      feedbackColor.value = 'error'
+      showFeedback.value = true
+      textHint.value = '' // Vaciar input si es trampa
+      return
+    }
+
+    multiplayerStore.sendGameAction({
+      type: 'PARTNER_EMOJI', // Reutilizamos el tipo para mostrar en el historial del Guesser
+      emoji: hint, // Enviamos el texto en lugar de un emoji
+    })
+    textHint.value = ''
+  }
 
   // --- DADES DEL JOC (temes variats) ---
   const allLettersData = [
@@ -504,6 +547,14 @@
     return roscoLetters.value[currentIndex.value]
   })
 
+  // Actualizar pistas cuando cambia la letra
+  watch(() => currentLetter.value, newLetter => {
+    if (newLetter && newLetter.answer) {
+      currentHints.category = getWordCategory(newLetter.answer)
+      currentHints.type = getWordType(newLetter.answer)
+    }
+  }, { immediate: true })
+
   const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length)
   const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length)
   const finalReward = computed(() => score.value + timeLeft.value)
@@ -516,8 +567,8 @@
   // Initialization - use server data
   function initRosco () {
     if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData) {
-      const teamId = multiplayerStore.room.gameConfig.teams[astroStore.user]
-      const data = multiplayerStore.room.gameConfig.roscoData[teamId] || multiplayerStore.room.gameConfig.roscoData.default
+      const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user]
+      const data = multiplayerStore.room?.gameConfig?.roscoData[teamId] || multiplayerStore.room?.gameConfig?.roscoData.default
       if (data && roscoLetters.value.length === 0) {
         roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
         console.log('Rosco inicializado con datos del servidor:', roscoLetters.value)
@@ -534,18 +585,18 @@
   })
 
   // Asegurar que si los datos llegan tarde, se inicialice el rosco
-  watch(() => multiplayerStore.room, (newRoom) => {
+  watch(() => multiplayerStore.room, newRoom => {
     if (newRoom?.gameConfig?.roscoData) {
       initRosco()
     }
   }, { deep: true })
 
   // Sincronización de escritura con throttle
-  const emitTyping = throttle((text) => {
+  const emitTyping = throttle(text => {
     if (props.isMultiplayer && !isTranslator.value && !isSender.value) {
       multiplayerStore.sendGameAction({
         type: 'TYPING_SYNC',
-        text
+        text,
       })
     }
   }, 150)
@@ -564,26 +615,26 @@
     }
 
     // Recibir avance de letra del compañero (Guesser -> Sender/Translator)
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ADVANCE_LETTER') {
-      if (isSender.value || isTranslator.value) {
-         const { index, status, score: newScore } = msg.action
-         roscoLetters.value[index].status = status
-         score.value = newScore
-         advanceTurn()
-      }
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ADVANCE_LETTER' && (isSender.value || isTranslator.value)) {
+      const { index, status, score: newScore } = msg.action
+      roscoLetters.value[index].status = status
+      score.value = newScore
+      advanceTurn()
     }
 
     // Rebre sabotatge del rival: restar temps
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
       timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
     }
-    
+
     // Feedback visual de cambio de rol
     if (msg.type === 'GAME_ROLES_SWAPPED') {
       feedbackMessage.value = '¡CAMBIO DE ROLES!'
       feedbackColor.value = 'warning'
       showFeedback.value = true
-      setTimeout(() => { showFeedback.value = false }, 2000)
+      setTimeout(() => {
+        showFeedback.value = false
+      }, 2000)
     }
   })
 
@@ -611,6 +662,11 @@
   // Rocket Animation - Following the outline
   function animateRocket (fromIdx, toIdx) {
     return new Promise(resolve => {
+      if (document.hidden) {
+        resolve()
+        return
+      }
+
       // fromIdx i toIdx són índexs de lletres (0..4)
       // Els convertim a índexs de starPoints (multiplicant per 2)
       const startPointIdx = letterPositions[fromIdx]
@@ -723,7 +779,9 @@
         feedbackColor.value = 'warning'
         showFeedback.value = true
         isChecking.value = false
-        setTimeout(() => { showFeedback.value = false }, 1000)
+        setTimeout(() => {
+          showFeedback.value = false
+        }, 1000)
       }
     }
   }
@@ -735,7 +793,7 @@
         type: 'ADVANCE_LETTER',
         index: currentIndex.value,
         status: status,
-        score: score.value
+        score: score.value,
       })
     }
 
@@ -753,16 +811,16 @@
     rawInput.value = ''
     attempts.value = 0 // Reset intentos al pasar
     onTyping()
-    
+
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
         type: 'ADVANCE_LETTER',
         index: currentIndex.value,
         status: 'pending',
-        score: score.value
+        score: score.value,
       })
     }
-    
+
     advanceTurn()
   }
 
@@ -789,7 +847,7 @@
       multiplayerStore.sendGameAction({
         type: 'ROSCO_PROGRESS_UPDATE',
         letterIndex: roscoLetters.value.filter(l => l.status !== 'pending').length,
-        errors: incorrectCount.value
+        errors: incorrectCount.value,
       })
     }
 
@@ -1085,6 +1143,14 @@
   background: rgba(255, 255, 255, 0.1);
   padding: 2px;
   border-radius: 8px;
+}
+
+.emoji-tabs :deep(.v-slide-group__content) {
+  justify-content: center;
+}
+.emoji-tabs :deep(.v-tab) {
+  min-width: 44px;
+  padding: 0;
 }
 
 @keyframes pop-in {

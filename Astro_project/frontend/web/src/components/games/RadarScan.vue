@@ -16,7 +16,7 @@
         v-for="(letter, index) in board"
         :key="index"
         class="letter-cell d-flex justify-center align-center text-h4 font-weight-bold cursor-pointer"
-        :class="{ 
+        :class="{
           'letter-correct': clickedIndices.get(index) === 'correct',
           'letter-incorrect': clickedIndices.get(index) === 'incorrect'
         }"
@@ -33,6 +33,17 @@
       :class="{ 'flashlight-hidden': isTransitioning }"
       :style="flashlightStyle"
     />
+
+    <!-- Cursors remots (Task 4.3) -->
+    <div
+      v-for="(cursor, id) in multiplayerStore.remoteCursors"
+      :key="'cursor-'+id"
+      class="remote-cursor"
+      :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }"
+    >
+      <v-icon color="amber-accent-3" size="32">mdi-cursor-default</v-icon>
+      <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold">{{ id }}</span>
+    </div>
 
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
@@ -101,6 +112,8 @@
   const correctClicked = ref(false)
   const score = ref(0)
   const timeLeft = ref(60)
+  const startTime = ref(0)
+  const totalDuration = ref(60)
   let timerInterval = null
 
   // --- SISTEMA DE VISIÓ ---
@@ -113,10 +126,7 @@
     let lastRan
     let lastFunc
     return function (...args) {
-      if (!lastRan) {
-        func(...args)
-        lastRan = Date.now()
-      } else {
+      if (lastRan) {
         clearTimeout(lastFunc)
         lastFunc = setTimeout(function () {
           if ((Date.now() - lastRan) >= limit) {
@@ -124,25 +134,27 @@
             lastRan = Date.now()
           }
         }, limit - (Date.now() - lastRan))
+      } else {
+        func(...args)
+        lastRan = Date.now()
       }
     }
   }
 
   const sendMouseMove = throttle((x, y) => {
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer && gameArea.value) {
       multiplayerStore.sendGameAction({
         type: 'MOUSE_MOVE',
-        x: Math.round(x),
-        y: Math.round(y),
+        x: Math.round((x / gameArea.value.clientWidth) * 1000),
+        y: Math.round((y / gameArea.value.clientHeight) * 1000),
       })
     }
-  }, 50)
+  }, 25)
 
   // --- LÒGICA DEL TAULER ---
   const board = ref([])
   const currentLevel = ref(1)
-  const targetIndex = ref(-1)
-  const allTeamTargets = ref([]) // AÑADIDO: [{index, user}]
+  const targetIndices = ref([]) // Cambiado a array para soportar múltiples objetivos
 
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
@@ -163,28 +175,29 @@
   const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid))
   const boardSize = computed(() => currentConfig.value.grid * cellSize.value)
 
-  // Estil dinàmic per a múltiples linternes
   const flashlightStyle = computed(() => {
     const tunnelSize = currentTunnelSize.value
     const cursors = props.isMultiplayer ? Object.values(multiplayerStore.remoteCursors) : []
 
-    // Per restaurar l'efecte del singleplayer i suportar múltiples linternes:
-    // Usem mix-blend-mode: multiply. L'overlay serà negre amb spots blancs.
-    // El blanc (1) deixa passar el color original, el negre (0) el tapa.
-    
-    const spots = [
-      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, white 0%, rgba(255, 255, 255, 0) 80%)`
+    // Restauramos el efecto visual combinando múltiples focos de luz.
+    const lightSpots = [
+      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`,
     ]
 
     for (const c of cursors) {
-      spots.push(`radial-gradient(circle ${tunnelSize}px at ${c.x}px ${c.y}px, white 0%, rgba(255, 255, 255, 0) 80%)`)
+      if (gameArea.value) {
+        const realX = (c.x / 1000) * gameArea.value.clientWidth
+        const realY = (c.y / 1000) * gameArea.value.clientHeight
+        lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${realX}px ${realY}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`)
+      }
     }
 
     return {
-      'background': spots.join(', '),
-      'background-color': '#0b1120', // Color base fosc
+      'background-color': '#0b1120',
+      'background-image': lightSpots.join(', '),
+      'background-blend-mode': 'lighten',
       'mix-blend-mode': 'multiply',
-      'z-index': 5
+      'z-index': 5,
     }
   })
 
@@ -204,32 +217,25 @@
     const config = currentConfig.value
     const totalCells = config.grid * config.grid
     clickedIndices.value.clear()
+    completedTargets.value.clear()
 
     if (props.isMultiplayer) {
       if (isHost.value) {
-        // El host genera el tablero y los objetivos para su equipo
         const newBoard = Array.from({ length: totalCells }, () => config.distractor)
+        // Generamos 2 objetivos para multijugador
+        const t1 = Math.floor(Math.random() * totalCells)
+        let t2
+        do {
+          t2 = Math.floor(Math.random() * totalCells)
+        } while (t2 === t1)
 
-        const teamId = multiplayerStore.room.gameConfig.teams[astroStore.user]
-        const teamPlayers = Object.keys(multiplayerStore.room.gameConfig.teams).filter(
-          p => multiplayerStore.room.gameConfig.teams[p] === teamId,
-        )
+        newBoard[t1] = config.target
+        newBoard[t2] = config.target
+        targetIndices.value = [t1, t2]
 
-        const targets = []
-        const usedIndices = new Set()
-
-        for (const player of teamPlayers) {
-          let idx
-          do {
-            idx = Math.floor(Math.random() * totalCells)
-          } while (usedIndices.has(idx))
-          usedIndices.add(idx)
-          newBoard[idx] = config.target
-          targets.push({ index: idx, user: player })
-        }
-
-        // Añadir señuelos (letras que no son distractor ni target) para aumentar dificultad
+        // Añadir señuelos
         const possibleDecoys = ['x', 'z', 'k', 'y', 'w', 'h', 'j'].filter(c => c !== config.distractor && c !== config.target)
+        const usedIndices = new Set([t1, t2])
         for (let i = 0; i < 2; i++) {
           let idx
           do {
@@ -240,46 +246,48 @@
         }
 
         board.value = newBoard
-        allTeamTargets.value = targets
 
-        // Sincronizar con el equipo
         multiplayerStore.sendGameAction({
           type: 'BOARD_SYNC',
           board: newBoard,
-          targets: targets,
+          targetIndices: [t1, t2],
         })
       }
     } else {
-      // Modo individual original
+      // Modo individual original: 1 objetivo
       const newBoard = Array.from({ length: totalCells }, () => config.distractor)
-      targetIndex.value = Math.floor(Math.random() * totalCells)
-      newBoard[targetIndex.value] = config.target
+      const target = Math.floor(Math.random() * totalCells)
+      targetIndices.value = [target]
+      newBoard[target] = config.target
       board.value = newBoard
     }
   }
 
   const clickedIndices = ref(new Map())
+  const completedTargets = ref(new Set()) // Track targets completed (by index instead of user)
 
   function nextRound () {
     score.value += (currentLevel.value * 10)
     timeLeft.value = Math.min(60, timeLeft.value + 1)
     currentLevel.value++
+    completedTargets.value.clear()
     generateBoard()
   }
 
   function checkLetter (index) {
     if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return
+    if (completedTargets.value.has(index)) return // Ignorar si ya está encontrado
 
-    // En multijugador, validamos si es el objetivo asignado al jugador
+    const isCorrect = targetIndices.value.includes(index)
+
+    // En multijugador, validamos si es el objetivo compartido
     if (props.isMultiplayer) {
-      const myTarget = allTeamTargets.value.find(t => t.user === astroStore.user)
-      const isCorrect = myTarget && index === myTarget.index
-
       // Notificamos el click para sincronización visual inmediata
       multiplayerStore.sendGameAction({
         type: 'RADAR_CLICK',
         index,
-        status: isCorrect ? 'correct' : 'incorrect'
+        status: isCorrect ? 'correct' : 'incorrect',
+        user: astroStore.user,
       })
 
       if (!isCorrect) {
@@ -287,29 +295,42 @@
         return
       }
 
-      // Si es su objetivo, marcamos como completado para este jugador
-      isTransitioning.value = true
+      // Si es correcto, lo marcamos
       clickedIndices.value.set(index, 'correct')
+      completedTargets.value.add(index)
 
-      setTimeout(() => {
-        // Notificamos al servidor que hemos acabado nuestra parte
-        multiplayerStore.submitRoundResult()
-      }, 800)
+      // Verificamos si se han encontrado todas las letras objetivo (2 en multi)
+      if (completedTargets.value.size >= targetIndices.value.length) {
+        isTransitioning.value = true
+        // En lugar de cerrar la partida (submitRoundResult), avanzamos ronda como en el individual
+        if (isHost.value) {
+          setTimeout(() => {
+            multiplayerStore.sendGameAction({ type: 'RADAR_NEXT_ROUND' })
+            nextRound()
+            setTimeout(() => {
+              isTransitioning.value = false
+            }, 200)
+          }, 800)
+        }
+      }
 
       return
     }
 
     // Lógica original individual
-    if (index === targetIndex.value) {
-      isTransitioning.value = true
+    if (isCorrect) {
       clickedIndices.value.set(index, 'correct')
+      completedTargets.value.add(index)
 
-      setTimeout(() => {
-        nextRound()
+      if (completedTargets.value.size >= targetIndices.value.length) {
+        isTransitioning.value = true
         setTimeout(() => {
-          isTransitioning.value = false
-        }, 200)
-      }, 800)
+          nextRound()
+          setTimeout(() => {
+            isTransitioning.value = false
+          }, 200)
+        }, 800)
+      }
     } else {
       clickedIndices.value.set(index, 'incorrect')
       timeLeft.value = Math.max(0, timeLeft.value - 3)
@@ -325,16 +346,27 @@
     isTransitioning.value = false
     correctClicked.value = false
     score.value = 0
+    totalDuration.value = 60
     timeLeft.value = 60
+    startTime.value = Date.now()
     currentLevel.value = 1
     generateBoard()
 
+    if (props.isMultiplayer && isHost.value) {
+      multiplayerStore.sendGameAction({
+        type: 'START_TIME_SYNC',
+        startTime: startTime.value,
+        duration: totalDuration.value,
+      })
+    }
+
     timerInterval = setInterval(() => {
       if (!isTransitioning.value && timeLeft.value > 0) {
-        timeLeft.value--
+        const elapsed = Math.floor((Date.now() - startTime.value) / 1000)
+        timeLeft.value = Math.max(0, totalDuration.value - elapsed)
         if (timeLeft.value <= 0) endGame()
       }
-    }, 1000)
+    }, 500)
   }
 
   function endGame (silent = false) {
@@ -378,23 +410,44 @@
 
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1))
+        totalDuration.value -= (msg.action.amount || 1)
+      }
+
+      if (msg.action?.type === 'START_TIME_SYNC') {
+        console.log('Sincronización de tiempo recibida')
+        startTime.value = msg.action.startTime
+        totalDuration.value = msg.action.duration
       }
 
       if (msg.action?.type === 'BOARD_SYNC') {
         console.log('Tablero sincronizado recibido')
         board.value = msg.action.board
-        allTeamTargets.value = msg.action.targets
+        targetIndices.value = msg.action.targetIndices
         // Reseteamos estados visuales
         isTransitioning.value = false
         clickedIndices.value.clear()
+        completedTargets.value.clear()
+      }
+
+      if (msg.action?.type === 'RADAR_NEXT_ROUND' && !isHost.value) {
+        nextRound()
+        setTimeout(() => {
+          isTransitioning.value = false
+        }, 200)
       }
 
       if (msg.action?.type === 'RADAR_CLICK') {
         const { index, status } = msg.action
-        clickedIndices.value.set(index, status)
         if (status === 'incorrect') {
+          clickedIndices.value.set(index, status)
           setTimeout(() => clickedIndices.value.delete(index), 500)
+        } else if (status === 'correct') {
+          clickedIndices.value.set(index, 'correct')
+          completedTargets.value.add(index)
+
+          if (completedTargets.value.size >= targetIndices.value.length) {
+            isTransitioning.value = true
+          }
         }
       }
     }
@@ -485,5 +538,12 @@
   border-radius: 999px;
   padding: 10px 22px;
   backdrop-filter: blur(4px);
+}
+
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10000;
+  will-change: left, top;
 }
 </style>
