@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center">
+  <v-container fluid class="fill-height d-flex flex-column align-center justify-center">
     
     <!-- Capçalera del joc -->
     <v-card width="100%" max-width="600" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">

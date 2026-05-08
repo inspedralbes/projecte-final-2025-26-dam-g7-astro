@@ -507,14 +507,15 @@ svg {
 }
 
 .game-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: absolute;
+    inset: 0;
     background: #0b0f19;
     z-index: 100;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    overflow-y: auto;
+    padding: 60px 20px;
 }
 
 .close-game-btn {
