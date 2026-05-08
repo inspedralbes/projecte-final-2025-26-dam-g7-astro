@@ -2,6 +2,7 @@
     <v-navigation-drawer app permanent width="280" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
         <div class="menu-header d-flex flex-column justify-center align-center py-12">
             <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
+            <v-img src="/logo/logo astro.png" width="80" height="80" class="my-2 logo-sidebar-img" contain></v-img>
             <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
         </div>
 
@@ -90,6 +91,11 @@ const menuItems = computed(() => {
     backdrop-filter: blur(25px);
     border-right: 1px solid rgba(0, 242, 255, 0.1) !important;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.logo-sidebar-img {
+    mix-blend-mode: screen;
+    filter: brightness(1.2) contrast(1.1);
 }
 
 .letter-spacing-2 {

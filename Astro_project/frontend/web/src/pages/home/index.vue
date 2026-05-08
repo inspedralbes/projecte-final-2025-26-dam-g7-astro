@@ -5,7 +5,6 @@
       <v-app-bar-title>
         <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
       </v-app-bar-title>
-      
       <v-spacer></v-spacer>
 
       <div class="d-flex align-center">
