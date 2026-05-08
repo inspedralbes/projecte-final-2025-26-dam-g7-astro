@@ -62,7 +62,10 @@ function registerAuthRoutes(app, {
                     missionsCompleted: user.missionsCompleted || 0,
                     dailyMissions: user.dailyMissions || [],
                     weeklyMissions: user.weeklyMissions || [],
-                    selectedTitle: user.selectedTitle || null
+                    displayName: user.displayName || null,
+                    nameChangesCount: user.nameChangesCount || 0,
+                    selectedTitle: user.selectedTitle || null,
+                    deletionScheduledAt: user.deletionScheduledAt || null
                 }
             });
         } catch (error) {

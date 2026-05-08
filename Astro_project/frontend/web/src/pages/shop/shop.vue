@@ -34,7 +34,7 @@
 
                     <v-row class="px-2 mb-10">
                         <v-col v-for="item in basicItems" :key="item.id" cols="12" md="6">
-                            <v-card class="mx-auto item-card rounded-xl pa-4 d-flex align-center" color="#1e293b">
+                            <v-card class="mx-auto item-card rounded-xl pa-4 d-flex align-center" color="#1e293b" height="100%">
                                 <div class="d-flex align-center flex-grow-1 mr-4" style="min-width: 0;">
                                     <v-avatar size="50" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'"
                                         class="mr-3 flex-shrink-0">
@@ -58,7 +58,7 @@
                                     </div>
                                 </div>
 
-                                <div style="min-width: 120px;">
+                                <div style="width: 130px; flex-shrink: 0;">
                                     <v-btn block height="44"
                                         :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
                                         :variant="hasReachedMax(item.id) ? 'outlined' : 'flat'"
@@ -88,7 +88,7 @@
                     <v-row class="px-2">
                         <v-col v-for="item in premiumItems" :key="item.id" cols="12" sm="6" md="3">
                             <v-card class="mx-auto item-card premium-card rounded-xl pt-6 pb-4" color="#1e293b"
-                                elevation="6">
+                                elevation="6" height="100%">
                                 <div class="text-center mb-4">
                                     <v-avatar size="80" :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
                                         class="elevation-4">
@@ -190,7 +190,8 @@ const basicItems = computed(() => [
     { id: 2, name: t('shopItems.racha.name'), cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: t('shopItems.racha.desc'), bgColor: 'rgba(24, 255, 255, 0.1)' },
     { id: 3, name: t('shopItems.dobleMonedas.name'), cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: t('shopItems.dobleMonedas.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 213, 79, 0.1)' },
     { id: 4, name: t('shopItems.doblePuntos.name'), cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: t('shopItems.doblePuntos.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 152, 0, 0.1)' },
-    { id: 5, name: t('shopItems.sabotageRay.name'), cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: t('shopItems.sabotageRay.desc'), limitacio: t('shopItems.sabotageRay.limit'), bgColor: 'rgba(124, 77, 255, 0.1)' }
+    { id: 5, name: t('shopItems.sabotageRay.name'), cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: t('shopItems.sabotageRay.desc'), limitacio: t('shopItems.sabotageRay.limit'), bgColor: 'rgba(124, 77, 255, 0.1)' },
+    { id: 6, name: t('shopItems.nameChange.name'), cat: 'items', price: 10000, icon: 'mdi-account-edit', color: 'green-accent-2', desc: t('shopItems.nameChange.desc'), bgColor: 'rgba(0, 255, 136, 0.1)' }
 ]);
 
 const premiumItems = computed(() => [

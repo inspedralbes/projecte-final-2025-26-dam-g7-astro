@@ -156,7 +156,7 @@
                   
                   <!-- Mostrar nivel y rango si existen (objetos enriquecidos) -->
                   <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
-                    {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ player.rank }}
+                    {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ getRankName(player.level) }}
                   </div>
 
                   <v-chip v-if="(player.username || player) === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
@@ -542,8 +542,8 @@ function getTitleKey(titleName) {
 }
 
 const getRankName = (level) => {
-    const rankIndex = Math.floor((level || 1) / 10);
-    return t(`friends.ranks.${rankIndex}`);
+    const index = Math.min(Math.floor(((level || 1) - 1) / 10), 14);
+    return t(`ranks.${index}`);
 };
 
 const matchResult = computed(() => {
@@ -789,6 +789,7 @@ onMounted(() => {
 <style scoped>
 .lobby-container {
   min-height: 100%;
+  position: relative;
 }
 
 /* Mission Control Panel */
@@ -1016,15 +1017,15 @@ onMounted(() => {
 }
 
 .game-active-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background: #0b1421;
   z-index: 500;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  padding: 60px 20px;
+  align-items: center;
 }
 
 .game-content {
@@ -1036,7 +1037,7 @@ onMounted(() => {
 }
 
 .game-hud-container {
-  position: fixed;
+  position: absolute;
   top: 10px;
   left: 0;
   width: 100%;
@@ -1134,8 +1135,8 @@ onMounted(() => {
 }
 
 /* Resta de estils existents... */
-.match-result-overlay {
-  position: fixed;
+.round-result-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;

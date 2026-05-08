@@ -61,7 +61,7 @@
                 <div class="mb-4">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(friend.level)]" size="x-small">
-                    {{ friend.selectedTitle || getRankName(friend.level) }}
+                    {{ friend.selectedTitle ? t('shopItems.' + getTitleKey(friend.selectedTitle) + '.name') : getRankName(friend.level) }}
                   </v-chip>
                 </div>
 
@@ -79,7 +79,7 @@
                 <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
-                  <v-btn color="primary" variant="elevated" block class="action-btn font-weight-bold"
+                  <v-btn color="primary" variant="elevated" block class="font-weight-bold rounded-lg h-large"
                     :loading="challengeCooldowns[friend.user]" :disabled="challengeCooldowns[friend.user]"
                     @click="challengeFriend(friend.user)">
                     <v-icon start icon="mdi-sword-cross" size="18"></v-icon>
@@ -89,13 +89,13 @@
                     <v-badge :model-value="!!chatStore.unreadCounts[friend.user]" color="error"
                       :content="chatStore.unreadCounts[friend.user] > 9 ? '9+' : chatStore.unreadCounts[friend.user]"
                       floating class="flex-grow-1 msg-badge">
-                      <v-btn color="cyan-accent-2" variant="tonal" class="action-btn font-weight-bold w-100"
+                    <v-btn color="cyan-accent-2" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg h-large"
                         @click="startChat(friend)">
                         <v-icon start icon="mdi-message-text-outline" size="18"></v-icon>
-                        {{ $t('chat.send') }}
+                        {{ $t('friends.chat') }}
                       </v-btn>
                     </v-badge>
-                    <v-btn color="error" variant="tonal" class="action-btn px-0" style="min-width: 48px"
+                    <v-btn color="error" variant="tonal" class="px-0 rounded-lg h-large" style="min-width: 48px"
                       @click="removeFriend(friend.user)">
                       <v-icon icon="mdi-account-minus-outline" size="20"></v-icon>
                     </v-btn>
@@ -148,28 +148,42 @@
                     </div>
                   </div>
                   <div class="text-right">
-                    <v-chip size="x-small" color="cyan-accent-2" variant="tonal" class="font-weight-black">
-                      {{ $t('profile.level', { level: explorer.level || 1 }) }}
-                    </v-chip>
+                    <div class="text-overline text-cyan-accent-1 lh-1 mb-1">
+                      {{ $t('friends.level', { level: explorer.level || 1 }) }}
+                    </div>
+                    <div class="xp-mini-bar">
+                      <v-progress-linear :model-value="Math.random() * 100" color="cyan-accent-2" height="4" rounded></v-progress-linear>
+                    </div>
                   </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-4">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
-                    {{ explorer.selectedTitle || getRankName(explorer.level) }}
+                    {{ explorer.selectedTitle ? t('shopItems.' + getTitleKey(explorer.selectedTitle) + '.name') : getRankName(explorer.level) }}
                   </v-chip>
                 </div>
 
-                <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
+                <!-- Achievements Mini Showcase -->
+                <div class="section-label-mini mb-2">{{ $t('friends.activeAchievements') }}</div>
+                <div class="achievements-showcase mb-6">
+                  <div v-for="i in 3" :key="i" class="mini-medal-slot">
+                    <Medal v-if="getAchievement(explorer.selectedAchievements?.[i - 1])"
+                      :type="getAchievement(explorer.selectedAchievements[i - 1]).type"
+                      :icon="getAchievement(explorer.selectedAchievements[i - 1]).icon" :scale="0.25" />
+                    <v-icon v-else icon="mdi-shield-outline" color="rgba(255,255,255,0.05)" size="20"></v-icon>
+                  </div>
+                </div>
+
+                <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex gap-3">
-                  <v-btn color="white" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg"
+                  <v-btn color="white" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg h-large"
                     @click="openProfile(explorer)">
                     {{ $t('friends.viewProfile') }}
                   </v-btn>
                   <v-btn color="success" variant="elevated" :disabled="hasSentRequest(explorer.user)"
-                    class="flex-grow-1 font-weight-bold rounded-lg" @click="sendRequest(explorer.user)">
+                    class="flex-grow-1 font-weight-bold rounded-lg h-large" @click="sendRequest(explorer.user)">
                     <v-icon start :icon="hasSentRequest(explorer.user) ? 'mdi-check' : 'mdi-plus-thick'"></v-icon>
                     {{ hasSentRequest(explorer.user) ? $t('friends.sentReq') : $t('friends.recruit') }}
                   </v-btn>
@@ -212,23 +226,26 @@
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.user }}</h2>
                   <div class="d-flex align-center gap-2">
                     <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(requester.level)]" size="x-small">
-                      {{ requester.selectedTitle || getRankName(requester.level) }}
+                      {{ requester.selectedTitle ? t('shopItems.' + getTitleKey(requester.selectedTitle) + '.name') : getRankName(requester.level) }}
                     </v-chip>
-                    <span class="text-caption text-cyan-accent-1 font-weight-bold">· {{ $t('profile.level', {
-                      level:
-                      requester.level || 1 }) }}</span>
+                    <div class="text-overline text-cyan-accent-1 lh-1 mb-1">
+                      {{ $t('friends.level', { level: requester.level || 1 }) }}
+                    </div>
+                    <div class="xp-mini-bar">
+                      <v-progress-linear :model-value="Math.random() * 100" color="cyan-accent-2" height="4" rounded></v-progress-linear>
+                    </div>
                   </div>
                 </div>
 
-                <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
+                <v-divider class="mb-4 border-opacity-10" color="white"></v-divider>
 
                 <div class="d-flex flex-column gap-2">
                   <div class="d-flex gap-2">
-                    <v-btn color="success" variant="elevated" class="flex-grow-1 font-weight-bold rounded-lg"
+                    <v-btn color="success" variant="elevated" class="flex-grow-1 font-weight-bold rounded-lg h-large"
                       @click="acceptRequest(requester.user)">
                       {{ $t('friends.accept') }}
                     </v-btn>
-                    <v-btn color="error" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg"
+                    <v-btn color="error" variant="tonal" class="flex-grow-1 font-weight-bold rounded-lg h-large"
                       @click="rejectRequest(requester.user)">
                       {{ $t('friends.reject') }}
                     </v-btn>
@@ -272,11 +289,10 @@
           <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
           <div class="mb-6">
             <v-chip :class="['rank-chip font-weight-black px-6', getRankClass(profileDialog.user?.level)]" size="large">
-              {{ profileDialog.user?.selectedTitle || getRankName(profileDialog.user?.level) }}
+              {{ profileDialog.user?.selectedTitle ? t('shopItems.' + getTitleKey(profileDialog.user?.selectedTitle) + '.name') : getRankName(profileDialog.user?.level) }}
             </v-chip>
-            <div class="mt-2 text-overline text-grey-lighten-1">{{ $t('profile.level', {
-              level:
-                profileDialog.user?.level || 1 }) }}</div>
+            <div class="mt-2 text-overline text-cyan-accent-1">{{ $t('friends.level', {
+              level: profileDialog.user?.level || 1 }) }}</div>
           </div>
 
           <v-row class="bg-black-semi pa-4 rounded-lg mb-8" no-gutters>
@@ -369,6 +385,19 @@ const showMessage = (text, color = 'success') => {
   };
 };
 
+const ALL_TITLES = [
+  { id: 105, name: 'El Imparable', key: 'titleUnstoppable' },
+  { id: 106, name: 'Leyenda Galáctica', key: 'titleLegend' },
+  { id: 107, name: 'Destructor de Asteroides', key: 'titleDestroyer' }
+];
+
+function getTitleKey(titleName) {
+  if (!titleName) return '';
+  const cleanName = titleName.replace('Título: ', '');
+  const title = ALL_TITLES.find(t => t.name === cleanName);
+  return title ? title.key : '';
+}
+
 const getAchievement = (id) => {
   if (id === null || id === undefined) return null;
   return ACHIEVEMENTS.find(a => a.id === Number(id));
@@ -392,7 +421,7 @@ const isFriend = (username) => {
 // Rangos dinámicos (Cada 10 niveles)
 const getRankName = (level = 1) => {
   const index = Math.min(Math.floor((level - 1) / 10), 14);
-  return t(`friends.ranks.${index}`);
+  return t(`ranks.${index}`);
 };
 
 const getRankClass = (level = 1) => {
@@ -544,6 +573,12 @@ const rejectRequest = async (requesterName) => {
   opacity: 1;
 }
 
+.custom-tabs :deep(.v-tabs-slider) {
+  height: 3px !important;
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+}
+
 /* Card Styling */
 .detailed-card {
   background: rgba(13, 25, 48, 0.5) !important;
@@ -645,6 +680,14 @@ const rejectRequest = async (requesterName) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-radius: 4px !important;
+  max-width: 140px;
+}
+
+.rank-chip-mini :deep(.v-chip__content) {
+  display: block !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .avatar-container {
@@ -791,6 +834,10 @@ const rejectRequest = async (requesterName) => {
 
 .gap-3 {
   gap: 12px;
+}
+
+.h-large {
+  height: 48px !important;
 }
 
 .gap-4 {

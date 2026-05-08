@@ -216,7 +216,7 @@ const getPlayerAvatar = (username) => {
 
 <style scoped>
 .match-result-screen {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;

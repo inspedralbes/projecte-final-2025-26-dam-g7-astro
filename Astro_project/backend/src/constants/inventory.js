@@ -52,6 +52,16 @@ const INVENTORY_ITEMS = Object.freeze([
         stackable: true
     },
     {
+        id: 6,
+        name: 'Cambio de Nombre',
+        desc: 'Cambia tu apodo mostrado en el perfil. ¡El primero es gratis desde tu perfil!',
+        icon: 'mdi-account-edit',
+        color: 'green-accent-2',
+        cat: 'items',
+        price: 10000,
+        stackable: true
+    },
+    {
         id: 101,
         name: 'Pin Comandante',
         desc: 'Insignia dorada.',

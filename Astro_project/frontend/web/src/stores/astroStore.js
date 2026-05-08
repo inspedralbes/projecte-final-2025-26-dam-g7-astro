@@ -21,8 +21,11 @@ export const useAstroStore = defineStore('astro', () => {
     const parentId = computed({ get: () => sessionStore.parentId, set: (value) => sessionStore.setParentId(value) });
     const rank = computed({ get: () => sessionStore.rank, set: (value) => sessionStore.setRank(value) });
     const selectedTitle = computed({ get: () => sessionStore.selectedTitle, set: (value) => sessionStore.setSelectedTitle(value) });
+    const displayName = computed({ get: () => sessionStore.displayName, set: (value) => sessionStore.setDisplayName(value) });
+    const nameChangesCount = computed({ get: () => sessionStore.nameChangesCount, set: (value) => sessionStore.setNameChangesCount(value) });
     const avatar = computed({ get: () => sessionStore.avatar, set: (value) => sessionStore.setAvatar(value) });
     const token = computed({ get: () => sessionStore.token, set: (value) => sessionStore.setToken(value) });
+    const deletionScheduledAt = computed({ get: () => sessionStore.deletionScheduledAt, set: (value) => sessionStore.setDeletionScheduled(value) });
 
     const coins = computed({ get: () => progressStore.coins, set: (value) => progressStore.setCoins(value) });
     const partides = computed({ get: () => progressStore.partides, set: (value) => progressStore.setPartides(value) });
@@ -188,6 +191,34 @@ export const useAstroStore = defineStore('astro', () => {
     async function updateAchievements(achievements) { return achievementsStore.updateAchievements(achievements); }
     async function updatePlan(planType) { return sessionStore.updatePlan(planType); }
     async function changePassword(oldPassword, newPassword) { return sessionStore.changePassword(oldPassword, newPassword); }
+    async function scheduleAccountDeletion() { return sessionStore.scheduleAccountDeletion(); }
+    async function cancelAccountDeletion() { return sessionStore.cancelAccountDeletion(); }
+
+    async function changeDisplayName(newDisplayName) {
+        if (!user.value) return { success: false, message: 'No hay usuario' };
+        try {
+            const { requestJson } = await import('./astroShared');
+            const { response, data } = await requestJson('/api/user/change-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: user.value, newDisplayName })
+            });
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al cambiar apodo');
+            }
+
+            sessionStore.setDisplayName(data.displayName);
+            sessionStore.setNameChangesCount(data.nameChangesCount);
+            if (data.inventory) {
+                inventoryStore.setInventory(data.inventory);
+            }
+            return { success: true };
+        } catch (error) {
+            console.error('❌ Error cambiando apodo:', error);
+            return { success: false, message: error.message };
+        }
+    }
 
     async function useStreakFreeze() {
         const result = await progressStore.useStreakFreeze();
@@ -206,8 +237,8 @@ export const useAstroStore = defineStore('astro', () => {
 
 
     return {
-        user, plan, role, parentId, rank, selectedTitle, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
-        inventory, selectedAchievements, unlockedAchievements, avatar, token, lastActivity, lastGame,
+        user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
+        inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
         dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
         
         friendRequests, // EXPORTADO
@@ -222,6 +253,6 @@ export const useAstroStore = defineStore('astro', () => {
         buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
         addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, // EXPORTADAS
         connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
-        updatePlan, changePassword, useStreakFreeze, setCoins, setInventory
+        updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, changeDisplayName, useStreakFreeze, setCoins, setInventory
     };
 });

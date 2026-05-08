@@ -25,8 +25,11 @@ export const useSessionStore = defineStore('session', {
         parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
         selectedTitle: storageGetItem('astro_selected_title') || null,
+        displayName: storageGetItem('astro_display_name') || null,
+        nameChangesCount: Number(storageGetItem('astro_name_changes')) || 0,
         token: storageGetItem(STORAGE_KEYS.token) || null,
         lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
+        deletionScheduledAt: storageGetItem('astro_deletion_scheduled') || null,
         error: null
     }),
 
@@ -92,6 +95,16 @@ export const useSessionStore = defineStore('session', {
             persistNullable('astro_selected_title', this.selectedTitle);
         },
 
+        setDisplayName(displayName) {
+            this.displayName = displayName || null;
+            persistNullable('astro_display_name', this.displayName);
+        },
+
+        setNameChangesCount(count) {
+            this.nameChangesCount = count || 0;
+            storageSetItem('astro_name_changes', this.nameChangesCount);
+        },
+
         applyLoginPayload(data = {}) {
             const profile = data.profile || {};
             this.setUser(profile.name ?? this.user);
@@ -109,6 +122,20 @@ export const useSessionStore = defineStore('session', {
             if (profile.selectedTitle !== undefined) {
                 this.setSelectedTitle(profile.selectedTitle);
             }
+            if (profile.displayName !== undefined) {
+                this.setDisplayName(profile.displayName);
+            }
+            if (profile.nameChangesCount !== undefined) {
+                this.setNameChangesCount(profile.nameChangesCount);
+            }
+            if (profile.deletionScheduledAt !== undefined) {
+                this.setDeletionScheduled(profile.deletionScheduledAt);
+            }
+        },
+        
+        setDeletionScheduled(date) {
+            this.deletionScheduledAt = date || null;
+            persistNullable('astro_deletion_scheduled', this.deletionScheduledAt);
         },
 
         async registerTripulante(userData) {
@@ -276,6 +303,42 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
+        async scheduleAccountDeletion() {
+            if (!this.user) return { success: false, message: 'Usuario no identificado' };
+            try {
+                const { response, data } = await requestJson('/api/user/delete-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user })
+                });
+                if (!response.ok) throw new Error(data.message || 'Error al solicitar eliminación');
+                
+                this.setDeletionScheduled(data.deletionScheduledAt);
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Error solicitando eliminación:', error);
+                return { success: false, message: error.message };
+            }
+        },
+
+        async cancelAccountDeletion() {
+            if (!this.user) return { success: false, message: 'Usuario no identificado' };
+            try {
+                const { response, data } = await requestJson('/api/user/delete-cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user })
+                });
+                if (!response.ok) throw new Error(data.message || 'Error al cancelar eliminación');
+                
+                this.setDeletionScheduled(null);
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Error cancelando eliminación:', error);
+                return { success: false, message: error.message };
+            }
+        },
+
         clearSession() {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';
@@ -283,13 +346,18 @@ export const useSessionStore = defineStore('session', {
             this.role = null;
             this.parentId = null;
             this.avatar = 'Astronauta_blanc.jpg';
+            this.selectedTitle = null;
+            this.displayName = null;
+            this.nameChangesCount = 0;
             this.token = null;
+            this.deletionScheduledAt = null;
             this.error = null;
 
             // Limpiar ambos (Persistent y Session) por seguridad
             [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
              STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, 
-             STORAGE_KEYS.lastActivity, 'astro_selected_title'].forEach(key => {
+             STORAGE_KEYS.lastActivity, 'astro_selected_title', 'astro_display_name', 
+             'astro_name_changes', 'astro_deletion_scheduled'].forEach(key => {
                 storageRemoveItem(key, false); // Session
                 storageRemoveItem(key, true);  // Local
             });

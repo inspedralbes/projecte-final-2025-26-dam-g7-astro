@@ -121,40 +121,163 @@
             </v-btn>
         </div>
 
-        <!-- Popups -->
-        <v-dialog v-model="dialogDiarias" max-width="450">
-            <v-card class="glass-panel pa-6">
-                <div class="d-flex align-center justify-space-between mb-6">
-                    <h2 class="text-h5 text-white">{{ $t('rightSidebar.dailyMissions') }}</h2>
-                    <v-btn icon="mdi-close" variant="text" @click="dialogDiarias = false"></v-btn>
-                </div>
-                <v-list bg-color="transparent" class="pa-0">
-                    <v-card v-for="mission in dailyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ getMissionTranslation(mission, 'daily') }}</div>
-                        <div class="d-flex justify-space-between align-center">
-                            <span class="text-primary">{{ mission.progress }} / {{ mission.goal }}</span>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="primary" @click="claimReward(mission.id, 'daily')">{{ $t('rightSidebar.claimReward') }}</v-btn>
+        <!-- Daily Missions Popup -->
+        <v-dialog v-model="dialogDiarias" max-width="500" transition="dialog-bottom-transition">
+            <v-card class="mission-popup-card">
+                <div class="popup-header pa-6 pb-2">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                        <div class="d-flex align-center">
+                            <v-icon icon="mdi-calendar-check" color="primary" class="mr-3" size="large"></v-icon>
+                            <h2 class="text-h5 font-weight-black text-white">{{ $t('rightSidebar.dailyMissions') }}</h2>
                         </div>
-                    </v-card>
-                </v-list>
+                        <v-btn icon="mdi-close" variant="text" density="compact" @click="dialogDiarias = false" color="grey-lighten-1"></v-btn>
+                    </div>
+                    <p class="text-caption text-grey-lighten-1 mb-4">Completa estas tareas antes del próximo ciclo para obtener recompensas.</p>
+                </div>
+
+                <v-divider class="border-opacity-25" color="primary"></v-divider>
+
+                <div class="pa-6 pt-4">
+                    <div v-for="mission in dailyMissions" :key="mission.id" 
+                        class="mission-detail-item mb-4"
+                        :class="{ 'mission-item-completed': mission.completed, 'mission-item-claimed': mission.claimed }">
+                        
+                        <v-card class="glass-mission-card pa-4" elevation="0">
+                            <div class="d-flex align-start mb-3">
+                                <div class="mission-icon-container mr-4" :class="mission.type">
+                                    <v-icon :icon="getMissionIcon(mission.type)" :color="getMissionColor(mission.type)" size="24"></v-icon>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-space-between align-center mb-1">
+                                        <div class="text-subtitle-1 font-weight-bold text-white mission-title" 
+                                            :class="{ 'text-grey text-decoration-line-through': mission.claimed }">
+                                            {{ getMissionTranslation(mission, 'daily') }}
+                                        </div>
+                                        <div v-if="mission.reward" class="reward-tag d-flex align-center">
+                                            <v-icon icon="mdi-database" size="14" color="yellow-accent-3" class="mr-1"></v-icon>
+                                            <span class="text-caption font-weight-black text-yellow-accent-3">+{{ mission.reward }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-center justify-space-between mt-1">
+                                        <div class="text-caption" :class="mission.completed ? 'text-success font-weight-black' : 'text-primary'">
+                                            {{ mission.completed ? 'COMPLETADA' : `${mission.progress} / ${mission.goal}` }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <v-progress-linear
+                                :model-value="(mission.progress / mission.goal) * 100"
+                                :color="mission.completed ? 'success' : 'primary'"
+                                height="6"
+                                rounded
+                                bg-color="rgba(255,255,255,0.05)"
+                                bg-opacity="1"
+                                class="mb-2"
+                                :class="{ 'glow-success': mission.completed, 'glow-primary': !mission.completed && mission.progress > 0 }"
+                            ></v-progress-linear>
+
+                            <div v-if="mission.completed && !mission.claimed" class="d-flex justify-end mt-3">
+                                <v-btn 
+                                    color="primary" 
+                                    size="small" 
+                                    variant="elevated" 
+                                    class="claim-btn font-weight-black"
+                                    @click="claimReward(mission.id, 'daily')"
+                                    prepend-icon="mdi-gift"
+                                >
+                                    {{ $t('rightSidebar.claimReward') }}
+                                </v-btn>
+                            </div>
+                            <div v-else-if="mission.claimed" class="d-flex justify-end mt-3">
+                                <div class="text-caption text-success d-flex align-center font-weight-bold">
+                                    <v-icon icon="mdi-check-decagram" size="small" class="mr-1"></v-icon>
+                                    RECOMPENSA COBRADA
+                                </div>
+                            </div>
+                        </v-card>
+                    </div>
+                </div>
             </v-card>
         </v-dialog>
 
-        <v-dialog v-model="dialogMisiones" max-width="450">
-            <v-card class="glass-panel pa-6">
-                <div class="d-flex align-center justify-space-between mb-6">
-                    <h2 class="text-h5 text-white">{{ $t('rightSidebar.weeklyMissions') }}</h2>
-                    <v-btn icon="mdi-close" variant="text" @click="dialogMisiones = false"></v-btn>
-                </div>
-                <v-list bg-color="transparent" class="pa-0">
-                    <v-card v-for="mission in weeklyMissions" :key="mission.id" class="glass-card mb-3 pa-4">
-                        <div class="text-h6 mb-1" :class="{ 'text-grey text-decoration-line-through': mission.claimed }">{{ getMissionTranslation(mission, 'weekly') }}</div>
-                        <div class="d-flex justify-space-between align-center">
-                            <span class="text-secondary">{{ mission.progress }} / {{ mission.goal }}</span>
-                            <v-btn v-if="mission.completed && !mission.claimed" color="secondary" @click="claimReward(mission.id, 'weekly')">{{ $t('rightSidebar.claimReward') }}</v-btn>
+        <!-- Weekly Missions Popup -->
+        <v-dialog v-model="dialogMisiones" max-width="500" transition="dialog-bottom-transition">
+            <v-card class="mission-popup-card weekly">
+                <div class="popup-header pa-6 pb-2">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                        <div class="d-flex align-center">
+                            <v-icon icon="mdi-calendar-clock" color="secondary" class="mr-3" size="large"></v-icon>
+                            <h2 class="text-h5 font-weight-black text-white">{{ $t('rightSidebar.weeklyMissions') }}</h2>
                         </div>
-                    </v-card>
-                </v-list>
+                        <v-btn icon="mdi-close" variant="text" density="compact" @click="dialogMisiones = false" color="grey-lighten-1"></v-btn>
+                    </div>
+                    <p class="text-caption text-grey-lighten-1 mb-4">Tareas de largo alcance. Tienes toda la semana para completar estas operaciones.</p>
+                </div>
+
+                <v-divider class="border-opacity-25" color="secondary"></v-divider>
+
+                <div class="pa-6 pt-4">
+                    <div v-for="mission in weeklyMissions" :key="mission.id" 
+                        class="mission-detail-item mb-4"
+                        :class="{ 'mission-item-completed': mission.completed, 'mission-item-claimed': mission.claimed }">
+                        
+                        <v-card class="glass-mission-card pa-4" elevation="0">
+                            <div class="d-flex align-start mb-3">
+                                <div class="mission-icon-container mr-4" :class="mission.type">
+                                    <v-icon :icon="getMissionIcon(mission.type)" :color="getMissionColor(mission.type)" size="24"></v-icon>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-space-between align-center mb-1">
+                                        <div class="text-subtitle-1 font-weight-bold text-white mission-title" 
+                                            :class="{ 'text-grey text-decoration-line-through': mission.claimed }">
+                                            {{ getMissionTranslation(mission, 'weekly') }}
+                                        </div>
+                                        <div v-if="mission.reward" class="reward-tag d-flex align-center">
+                                            <v-icon icon="mdi-database" size="14" color="yellow-accent-3" class="mr-1"></v-icon>
+                                            <span class="text-caption font-weight-black text-yellow-accent-3">+{{ mission.reward }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-center justify-space-between mt-1">
+                                        <div class="text-caption" :class="mission.completed ? 'text-success font-weight-black' : 'text-secondary'">
+                                            {{ mission.completed ? 'COMPLETADA' : `${mission.progress} / ${mission.goal}` }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <v-progress-linear
+                                :model-value="(mission.progress / mission.goal) * 100"
+                                :color="mission.completed ? 'success' : 'secondary'"
+                                height="6"
+                                rounded
+                                bg-color="rgba(255,255,255,0.05)"
+                                bg-opacity="1"
+                                class="mb-2"
+                                :class="{ 'glow-success': mission.completed, 'glow-secondary': !mission.completed && mission.progress > 0 }"
+                            ></v-progress-linear>
+
+                            <div v-if="mission.completed && !mission.claimed" class="d-flex justify-end mt-3">
+                                <v-btn 
+                                    color="secondary" 
+                                    size="small" 
+                                    variant="elevated" 
+                                    class="claim-btn font-weight-black"
+                                    @click="claimReward(mission.id, 'weekly')"
+                                    prepend-icon="mdi-gift"
+                                >
+                                    {{ $t('rightSidebar.claimReward') }}
+                                </v-btn>
+                            </div>
+                            <div v-else-if="mission.claimed" class="d-flex justify-end mt-3">
+                                <div class="text-caption text-success d-flex align-center font-weight-bold">
+                                    <v-icon icon="mdi-check-decagram" size="small" class="mr-1"></v-icon>
+                                    RECOMPENSA COBRADA
+                                </div>
+                            </div>
+                        </v-card>
+                    </div>
+                </div>
             </v-card>
         </v-dialog>
 
@@ -238,6 +361,30 @@ const getMissionTranslation = (mission, period) => {
         return translated;
     }
     return mission.label || mission.text || (period === 'daily' ? t('rightSidebar.specialMission') : t('rightSidebar.weeklyMission'));
+}
+
+const getMissionIcon = (type) => {
+    const icons = {
+        'games': 'mdi-rocket-launch',
+        'coins': 'mdi-database',
+        'xp': 'mdi-star-circle',
+        'item': 'mdi-briefcase-variant',
+        'streak': 'mdi-fire',
+        'social': 'mdi-account-group'
+    }
+    return icons[type] || 'mdi-target'
+}
+
+const getMissionColor = (type) => {
+    const colors = {
+        'games': 'cyan-accent-2',
+        'coins': 'yellow-accent-3',
+        'xp': 'light-blue-accent-2',
+        'item': 'deep-purple-accent-2',
+        'streak': 'orange-accent-3',
+        'social': 'pink-accent-2'
+    }
+    return colors[type] || 'primary'
 }
 </script>
 
@@ -348,5 +495,104 @@ const getMissionTranslation = (mission, period) => {
 
 .missions-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* New Popup Styles */
+.mission-popup-card {
+    background: linear-gradient(135deg, #0d1930 0%, #050a14 100%) !important;
+    border: 1px solid rgba(0, 242, 255, 0.2) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+.mission-popup-card.weekly {
+    border-color: rgba(112, 0, 255, 0.3) !important;
+}
+
+.glass-mission-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-mission-card:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    transform: translateY(-2px);
+    border-color: rgba(0, 242, 255, 0.1) !important;
+}
+
+.weekly .glass-mission-card:hover {
+    border-color: rgba(112, 0, 255, 0.2) !important;
+}
+
+.mission-icon-container {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mission-icon-container.games { border-color: rgba(0, 242, 255, 0.2); background: rgba(0, 242, 255, 0.05); }
+.mission-icon-container.coins { border-color: rgba(255, 215, 0, 0.2); background: rgba(255, 215, 0, 0.05); }
+.mission-icon-container.xp { border-color: rgba(3, 169, 244, 0.2); background: rgba(3, 169, 244, 0.05); }
+.mission-icon-container.item { border-color: rgba(103, 58, 183, 0.2); background: rgba(103, 58, 183, 0.05); }
+.mission-icon-container.streak { border-color: rgba(255, 87, 34, 0.2); background: rgba(255, 87, 34, 0.05); }
+
+.mission-title {
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.reward-tag {
+    background: rgba(255, 215, 0, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.glow-primary {
+    filter: drop-shadow(0 0 3px rgba(0, 242, 255, 0.5));
+}
+
+.glow-secondary {
+    filter: drop-shadow(0 0 3px rgba(112, 0, 255, 0.5));
+}
+
+.glow-success {
+    filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.5));
+}
+
+.claim-btn {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem !important;
+    animation: pulse-button 2s infinite;
+}
+
+@keyframes pulse-button {
+    0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+}
+
+.weekly .claim-btn {
+    animation: pulse-button-secondary 2s infinite;
+}
+
+@keyframes pulse-button-secondary {
+    0% { box-shadow: 0 0 0 0 rgba(112, 0, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(112, 0, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(112, 0, 255, 0); }
+}
+
+.mission-item-claimed {
+    filter: grayscale(0.8);
+    opacity: 0.6;
 }
 </style>
