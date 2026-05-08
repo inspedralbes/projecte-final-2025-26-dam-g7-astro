@@ -25,6 +25,8 @@ export const useSessionStore = defineStore('session', {
         parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
         avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
         selectedTitle: storageGetItem('astro_selected_title') || null,
+        displayName: storageGetItem('astro_display_name') || null,
+        nameChangesCount: Number(storageGetItem('astro_name_changes')) || 0,
         token: storageGetItem(STORAGE_KEYS.token) || null,
         lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
         error: null
@@ -92,6 +94,16 @@ export const useSessionStore = defineStore('session', {
             persistNullable('astro_selected_title', this.selectedTitle);
         },
 
+        setDisplayName(displayName) {
+            this.displayName = displayName || null;
+            persistNullable('astro_display_name', this.displayName);
+        },
+
+        setNameChangesCount(count) {
+            this.nameChangesCount = count || 0;
+            storageSetItem('astro_name_changes', this.nameChangesCount);
+        },
+
         applyLoginPayload(data = {}) {
             const profile = data.profile || {};
             this.setUser(profile.name ?? this.user);
@@ -108,6 +120,12 @@ export const useSessionStore = defineStore('session', {
 
             if (profile.selectedTitle !== undefined) {
                 this.setSelectedTitle(profile.selectedTitle);
+            }
+            if (profile.displayName !== undefined) {
+                this.setDisplayName(profile.displayName);
+            }
+            if (profile.nameChangesCount !== undefined) {
+                this.setNameChangesCount(profile.nameChangesCount);
             }
         },
 
@@ -283,13 +301,16 @@ export const useSessionStore = defineStore('session', {
             this.role = null;
             this.parentId = null;
             this.avatar = 'Astronauta_blanc.jpg';
+            this.selectedTitle = null;
+            this.displayName = null;
+            this.nameChangesCount = 0;
             this.token = null;
             this.error = null;
 
             // Limpiar ambos (Persistent y Session) por seguridad
             [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
              STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, 
-             STORAGE_KEYS.lastActivity, 'astro_selected_title'].forEach(key => {
+             STORAGE_KEYS.lastActivity, 'astro_selected_title', 'astro_display_name', 'astro_name_changes'].forEach(key => {
                 storageRemoveItem(key, false); // Session
                 storageRemoveItem(key, true);  // Local
             });
