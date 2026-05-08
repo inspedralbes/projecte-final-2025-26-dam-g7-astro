@@ -155,7 +155,13 @@
         "passwordFieldsRequired": "Tots els camps són obligatoris",
         "passwordMustDiffer": "La nova contrasenya ha de ser diferent de l'actual",
         "passwordChangeSuccess": "Contrasenya actualitzada amb èxit!",
-        "passwordChangeError": "Error en actualitzar la contrasenya"
+        "passwordChangeError": "Error en actualitzar la contrasenya",
+        "changeDisplayName": "Canviar Apodo",
+        "newDisplayName": "Nou Apodo",
+        "firstChangeFree": "El teu primer canvi d'apodo és gratuït!",
+        "noNameChangeTokens": "No tens subministraments de Canvi de Nom.",
+        "goToShop": "Anar a la botiga",
+        "tokensAvailable": "Tens {count} subministraments de Canvi de Nom."
     },
     "friends": {
         "title": "Tripulació",
@@ -559,6 +565,10 @@
         "titleDestroyer": {
             "name": "Destructor d'Asteroides",
             "desc": "Etiqueta de text permanent."
+        },
+        "nameChange": {
+            "name": "Canvi de Nom",
+            "desc": "Canvia el teu apodo. El primer és gratis!"
         },
         "limit3": "* Només vàlid durant 3 partides"
     },

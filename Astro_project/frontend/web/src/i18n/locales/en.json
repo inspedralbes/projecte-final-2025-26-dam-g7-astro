@@ -156,7 +156,13 @@
         "passwordFieldsRequired": "All fields are required",
         "passwordMustDiffer": "The new password must be different from the current one",
         "passwordChangeSuccess": "Password updated successfully!",
-        "passwordChangeError": "Error updating password"
+        "passwordChangeError": "Error updating password",
+        "changeDisplayName": "Change Display Name",
+        "newDisplayName": "New Display Name",
+        "firstChangeFree": "Your first name change is free!",
+        "noNameChangeTokens": "You don't have Name Change supplies.",
+        "goToShop": "Go to shop",
+        "tokensAvailable": "You have {count} Name Change supplies."
     },
     "friends": {
         "title": "Crew",
@@ -562,6 +568,10 @@
         "titleDestroyer": {
             "name": "Asteroid Destroyer",
             "desc": "Permanent text tag."
+        },
+        "nameChange": {
+            "name": "Name Change",
+            "desc": "Change your display name. First one is free!"
         },
         "limit3": "* Only valid for 3 games"
     },

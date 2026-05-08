@@ -161,7 +161,9 @@ class MongoUserRepository extends UserRepository {
             gameHistory: user.gameHistory,
             totalGamesPlayed: user.totalGamesPlayed,
             totalPoints: user.totalPoints,
-            selectedTitle: user.selectedTitle
+            selectedTitle: user.selectedTitle,
+            displayName: user.displayName,
+            nameChangesCount: user.nameChangesCount
         };
     }
 }
