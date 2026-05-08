@@ -154,11 +154,22 @@
                   </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-4">
                   <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
                     {{ explorer.selectedTitle || getRankName(explorer.level) }}
                   </v-chip>
+                </div>
+
+                <!-- Achievements Mini Showcase -->
+                <div class="section-label-mini mb-2">{{ $t('friends.activeAchievements') }}</div>
+                <div class="achievements-showcase mb-6">
+                  <div v-for="i in 3" :key="i" class="mini-medal-slot">
+                    <Medal v-if="getAchievement(explorer.selectedAchievements?.[i - 1])"
+                      :type="getAchievement(explorer.selectedAchievements[i - 1]).type"
+                      :icon="getAchievement(explorer.selectedAchievements[i - 1]).icon" :scale="0.25" />
+                    <v-icon v-else icon="mdi-shield-outline" color="rgba(255,255,255,0.05)" size="20"></v-icon>
+                  </div>
                 </div>
 
                 <v-divider class="mb-6 border-opacity-10" color="white"></v-divider>
