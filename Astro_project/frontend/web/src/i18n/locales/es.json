@@ -264,6 +264,15 @@
         "endMission": "Fin de la Misión",
         "returnMenu": "VOLVER AL MENÚ"
     },
+    "streak": {
+        "loss_title": "¡Racha en Peligro!",
+        "loss_desc": "No has jugado en más de 24 horas y tu racha de {streak} días está a punto de desaparecer.",
+        "available_freezes": "Congeladores Disponibles",
+        "no_freezes": "No tienes congeladores, pero puedes conseguir uno en la tienda para proteger tu racha en el futuro.",
+        "recover_btn": "Usar Congelador",
+        "go_to_shop": "Ir a la Tienda",
+        "continue_anyway": "Continuar sin racha"
+    },
     "rightSidebar": {
         "pilotState": "ESTADO DEL PILOTO",
         "progress": "PROGRESO",
