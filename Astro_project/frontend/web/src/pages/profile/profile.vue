@@ -33,14 +33,15 @@
                                 <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
                                     <div class="flex-grow-1">
                                         <h1 class="user-name text-h3 font-weight-black text-white capitalize mb-2 d-flex align-center">
-                                            {{ user || $t('profile.guest') }}
+                                            {{ displayName || user || $t('profile.guest') }}
                                             <v-btn
                                                 icon="mdi-pencil-outline"
                                                 variant="text"
                                                 color="grey-lighten-1"
                                                 size="x-small"
                                                 class="ml-1 name-edit-btn"
-                                                title="Canviar nom (properament)"
+                                                :title="$t('profile.changeDisplayName')"
+                                                @click="openNameChangeDialog"
                                             ></v-btn>
                                         </h1>
                                         <div class="d-flex flex-wrap align-center ga-3">
@@ -426,6 +427,64 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+
+        <!-- Diálogo Cambio de Apodo -->
+        <v-dialog v-model="nameChangeDialog" max-width="500">
+            <v-card class="glass-popup pa-4">
+                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
+                    {{ $t('profile.changeDisplayName') }}
+                    <v-btn icon="mdi-close" variant="text" color="white" @click="nameChangeDialog = false"></v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-alert v-if="nameChangeError" type="error" variant="tonal" class="mb-4" density="compact">
+                        {{ nameChangeError }}
+                    </v-alert>
+                    
+                    <template v-if="nameChangesCount === 0">
+                        <v-alert type="info" variant="tonal" color="cyan-accent-3" class="mb-4" density="compact">
+                            {{ $t('profile.firstChangeFree') }}
+                        </v-alert>
+                    </template>
+                    <template v-else-if="nameChangeTokens === 0">
+                        <v-alert type="warning" variant="tonal" color="amber-accent-3" class="mb-4" density="compact">
+                            {{ $t('profile.noNameChangeTokens') }}
+                        </v-alert>
+                        <v-btn block color="amber-accent-3" variant="flat" to="/shop" class="font-weight-bold">
+                            {{ $t('profile.goToShop') }}
+                        </v-btn>
+                    </template>
+                    <template v-else>
+                        <v-alert type="info" variant="tonal" color="cyan-accent-3" class="mb-4" density="compact">
+                            {{ $t('profile.tokensAvailable', { count: nameChangeTokens }) }}
+                        </v-alert>
+                    </template>
+
+                    <v-form @submit.prevent="submitNameChange" v-if="nameChangesCount === 0 || nameChangeTokens > 0">
+                        <v-text-field
+                            v-model="newDisplayName"
+                            :label="$t('profile.newDisplayName')"
+                            variant="outlined"
+                            color="cyan-accent-3"
+                            density="comfortable"
+                            class="mb-6 mt-2"
+                        ></v-text-field>
+                        
+                        <v-btn
+                            block
+                            color="cyan-accent-3"
+                            height="50"
+                            rounded="lg"
+                            type="submit"
+                            :loading="nameChangeLoading"
+                            :disabled="!newDisplayName || newDisplayName === (displayName || user)"
+                            class="font-weight-black"
+                        >
+                            {{ $t('profile.saveChanges') }}
+                        </v-btn>
+                    </v-form>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -448,8 +507,12 @@ const titleDialog = ref(false)
 const historyDialog = ref(false)
 const showLogoutDialog = ref(false)
 const settingsDialog = ref(false)
+const nameChangeDialog = ref(false)
 const settingsLoading = ref(false)
+const nameChangeLoading = ref(false)
 const settingsError = ref('')
+const nameChangeError = ref('')
+const newDisplayName = ref('')
 const settingsSuccess = ref('')
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -460,7 +523,7 @@ const currentSlotIndex = ref(null)
 
 const { 
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
-    avatar, level, coins, xp, partides, inventory,
+    avatar, level, coins, xp, partides, inventory, displayName, nameChangesCount,
     gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
 } = storeToRefs(astroStore)
 
@@ -543,6 +606,12 @@ const formattedTitle = computed(() => {
         return t('shopItems.' + getTitleKey(selectedTitle.value) + '.name');
     }
     return getRankName(level.value);
+})
+
+const nameChangeTokens = computed(() => {
+    if (!inventory.value) return 0;
+    const item = inventory.value.find(i => Number(i.id) === 6);
+    return item ? Number(item.quantity) : 0;
 })
 
 const playerMetrics = computed(() => ({
@@ -644,6 +713,29 @@ function openSettingsDialog() {
 function closeSettingsDialog() {
     settingsDialog.value = false
     clearPasswordForm()
+}
+
+function openNameChangeDialog() {
+    newDisplayName.value = displayName.value || user.value || '';
+    nameChangeError.value = '';
+    nameChangeDialog.value = true;
+}
+
+async function submitNameChange() {
+    if (nameChangeLoading.value) return;
+    nameChangeError.value = '';
+    
+    if (!newDisplayName.value) return;
+    
+    nameChangeLoading.value = true;
+    const result = await astroStore.changeDisplayName(newDisplayName.value);
+    nameChangeLoading.value = false;
+    
+    if (result.success) {
+        nameChangeDialog.value = false;
+    } else {
+        nameChangeError.value = result.message || 'Error al cambiar apodo';
+    }
 }
 
 async function submitPasswordChange() {

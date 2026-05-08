@@ -150,7 +150,13 @@
         "passwordFieldsRequired": "Todos los campos son obligatorios",
         "passwordMustDiffer": "La nueva contraseña debe ser diferente a la actual",
         "passwordChangeSuccess": "¡Contraseña actualizada con éxito!",
-        "passwordChangeError": "Error al actualizar la contraseña"
+        "passwordChangeError": "Error al actualizar la contraseña",
+        "changeDisplayName": "Cambiar Apodo",
+        "newDisplayName": "Nuevo Apodo",
+        "firstChangeFree": "¡Tu primer cambio de apodo es gratis!",
+        "noNameChangeTokens": "No tienes suministros de Cambio de Nombre.",
+        "goToShop": "Ir a la tienda",
+        "tokensAvailable": "Tienes {count} suministros de Cambio de Nombre."
     },
     "friends": {
         "title": "Tripulación",
@@ -556,6 +562,10 @@
         "titleDestroyer": {
             "name": "Destructor de Asteroides",
             "desc": "Etiqueta de texto permanente."
+        },
+        "nameChange": {
+            "name": "Cambio de Nombre",
+            "desc": "Cambia tu apodo. ¡El primero es gratis!"
         },
         "limit3": "* Solo válido durante 3 partidas"
     },

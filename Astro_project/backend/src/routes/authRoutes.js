@@ -62,6 +62,8 @@ function registerAuthRoutes(app, {
                     missionsCompleted: user.missionsCompleted || 0,
                     dailyMissions: user.dailyMissions || [],
                     weeklyMissions: user.weeklyMissions || [],
+                    displayName: user.displayName || null,
+                    nameChangesCount: user.nameChangesCount || 0,
                     selectedTitle: user.selectedTitle || null
                 }
             });
