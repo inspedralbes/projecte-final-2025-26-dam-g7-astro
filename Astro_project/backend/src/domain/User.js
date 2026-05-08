@@ -40,6 +40,7 @@ class User {
         this.displayName = data.displayName || null;
         this.nameChangesCount = data.nameChangesCount || 0;
         this.selectedTitle = data.selectedTitle || null;
+        this.deletionScheduledAt = data.deletionScheduledAt || null;
     }
 
     getXPNeeded() {

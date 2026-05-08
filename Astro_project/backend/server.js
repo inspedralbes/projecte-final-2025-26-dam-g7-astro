@@ -259,3 +259,29 @@ app.post('/api/user/change-name', async (req, res) => {
     }
 });
 
+app.post('/api/user/delete-request', async (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ message: 'Usuario requerido.' });
+
+    try {
+        const deletionScheduledAt = await userServiceInstance.requestAccountDeletion(user);
+        res.json({ success: true, deletionScheduledAt });
+    } catch (error) {
+        console.error("❌ Error al solicitar eliminación:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.post('/api/user/delete-cancel', async (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ message: 'Usuario requerido.' });
+
+    try {
+        await userServiceInstance.cancelAccountDeletion(user);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("❌ Error al cancelar eliminación:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+

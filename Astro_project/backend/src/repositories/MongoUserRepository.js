@@ -163,7 +163,8 @@ class MongoUserRepository extends UserRepository {
             totalPoints: user.totalPoints,
             selectedTitle: user.selectedTitle,
             displayName: user.displayName,
-            nameChangesCount: user.nameChangesCount
+            nameChangesCount: user.nameChangesCount,
+            deletionScheduledAt: user.deletionScheduledAt
         };
     }
 }
