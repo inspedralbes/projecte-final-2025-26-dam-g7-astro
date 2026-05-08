@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center game-container">
+  <v-container fluid class="d-flex flex-column align-center justify-center game-container w-100" style="min-height: 800px">
     
     <!-- Capçalera -->
     <v-card width="100%" max-width="800" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
@@ -25,7 +25,7 @@
     <v-row v-if="!gameFinished" class="w-100 d-flex justify-center align-center" no-gutters>
       
       <!-- Estrella -->
-      <v-col cols="12" md="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-md-0">
+      <v-col cols="12" lg="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-lg-0">
         <div class="star-wrapper">
           <svg class="star-svg" viewBox="0 0 400 400">
             <!-- Polígons d'il·luminació interior (Puntes) -->
@@ -78,7 +78,7 @@
       </v-col>
 
       <!-- Panell de Pregunta i Resposta -->
-      <v-col cols="12" md="6" class="px-md-8">
+      <v-col cols="12" lg="6" class="px-lg-8">
         <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
           <div class="mb-4">
             <v-chip color="cyan" label class="mb-2 font-weight-bold">{{ $t('spelledRosco.definition') }}</v-chip>
@@ -272,7 +272,7 @@ const normalize = (str) => {
 
 // Initialization - pick 5 random
 onMounted(() => {
-    const shuffled = [...allLettersData].sort(() => Math.random() - 0.5);
+    const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5);
     roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
     startTimer();
 });
@@ -520,8 +520,9 @@ const getChipColor = (letter) => {
 
 .star-wrapper {
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1 / 1;
 }
 
 .star-svg {

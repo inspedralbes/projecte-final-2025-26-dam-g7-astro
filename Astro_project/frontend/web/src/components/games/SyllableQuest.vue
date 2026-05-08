@@ -1,6 +1,6 @@
 <template>
-  <v-container class="text-center d-flex justify-center align-center fill-height">
-    <v-card class="pa-6 bg-slate-900 border-amber game-shell" rounded="xl" width="100%" max-width="560">
+  <v-container fluid class="text-center d-flex justify-center align-center">
+    <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10" rounded="xl" width="100%" max-width="560">
       <div class="hud-row mb-6">
         <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
         <div class="text-subtitle-1 font-weight-bold" :class="timeLeft <= 10 ? 'text-red-accent-2' : 'text-cyan-accent-2'">

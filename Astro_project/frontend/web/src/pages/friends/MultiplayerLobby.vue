@@ -789,6 +789,7 @@ onMounted(() => {
 <style scoped>
 .lobby-container {
   min-height: 100%;
+  position: relative;
 }
 
 /* Mission Control Panel */
@@ -1016,15 +1017,15 @@ onMounted(() => {
 }
 
 .game-active-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background: #0b1421;
   z-index: 500;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  padding: 60px 20px;
+  align-items: center;
 }
 
 .game-content {
@@ -1036,7 +1037,7 @@ onMounted(() => {
 }
 
 .game-hud-container {
-  position: fixed;
+  position: absolute;
   top: 10px;
   left: 0;
   width: 100%;
@@ -1134,8 +1135,8 @@ onMounted(() => {
 }
 
 /* Resta de estils existents... */
-.match-result-overlay {
-  position: fixed;
+.round-result-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;

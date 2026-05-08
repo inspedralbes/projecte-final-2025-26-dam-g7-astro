@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
+  <v-container fluid class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
     
     <v-card v-if="!isPlaying && !isGameOver" width="100%" max-width="800" class="pa-10 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-timer-sand" color="cyan-accent-3" size="100" class="mb-6 animate-bounce"></v-icon>
@@ -42,10 +42,10 @@
       </v-card>
 
       <div 
-        class="play-area position-relative rounded-xl overflow-hidden w-100" 
+        class="play-area position-relative rounded-xl overflow-hidden w-100 mt-2" 
         :class="{ 'turbo-mode': isTurbo }"
         @click.self="missClick" 
-        style="max-width: 1200px; height: 75vh; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
+        style="max-width: 1200px; flex: 1; border: 2px solid rgba(255, 255, 255, 0.1);"
       >
         <div class="nebula-bg" v-if="isTurbo"></div>
         
