@@ -363,7 +363,7 @@
         </v-dialog>
 
         <!-- Diálogo Ajustes (Rediseñado) -->
-        <v-dialog v-model="settingsDialog" max-width="700" transition="dialog-bottom-transition">
+        <v-dialog v-model="settingsDialog" max-width="850" transition="dialog-bottom-transition">
             <v-card class="settings-modern-card glass-popup">
                 <div class="settings-layout">
                     <!-- Sidebar de Navegación -->
@@ -405,12 +405,6 @@
                                 class="nav-item danger-nav"
                             ></v-list-item>
                         </v-list>
-                        <v-spacer></v-spacer>
-                        <div class="pa-4">
-                            <v-btn block variant="tonal" color="white" @click="closeSettingsDialog" rounded="lg">
-                                {{ $t('general.cancel') }}
-                            </v-btn>
-                        </div>
                     </div>
 
                     <!-- Contenido Principal -->
@@ -569,16 +563,67 @@
                             <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('profile.dangerZone') }}</h3>
                             
                             <v-card variant="outlined" color="red-darken-3" class="pa-6 rounded-xl border-dashed">
-                                <div class="d-flex align-center mb-4">
-                                    <v-icon icon="mdi-alert-outline" color="red-accent-3" size="32" class="mr-3"></v-icon>
-                                    <span class="text-h6 font-weight-black text-red-accent-3">{{ $t('profile.deleteAccount') }}</span>
+                                <div v-if="!deletionScheduledAt">
+                                    <div class="d-flex align-center mb-4">
+                                        <v-icon icon="mdi-alert-outline" color="red-accent-3" size="32" class="mr-3"></v-icon>
+                                        <span class="text-h6 font-weight-black text-red-accent-3">{{ $t('profile.deleteAccount') }}</span>
+                                    </div>
+                                    <p class="text-body-2 text-grey-lighten-1 mb-6">
+                                        {{ $t('profile.deleteConfirmDesc') }}
+                                    </p>
+
+                                    <div class="text-caption text-grey-lighten-1 mb-2">
+                                        {{ $t('profile.deleteConfirmationLabel', { phrase: $t('profile.deleteConfirmationPhrase') }) }}
+                                    </div>
+                                    <v-text-field
+                                        v-model="deleteConfirmationInput"
+                                        :placeholder="$t('profile.deleteConfirmationPhrase')"
+                                        variant="outlined"
+                                        color="red-accent-3"
+                                        density="comfortable"
+                                        class="mb-4 delete-confirm-input"
+                                        hide-details="auto"
+                                        :error="deleteConfirmationInput.length > 0 && !isDeleteConfirmed"
+                                        :error-messages="deleteConfirmationInput.length > 0 && !isDeleteConfirmed ? [$t('profile.wrongPhrase')] : []"
+                                        @paste.prevent
+                                    ></v-text-field>
+
+                                    <v-btn 
+                                        block 
+                                        color="red-accent-4" 
+                                        variant="flat" 
+                                        height="48" 
+                                        class="font-weight-black"
+                                        :class="{ 'btn-blurred': !isDeleteConfirmed }"
+                                        :disabled="!isDeleteConfirmed"
+                                        :loading="deleteLoading"
+                                        @click="handleRequestDeletion"
+                                    >
+                                        {{ $t('profile.deleteAction') }}
+                                    </v-btn>
                                 </div>
-                                <p class="text-body-2 text-grey-lighten-1 mb-6">
-                                    {{ $t('profile.deleteConfirmDesc') }}
-                                </p>
-                                <v-btn block color="red-accent-4" variant="flat" height="48" class="font-weight-black">
-                                    {{ $t('profile.deleteAction') }}
-                                </v-btn>
+
+                                <div v-else>
+                                    <div class="d-flex align-center mb-4">
+                                        <v-icon icon="mdi-timer-sand" color="amber-accent-3" size="32" class="mr-3"></v-icon>
+                                        <span class="text-h6 font-weight-black text-amber-accent-3">{{ $t('profile.deleteScheduledTitle') }}</span>
+                                    </div>
+                                    <p class="text-body-2 text-grey-lighten-1 mb-6">
+                                        {{ $t('profile.deleteScheduledDesc', { date: formattedDeletionDate }) }}
+                                    </p>
+                                    <v-btn 
+                                        block 
+                                        color="cyan-accent-3" 
+                                        variant="flat" 
+                                        height="48" 
+                                        class="font-weight-black"
+                                        :loading="deleteLoading"
+                                        @click="handleCancelDeletion"
+                                    >
+                                        <v-icon start icon="mdi-undo" class="mr-2"></v-icon>
+                                        {{ $t('profile.cancelDeleteAction') }}
+                                    </v-btn>
+                                </div>
                             </v-card>
                         </div>
                     </div>
@@ -611,7 +656,9 @@ const settingsDialog = ref(false)
 const settingsTab = ref('profile')
 const nameChangeDialog = ref(false)
 const settingsLoading = ref(false)
+const deleteLoading = ref(false)
 const nameChangeLoading = ref(false)
+const deleteConfirmationInput = ref('')
 const settingsError = ref('')
 const nameChangeError = ref('')
 const newDisplayName = ref('')
@@ -626,7 +673,7 @@ const currentSlotIndex = ref(null)
 const { 
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements, 
     avatar, level, coins, xp, partides, inventory, displayName, nameChangesCount,
-    gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints
+    gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints, deletionScheduledAt
 } = storeToRefs(astroStore)
 
 const getRankName = (lvl = 1) => {
@@ -735,6 +782,16 @@ const allAchievements = computed(() => {
 
 const passwordsMatch = computed(() => newPassword.value === confirmNewPassword.value)
 
+const isDeleteConfirmed = computed(() => {
+    return deleteConfirmationInput.value.trim().toLowerCase() === t('profile.deleteConfirmationPhrase').toLowerCase()
+})
+
+const formattedDeletionDate = computed(() => {
+    if (!deletionScheduledAt.value) return ''
+    const date = new Date(deletionScheduledAt.value)
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+})
+
 const canSubmitPasswordChange = computed(() => {
     return Boolean(
         oldPassword.value &&
@@ -792,6 +849,28 @@ function changePlan() { router.push('/plans') }
 function selectAvatar(file) {
     astroStore.updateAvatar(file)
     avatarDialog.value = false
+}
+
+async function handleRequestDeletion() {
+    if (!isDeleteConfirmed.value || deleteLoading.value) return
+    deleteLoading.value = true
+    const result = await astroStore.scheduleAccountDeletion()
+    deleteLoading.value = false
+    if (result.success) {
+        deleteConfirmationInput.value = ''
+    } else {
+        settingsError.value = result.message
+    }
+}
+
+async function handleCancelDeletion() {
+    if (deleteLoading.value) return
+    deleteLoading.value = true
+    const result = await astroStore.cancelAccountDeletion()
+    deleteLoading.value = false
+    if (!result.success) {
+        settingsError.value = result.message
+    }
 }
 
 function selectTitle(titleName) {
@@ -909,7 +988,8 @@ watch(historyDialog, async (isOpen) => {
 }
 
 .settings-sidebar {
-    width: 240px;
+    width: 280px;
+    flex-shrink: 0;
     background: rgba(0, 0, 0, 0.3);
     border-right: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
@@ -963,6 +1043,17 @@ watch(historyDialog, async (isOpen) => {
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(10px); }
     to { opacity: 1; transform: translateX(0); }
+}
+
+.btn-blurred {
+    filter: blur(1px);
+    opacity: 0.6 !important;
+}
+
+.delete-confirm-input :deep(input) {
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
 
 @media (max-width: 600px) {

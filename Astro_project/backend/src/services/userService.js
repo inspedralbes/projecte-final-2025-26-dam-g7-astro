@@ -49,6 +49,27 @@ class UserService {
         // Per ara, usem la col·lecció directament via repo si l'exposem o afegim el mètode.
         return await this.userRepo.findAllExplorers();
     }
+
+    async requestAccountDeletion(username) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        const deletionDate = new Date();
+        deletionDate.setDate(deletionDate.getDate() + 30);
+        
+        user.deletionScheduledAt = deletionDate.toISOString();
+        await this.userRepo.update(user);
+        return user.deletionScheduledAt;
+    }
+
+    async cancelAccountDeletion(username) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        user.deletionScheduledAt = null;
+        await this.userRepo.update(user);
+        return true;
+    }
 }
 
 module.exports = UserService;

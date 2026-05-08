@@ -29,6 +29,7 @@ export const useSessionStore = defineStore('session', {
         nameChangesCount: Number(storageGetItem('astro_name_changes')) || 0,
         token: storageGetItem(STORAGE_KEYS.token) || null,
         lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
+        deletionScheduledAt: storageGetItem('astro_deletion_scheduled') || null,
         error: null
     }),
 
@@ -127,6 +128,14 @@ export const useSessionStore = defineStore('session', {
             if (profile.nameChangesCount !== undefined) {
                 this.setNameChangesCount(profile.nameChangesCount);
             }
+            if (profile.deletionScheduledAt !== undefined) {
+                this.setDeletionScheduled(profile.deletionScheduledAt);
+            }
+        },
+        
+        setDeletionScheduled(date) {
+            this.deletionScheduledAt = date || null;
+            persistNullable('astro_deletion_scheduled', this.deletionScheduledAt);
         },
 
         async registerTripulante(userData) {
@@ -294,6 +303,42 @@ export const useSessionStore = defineStore('session', {
             }
         },
 
+        async scheduleAccountDeletion() {
+            if (!this.user) return { success: false, message: 'Usuario no identificado' };
+            try {
+                const { response, data } = await requestJson('/api/user/delete-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user })
+                });
+                if (!response.ok) throw new Error(data.message || 'Error al solicitar eliminación');
+                
+                this.setDeletionScheduled(data.deletionScheduledAt);
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Error solicitando eliminación:', error);
+                return { success: false, message: error.message };
+            }
+        },
+
+        async cancelAccountDeletion() {
+            if (!this.user) return { success: false, message: 'Usuario no identificado' };
+            try {
+                const { response, data } = await requestJson('/api/user/delete-cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: this.user })
+                });
+                if (!response.ok) throw new Error(data.message || 'Error al cancelar eliminación');
+                
+                this.setDeletionScheduled(null);
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Error cancelando eliminación:', error);
+                return { success: false, message: error.message };
+            }
+        },
+
         clearSession() {
             this.user = null;
             this.plan = 'INDIVIDUAL_FREE';
@@ -305,12 +350,14 @@ export const useSessionStore = defineStore('session', {
             this.displayName = null;
             this.nameChangesCount = 0;
             this.token = null;
+            this.deletionScheduledAt = null;
             this.error = null;
 
             // Limpiar ambos (Persistent y Session) por seguridad
             [STORAGE_KEYS.token, STORAGE_KEYS.user, STORAGE_KEYS.rank, STORAGE_KEYS.role, 
              STORAGE_KEYS.parentId, STORAGE_KEYS.plan, STORAGE_KEYS.avatar, 
-             STORAGE_KEYS.lastActivity, 'astro_selected_title', 'astro_display_name', 'astro_name_changes'].forEach(key => {
+             STORAGE_KEYS.lastActivity, 'astro_selected_title', 'astro_display_name', 
+             'astro_name_changes', 'astro_deletion_scheduled'].forEach(key => {
                 storageRemoveItem(key, false); // Session
                 storageRemoveItem(key, true);  // Local
             });

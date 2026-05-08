@@ -172,9 +172,17 @@
         "interface": "INTERFACE",
         "sound": "SOUND",
         "music": "MUSIC",
-        "deleteConfirmTitle": "DELETE ACCOUNT PERMANENTLY?",
-        "deleteConfirmDesc": "This action cannot be undone. All your progress, achievements, and items will be lost in the stellar void.",
-        "deleteAction": "DELETE PERMANENTLY"
+        "deleteConfirmTitle": "DELETE ACCOUNT?",
+        "deleteConfirmDesc": "Your account will be scheduled for permanent deletion. You have a 30-day grace period to recover your progress if you change your mind.",
+        "deleteAction": "REQUEST DELETION",
+        "deleteConfirmationLabel": "Type '{phrase}' to confirm",
+        "deleteConfirmationPhrase": "Delete account",
+        "deleteScheduledTitle": "ACCOUNT DELETION IN PROGRESS",
+        "deleteScheduledDesc": "This account is scheduled for deletion on {date}. You can cancel this process right now.",
+        "cancelDeleteAction": "CANCEL DELETION",
+        "recoveryTitle": "ACCOUNT RECOVERY",
+        "recoverySuccess": "Your account has been successfully recovered! Welcome back, explorer.",
+        "wrongPhrase": "The phrase does not match exactly"
     },
     "friends": {
         "title": "Crew",
