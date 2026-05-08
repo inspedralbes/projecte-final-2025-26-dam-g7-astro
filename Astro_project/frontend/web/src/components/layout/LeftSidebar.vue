@@ -1,8 +1,8 @@
 <template>
     <v-navigation-drawer app permanent width="280" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
-        <div class="menu-header d-flex flex-column justify-center align-center py-12">
+        <div class="menu-header d-flex flex-column justify-center align-center py-8">
             <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
-            <v-img src="/logo/logo astro.png" width="80" height="80" class="my-2 logo-sidebar-img" contain></v-img>
+            <v-img src="/logo/logo astro final.png" width="50" height="50" class="my-2 logo-sidebar-img" contain></v-img>
             <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
         </div>
 
@@ -94,8 +94,7 @@ const menuItems = computed(() => {
 }
 
 .logo-sidebar-img {
-    mix-blend-mode: screen;
-    filter: brightness(1.2) contrast(1.1);
+    filter: brightness(0) invert(1);
 }
 
 .letter-spacing-2 {
