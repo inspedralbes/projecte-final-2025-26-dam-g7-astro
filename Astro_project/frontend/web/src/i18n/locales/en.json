@@ -162,7 +162,19 @@
         "firstChangeFree": "Your first name change is free!",
         "noNameChangeTokens": "You don't have Name Change supplies.",
         "goToShop": "Go to shop",
-        "tokensAvailable": "You have {count} Name Change supplies."
+        "tokensAvailable": "You have {count} Name Change supplies.",
+        "security": "SECURITY",
+        "preferences": "PREFERENCES",
+        "appearance": "APPEARANCE",
+        "dangerZone": "DANGER ZONE",
+        "deleteAccount": "DELETE ACCOUNT",
+        "language": "LANGUAGE",
+        "interface": "INTERFACE",
+        "sound": "SOUND",
+        "music": "MUSIC",
+        "deleteConfirmTitle": "DELETE ACCOUNT PERMANENTLY?",
+        "deleteConfirmDesc": "This action cannot be undone. All your progress, achievements, and items will be lost in the stellar void.",
+        "deleteAction": "DELETE PERMANENTLY"
     },
     "friends": {
         "title": "Crew",

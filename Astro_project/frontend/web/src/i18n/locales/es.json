@@ -156,7 +156,19 @@
         "firstChangeFree": "¡Tu primer cambio de apodo es gratis!",
         "noNameChangeTokens": "No tienes suministros de Cambio de Nombre.",
         "goToShop": "Ir a la tienda",
-        "tokensAvailable": "Tienes {count} suministros de Cambio de Nombre."
+        "tokensAvailable": "Tienes {count} suministros de Cambio de Nombre.",
+        "security": "SEGURIDAD",
+        "preferences": "PREFERENCIAS",
+        "appearance": "APARIENCIA",
+        "dangerZone": "ZONA DE PELIGRO",
+        "deleteAccount": "ELIMINAR CUENTA",
+        "language": "IDIOMA",
+        "interface": "INTERFAZ",
+        "sound": "SONIDO",
+        "music": "MÚSICA",
+        "deleteConfirmTitle": "¿ELIMINAR CUENTA PERMANENTEMENTE?",
+        "deleteConfirmDesc": "Esta acción no se puede deshacer. Todos tus progresos, logros y objetos se perderán en el vacío estelar.",
+        "deleteAction": "ELIMINAR PERMANENTEMENTE"
     },
     "friends": {
         "title": "Tripulación",
