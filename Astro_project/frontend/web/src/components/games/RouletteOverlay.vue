@@ -101,7 +101,7 @@ watch(() => props.show, (newVal) => {
 
 <style scoped>
 .roulette-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
