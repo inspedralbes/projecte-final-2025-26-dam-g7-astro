@@ -156,7 +156,7 @@
                   
                   <!-- Mostrar nivel y rango si existen (objetos enriquecidos) -->
                   <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
-                    {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ player.rank }}
+                    {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ getRankName(player.level) }}
                   </div>
 
                   <v-chip v-if="(player.username || player) === multiplayerStore.room.host" color="amber-accent-2" size="x-small" variant="flat" class="text-black font-weight-black px-3">
@@ -542,8 +542,8 @@ function getTitleKey(titleName) {
 }
 
 const getRankName = (level) => {
-    const rankIndex = Math.floor((level || 1) / 10);
-    return t(`friends.ranks.${rankIndex}`);
+    const index = Math.min(Math.floor(((level || 1) - 1) / 10), 14);
+    return t(`ranks.${index}`);
 };
 
 const matchResult = computed(() => {
