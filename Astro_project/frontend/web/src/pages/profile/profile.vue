@@ -361,128 +361,228 @@
                 </div>
             </v-card>
         </v-dialog>
-        <!-- Diálogo Ajustes (Contraseña) -->
-        <v-dialog v-model="settingsDialog" max-width="500">
-            <v-card class="glass-popup pa-4">
-                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    {{ $t('profile.accountSettings') }}
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="closeSettingsDialog"></v-btn>
-                </v-card-title>
-                <v-card-text>
-                    <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-4" density="compact">
-                        {{ settingsError }}
-                    </v-alert>
-                    <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-4" density="compact">
-                        {{ settingsSuccess }}
-                    </v-alert>
 
-                    <h4 class="text-overline text-grey-lighten-1 mb-4">{{ $t('profile.changePassword') }}</h4>
-                    
-                    <v-form @submit.prevent="submitPasswordChange">
-                        <v-text-field
-                            v-model="oldPassword"
-                            :label="$t('profile.oldPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            density="comfortable"
-                            class="mb-2"
-                        ></v-text-field>
-                        
-                        <v-text-field
-                            v-model="newPassword"
-                            :label="$t('profile.newPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            density="comfortable"
-                            class="mb-2"
-                        ></v-text-field>
-                        
-                        <v-text-field
-                            v-model="confirmNewPassword"
-                            :label="$t('profile.confirmNewPassword')"
-                            type="password"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            density="comfortable"
-                            class="mb-6"
-                            :error="confirmNewPassword && !passwordsMatch"
-                            :error-messages="confirmNewPassword && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
-                        ></v-text-field>
-                        
-                        <v-btn
-                            block
-                            color="cyan-accent-3"
-                            height="50"
-                            rounded="lg"
-                            type="submit"
-                            :loading="settingsLoading"
-                            :disabled="!canSubmitPasswordChange"
-                            class="font-weight-black"
-                        >
-                            {{ $t('profile.saveChanges') }}
-                        </v-btn>
-                    </v-form>
-                </v-card-text>
-            </v-card>
-        </v-dialog>
+        <!-- Diálogo Ajustes (Rediseñado) -->
+        <v-dialog v-model="settingsDialog" max-width="700" transition="dialog-bottom-transition">
+            <v-card class="settings-modern-card glass-popup">
+                <div class="settings-layout">
+                    <!-- Sidebar de Navegación -->
+                    <div class="settings-sidebar">
+                        <div class="sidebar-header pa-6">
+                            <h2 class="text-h6 font-weight-black text-white">{{ $t('profile.accountSettings') }}</h2>
+                        </div>
+                        <v-list bg-color="transparent" class="px-2">
+                            <v-list-item
+                                :active="settingsTab === 'profile'"
+                                @click="settingsTab = 'profile'"
+                                prepend-icon="mdi-account-outline"
+                                :title="$t('sidebar.profile')"
+                                rounded="lg"
+                                class="mb-1 nav-item"
+                            ></v-list-item>
+                            <v-list-item
+                                :active="settingsTab === 'security'"
+                                @click="settingsTab = 'security'"
+                                prepend-icon="mdi-shield-lock-outline"
+                                :title="$t('profile.security')"
+                                rounded="lg"
+                                class="mb-1 nav-item"
+                            ></v-list-item>
+                            <v-list-item
+                                :active="settingsTab === 'prefs'"
+                                @click="settingsTab = 'prefs'"
+                                prepend-icon="mdi-tune-variant"
+                                :title="$t('profile.preferences')"
+                                rounded="lg"
+                                class="mb-1 nav-item"
+                            ></v-list-item>
+                            <v-list-item
+                                :active="settingsTab === 'danger'"
+                                @click="settingsTab = 'danger'"
+                                prepend-icon="mdi-alert-octagon-outline"
+                                :title="$t('profile.dangerZone')"
+                                rounded="lg"
+                                class="nav-item danger-nav"
+                            ></v-list-item>
+                        </v-list>
+                        <v-spacer></v-spacer>
+                        <div class="pa-4">
+                            <v-btn block variant="tonal" color="white" @click="closeSettingsDialog" rounded="lg">
+                                {{ $t('general.cancel') }}
+                            </v-btn>
+                        </div>
+                    </div>
 
-        <!-- Diálogo Cambio de Apodo -->
-        <v-dialog v-model="nameChangeDialog" max-width="500">
-            <v-card class="glass-popup pa-4">
-                <v-card-title class="text-white font-weight-bold d-flex justify-space-between align-center">
-                    {{ $t('profile.changeDisplayName') }}
-                    <v-btn icon="mdi-close" variant="text" color="white" @click="nameChangeDialog = false"></v-btn>
-                </v-card-title>
-                <v-card-text>
-                    <v-alert v-if="nameChangeError" type="error" variant="tonal" class="mb-4" density="compact">
-                        {{ nameChangeError }}
-                    </v-alert>
-                    
-                    <template v-if="nameChangesCount === 0">
-                        <v-alert type="info" variant="tonal" color="cyan-accent-3" class="mb-4" density="compact">
-                            {{ $t('profile.firstChangeFree') }}
-                        </v-alert>
-                    </template>
-                    <template v-else-if="nameChangeTokens === 0">
-                        <v-alert type="warning" variant="tonal" color="amber-accent-3" class="mb-4" density="compact">
-                            {{ $t('profile.noNameChangeTokens') }}
-                        </v-alert>
-                        <v-btn block color="amber-accent-3" variant="flat" to="/shop" class="font-weight-bold">
-                            {{ $t('profile.goToShop') }}
-                        </v-btn>
-                    </template>
-                    <template v-else>
-                        <v-alert type="info" variant="tonal" color="cyan-accent-3" class="mb-4" density="compact">
-                            {{ $t('profile.tokensAvailable', { count: nameChangeTokens }) }}
-                        </v-alert>
-                    </template>
+                    <!-- Contenido Principal -->
+                    <div class="settings-content pa-8">
+                        <div class="d-flex justify-end position-absolute top-0 right-0 pa-4" style="z-index: 10;">
+                            <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="closeSettingsDialog"></v-btn>
+                        </div>
 
-                    <v-form @submit.prevent="submitNameChange" v-if="nameChangesCount === 0 || nameChangeTokens > 0">
-                        <v-text-field
-                            v-model="newDisplayName"
-                            :label="$t('profile.newDisplayName')"
-                            variant="outlined"
-                            color="cyan-accent-3"
-                            density="comfortable"
-                            class="mb-6 mt-2"
-                        ></v-text-field>
-                        
-                        <v-btn
-                            block
-                            color="cyan-accent-3"
-                            height="50"
-                            rounded="lg"
-                            type="submit"
-                            :loading="nameChangeLoading"
-                            :disabled="!newDisplayName || newDisplayName === (displayName || user)"
-                            class="font-weight-black"
-                        >
-                            {{ $t('profile.saveChanges') }}
-                        </v-btn>
-                    </v-form>
-                </v-card-text>
+                        <!-- SECCIÓN: PERFIL -->
+                        <div v-if="settingsTab === 'profile'" class="tab-pane">
+                            <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('sidebar.profile') }}</h3>
+                            
+                            <div class="d-flex align-center mb-8 profile-preview-box pa-4 rounded-xl">
+                                <v-avatar size="80" class="mr-4 border-cyan">
+                                    <v-img :src="`/${avatar}`"></v-img>
+                                </v-avatar>
+                                <div>
+                                    <div class="text-overline text-cyan-accent-3">{{ $t('profile.systemLabel') }} ID</div>
+                                    <div class="text-h6 text-white font-weight-bold">{{ user }}</div>
+                                </div>
+                            </div>
+
+                            <v-form @submit.prevent="submitNameChange">
+                                <div class="text-subtitle-2 text-grey-lighten-1 mb-2">{{ $t('profile.changeDisplayName') }}</div>
+                                <v-text-field
+                                    v-model="newDisplayName"
+                                    :label="$t('profile.newDisplayName')"
+                                    variant="outlined"
+                                    color="cyan-accent-3"
+                                    density="comfortable"
+                                    class="mb-4"
+                                    prepend-inner-icon="mdi-pencil-outline"
+                                ></v-text-field>
+
+                                <v-alert v-if="nameChangeError" type="error" variant="tonal" class="mb-4" density="compact">
+                                    {{ nameChangeError }}
+                                </v-alert>
+
+                                <div class="d-flex align-center ga-4">
+                                    <v-btn
+                                        color="cyan-accent-3"
+                                        height="48"
+                                        rounded="lg"
+                                        type="submit"
+                                        :loading="nameChangeLoading"
+                                        :disabled="!newDisplayName || newDisplayName === (displayName || user)"
+                                        class="font-weight-black flex-grow-1"
+                                    >
+                                        {{ $t('profile.saveChanges') }}
+                                    </v-btn>
+                                    
+                                    <div v-if="nameChangesCount === 0" class="text-caption text-cyan-accent-3 font-weight-bold">
+                                        {{ $t('profile.firstChangeFree') }}
+                                    </div>
+                                    <div v-else class="text-caption text-grey">
+                                        {{ $t('profile.tokensAvailable', { count: nameChangeTokens }) }}
+                                    </div>
+                                </div>
+                            </v-form>
+                        </div>
+
+                        <!-- SECCIÓN: SEGURIDAD -->
+                        <div v-if="settingsTab === 'security'" class="tab-pane">
+                            <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('profile.security') }}</h3>
+                            
+                            <v-alert v-if="settingsError" type="error" variant="tonal" class="mb-4" density="compact">
+                                {{ settingsError }}
+                            </v-alert>
+                            <v-alert v-if="settingsSuccess" type="success" variant="tonal" class="mb-4" density="compact">
+                                {{ settingsSuccess }}
+                            </v-alert>
+
+                            <v-form @submit.prevent="submitPasswordChange">
+                                <v-text-field
+                                    v-model="oldPassword"
+                                    :label="$t('profile.oldPassword')"
+                                    type="password"
+                                    variant="outlined"
+                                    color="cyan-accent-3"
+                                    density="comfortable"
+                                    class="mb-4"
+                                    prepend-inner-icon="mdi-lock-outline"
+                                ></v-text-field>
+                                
+                                <v-text-field
+                                    v-model="newPassword"
+                                    :label="$t('profile.newPassword')"
+                                    type="password"
+                                    variant="outlined"
+                                    color="cyan-accent-3"
+                                    density="comfortable"
+                                    class="mb-4"
+                                    prepend-inner-icon="mdi-lock-reset"
+                                ></v-text-field>
+                                
+                                <v-text-field
+                                    v-model="confirmNewPassword"
+                                    :label="$t('profile.confirmNewPassword')"
+                                    type="password"
+                                    variant="outlined"
+                                    color="cyan-accent-3"
+                                    density="comfortable"
+                                    class="mb-8"
+                                    prepend-inner-icon="mdi-lock-check-outline"
+                                    :error="confirmNewPassword && !passwordsMatch"
+                                    :error-messages="confirmNewPassword && !passwordsMatch ? [$t('profile.passwordMismatch')] : []"
+                                ></v-text-field>
+                                
+                                <v-btn
+                                    block
+                                    color="cyan-accent-3"
+                                    height="50"
+                                    rounded="lg"
+                                    type="submit"
+                                    :loading="settingsLoading"
+                                    :disabled="!canSubmitPasswordChange"
+                                    class="font-weight-black"
+                                >
+                                    {{ $t('profile.saveChanges') }}
+                                </v-btn>
+                            </v-form>
+                        </div>
+
+                        <!-- SECCIÓN: PREFERENCIAS -->
+                        <div v-if="settingsTab === 'prefs'" class="tab-pane">
+                            <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('profile.preferences') }}</h3>
+                            
+                            <div class="mb-8">
+                                <div class="text-overline text-cyan-accent-3 mb-2">{{ $t('profile.language') }}</div>
+                                <LanguageSelector />
+                            </div>
+
+                            <div class="mb-8">
+                                <div class="text-overline text-grey-lighten-1 mb-4">{{ $t('profile.appearance') }}</div>
+                                <div class="d-flex ga-4">
+                                    <v-switch
+                                        color="cyan-accent-3"
+                                        :label="$t('profile.interface') + ': Neon UI'"
+                                        model-value="true"
+                                        hide-details
+                                        density="compact"
+                                    ></v-switch>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="text-overline text-grey-lighten-1 mb-4">Mantenimiento de Datos</div>
+                                <v-btn variant="tonal" color="cyan-accent-3" block prepend-icon="mdi-sync" disabled>
+                                    Sincronizar Cloud Atlas
+                                </v-btn>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN: PELIGRO -->
+                        <div v-if="settingsTab === 'danger'" class="tab-pane">
+                            <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('profile.dangerZone') }}</h3>
+                            
+                            <v-card variant="outlined" color="red-darken-3" class="pa-6 rounded-xl border-dashed">
+                                <div class="d-flex align-center mb-4">
+                                    <v-icon icon="mdi-alert-outline" color="red-accent-3" size="32" class="mr-3"></v-icon>
+                                    <span class="text-h6 font-weight-black text-red-accent-3">{{ $t('profile.deleteAccount') }}</span>
+                                </div>
+                                <p class="text-body-2 text-grey-lighten-1 mb-6">
+                                    {{ $t('profile.deleteConfirmDesc') }}
+                                </p>
+                                <v-btn block color="red-accent-4" variant="flat" height="48" class="font-weight-black">
+                                    {{ $t('profile.deleteAction') }}
+                                </v-btn>
+                            </v-card>
+                        </div>
+                    </div>
+                </div>
             </v-card>
         </v-dialog>
     </v-container>
@@ -495,6 +595,7 @@ import { useAstroStore } from '@/stores/astroStore'
 import { storeToRefs } from 'pinia' 
 import { ACHIEVEMENTS } from '@/constants/achievements'
 import Medal from '@/components/achievements/Medal.vue'
+import LanguageSelector from '@/components/layout/LanguageSelector.vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -507,6 +608,7 @@ const titleDialog = ref(false)
 const historyDialog = ref(false)
 const showLogoutDialog = ref(false)
 const settingsDialog = ref(false)
+const settingsTab = ref('profile')
 const nameChangeDialog = ref(false)
 const settingsLoading = ref(false)
 const nameChangeLoading = ref(false)
@@ -707,6 +809,7 @@ function clearPasswordForm() {
 
 function openSettingsDialog() {
     clearPasswordForm()
+    settingsTab.value = 'profile'
     settingsDialog.value = true
 }
 
@@ -718,7 +821,8 @@ function closeSettingsDialog() {
 function openNameChangeDialog() {
     newDisplayName.value = displayName.value || user.value || '';
     nameChangeError.value = '';
-    nameChangeDialog.value = true;
+    settingsTab.value = 'profile'
+    settingsDialog.value = true
 }
 
 async function submitNameChange() {
@@ -793,13 +897,83 @@ watch(historyDialog, async (isOpen) => {
     width: 100%;
 }
 
-.profile-card {
-    background: #0a0c10 !important;
-    border: 1px solid rgba(0, 242, 255, 0.1);
-    border-radius: 20px !important;
-    overflow: hidden;
+.settings-modern-card {
+    min-height: 500px;
+    border: 1px solid rgba(0, 242, 255, 0.2);
+}
+
+.settings-layout {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.settings-sidebar {
+    width: 240px;
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-content {
+    flex-grow: 1;
+    background: rgba(0, 0, 0, 0.1);
     position: relative;
-    z-index: 2;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.nav-item {
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.nav-item:hover {
+    background: rgba(0, 242, 255, 0.05) !important;
+    opacity: 1;
+}
+
+.nav-item.v-list-item--active {
+    background: rgba(0, 242, 255, 0.1) !important;
+    color: #00f2ff !important;
+    opacity: 1;
+    border-right: 3px solid #00f2ff;
+}
+
+.danger-nav.v-list-item--active {
+    color: #ff5252 !important;
+    border-color: #ff5252;
+    background: rgba(255, 82, 82, 0.1) !important;
+}
+
+.profile-preview-box {
+    background: rgba(0, 242, 255, 0.05);
+    border: 1px solid rgba(0, 242, 255, 0.1);
+}
+
+.border-cyan {
+    border: 2px solid #00f2ff !important;
+}
+
+.tab-pane {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 600px) {
+    .settings-layout {
+        flex-direction: column;
+    }
+    .settings-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
 }
 
 .banner-section { position: relative; }
