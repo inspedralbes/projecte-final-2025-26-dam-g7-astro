@@ -166,9 +166,17 @@
         "interface": "INTERFAZ",
         "sound": "SONIDO",
         "music": "MÚSICA",
-        "deleteConfirmTitle": "¿ELIMINAR CUENTA PERMANENTEMENTE?",
-        "deleteConfirmDesc": "Esta acción no se puede deshacer. Todos tus progresos, logros y objetos se perderán en el vacío estelar.",
-        "deleteAction": "ELIMINAR PERMANENTEMENTE"
+        "deleteConfirmTitle": "¿ELIMINAR CUENTA?",
+        "deleteConfirmDesc": "Tu cuenta será programada para su eliminación permanente. Tienes un periodo de gracia de 30 días para recuperar tu progreso si te arrepientes.",
+        "deleteAction": "SOLICITAR ELIMINACIÓN",
+        "deleteConfirmationLabel": "Escribe '{phrase}' para confirmar",
+        "deleteConfirmationPhrase": "Eliminar cuenta",
+        "deleteScheduledTitle": "CUENTA EN PROCESO DE ELIMINACIÓN",
+        "deleteScheduledDesc": "Esta cuenta está programada para eliminarse el {date}. Puedes cancelar este proceso ahora mismo.",
+        "cancelDeleteAction": "CANCELAR ELIMINACIÓN",
+        "recoveryTitle": "RECUPERACIÓN DE CUENTA",
+        "recoverySuccess": "¡Tu cuenta ha sido recuperada con éxito! Bienvenido de nuevo, explorador.",
+        "wrongPhrase": "La frase no coincide exactamente"
     },
     "friends": {
         "title": "Tripulación",
