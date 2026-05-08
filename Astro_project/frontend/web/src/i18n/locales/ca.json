@@ -269,6 +269,15 @@
         "endMission": "Fi de la Missió",
         "returnMenu": "TORNAR AL MENÚ"
     },
+    "streak": {
+        "loss_title": "Ratxa en Perill!",
+        "loss_desc": "No has jugat en més de 24 hores i la teva ratxa de {streak} dies està a punt de desaparèixer.",
+        "available_freezes": "Congeladors Disponibles",
+        "no_freezes": "No tens congeladors, però en pots aconseguir un a la botiga per protegir la teva ratxa en el futur.",
+        "recover_btn": "Usar Congelador",
+        "go_to_shop": "Anar a la Botiga",
+        "continue_anyway": "Continuar sense ratxa"
+    },
     "rightSidebar": {
         "pilotState": "ESTAT DEL PILOT",
         "progress": "PROGRÉS",

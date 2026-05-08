@@ -270,6 +270,15 @@
         "endMission": "Mission End",
         "returnMenu": "RETURN TO MENU"
     },
+    "streak": {
+        "loss_title": "Streak in Danger!",
+        "loss_desc": "You haven't played in over 24 hours and your {streak}-day streak is about to disappear.",
+        "available_freezes": "Available Freezes",
+        "no_freezes": "You don't have any freezes, but you can get one in the shop to protect your streak in the future.",
+        "recover_btn": "Use Freeze",
+        "go_to_shop": "Go to Shop",
+        "continue_anyway": "Continue without streak"
+    },
     "rightSidebar": {
         "pilotState": "PILOT STATE",
         "progress": "PROGRESS",

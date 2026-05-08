@@ -11,15 +11,15 @@
         </div>
 
         <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">
-          {{ $t('streak.loss_title') || '¡Racha en Peligro!' }}
+          {{ $t('streak.loss_title') }}
         </h2>
         
         <p class="text-body-1 text-blue-grey-lighten-3 mb-6 px-4">
-          {{ $t('streak.loss_desc') || 'No has jugado en más de 24 horas y tu racha de ' + progressStore.previousStreak + ' días está a punto de desaparecer.' }}
+          {{ $t('streak.loss_desc', { streak: progressStore.previousStreak }) }}
         </p>
 
         <div v-if="progressStore.streakFreezes > 0" class="recovery-box pa-4 rounded-lg mb-6">
-          <div class="text-overline text-cyan-accent-2 mb-1">{{ $t('streak.available_freezes') || 'Congeladores Disponibles' }}</div>
+          <div class="text-overline text-cyan-accent-2 mb-1">{{ $t('streak.available_freezes') }}</div>
           <div class="d-flex align-center justify-center">
             <v-icon icon="mdi-snowflake" color="cyan-accent-2" class="mr-2"></v-icon>
             <span class="text-h5 font-weight-bold text-white">{{ progressStore.streakFreezes }}</span>
@@ -28,7 +28,7 @@
 
         <div v-else class="warning-box pa-4 rounded-lg mb-6">
           <p class="text-caption text-amber-accent-2 mb-0">
-            {{ $t('streak.no_freezes') || 'No tienes congeladores, pero puedes conseguir uno en la tienda para proteger tu racha en el futuro.' }}
+            {{ $t('streak.no_freezes') }}
           </p>
         </div>
 
@@ -44,7 +44,7 @@
             :loading="loading"
           >
             <v-icon icon="mdi-auto-fix" start></v-icon>
-            {{ $t('streak.recover_btn') || 'Usar Congelador' }}
+            {{ $t('streak.recover_btn') }}
           </v-btn>
 
           <v-btn
@@ -59,7 +59,7 @@
             @click="visible = false"
           >
             <v-icon icon="mdi-cart" start></v-icon>
-            {{ $t('streak.go_to_shop') || 'Ir a la Tienda' }}
+            {{ $t('streak.go_to_shop') }}
           </v-btn>
 
           <v-btn
@@ -68,7 +68,7 @@
             class="text-none"
             @click="handleClose"
           >
-            {{ $t('streak.continue_anyway') || 'Continuar sin racha' }}
+            {{ $t('streak.continue_anyway') }}
           </v-btn>
         </div>
       </div>
