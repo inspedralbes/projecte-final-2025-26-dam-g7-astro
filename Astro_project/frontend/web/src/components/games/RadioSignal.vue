@@ -98,23 +98,35 @@
       <div class="placeholder-sub">Informa al teu company per a que sintonitzi</div>
     </div>
 
-    <!-- MINI CHAT INTEGRADO -->
-    <div v-if="isMultiplayer" class="radio-mini-chat custom-scrollbar mb-2">
-      <div v-for="(m, i) in multiplayerStore.coopChatMessages" :key="i" class="chat-msg" :class="{ 'msg-me': m.from === astroStore.user }">
-        <span class="msg-sender">{{ m.from === astroStore.user ? 'TU' : 'COMP' }}:</span>
-        <span class="msg-text">{{ m.text }}</span>
-      </div>
-      <div class="chat-input-row">
-        <input v-model="chatInput" class="mini-chat-input" placeholder="Missatge..." @keyup.enter="sendRadioChat">
-        <button class="mini-chat-send" @click="sendRadioChat"><v-icon color="white" size="14">mdi-send</v-icon></button>
+    <div class="screen-housing">
+      <div class="screen-bezel">
+        <!-- MINI CHAT INTEGRADO EN PANTALLA -->
+        <div v-if="isMultiplayer" class="radio-mini-chat custom-scrollbar">
+          <div v-for="(m, i) in multiplayerStore.coopChatMessages" :key="i" class="chat-msg" :class="{ 'msg-me': m.from === astroStore.user }">
+            <span class="msg-sender">{{ m.from === astroStore.user ? 'TU' : 'COMP' }}:</span>
+            <span class="msg-text">{{ m.text }}</span>
+          </div>
+        </div>
+
+        <div class="wave-panels">
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <span class="screen-label">OSC-A</span>
+            <canvas ref="canvasA" class="wave-canvas" />
+            <div class="scanline" />
+          </div>
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <span class="screen-label">OSC-B</span>
+            <canvas ref="canvasB" class="wave-canvas" />
+            <div class="scanline" />
+          </div>
+        </div>
       </div>
     </div>
-
     <div class="input-housing">
       <!-- El escritor siempre ve el input, el oyente lo ve bloqueado -->
       <div v-if="isTuned || (isMultiplayer && subRole === 'writer')" class="input-active">
         <div class="input-header">
-          <button v-if="!isMultiplayer || subRole === 'listener'" class="replay-btn" @click="speakPhrase(1.0)">
+          <button v-if="!isMultiplayer || subRole === 'listener'" class="replay-btn" @click="() => { initAudio(); speakPhrase(1.0); }">
             <v-icon size="18">mdi-volume-high</v-icon>
           </button>
           <span class="input-label">
@@ -133,6 +145,10 @@
           <button v-if="!isMultiplayer || subRole === 'writer'" class="send-btn" @click="checkPhrase">
             SEND
           </button>
+          <!-- INPUT CHAT INTEGRADO -->
+          <div v-if="isMultiplayer" class="mini-chat-inline">
+             <input v-model="chatInput" class="mini-chat-input" placeholder="Chat..." @keyup.enter="sendRadioChat">
+          </div>
         </div>
         <!-- Feedback de lo que escribe el compañero -->
         <div v-if="isMultiplayer && subRole === 'listener' && partnerText" class="partner-typing-indicator">
@@ -153,7 +169,7 @@
     </v-snackbar>
 
     <v-snackbar v-model="showSuccess" color="success" location="top" timeout="2000">
-      ✓ SENYAL DESXIFRADA! +150 PTS | +15s
+      ✓ SENYAL DESXIFRADA! +500 PTS | +10s
     </v-snackbar>
   </div>
 </template>
@@ -200,7 +216,7 @@
   const userGuess = ref('')
   const isTuned = ref(false)
   const showError = ref(false)
-  const showSuccess = ref(false) // NUEVO: Feedback de éxito
+  const showSuccess = ref(false)
   const score = ref(0)
   const timeLeft = ref(60)
   const gameFinished = ref(false)
@@ -220,7 +236,6 @@
   watch(() => multiplayerStore.lastMessage, msg => {
     if (msg?.type === 'GAME_ACTION' && msg.action?.type === 'FREQ_SYNC' && subRole.value === 'writer') {
       currentFrequency.value = msg.action.frequency
-      // El escritor detecta automáticamente si el compañero ha sintonizado
       const dist = Math.abs(currentFrequency.value - targetFrequency.value)
       isTuned.value = dist < tuningThreshold
     }
@@ -237,11 +252,8 @@
     'LA NAU ESPACIAL DESPEGA A L\'ALBA',
     'BASE LUNAR REPORTA BON ESTAT',
   ]
-  // Phrases shuffled at start
-  const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5).slice(0, 4) // 4 frases per partida
-  const phraseIndex = ref(0) // Frase atual
+  const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5)
   const currentPhrase = ref(shuffledPhrases[0])
-  const totalPhrases = shuffledPhrases.length
   let speechRepeatTimer = null
 
   // ---- DIAL ----
@@ -256,9 +268,6 @@
     window.removeEventListener('touchmove', onRotating)
     window.removeEventListener('touchend', stopRotating)
   }
-
-  knobRotation.value = (currentFrequency.value / 100) * 360
-  currentKnobRotation = knobRotation.value
 
   function startRotating (e) {
     if (gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
@@ -321,7 +330,6 @@
     if (audioCtx) {
       if (audioCtx.state === 'suspended') await audioCtx.resume(); return
     }
-    // Solo inicializar audio si eres el oyente
     if (props.isMultiplayer && subRole.value !== 'listener') return
 
     try {
@@ -366,19 +374,12 @@
     const ctx = canvas.getContext('2d')
     const w = canvas.width, h = canvas.height
     ctx.clearRect(0, 0, w, h)
-
     ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5
-    for (let i = 0; i < w; i += 18) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke()
-    }
-    for (let i = 0; i < h; i += 18) {
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke()
-    }
+    for (let i = 0; i < w; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke() }
+    for (let i = 0; i < h; i += 18) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke() }
     ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
-
     const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time
-
     if (isTarget) {
       ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#FF9800'; ctx.setLineDash([])
       for (let x = 0; x < w; x++) {
@@ -386,9 +387,7 @@
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
       ctx.stroke()
-      if (isTuned.value) {
-        ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0
-      }
+      if (isTuned.value) { ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0 }
     } else {
       const dist = Math.abs(currentFrequency.value - targetFrequency.value)
       const prox = Math.max(0, 1 - (dist / 50))
@@ -397,86 +396,76 @@
         const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
         const c1 = Math.sin(x * 0.23 + time * 1.5) * 18
         const c2 = Math.sin(x * 0.07 + time * 0.7) * 12
-        const c3 = Math.sin(x * 0.35 + time * 2.3) * 8
         const noise = (Math.random() - 0.5) * 10 * (1 - prox)
-        const y = h / 2 + clean * prox + (c1 + c2 * 0.5 + c3 * 0.3 + noise) * (1 - prox)
+        const y = h / 2 + clean * prox + (c1 + c2 * 0.5 + noise) * (1 - prox)
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
       ctx.stroke()
-      if (prox > 0.8) {
-        ctx.shadowBlur = 10 * prox; ctx.shadowColor = '#00E5FF'; ctx.stroke(); ctx.shadowBlur = 0
-      }
+      if (prox > 0.8) { ctx.shadowBlur = 10 * prox; ctx.shadowColor = '#00E5FF'; ctx.stroke(); ctx.shadowBlur = 0 }
     }
   }
 
-  // ---- VOZ ----
   function startSpeechLoop () {
     if (!isTuned.value || gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
-    speakPhrase(1)
+    speakPhrase(1, false)
   }
 
   function stopSpeechLoop () {
-    if (speechRepeatTimer) {
-      clearTimeout(speechRepeatTimer)
-      speechRepeatTimer = null
-    }
+    if (speechRepeatTimer) { clearTimeout(speechRepeatTimer); speechRepeatTimer = null }
     window.speechSynthesis.cancel()
   }
 
-  function speakPhrase (volume = 1) {
-    if (!window.speechSynthesis || gameFinished.value || (props.isMultiplayer && subRole.value !== 'listener')) return
+  function speakPhrase (volume = 1, force = true) {
+    if (!window.speechSynthesis || gameFinished.value) return
+    // Evitar que ambos escuchen si no es necesario, pero si el usuario le da al botón explícitamente, debería sonar.
+    // Si es automático (force=false) solo el oyente escucha. Si es manual (clic), cualquiera escucha.
+    if (!force && props.isMultiplayer && subRole.value !== 'listener') return
 
-    // Cancel·lar qualsevol alocució prèvia immediatament
     window.speechSynthesis.cancel()
-    if (speechRepeatTimer) clearTimeout(speechRepeatTimer)
-
-    const u = new SpeechSynthesisUtterance(currentPhrase.value)
-
-    // Configurar veus
-    const voices = window.speechSynthesis.getVoices()
-    const v = voices.find(v => v.lang.includes('ca'))
-      || voices.find(v => v.lang.includes('es') && v.name.includes('Google'))
-      || voices.find(v => v.lang.includes('es')) || voices[0]
-
-    if (v) u.voice = v
-    u.lang = 'ca-ES'
-    u.rate = 0.9 // Una mica més ràpid per millorar la sensació de fluïdesa
-    u.pitch = 0.9
-    u.volume = volume
-
-    // Lògica de repetició: reduïm l'espera a 500ms
-    u.onend = () => {
-      if (isTuned.value && !gameFinished.value) {
-        speechRepeatTimer = setTimeout(() => {
-          if (isTuned.value && !gameFinished.value) speakPhrase(volume)
-        }, 500)
+    
+    // Timeout mínimo para asegurar que el cancel se procesa
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(currentPhrase.value)
+      u.lang = 'ca-ES'; u.rate = 0.85; u.pitch = 0.9; u.volume = volume
+      const voices = window.speechSynthesis.getVoices()
+      if (voices.length > 0) {
+        const v = voices.find(v => v.lang.includes('ca')) || voices.find(v => v.lang.includes('es')) || voices[0]
+        if (v) u.voice = v
       }
-    }
-
-    window.speechSynthesis.speak(u)
+      u.onend = () => {
+        if (!force && isTuned.value && !gameFinished.value) {
+          speechRepeatTimer = setTimeout(() => { if (isTuned.value && !gameFinished.value) speakPhrase(volume, false) }, 1500)
+        }
+      }
+      window.speechSynthesis.speak(u)
+    }, 100)
   }
 
-  // LÓGICA CORE CORREGIDA
-  function checkPhrase () {
-    if (gameFinished.value || (props.isMultiplayer && subRole.value === 'listener')) return
-    const norm = s => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
-
-    if (norm(userGuess.value) === norm(currentPhrase.value)) {
-      // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
-      score.value += 150
-      timeLeft.value += 15
-      userGuess.value = ''
-      showSuccess.value = true
-
-      // Si es multijugador, el servidor debería mandar la nueva frase/frecuencia
-      // De momento regeneramos localmente pero el servidor es la fuente de verdad al inicio
-      currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)]
+  function initGame (force = false) {
+    if (force) {
       targetFrequency.value = Math.random() * 90 + 5
-
-      // Reseteamos el estado para que vuelva a buscar
+      currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)]
+      userGuess.value = ''
       isTuned.value = false
       stopSpeechLoop()
       updateNoise()
+    }
+  }
+
+  function checkPhrase () {
+    if (gameFinished.value || (props.isMultiplayer && subRole.value === 'listener')) return
+    const norm = s => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+    if (norm(userGuess.value) === norm(currentPhrase.value)) {
+      score.value += 500
+      timeLeft.value = Math.min(60, timeLeft.value + 10)
+      showSuccess.value = true
+      
+      if (props.isMultiplayer && !isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'SIGNAL_SUCCESS' })
+      }
+
+      if (timeLeft.value > 0) initGame(true)
+      else finishGame()
     } else {
       showError.value = true
       userGuess.value = ''
@@ -484,476 +473,116 @@
   }
 
   function startTimer () {
-    if (roundTimer) {
-      clearInterval(roundTimer)
-    }
-
+    if (roundTimer) clearInterval(roundTimer)
+    let lastTick = Date.now()
     roundTimer = setInterval(() => {
       if (gameFinished.value) return
-      timeLeft.value = Math.max(0, timeLeft.value - 1)
-      if (timeLeft.value === 0) {
-        finishGame()
+      if (!props.isMultiplayer || isHost.value) {
+        const now = Date.now()
+        const delta = Math.floor((now - lastTick) / 1000)
+        if (delta >= 1) {
+          timeLeft.value = Math.max(0, timeLeft.value - delta)
+          lastTick += delta * 1000
+          
+          if (props.isMultiplayer && isHost.value) {
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          }
+
+          if (timeLeft.value === 0) finishGame()
+        }
       }
-    }, 1000)
+    }, 500)
   }
 
   function finishGame (silent = false) {
     if (gameFinished.value) return
-
-    if (props.isMultiplayer && !silent) {
-      multiplayerStore.submitRoundResult()
-      return
+    if (props.isMultiplayer && !silent && timeLeft.value === 0) {
+      multiplayerStore.submitRoundResult(); return
     }
-
-    gameFinished.value = true
-    isDragging = false
-    removeDragListeners()
-    if (roundTimer) {
-      clearInterval(roundTimer)
-      roundTimer = null
-    }
-    const reward = score.value + timeLeft.value
-    stopSpeechLoop()
-    stopAudio()
-    emit('game-over', reward)
+    gameFinished.value = true; if (roundTimer) { clearInterval(roundTimer); roundTimer = null }
+    stopSpeechLoop(); stopAudio()
+    emit('game-over', score.value + timeLeft.value)
   }
 
   function stopAudio () {
     stopSpeechLoop()
-    if (noiseNode) try {
-      noiseNode.stop()
-    } catch {}
+    if (noiseNode) try { noiseNode.stop() } catch {}
     if (audioCtx) audioCtx.close()
-    noiseNode = null
-    filterNode = null
-    gainNode = null
-    audioCtx = null
+    noiseNode = null; filterNode = null; gainNode = null; audioCtx = null
   }
 
   onMounted(() => {
-    // Sincronizar datos iniciales desde el servidor si están disponibles
+    if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => {}
     if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.radioData) {
       const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user]
       const data = multiplayerStore.room?.gameConfig?.radioData[teamId] || multiplayerStore.room?.gameConfig?.radioData['default']
-      if (data) {
-        targetFrequency.value = data.frequency
-        currentPhrase.value = data.phrase
-      }
+      if (data) { targetFrequency.value = data.frequency; currentPhrase.value = data.phrase }
     }
-    drawWaves()
-    startTimer()
+    drawWaves(); startTimer()
   })
 
-  // Listener para eventos multijugador (Mantenemos de HEAD)
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
-
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      // Alguien ganó la ronda, cerrar este juego formalmente
-      gameFinished.value = true
-      emit('game-over', score.value + timeLeft.value)
-    }
-
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'RADIO_CHAT') {
-      radioMessages.value.push({
-        text: msg.action.text,
-        sender: msg.action.sender,
-        isMe: msg.action.sender === astroStore.user,
-      })
-      if (radioMessages.value.length > 5) radioMessages.value.shift()
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') { gameFinished.value = true; emit('game-over', score.value + timeLeft.value) }
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'TIME_SYNC' && !isHost.value) timeLeft.value = msg.action.timeLeft
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SCORE_UPDATE' && !isHost.value) score.value = msg.action.score
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SIGNAL_SUCCESS' && isHost.value) {
+       score.value += 500
+       timeLeft.value = Math.min(60, timeLeft.value + 10)
+       initGame(true)
     }
   })
 
-  // Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
-  watch(score, newScore => {
-    if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'SCORE_UPDATE',
-        score: newScore,
-      })
-    }
-  })
+  watch(score, newScore => { if (props.isMultiplayer && isHost.value) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore }) })
 
   onUnmounted(() => {
-    isDragging = false
-    removeDragListeners()
-    if (roundTimer) clearInterval(roundTimer)
-    stopSpeechLoop()
-    stopAudio()
-    if (animationFrame) cancelAnimationFrame(animationFrame)
+    removeDragListeners(); if (roundTimer) clearInterval(roundTimer)
+    stopSpeechLoop(); stopAudio(); if (animationFrame) cancelAnimationFrame(animationFrame)
   })
 </script>
 
 <style scoped>
 .radio-cabinet {
-    max-width: 460px;
-    width: 95vw;
+    max-width: 460px; width: 95vw;
     background: linear-gradient(145deg, #2c2f36 0%, #1e2028 50%, #282b33 100%);
-    border: 3px solid #3d424d;
-    border-radius: 14px;
-    padding: 16px;
-    position: relative;
-    box-shadow:
-        0 8px 30px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        inset 0 -1px 0 rgba(0,0,0,0.3);
+    border: 3px solid #3d424d; border-radius: 14px; padding: 16px; position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.3);
 }
-
-.screw {
-    position: absolute;
-    width: 12px; height: 12px;
-    background: radial-gradient(circle at 40% 35%, #888 0%, #444 100%);
-    border-radius: 50%;
-    border: 1px solid #333;
-    z-index: 2;
-}
-.screw::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 8px; height: 1.5px;
-    background: #333;
-    transform: translate(-50%, -50%) rotate(45deg);
-}
-.screw-tl { top: 8px; left: 8px; }
-.screw-tr { top: 8px; right: 8px; }
-.screw-bl { bottom: 8px; left: 8px; }
-.screw-br { bottom: 8px; right: 8px; }
-
-.radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
-.brand-text {
-    font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
-    color: #ccc; letter-spacing: 6px; text-shadow: 0 0 8px rgba(200,200,200,0.15);
-}
-.brand-model { color: #00E5FF; font-size: 12px; letter-spacing: 2px; }
-.brand-subtitle { font-size: 8px; color: #555; letter-spacing: 4px; margin-top: 2px; }
-
-.session-hud {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.hud-pill {
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 999px;
-    color: #d3d7e0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    padding: 6px 12px;
-}
-
-.hud-pill-alert {
-    color: #ff6e6e;
-    border-color: #8b2d2d;
-}
-
-.screen-housing {
-    background: #111;
-    border: 2px solid #3a3f4b;
-    border-radius: 8px;
-    padding: 6px;
-    margin-bottom: 10px;
-}
-.screen-bezel {
-    background: #080a0e;
-    border: 1px solid #222;
-    border-radius: 4px;
-    padding: 4px;
-    overflow: hidden;
-}
+.hide-cursor { cursor: none; }
+.screw { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle at 40% 35%, #888 0%, #444 100%); border-radius: 50%; border: 1px solid #333; z-index: 2; }
+.screw::after { content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 1.5px; background: #333; transform: translate(-50%, -50%) rotate(45deg); }
+.screw-tl { top: 8px; left: 8px; } .screw-tr { top: 8px; right: 8px; } .screw-bl { bottom: 8px; left: 8px; } .screw-br { bottom: 8px; right: 8px; }
+.radio-brand { text-align: center; margin-bottom: 10px; }
+.brand-text { font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; color: #ccc; letter-spacing: 6px; }
+.brand-model { color: #00E5FF; font-size: 12px; }
+.brand-subtitle { font-size: 8px; color: #555; letter-spacing: 4px; }
+.session-hud { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.hud-pill { background: #15171c; border: 1px solid #2a2e36; border-radius: 999px; color: #d3d7e0; font-family: 'Courier New', monospace; font-size: 12px; padding: 6px 12px; }
+.hud-pill-alert { color: #ff6e6e; border-color: #8b2d2d; }
+.screen-housing { background: #111; border: 2px solid #3a3f4b; border-radius: 8px; padding: 6px; margin-bottom: 10px; }
+.screen-bezel { background: #080a0e; border: 1px solid #222; border-radius: 4px; padding: 4px; }
 .wave-panels { display: flex; gap: 6px; }
-.wave-screen {
-    flex: 1;
-    background: #040608;
-    border: 1px solid #1a1e26;
-    border-radius: 3px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.4s, box-shadow 0.4s;
-}
-.screen-synced { border-color: #00E5FF !important; box-shadow: inset 0 0 15px rgba(0,229,255,0.1); }
-.screen-label {
-    position: absolute; top: 3px; left: 6px;
-    font-size: 7px; color: #334; font-weight: bold; letter-spacing: 2px; z-index: 1;
-}
-canvas { display: block; width: 100%; height: auto; }
-.scanline {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
-    pointer-events: none;
-}
-
-.indicator-strip {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 6px 12px;
-    margin-bottom: 10px;
-}
-.freq-display { display: flex; align-items: baseline; gap: 4px; }
-.freq-value {
-    font-family: 'Courier New', monospace; font-size: 22px; font-weight: bold;
-    color: #00E5FF; text-shadow: 0 0 10px rgba(0,229,255,0.4);
-}
-.freq-unit { font-size: 10px; color: #456; letter-spacing: 1px; }
-.indicator-lights { display: flex; gap: 8px; }
-.indicator-dot { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s; }
-.dot-green { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
-.dot-red { background: #f44336; box-shadow: 0 0 8px #f44336; }
-.dot-off { background: #222; }
-.status-display { font-size: 10px; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-.status-sync { color: #4caf50; }
-.status-lost { color: #666; }
-
-.dial-housing {
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 10px 14px 14px;
-    margin-bottom: 10px;
-}
-.dial-markings {
-    position: relative; height: 14px; margin-bottom: 4px;
-}
-.dial-mark {
-    position: absolute; transform: translateX(-50%);
-    font-size: 8px; color: #444; font-family: 'Courier New', monospace;
-}
-.dial-track {
-    position: relative; height: 6px;
-    background: #222; border-radius: 3px;
-    margin-bottom: 12px; border: 1px solid #333;
-}
-.dial-indicator {
-    position: absolute; top: -3px;
-    width: 4px; height: 12px;
-    background: #f44336;
-    border-radius: 2px;
-    transform: translateX(-50%);
-    transition: left 0.05s linear;
-    box-shadow: 0 0 6px rgba(244,67,54,0.4);
-}
-.knob-row { display: flex; justify-content: center; }
-.knob-container {
-    width: 80px; height: 80px;
-    cursor: pointer; user-select: none;
-    position: relative;
-}
-.knob-body {
-    width: 100%; height: 100%;
-    background: radial-gradient(circle at 38% 32%, #d0d0d0 0%, #8a8a8a 60%, #666 100%);
-    border-radius: 50%;
-    border: 3px solid #444;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
-    transition: transform 0.05s linear;
-    position: relative;
-}
-.knob-line {
-    position: absolute; top: 6px; left: 50%;
-    width: 3px; height: 14px;
-    background: #222;
-    border-radius: 2px;
-    transform: translateX(-50%);
-}
-
-.input-housing {
-    min-height: 90px;
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 10px;
-}
-.input-active { animation: fadeUp 0.3s ease-out; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.input-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.replay-btn {
-    background: none; border: 1px solid #00E5FF; border-radius: 4px;
-    padding: 4px 6px; cursor: pointer; color: #00E5FF;
-    transition: all 0.2s;
-}
-.replay-btn:hover { background: rgba(0,229,255,0.1); }
-.input-label { font-size: 10px; color: #00E5FF; letter-spacing: 2px; font-weight: bold; font-family: 'Courier New', monospace; }
-.input-row { display: flex; gap: 6px; }
-.radio-input {
-    flex: 1; background: #0a0c10; border: 1px solid #2d3139;
-    border-radius: 4px; padding: 8px 10px;
-    color: #00E5FF; font-family: 'Courier New', monospace; font-size: 13px;
-    outline: none; transition: border-color 0.3s;
-}
-.radio-input:focus { border-color: #00E5FF; }
-.radio-input::placeholder { color: #334; }
-.send-btn {
-    background: #00E5FF; color: #111; border: none; border-radius: 4px;
-    padding: 8px 16px; font-weight: bold; font-size: 12px; letter-spacing: 1px;
-    cursor: pointer; transition: all 0.2s;
-}
-.send-btn:hover { background: #33ecff; box-shadow: 0 0 10px rgba(0,229,255,0.3); }
-.input-placeholder {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 70px; gap: 6px;
-    font-size: 10px; color: #333; letter-spacing: 2px; font-family: 'Courier New', monospace;
-}
-
-/* --- NUEVOS ESTILOS COOPERATIVOS Y ACCESIBILIDAD --- */
-
-.dyslexic-font {
-  font-family: 'OpenDyslexic', 'Courier New', monospace !important;
-}
-
-.access-toggle {
-  position: absolute;
-  top: 8px;
-  right: 40px;
-  background: #1a1e26;
-  border: 1px solid #333;
-  border-radius: 4px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.access-toggle:hover {
-  background: #2a2e36;
-  border-color: #00E5FF;
-}
-
-.role-guidance {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.guidance-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  animation: pulse 2s infinite;
-}
-.guidance-pill.listener { background: #1976d2; border: 1px solid #2196f3; }
-.guidance-pill.writer { background: #e65100; border: 1px solid #ff9800; }
-
-@keyframes pulse {
-  0% { opacity: 0.8; }
-  50% { opacity: 1; }
-  100% { opacity: 0.8; }
-}
-
-.writer-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 160px;
-  background: #0a0c10;
-  border: 2px dashed #1a1e26;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  color: #334;
-}
-.placeholder-text {
-  font-size: 14px;
-  font-weight: bold;
-  color: #00E5FF;
-  margin-top: 10px;
-  letter-spacing: 2px;
-}
-.placeholder-sub {
-  font-size: 10px;
-  color: #444;
-  margin-top: 4px;
-}
-
-.partner-typing-indicator {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  padding: 6px 10px;
-  background: rgba(0, 229, 255, 0.05);
-  border-radius: 4px;
-}
-
-.partner-preview {
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  color: #00E5FF;
-  font-style: italic;
-}
-
-.typing-dots {
-  display: flex;
-  gap: 3px;
-}
-.typing-dots span {
-  width: 4px;
-  height: 4px;
-  background: #00E5FF;
-  border-radius: 50%;
-  animation: typing 1.4s infinite;
-}
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typing {
-  0%, 100% { transform: translateY(0); opacity: 0.4; }
-  50% { transform: translateY(-4px); opacity: 1; }
-}
-
-/* RADIO MINI CHAT */
-.radio-mini-chat {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #3d424d;
-  border-radius: 4px;
-  padding: 6px;
-  max-height: 100px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.chat-msg {
-  font-size: 10px;
-  font-family: 'Courier New', monospace;
-  color: #aaa;
-}
-.msg-me { color: #00E5FF; }
-.msg-sender { font-weight: bold; margin-right: 4px; }
-.chat-input-row {
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-}
-.mini-chat-input {
-  flex: 1;
-  background: #0a0c10;
-  border: 1px solid #2d3139;
-  border-radius: 2px;
-  padding: 2px 6px;
-  color: #fff;
-  font-size: 10px;
-}
-.mini-chat-send {
-  background: #3d424d;
-  border: none;
-  border-radius: 2px;
-  padding: 0 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.wave-screen { flex: 1; background: #040608; border: 1px solid #1a1e26; border-radius: 3px; position: relative; overflow: hidden; }
+.screen-synced { border-color: #00E5FF !important; }
+.screen-label { position: absolute; top: 3px; left: 6px; font-size: 7px; color: #334; z-index: 1; }
+.scanline { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px); pointer-events: none; }
+.indicator-strip { display: flex; align-items: center; justify-content: space-between; background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 6px 12px; margin-bottom: 10px; }
+.freq-value { font-family: 'Courier New', monospace; font-size: 22px; color: #00E5FF; }
+.indicator-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-green { background: #4caf50; } .dot-red { background: #f44336; } .dot-off { background: #222; }
+.dial-housing { background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 10px 14px 14px; margin-bottom: 10px; }
+.dial-track { position: relative; height: 6px; background: #222; border-radius: 3px; margin-bottom: 12px; }
+.dial-indicator { position: absolute; top: -3px; width: 4px; height: 12px; background: #f44336; }
+.knob-container { width: 80px; height: 80px; cursor: pointer; position: relative; margin: 0 auto; }
+.knob-body { width: 100%; height: 100%; background: radial-gradient(circle at 38% 32%, #d0d0d0 0%, #8a8a8a 60%, #666 100%); border-radius: 50%; border: 3px solid #444; position: relative; }
+.knob-line { position: absolute; top: 6px; left: 50%; width: 3px; height: 14px; background: #222; transform: translateX(-50%); }
+.input-housing { min-height: 90px; background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 10px; }
+.radio-input { width: 100%; background: #000; border: 1px solid #333; color: #00E5FF; padding: 8px; font-family: 'Courier New', monospace; }
+.send-btn { background: #00E5FF; color: #000; border: none; padding: 8px 16px; font-weight: bold; cursor: pointer; }
+.input-placeholder { display: flex; align-items: center; justify-content: center; height: 70px; gap: 8px; color: #444; }
 </style>
+.radio-mini-chat { position: absolute; top: 10px; right: 10px; width: 120px; max-height: 60px; background: rgba(0,0,0,0.7); border: 1px solid #333; border-radius: 4px; padding: 4px; overflow-y: auto; font-size: 9px; z-index: 10; pointer-events: none; }
+.chat-msg { margin-bottom: 2px; }
+.msg-sender { color: #00E5FF; font-weight: bold; }
+.mini-chat-inline { margin-left: 8px; flex: 1; }
+.mini-chat-input { width: 100%; background: #080a0e; border: 1px solid #333; color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; }

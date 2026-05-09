@@ -1,5 +1,17 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center">
+  <v-container class="fill-height d-flex flex-column align-center justify-center" @mousemove="updateMouse" ref="gameArea" style="position: relative;">
+
+    <!-- Cursors remots -->
+    <div
+      v-if="props.isMultiplayer"
+      v-for="(cursor, id) in multiplayerStore.remoteCursors"
+      :key="'cursor-'+id"
+    >
+      <div v-if="id !== astroStore.user" class="remote-cursor" :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }">
+        <v-icon color="amber-accent-3" size="32" class="cursor-glow">mdi-cursor-default</v-icon>
+        <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold shadow-sm">{{ id }}</span>
+      </div>
+    </div>
     
     <!-- Capçalera del joc -->
     <v-card width="100%" max-width="600" class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
@@ -12,7 +24,7 @@
             <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">Temps: {{ timeLeft }}s</span>
           </div>
         </div>
-        <!-- Barra de progr├®s "Construcció" -->
+        <!-- Barra de progrés "Construcció" -->
         <div class="d-flex flex-column align-end">
           <span class="text-overline mb-1">Estat de la Base</span>
           <v-progress-linear
@@ -91,7 +103,7 @@
     <!-- Pantalla de Final de Joc -->
     <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-trophy" color="yellow-accent-4" size="80" class="mb-4"></v-icon>
-      <h2 class="text-h4 text-white mb-2">┬íConstrucció Completada!</h2>
+      <h2 class="text-h4 text-white mb-2">¡Construcció Completada!</h2>
       <p class="text-h5 text-cyan-accent-2 mb-2">Punts Totals: {{ score }}</p>
       <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps Restant: {{ timeLeft }}s</p>
       <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
@@ -113,6 +125,45 @@ import { useAstroStore } from '@/stores/astroStore';
 
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
+
+const gameArea = ref(null);
+
+function throttle(func, limit) {
+  let lastRan;
+  let lastFunc;
+  return function (...args) {
+    if (lastRan) {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(function () {
+        if (Date.now() - lastRan >= limit) {
+          func(...args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    } else {
+      func(...args);
+      lastRan = Date.now();
+    }
+  };
+}
+
+const sendMouseMove = throttle((x, y) => {
+  if (props.isMultiplayer && gameArea.value) {
+    multiplayerStore.sendGameAction({
+      type: 'MOUSE_MOVE',
+      x: Math.round((x / gameArea.value.$el.clientWidth) * 1000),
+      y: Math.round((y / gameArea.value.$el.clientHeight) * 1000),
+    });
+  }
+}, 15);
+
+function updateMouse(e) {
+  if (!gameArea.value || !props.isMultiplayer) return;
+  const rect = gameArea.value.$el.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  sendMouseMove(x, y);
+}
 
 const props = defineProps({
   isMultiplayer: {
@@ -142,7 +193,7 @@ const words = Object.freeze([
     { word: 'LLUM', hint: 'Viatja molt ràpid per l\'espai' },
     { word: 'OVNI', hint: 'Objecte Volador No Identificat' },
     { word: 'CEL', hint: 'El veus si mires amunt' },
-    { word: 'GAS', hint: 'Estat de la matèria a les nebuloses' },
+    { word: 'GAS', hint: 'Estat de la matèria a las nebulosas' },
     { word: 'FORAT', hint: 'Pot ser negre i engolir-ho tot' },
 
     // --- TEMA: TECNOLOGIA I INFORMÀTICA ---
@@ -235,6 +286,7 @@ const messageType = ref('info');
 const gameFinished = ref(false);
 const letterId = ref(0);
 const isRoundLocked = ref(false);
+let isUpdatingFromSync = false;
 const totalTime = 60;
 const timeLeft = ref(totalTime);
 let timerInterval = null;
@@ -287,8 +339,8 @@ const shuffleCurrentLetters = () => {
 
 const loadNextWord = () => {
   if (currentStep.value >= totalSteps.value) {
-    finishGame();
-    return;
+    // En lugar de terminar, reseteamos el progreso visual y seguimos
+    currentStep.value = 0;
   }
   
   if (!props.isMultiplayer || isHost.value) {
@@ -338,10 +390,10 @@ const checkAnswer = (fromRemote = false) => {
       const myMatchScore = multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0;
       const oppMatchScore = multiplayerStore.room?.gameConfig?.scores?.[opponentName.value] || 0;
       
-      // Si estas guanyant per m├®s de 100 punts a la partida general, bonus de "Superioritat"
+      // Si estas guanyant per més de 100 punts a la partida general, bonus de "Superioritat"
       if (myMatchScore - oppMatchScore > 100) {
         pointsGained += 50; 
-        message.value = "Correcte! +5s Temps i Bonus de Superioritat! ­ƒöÑ";
+        message.value = "Correcte! +5s Temps i Bonus de Superioritat! 🔥";
       } else {
         message.value = "Correcte! +5s Temps. Bloc afegit!";
       }
@@ -353,12 +405,12 @@ const checkAnswer = (fromRemote = false) => {
     currentStep.value++;
     messageType.value = "success";
     
-    // Notificar sabotatge/bonus (visualment al HUD del rival)
+    // Notificar éxito al compañero
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
-        type: 'SABOTAGE',
-        subtype: 'REDUCE_TIME',
-        amount: 2 // Restem 2s al rival per cada paraula encertada? 
+        type: 'WORD_SUCCESS',
+        currentStep: currentStep.value,
+        score: score.value
       });
     }
 
@@ -378,9 +430,11 @@ const finishGame = async (silent = false) => {
   if (gameFinished.value) return;
 
   if (props.isMultiplayer && !silent) {
-    gameFinished.value = true;
-    if (timerInterval) clearInterval(timerInterval);
-    multiplayerStore.submitRoundResult();
+    if (isHost.value) {
+      gameFinished.value = true;
+      if (timerInterval) clearInterval(timerInterval);
+      multiplayerStore.submitRoundResult();
+    }
     return;
   }
 
@@ -399,14 +453,28 @@ const startTimer = () => {
   if (timerInterval) {
     clearInterval(timerInterval);
   }
+  let lastTick = Date.now();
 
   timerInterval = setInterval(() => {
     if (gameFinished.value) return;
-    timeLeft.value = Math.max(0, timeLeft.value - 1);
-    if (timeLeft.value === 0) {
-      finishGame();
+    
+    if (!props.isMultiplayer || isHost.value) {
+      const now = Date.now();
+      const delta = Math.floor((now - lastTick) / 1000);
+      if (delta >= 1) {
+        timeLeft.value = Math.max(0, timeLeft.value - delta);
+        lastTick += delta * 1000;
+        
+        if (props.isMultiplayer && isHost.value) {
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value });
+        }
+
+        if (timeLeft.value === 0) {
+          finishGame();
+        }
+      }
     }
-  }, 1000);
+  }, 500);
 };
 
 // --- INICI ---
@@ -446,6 +514,7 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
 
   // SYNC ARRAY DRAGGING
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user) {
+    isUpdatingFromSync = true;
     scrambledLetters.value = msg.action.letters;
   }
 
@@ -453,10 +522,35 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
      checkAnswer(true);
   }
+
+    if (msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+      }
+      if (msg.action?.type === 'WORD_SUCCESS') {
+        currentStep.value = msg.action.currentStep;
+        score.value = msg.action.score;
+        message.value = "El company ha construït un bloc!";
+        messageType.value = "success";
+        setTimeout(() => { message.value = ""; }, 2000);
+      }
+    }
+
+  // SYNC PUNTUACIÓ I PROGRÉS (Del Host)
+  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SCORE_UPDATE' && !isHost.value) {
+    score.value = msg.action.score;
+    if (msg.action.currentStep !== undefined) {
+      currentStep.value = msg.action.currentStep;
+    }
+  }
 });
 
 // Enviar sync d'ordre
 watch(scrambledLetters, (newVal) => {
+  if (isUpdatingFromSync) {
+    isUpdatingFromSync = false;
+    return;
+  }
   if (props.isMultiplayer && !isRoundLocked.value) {
     multiplayerStore.sendGameAction({
       type: 'ORDER_SYNC',
@@ -467,10 +561,11 @@ watch(scrambledLetters, (newVal) => {
 
 // Notificar puntuación al servidor en modo multijugador
 watch(score, (newScore) => {
-  if (props.isMultiplayer) {
+  if (props.isMultiplayer && isHost.value) {
     multiplayerStore.sendGameAction({
       type: 'SCORE_UPDATE',
-      score: newScore
+      score: newScore,
+      currentStep: currentStep.value
     });
   }
 });
@@ -496,5 +591,20 @@ onUnmounted(() => {
 .border-cyan {
   border: 2px solid #00e5ff;
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10000;
+  will-change: left, top;
+}
+
+.cursor-glow {
+  filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
+}
+
+.hide-cursor {
+  cursor: none;
 }
 </style>

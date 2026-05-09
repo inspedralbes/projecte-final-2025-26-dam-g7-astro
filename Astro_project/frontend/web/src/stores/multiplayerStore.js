@@ -129,11 +129,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'JOIN_SUCCESS': {
-          this.room = data.room
+          this.room = { ...data.room }
           break
         }
         case 'ROOM_UPDATE': {
-          this.room = data.room
+          this.room = { ...data.room }
           // Actualizar subRole si existe la configuración
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
@@ -145,7 +145,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.remoteCursors = {} // Reset cursores
           this.partnerText = '' // Reset texto
           this.partnerEmojis = [] // Reset emojis
-          this.room = data.room
+          this.room = { ...data.room }
 
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
@@ -210,7 +210,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.remoteCursors = {} // Limpiar cursores
           this.partnerText = ''
           this.partnerEmojis = []
-          this.room = data.room
+          this.room = { ...data.room }
 
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
@@ -221,7 +221,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         }
         case 'MATCH_FINISHED': {
           this.returnedPlayers = [] // Reset al acabar partida
-          this.room = data.room
+          this.room = { ...data.room }
           this.lastMessage = data // Para que el lobby muestre el overlay de resultados
           console.log('¡PARTIDA TERMINADA! Ganador absoluto:', data.winner)
           break

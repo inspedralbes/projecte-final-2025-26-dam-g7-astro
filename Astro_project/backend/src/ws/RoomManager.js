@@ -28,11 +28,11 @@ class RoomManager {
         this.wss = wss;
         console.log("RoomManager inicializado con acceso a DB y WSS");
 
-        // (AÑADIDO) Garbage Collector: Limpieza de salas inactivas cada 30 minutos
+        // (AÑADIDO) Garbage Collector: Limpieza de salas inactivas cada 10 minutos
         setInterval(async () => {
             console.log("[RoomManager] Ejecutando Garbage Collector de salas...");
             const now = Date.now();
-            const inactivityLimit = 2 * 60 * 60 * 1000; // 2 horas
+            const inactivityLimit = 10 * 60 * 1000; // 10 minutos (AJUSTADO)
 
             for (const [roomId, room] of this.rooms.entries()) {
                 if (now - room.lastActivity > inactivityLimit) {
@@ -49,6 +49,10 @@ class RoomManager {
                     });
 
                     // Limpieza completa
+                    if (this.roundTimers.has(roomId)) {
+                        clearTimeout(this.roundTimers.get(roomId));
+                        this.roundTimers.delete(roomId);
+                    }
                     this.rooms.delete(roomId);
                     this.roundGameScores.delete(roomId);
                     this.roundFinishedPlayers.delete(roomId);
@@ -66,7 +70,7 @@ class RoomManager {
                 }
             }
             await this.syncGlobalRooms();
-        }, 30 * 60 * 1000); // 30 minutos
+        }, 60 * 1000); // Check cada minuto
     }
 
     addSession(user, ws) {
@@ -159,7 +163,7 @@ class RoomManager {
         return setTimeout(async () => {
             const room = this.rooms.get(roomId);
             if (room && room.status === 'LOBBY') {
-                console.log(`[Room ${roomId}] Auto-cleanup: sala eliminada per inactividad (>15 min al lobby).`);
+                console.log(`[Room ${roomId}] Auto-cleanup: sala eliminada per inactividad (>10 min al lobby).`);
                 this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'inactive' });
 
                 this.rooms.delete(roomId);
@@ -178,7 +182,7 @@ class RoomManager {
                     }
                 }
             }
-        }, 15 * 60 * 1000); // 15 minutos en milisegundos
+        }, 10 * 60 * 1000); // 10 minutos (AJUSTADO)
     }
 
     async createRoom(host, isPublic = true, maxPlayers = 4, initialConfig = {}) {
@@ -250,10 +254,26 @@ class RoomManager {
     }
 
     // Actualiza el timestamp de actividad de la sala (AÑADIDO)
+    // Actualiza el timestamp de actividad de la sala (AÑADIDO con Throttling para DB)
     updateRoomActivity(roomId) {
         const room = this.rooms.get(roomId);
         if (room) {
-            room.lastActivity = Date.now();
+            const now = Date.now();
+            room.lastActivity = now;
+            
+            // Solo actualizamos la DB si han pasado al menos 30 segundos desde la última actualización en DB
+            // para evitar saturar la base de datos con MOUSE_MOVE o acciones frecuentes.
+            if (!room.lastDbActivityUpdate || (now - room.lastDbActivityUpdate > 30000)) {
+                room.lastDbActivityUpdate = now;
+                if (this.getCollections) {
+                    try {
+                        const { rooms } = this.getCollections();
+                        rooms.updateOne({ id: roomId }, { $set: { lastActivity: now } }).catch(() => {});
+                    } catch (e) {
+                        // Ignorar errores de DB
+                    }
+                }
+            }
         }
     }
 
@@ -287,20 +307,20 @@ class RoomManager {
             room.idleTimer = this.createLobbyTimeout(roomId);
         }
 
-        if (this.getCollections) {
-            try {
-                const { rooms } = this.getCollections();
-                await rooms.updateOne({ id: roomId }, { $addToSet: { players: user } });
-                await this.syncGlobalRooms(); // (ASEGURAR) Broadcast para actualizar slots
-            } catch (error) {
-                console.error("Error actualizando sala en DB:", error);
-            }
-        }
-
         this.broadcastToRoom(roomId, {
             type: 'ROOM_UPDATE',
             room: this.getRoom(roomId)
         });
+
+        if (this.getCollections) {
+            try {
+                const { rooms } = this.getCollections();
+                await rooms.updateOne({ id: roomId }, { $addToSet: { players: user } });
+                await this.syncGlobalRooms(); // Broadcast para actualizar slots
+            } catch (error) {
+                console.error("Error actualizando sala en DB:", error);
+            }
+        }
         return { success: true, room };
     }
 
@@ -398,6 +418,7 @@ class RoomManager {
     async updateGameConfig(roomId, config) {
         const room = this.rooms.get(roomId);
         if (!room) return;
+        this.updateRoomActivity(roomId);
         room.gameConfig = { ...room.gameConfig, ...config };
 
         this.broadcastToRoom(roomId, {
@@ -419,47 +440,19 @@ class RoomManager {
             room.idleTimer = null;
         }
 
-        // Reset scores i estat
+        // Inicializar scores y roles
         room.gameConfig.scores = {};
-        room.gameConfig.teams = {}; // Equipos (red/blue)
-        room.gameConfig.subRoles = {}; // AÑADIDO: Roles específicos (listener/writer)
+        room.gameConfig.teams = {};
+        room.gameConfig.subRoles = {};
         room.gameConfig.currentRound = 0;
         room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
-        room.gameConfig.roundHistory = []; // Historial de rondas
-        
-        // Reset jocs jugats
+        room.gameConfig.roundHistory = [];
         this.playedGames.set(roomId, new Set());
 
-        // Seleccionar primer joc (sense repeticions)
         const firstGame = this.pickNextGame(roomId);
         room.gameConfig.currentGame = firstGame;
 
-        const playerArray = Array.from(room.players);
-        const isPairGame = ['RadioSignal', 'SpelledRosco', 'RhymeSquad', 'RadarScan'].includes(firstGame);
-        const half = Math.ceil(playerArray.length / 2);
-
-        playerArray.forEach((p, index) => {
-            room.gameConfig.scores[p] = 0;
-            
-            if (isPairGame) {
-                // Dividir estrictamente en parejas de 2 (ej: team-1, team-2, team-3...)
-                const pairIndex = Math.floor(index / 2);
-                room.gameConfig.teams[p] = `team-${pairIndex + 1}`;
-
-                if (firstGame === 'SpelledRosco') {
-                    room.gameConfig.subRoles[p] = (index % 2 === 0) ? ROSCO_ROLES.SENDER : ROSCO_ROLES.GUESSER;
-                } else if (firstGame === 'RhymeSquad') {
-                    room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'catcher' : 'sniper';
-                } else {
-                    // Para RadioSignal, RadarScan, usamos los roles tradicionales
-                    room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'listener' : 'writer';
-                }
-            } else {
-                // Lógica original: dividir toda la sala en dos grandes equipos mitad y mitad
-                room.gameConfig.teams[p] = (index < half) ? 'red' : 'blue';
-                room.gameConfig.subRoles[p] = null;
-            }
-        });
+        this.assignRoles(roomId, firstGame, false);
 
         this.broadcastToRoom(roomId, {
             type: 'MATCH_STARTING',
@@ -479,6 +472,38 @@ class RoomManager {
         played.add(game);
         this.playedGames.set(roomId, played);
         return game;
+    }
+
+    assignRoles(roomId, gameName, rotate = false) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+
+        const playerArray = Array.from(room.players);
+        const isPairGame = ['RadioSignal', 'SpelledRosco', 'RhymeSquad', 'RadarScan'].includes(gameName);
+        const half = Math.ceil(playerArray.length / 2);
+
+        playerArray.forEach((p, index) => {
+            if (!room.gameConfig.scores[p]) room.gameConfig.scores[p] = 0;
+
+            if (isPairGame) {
+                const pairIndex = Math.floor(index / 2);
+                room.gameConfig.teams[p] = `team-${pairIndex + 1}`;
+
+                // Lógica de rotación: si rotate=true, invertimos el índice para cambiar el rol
+                const roleIndex = rotate ? (index + 1) : index;
+
+                if (gameName === 'SpelledRosco') {
+                    room.gameConfig.subRoles[p] = (roleIndex % 2 === 0) ? ROSCO_ROLES.SENDER : ROSCO_ROLES.GUESSER;
+                } else if (gameName === 'RhymeSquad') {
+                    room.gameConfig.subRoles[p] = (roleIndex % 2 === 0) ? 'catcher' : 'sniper';
+                } else {
+                    room.gameConfig.subRoles[p] = (roleIndex % 2 === 0) ? 'listener' : 'writer';
+                }
+            } else {
+                room.gameConfig.teams[p] = (index < half) ? 'red' : 'blue';
+                room.gameConfig.subRoles[p] = null;
+            }
+        });
     }
 
     async setRoomStatus(roomId, status) {
@@ -583,6 +608,7 @@ class RoomManager {
     async handlePlayerFinished(roomId, user) {
         const room = this.rooms.get(roomId);
         if (!room) return;
+        this.updateRoomActivity(roomId);
 
         let finished = this.roundFinishedPlayers.get(roomId);
         if (!finished) {
@@ -601,6 +627,7 @@ class RoomManager {
     async finishRound(roomId) {
         const room = this.rooms.get(roomId);
         if (!room || room.status !== 'PLAYING') return;
+        this.updateRoomActivity(roomId);
 
         // Cancelar timer si todavía está activo
         if (this.roundTimers.has(roomId)) {
@@ -665,6 +692,9 @@ class RoomManager {
                 const nextGame = this.pickNextGame(roomId);
                 currentRoom.gameConfig.currentGame = nextGame;
                 
+                // Rotar roles para el siguiente juego
+                this.assignRoles(roomId, nextGame, true);
+
                 this.broadcastToRoom(roomId, {
                     type: 'ROOM_UPDATE',
                     room: this.getRoom(roomId)
@@ -677,7 +707,10 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room) return;
 
-        this.updateRoomActivity(roomId);
+        // El movimiento del ratón no cuenta como actividad para evitar salas zombies (Requisito 10 min inactividad)
+        if (action.type !== 'MOUSE_MOVE') {
+            this.updateRoomActivity(roomId);
+        }
 
         // Retransmitir acciones de equipo (MOVIMIENTO, ONDA, ESCRITURA, EMOJIS, AVANCE)
         const teamSpecificActions = [
@@ -729,7 +762,7 @@ class RoomManager {
             });
         }
 
-        // AÑADIDO: Progreso cooperativo de SpelledRosco
+        // AÑADIDO: Progreso cooperativo de SpelledRosco (DESACTIVADO SWAP A PETICIÓN DEL USUARIO)
         if (action.type === 'ROSCO_PROGRESS_UPDATE') {
             const teamId = room.gameConfig.teams ? room.gameConfig.teams[user] : null;
             if (teamId) {
@@ -739,18 +772,10 @@ class RoomManager {
                 }
 
                 const progress = room.gameConfig.roscoProgress[teamId];
-                
-                // Solo disparamos el swap si avanzamos de la mitad o hay muchos errores
-                // (Para el test/demo usaremos 3 letras como mitad de 5)
-                const shouldSwap = (action.letterIndex >= 3 || action.errors >= 3) && !progress.swapped;
-                
                 progress.letterIndex = action.letterIndex;
                 progress.errors = action.errors;
-
-                if (shouldSwap) {
-                    progress.swapped = true;
-                    this.swapTeamRoles(roomId, teamId);
-                }
+                
+                // Ya no disparamos swapTeamRoles
             }
         }
 

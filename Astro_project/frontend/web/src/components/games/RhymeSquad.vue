@@ -10,18 +10,18 @@
     >
       <!-- AVISOS DE ROLES MULTIJUGADOR -->
       <div v-if="isMultiplayer && subRole === 'catcher'" class="mb-6 p-4 rounded-lg bg-green-darken-4">
-        <h2 class="text-h3 font-weight-black text-green-accent-3 mb-2">ERES EL RECOLECTOR</h2>
-        <p class="text-h5 text-white">¡Atrapa solo las palabras que rimen con la pista!</p>
+        <h2 class="text-h3 font-weight-black text-green-accent-3 mb-2">ETS EL RECOL·LECTOR</h2>
+        <p class="text-h5 text-white">¡Atrapa només les paraules que rimin amb la pista!</p>
       </div>
 
       <div v-if="isMultiplayer && subRole === 'sniper'" class="mb-6 p-4 rounded-lg bg-red-darken-4">
-        <h2 class="text-h3 font-weight-black text-red-accent-3 mb-2">ERES EL DESTRUCTOR</h2>
-        <p class="text-h5 text-white">¡Destruye las palabras que NO rimen para proteger a tu compañero!</p>
+        <h2 class="text-h3 font-weight-black text-red-accent-3 mb-2">ETS EL DESTRUCTOR</h2>
+        <p class="text-h5 text-white">¡Destrueix les paraules que NO rimin per protegir al company!</p>
       </div>
 
       <div v-if="isMultiplayer && !isHost" class="mt-8 text-center">
         <v-progress-circular color="cyan-accent-3" indeterminate size="32"></v-progress-circular>
-        <p class="text-h6 text-cyan-accent-3 mt-4">Esperando a que el Comandante inicie la misión...</p>
+        <p class="text-h6 text-cyan-accent-3 mt-4">Esperant que el Comandant iniciï la missió...</p>
       </div>
 
       <v-btn
@@ -34,7 +34,7 @@
         size="x-large"
         @click="handleStartClick"
       >
-        INICIAR MISIÓN
+        INICIAR MISSIÓ
       </v-btn>
     </v-card>
 
@@ -49,7 +49,7 @@
       >
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadrón Fonológico</h2>
+            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadró Fonològic</h2>
             <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
               <span class="font-weight-bold">Punts: {{ score }}</span>
               <span class="mx-3">|</span>
@@ -62,7 +62,7 @@
           </div>
 
           <div class="text-center px-10 target-box rounded-xl py-3">
-            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimas con:</div>
+            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimes amb:</div>
             <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget.word }}</div>
           </div>
 
@@ -123,21 +123,21 @@
       width="100%"
     >
       <v-icon class="mb-4" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" size="100" />
-      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Tiempo Agotado!' : '¡Misión Fallida!' }}</h2>
+      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Temps Agotat!' : '¡Missió Fallida!' }}</h2>
 
       <div class="d-flex justify-space-around my-8">
         <div class="text-center">
           <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
-          <div class="text-subtitle-1">Rimas Atrapadas</div>
+          <div class="text-subtitle-1">Rimes Atrapades</div>
         </div>
         <div class="text-center">
           <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
-          <div class="text-subtitle-1">Errors y Omisiones</div>
+          <div class="text-subtitle-1">Errors i Omissions</div>
         </div>
       </div>
 
-      <p class="text-h4 text-white mb-2">Puntuación Final: {{ score }}</p>
-      <p class="text-h6 text-grey-lighten-1 mb-8">Combo Máximo: x{{ maxCombo }}</p>
+      <p class="text-h4 text-white mb-2">Puntuació Final: {{ score }}</p>
+      <p class="text-h6 text-grey-lighten-1 mb-8">Combo Màxim: x{{ maxCombo }}</p>
 
       <v-btn
         color="cyan-accent-3"
@@ -148,11 +148,10 @@
         class="text-black font-weight-bold text-h6 block w-100"
         @click="emitExit"
       >
-        Obtener Recompensa
+        Obtenir Recompensa
       </v-btn>
     </v-card>
 
-    <!-- Overlay de Espera Multijugador -->
     <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
         <v-progress-circular class="mb-4" color="cyan-accent-3" indeterminate size="64" />
@@ -181,10 +180,9 @@
 
   const emit = defineEmits(['game-over'])
 
-  // ROLES COOPERATIVOS
-  const subRole = computed(() => multiplayerStore.subRole) // 'catcher' o 'sniper'
-  const remoteCursors = computed(() => multiplayerStore.remoteCursors)
+  const subRole = computed(() => multiplayerStore.subRole)
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const isWaitingForOthers = ref(false)
 
   function handleStartClick() {
     if (props.isMultiplayer && isHost.value) {
@@ -193,28 +191,14 @@
     startGame()
   }
 
-  function onMouseMove (e) {
-    if (!props.isMultiplayer || !isPlaying.value) return
-    const area = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - area.left) / area.width) * 100
-    const y = ((e.clientY - area.top) / area.height) * 100
-
-    multiplayerStore.sendGameAction({
-      type: 'MOUSE_MOVE',
-      x, y,
-    })
-  }
-
-  // DICCIONARIO ESTRUCTURADO
   const dictionary = [
-    { word: 'BOTÓN', ending: 'ÓN', rhymes: ['LEÓN', 'AVIÓN', 'CAMIÓN', 'BALÓN', 'MELÓN', 'RATÓN', 'CORAZÓN'], fakes: ['CASA', 'PERRO', 'MESA', 'GATO', 'LIBRO', 'SILLA', 'COCHE'] },
-    { word: 'CUNA', ending: 'UNA', rhymes: ['LUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'ACEITUNA', 'NINGUNA'], fakes: ['SOL', 'MAR', 'TIERRA', 'FUEGO', 'AIRE', 'AGUA', 'CIELO'] },
-    { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BAILAR', 'VOLAR', 'PENSAR', 'LLORAR', 'AMAR'], fakes: ['CORRER', 'DORMIR', 'VIVIR', 'REIR', 'COMER', 'BEBER', 'LEER'] },
-    { word: 'QUESO', ending: 'ESO', rhymes: ['HUESO', 'PESO', 'BESO', 'ESPESO', 'ACCESO', 'ILESO'], fakes: ['PAN', 'AGUA', 'VINO', 'LECHE', 'FRUTA', 'CARNE', 'SOPA'] },
-    { word: 'ESPEJO', ending: 'EJO', rhymes: ['CONEJO', 'CANGREJO', 'VIEJO', 'REFLEJO', 'CONSEJO'], fakes: ['CRISTAL', 'PARED', 'PUERTA', 'VENTANA', 'SUELO'] },
+    { word: 'BOTÓ', ending: 'Ó', rhymes: ['LLEÓ', 'AVIÓ', 'CAMIÓ', 'BALÓ', 'MELÓ', 'RATÓ', 'CORAZÓ'], fakes: ['CASA', 'GOS', 'TAULA', 'GAT', 'LLIBRE', 'CADIRA', 'COTXE'] },
+    { word: 'LLUNA', ending: 'UNA', rhymes: ['CUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'OLIVA', 'CAPUNA'], fakes: ['SOL', 'MAR', 'TERRA', 'FOC', 'AIRE', 'AIGUA', 'CEL'] },
+    { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BALLAR', 'VOLAR', 'PENSAR', 'PLORAR', 'AMAR'], fakes: ['CÓRRER', 'DORMIR', 'VIURE', 'RIURE', 'MENJAR', 'BEURE', 'LLEGIR'] },
+    { word: 'FORMATGE', ending: 'ATGE', rhymes: ['VIATGE', 'PAISATGE', 'MISSATGE', 'SALVATGE', 'CORATGE'], fakes: ['PA', 'AIGUA', 'VI', 'LLET', 'FRUITA', 'CARN', 'SOPA'] },
+    { word: 'MIRALL', ending: 'ALL', rhymes: ['TREBALL', 'RETRALL', 'VALL', 'REBULL', 'TALL'], fakes: ['CRISTAL', 'PARET', 'PORTA', 'FINESTRA', 'TERRA'] },
   ]
 
-  // ESTADOS
   const isPlaying = ref(false)
   const isGameOver = ref(false)
   const score = ref(0)
@@ -227,10 +211,9 @@
   const isTurbo = ref(false)
   const showTimeBonus = ref(false)
 
-  const currentTarget = ref(dictionary[0])
+  const currentTarget = ref(null)
   const activeWords = ref([])
 
-  // CONTROLES INTERNOS
   let gameLoopInterval = null
   let timerInterval = null
   let wordIdCounter = 0
@@ -254,17 +237,37 @@
     currentSpawnRate = 1200
     currentSpeed = 5
 
-    pickNewTarget()
-    gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
+    if (!props.isMultiplayer || isHost.value) {
+      pickNewTarget()
+      // Enviar target inicial inmediatamente
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
+      }
+      gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
+    }
 
+    let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (!isPlaying.value) return
-      timeLeft.value--
-      if (timeLeft.value <= 0) {
-        timeLeft.value = 0
-        endGame()
+      
+      if (!props.isMultiplayer || isHost.value) {
+        const now = Date.now()
+        const delta = Math.floor((now - lastTick) / 1000)
+        if (delta >= 1) {
+          timeLeft.value = Math.max(0, timeLeft.value - delta)
+          lastTick += delta * 1000
+          
+          if (props.isMultiplayer) {
+            multiplayerStore.sendGameAction({ type: 'RHYME_TIME_SYNC', timeLeft: timeLeft.value })
+          }
+
+          if (timeLeft.value <= 0) {
+            timeLeft.value = 0
+            endGame()
+          }
+        }
       }
-    }, 1000)
+    }, 500)
   }
 
   function pickNewTarget () {
@@ -274,34 +277,35 @@
 
   function spawnWord () {
     if (!isPlaying.value) return
+    if (props.isMultiplayer && !isHost.value) return
 
     let wordsToSpawn = 1
     if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2
     if (isTurbo.value && Math.random() < 0.25) wordsToSpawn = 3
 
-    const zones = [
-      { min: 5, max: 25 }, // Izquierda
-      { min: 35, max: 55 }, // Centro
-      { min: 65, max: 85 }, // Derecha
-    ]
+    const zones = [{ min: 5, max: 25 }, { min: 35, max: 55 }, { min: 65, max: 85 }]
     zones.sort(() => Math.random() - 0.5)
 
     for (let i = 0; i < wordsToSpawn; i++) {
       const isRhyme = Math.random() < 0.35
       const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes
       const wordText = wordList[Math.floor(Math.random() * wordList.length)]
-
       const targetZone = zones[i % zones.length]
       const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min
 
-      activeWords.value.push({
+      const newWord = {
         id: wordIdCounter++,
         text: wordText,
         isRhyme: isRhyme,
         status: 'falling',
         x: posX,
         speed: isTurbo.value ? currentSpeed * 0.75 : currentSpeed,
-      })
+      }
+      activeWords.value.push(newWord)
+
+      if (props.isMultiplayer && isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'RHYME_SPAWN_WORD', word: newWord })
+      }
     }
 
     if (currentSpawnRate > 500) {
@@ -315,23 +319,29 @@
   function catchWord (word) {
     if (!isPlaying.value || word.status !== 'falling') return
 
-    if (word.isRhyme) {
+    let isActionCorrect = false
+    
+    if (props.isMultiplayer) {
+      if (subRole.value === 'catcher') {
+        // El catcher debe atrapar rimas
+        isActionCorrect = word.isRhyme
+      } else if (subRole.value === 'sniper') {
+        // El sniper debe destruir fakes (no rimas)
+        isActionCorrect = !word.isRhyme
+      }
+    } else {
+      isActionCorrect = word.isRhyme
+    }
+
+    if (isActionCorrect) {
       word.status = 'correct'
       correctHits.value++
-
-      // MODIFICACIÓN: Sumar 1 segundo en lugar de 2
       timeLeft.value += 1
       triggerTimeBonusVisual()
-
-      const points = isTurbo.value ? 20 : 10
-      score.value += points
-      combo.value += 1
+      score.value += isTurbo.value ? 20 : 10
+      combo.value++
       if (combo.value > maxCombo.value) maxCombo.value = combo.value
-
-      if (combo.value >= 10 && !isTurbo.value) {
-        isTurbo.value = true
-      }
-
+      if (combo.value >= 10) isTurbo.value = true
       if (combo.value % 5 === 0) pickNewTarget()
     } else {
       word.status = 'incorrect'
@@ -339,28 +349,26 @@
       takeDamage()
     }
 
-    setTimeout(() => {
-      removeWord(word.id, true)
-    }, 350)
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'RHYME_CATCH', id: word.id, status: word.status })
+    }
+
+    setTimeout(() => { removeWord(word.id, true) }, 350)
   }
 
   function triggerTimeBonusVisual () {
     showTimeBonus.value = true
     if (bonusTimeout) clearTimeout(bonusTimeout)
-    bonusTimeout = setTimeout(() => {
-      showTimeBonus.value = false
-    }, 500)
+    bonusTimeout = setTimeout(() => { showTimeBonus.value = false }, 500)
   }
 
   function removeWord (id, clicked) {
     const wordIndex = activeWords.value.findIndex(w => w.id === id)
     if (wordIndex !== -1) {
       const word = activeWords.value[wordIndex]
-
-      // Eliminamos la palabra del DOM primero
       activeWords.value.splice(wordIndex, 1)
 
-      // MODIFICACIÓN: Si NO se clicó, era la correcta (isRhyme) y seguía cayendo... cuenta como fallo total
+      // Si nadie la clicó y era una rima, el Catcher falló su misión
       if (!clicked && word.isRhyme && word.status === 'falling') {
         incorrectHits.value++
         takeDamage()
@@ -375,12 +383,30 @@
   }
 
   function takeDamage () {
-    lives.value -= 1
+    if (props.isMultiplayer) {
+      if (isHost.value) {
+        lives.value = Math.max(0, lives.value - 1)
+        multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
+      } else {
+        multiplayerStore.sendGameAction({ type: 'TAKE_DAMAGE' })
+        return // El host nos enviará el LIVES_SYNC
+      }
+    } else {
+      lives.value = Math.max(0, lives.value - 1)
+    }
+
     combo.value = 0
     isTurbo.value = false
-
+    
     if (lives.value <= 0) {
-      endGame()
+      // Penalización en lugar de fin de juego
+      lives.value = 3;
+      score.value = Math.max(0, score.value - 500);
+      timeLeft.value = Math.max(0, timeLeft.value - 5);
+      
+      if (timeLeft.value <= 0) {
+        endGame()
+      }
     }
   }
 
@@ -389,13 +415,19 @@
   }
 
   function endGame (silent = false) {
+    if (props.isMultiplayer && !silent && timeLeft.value > 0) {
+      // Ignorar fin de juego si todavía queda tiempo
+      return
+    }
     if (props.isMultiplayer && !silent) {
-      isPlaying.value = false
-      isGameOver.value = false // No mostrar el overlay de single player
-      clearInterval(gameLoopInterval)
-      clearInterval(timerInterval)
-      activeWords.value = []
-      multiplayerStore.submitRoundResult()
+      if (isHost.value) {
+        isPlaying.value = false
+        isGameOver.value = true
+        clearInterval(gameLoopInterval)
+        clearInterval(timerInterval)
+        activeWords.value = []
+        multiplayerStore.submitRoundResult()
+      }
       return
     }
 
@@ -410,35 +442,51 @@
     emit('game-over', score.value)
   }
 
-  onMounted(() => {
-    // En multijugador cooperativo, el usuario espera al HOST para iniciar
-  })
-
-  // Listener para eventos multijugador
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
       isPlaying.value = false
       isGameOver.value = true
       emitExit()
     }
 
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'RHYME_START') {
-      if (!isHost.value) {
-        startGame()
+    if (msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'RHYME_TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
       }
+      if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value) {
+        currentTarget.value = msg.action.target
+      }
+      if (msg.action?.type === 'RHYME_START' && !isHost.value) startGame()
+      if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value) activeWords.value.push(msg.action.word)
+      if (msg.action?.type === 'RHYME_CATCH') {
+         const id = msg.action.id
+         const index = activeWords.value.findIndex(w => w.id === id)
+         if (index !== -1) {
+           activeWords.value[index].status = msg.action.status
+           setTimeout(() => { removeWord(id, true) }, 350)
+         }
+      }
+      if (msg.action?.type === 'SPAWN_WORD' && !isHost.value) {
+        activeWords.value.push(msg.action.word)
+      }
+      if (msg.action?.type === 'TARGET_SYNC' && !isHost.value) {
+        currentTarget.value = msg.action.target
+      }
+      if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value) takeDamage()
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) timeLeft.value = msg.action.timeLeft
+      if (msg.action?.type === 'LIVES_SYNC' && !isHost.value) {
+        lives.value = msg.action.lives
+        if (lives.value <= 0) { /* Handled in takeDamage logic usually */ }
+      }
+      if (msg.action?.type === 'SCORE_UPDATE' && !isHost.value) score.value = msg.action.score
     }
   })
 
-  // Notificar puntuación al servidor en modo multijugador
   watch(score, newScore => {
-    if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'SCORE_UPDATE',
-        score: newScore,
-      })
+    if (props.isMultiplayer && isHost.value) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
     }
   })
 
@@ -456,133 +504,27 @@
 </script>
 
 <style scoped>
-.game-container {
-  background-color: transparent;
-}
-
-.target-box {
-  background: rgba(0, 229, 255, 0.1);
-  border: 2px solid rgba(0, 229, 255, 0.4);
-}
-
-.glow-text {
-  text-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
-}
-
+.game-container { background-color: transparent; }
+.hide-cursor { cursor: none; }
+.target-box { background: rgba(0, 229, 255, 0.1); border: 2px solid rgba(0, 229, 255, 0.4); }
+.glow-text { text-shadow: 0 0 20px rgba(0, 229, 255, 0.8); }
 .border-cyan { border-color: #00e5ff !important; border-width: 2px; border-style: solid; }
-
-.play-area {
-  background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%);
-  cursor: crosshair;
-}
-
-.turbo-mode.play-area {
-  background: radial-gradient(circle at 50% 10%, #311042 0%, #0b051a 100%);
-}
-
-.nebula-bg {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%; height: 100%;
-    background: radial-gradient(circle, rgba(224, 64, 251, 0.1) 0%, transparent 60%);
-    pointer-events: none;
-    animation: pulse-bg 2s infinite alternate;
-}
-
-.falling-word {
-  position: absolute;
-  top: -100px;
-  padding: 12px 24px;      /* Tamaño revertido */
-  border-radius: 30px;     /* Tamaño revertido */
-  font-weight: 900;
-  font-size: 1.3rem;       /* Tamaño revertido */
-  color: white;
-  user-select: none;
-  animation-name: fallAnimation;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.word-falling {
-  background: rgba(30, 41, 59, 0.9);
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-}
-
-.word-falling:hover {
-  transform: scale(1.1);
-  border-color: #00e5ff;
-}
-
-.word-correct {
-  background: #00c853 !important;
-  border: 3px solid #b9f6ca !important;
-  box-shadow: 0 0 35px rgba(0, 200, 83, 0.9) !important;
-  transform: scale(1.2);
-  color: white;
-  z-index: 20;
-}
-
-.word-incorrect {
-  background: #d50000 !important;
-  border: 3px solid #ff8a80 !important;
-  box-shadow: 0 0 35px rgba(213, 0, 0, 0.9) !important;
-  transform: scale(0.9) rotate(5deg);
-  color: white;
-  z-index: 20;
-}
-
-.time-bonus-feedback {
-  position: absolute;
-  top: 30px;
-  right: 50px;
-  z-index: 30;
-  pointer-events: none;
-  text-shadow: 0 0 15px rgba(0, 200, 83, 0.9);
-}
-
-@keyframes fallAnimation {
-  0% { top: -100px; opacity: 0; }
-  5% { opacity: 1; }
-  95% { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
-}
-
-@keyframes pulse-bg {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-.animate-pulse {
-  animation: pulse-chip 1s infinite alternate;
-}
-
-@keyframes pulse-chip {
-  0% { transform: scale(1); box-shadow: 0 0 15px rgba(224, 64, 251, 0.5); }
-  100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(224, 64, 251, 0.9); }
-}
-
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-leave-to {
-  opacity: 0;
-}
-
-.fade-up-enter-active,
-.fade-up-leave-active {
-  transition: all 0.5s ease;
-}
-.fade-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-.fade-up-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
+.play-area { background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%); cursor: crosshair; }
+.turbo-mode.play-area { background: radial-gradient(circle at 50% 10%, #311042 0%, #0b051a 100%); }
+.nebula-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; background: radial-gradient(circle, rgba(224, 64, 251, 0.1) 0%, transparent 60%); pointer-events: none; animation: pulse-bg 2s infinite alternate; }
+.falling-word { position: absolute; top: -100px; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 1.3rem; color: white; user-select: none; animation-name: fallAnimation; animation-timing-function: linear; animation-fill-mode: forwards; transition: all 0.2s ease; z-index: 10; }
+.word-falling { background: rgba(30, 41, 59, 0.9); border: 3px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+.word-falling:hover { transform: scale(1.1); border-color: #00e5ff; }
+.word-correct { background: #00c853 !important; border: 3px solid #b9f6ca !important; box-shadow: 0 0 35px rgba(0, 200, 83, 0.9) !important; transform: scale(1.2); color: white; z-index: 20; }
+.word-incorrect { background: #d50000 !important; border: 3px solid #ff8a80 !important; box-shadow: 0 0 35px rgba(213, 0, 0, 0.9) !important; transform: scale(0.9) rotate(5deg); color: white; z-index: 20; }
+.time-bonus-feedback { position: absolute; top: 30px; right: 50px; z-index: 30; pointer-events: none; text-shadow: 0 0 15px rgba(0, 200, 83, 0.9); }
+@keyframes fallAnimation { 0% { top: -100px; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@keyframes pulse-bg { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+.animate-pulse { animation: pulse-chip 1s infinite alternate; }
+@keyframes pulse-chip { 0% { transform: scale(1); box-shadow: 0 0 15px rgba(224, 64, 251, 0.5); } 100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(224, 64, 251, 0.9); } }
+.fade-leave-active { transition: opacity 0.3s; }
+.fade-leave-to { opacity: 0; }
+.fade-up-enter-active, .fade-up-leave-active { transition: all 0.5s ease; }
+.fade-up-enter-from { opacity: 0; transform: translateY(20px); }
+.fade-up-leave-to { opacity: 0; transform: translateY(-20px); }
 </style>

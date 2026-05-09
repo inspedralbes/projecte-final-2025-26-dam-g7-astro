@@ -35,14 +35,16 @@
     />
 
     <!-- Cursors remots (Task 4.3) -->
-    <div
-      v-for="(cursor, id) in multiplayerStore.remoteCursors"
-      :key="'cursor-'+id"
-      class="remote-cursor"
-      :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }"
-    >
-      <v-icon color="amber-accent-3" size="32">mdi-cursor-default</v-icon>
-      <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold">{{ id }}</span>
+    <div v-if="props.isMultiplayer">
+      <div
+        v-for="(cursor, id) in multiplayerStore.remoteCursors"
+        :key="'cursor-'+id"
+      >
+        <div v-if="id !== astroStore.user" class="remote-cursor" :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }">
+          <v-icon color="amber-accent-3" size="32">mdi-cursor-default</v-icon>
+          <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold">{{ id }}</span>
+        </div>
+      </div>
     </div>
 
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
@@ -177,19 +179,19 @@
 
   const flashlightStyle = computed(() => {
     const tunnelSize = currentTunnelSize.value
-    const cursors = props.isMultiplayer ? Object.values(multiplayerStore.remoteCursors) : []
-
-    // Restauramos el efecto visual combinando múltiples focos de luz.
     const lightSpots = [
       `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`,
     ]
 
-    for (const c of cursors) {
-      if (gameArea.value) {
-        const realX = (c.x / 1000) * gameArea.value.clientWidth
-        const realY = (c.y / 1000) * gameArea.value.clientHeight
-        lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${realX}px ${realY}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`)
-      }
+    // Añadir focos de compañeros en multiplayer
+    if (props.isMultiplayer) {
+      Object.entries(multiplayerStore.remoteCursors).forEach(([id, cursor]) => {
+        if (id !== astroStore.user && gameArea.value) {
+          const pxX = (cursor.x / 1000) * gameArea.value.clientWidth
+          const pxY = (cursor.y / 1000) * gameArea.value.clientHeight
+          lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`)
+        }
+      })
     }
 
     return {
@@ -233,18 +235,6 @@
         newBoard[t2] = config.target
         targetIndices.value = [t1, t2]
 
-        // Añadir señuelos
-        const possibleDecoys = ['x', 'z', 'k', 'y', 'w', 'h', 'j'].filter(c => c !== config.distractor && c !== config.target)
-        const usedIndices = new Set([t1, t2])
-        for (let i = 0; i < 2; i++) {
-          let idx
-          do {
-            idx = Math.floor(Math.random() * totalCells)
-          } while (usedIndices.has(idx))
-          usedIndices.add(idx)
-          newBoard[idx] = possibleDecoys[Math.floor(Math.random() * possibleDecoys.length)]
-        }
-
         board.value = newBoard
 
         multiplayerStore.sendGameAction({
@@ -268,7 +258,7 @@
 
   function nextRound () {
     score.value += (currentLevel.value * 10)
-    timeLeft.value = Math.min(60, timeLeft.value + 1)
+    timeLeft.value = Math.min(60, timeLeft.value + 10)
     currentLevel.value++
     completedTargets.value.clear()
     generateBoard()
@@ -298,6 +288,7 @@
       // Si es correcto, lo marcamos
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
+      timeLeft.value = Math.min(60, timeLeft.value + 3)
 
       // Verificamos si se han encontrado todas las letras objetivo (2 en multi)
       if (completedTargets.value.size >= targetIndices.value.length) {
@@ -321,6 +312,7 @@
     if (isCorrect) {
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
+      timeLeft.value = Math.min(60, timeLeft.value + 3)
 
       if (completedTargets.value.size >= targetIndices.value.length) {
         isTransitioning.value = true
@@ -360,11 +352,21 @@
       })
     }
 
+    let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (!isTransitioning.value && timeLeft.value > 0) {
-        const elapsed = Math.floor((Date.now() - startTime.value) / 1000)
-        timeLeft.value = Math.max(0, totalDuration.value - elapsed)
-        if (timeLeft.value <= 0) endGame()
+        const now = Date.now()
+        const delta = Math.floor((now - lastTick) / 1000)
+        if (delta >= 1) {
+          timeLeft.value = Math.max(0, timeLeft.value - delta)
+          lastTick += delta * 1000
+          
+          if (props.isMultiplayer && isHost.value) {
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          }
+
+          if (timeLeft.value <= 0) endGame()
+        }
       }
     }, 500)
   }
@@ -409,8 +411,8 @@
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        totalDuration.value -= (msg.action.amount || 1)
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
       }
 
       if (msg.action?.type === 'START_TIME_SYNC') {
@@ -447,6 +449,15 @@
 
           if (completedTargets.value.size >= targetIndices.value.length) {
             isTransitioning.value = true
+            if (isHost.value) {
+              setTimeout(() => {
+                multiplayerStore.sendGameAction({ type: 'RADAR_NEXT_ROUND' })
+                nextRound()
+                setTimeout(() => {
+                  isTransitioning.value = false
+                }, 200)
+              }, 800)
+            }
           }
         }
       }
@@ -480,6 +491,10 @@
   align-items: center;
   overflow: hidden;
   user-select: none;
+}
+
+.hide-cursor {
+  cursor: none;
 }
 
 .board {

@@ -2,7 +2,6 @@
   <div
     ref="gameArea"
     class="game-container"
-    :class="{ 'hide-cursor': isPlaying }"
     @mousedown.left.prevent="beginFiring"
     @mouseleave="stopFiring"
     @mousemove="handlePointerMove"
@@ -24,7 +23,12 @@
       </div>
     </div>
 
-    <!-- Barra de progrés (Fixada perquè arribi al final) -->
+    <!-- Overlay de carga simplificado (ya no bloquea tanto) -->
+    <div v-if="props.isMultiplayer && !isHost && targets.length === 0" class="round-target-hint" style="font-size: 24px; animation: none;">
+      Esperant dades de la missió...
+    </div>
+
+    <!-- Barra de progrés -->
     <div class="lock-meter-wrapper">
       <div class="text-caption text-grey-lighten-1 mb-1">Bloqueig de precisió (Ronda {{ round }})</div>
       <v-progress-linear
@@ -36,7 +40,7 @@
       />
     </div>
 
-    <!-- Canvas -->
+    <!-- El canvas ahora se encarga de dibujar todo para máxima fluidez -->
     <canvas ref="gameCanvas" />
 
     <div
@@ -159,6 +163,8 @@
   const CLASSIC_DECOY_FILL = 'rgba(255, 255, 255, 0.06)'
   const PROGRESS_DECAY_OUTSIDE = 950
   const PROGRESS_DECAY_ON_DECOY = 700
+  let roundStartTime = null
+  let lastTick = 0
 
   let animationFrame = null
   let lastFrameTs = 0
@@ -200,12 +206,11 @@
   }
 
   function getPlayBounds (size) {
-    // Coordenadas lógicas 1000x1000
     const padding = 20
     const rawMinX = size / 2 + padding
     const rawMaxX = 1000 - size / 2 - padding
 
-    const safeTop = 180 // Hud safe top lógico
+    const safeTop = 180 
     const rawMinY = Math.max(safeTop, size / 2 + padding)
     const rawMaxY = 1000 - size / 2 - padding
 
@@ -282,6 +287,7 @@
 
     targets.value = newTargets
     holdProgressMs.value = 0
+    roundStartTime = null
   }
 
   function handlePointerMove (e) {
@@ -295,7 +301,6 @@
     }
   }
 
-  // Throttle per enviar posició del rató al servidor (cada 50ms)
   function throttle (func, limit) {
     let lastRan
     let lastFunc
@@ -321,9 +326,10 @@
         type: 'MOUSE_MOVE',
         x: Math.round(x),
         y: Math.round(y),
+        isFiring: isFiring.value,
       })
     }
-  }, 50)
+  }, 15)
 
   function update (dt) {
     if (!isPlaying.value) return
@@ -337,30 +343,40 @@
       }
     }
 
-    // Co-op logic: check teammate cursor
     let isPeerHovering = false
+    let isPeerFiring = false
     if (props.isMultiplayer && hoveredTarget) {
       const cursors = Object.values(multiplayerStore.remoteCursors)
       for (const c of cursors) {
-        // En multiplayer, enviamos de 0-1000, cursors almacena en 0-1000
         const dist = Math.hypot(c.x - hoveredTarget.x, c.y - hoveredTarget.y)
         if (dist < hoveredTarget.size / 2) {
           isPeerHovering = true
+          isPeerFiring = c.isFiring || false
           break
         }
       }
     }
 
-    const isCoopLocked = props.isMultiplayer ? (isFiring.value && hoveredTarget?.isTarget && isPeerHovering) : (isFiring.value && hoveredTarget?.isTarget)
+    const isCoopLocked = props.isMultiplayer ? (isFiring.value && hoveredTarget?.isTarget && isPeerHovering && isPeerFiring) : (isFiring.value && hoveredTarget?.isTarget)
 
     const hasPenaltyShot = isFiring.value && (!hoveredTarget || !hoveredTarget.isTarget)
     const timePenalty = hasPenaltyShot ? 2 : 1
     isPenaltyActive.value = timePenalty > 1
-    timeLeft.value -= dt * timePenalty
+    
+    // Solo el Host descuenta el tiempo en multiplayer
+    if (!props.isMultiplayer || isHost.value) {
+      timeLeft.value = Math.max(0, timeLeft.value - (dt * timePenalty))
+      
+      // Sincronizar tiempo periódicamente cada segundo
+      if (props.isMultiplayer && (Date.now() - lastTick >= 1000)) {
+        lastTick = Date.now()
+        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: Math.ceil(timeLeft.value) })
+      }
 
-    if (timeLeft.value <= 0) {
-      endGame()
-      return
+      if (timeLeft.value <= 0) {
+        endGame()
+        return
+      }
     }
 
     for (const t of targets.value) {
@@ -388,8 +404,7 @@
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_OUTSIDE))
     } else if (isFiring.value && hoveredTarget && !hoveredTarget.isTarget) {
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_ON_DECOY))
-    } else if (props.isMultiplayer && isFiring.value && hoveredTarget?.isTarget && !isPeerHovering) {
-      // Si yo disparo pero mi compañero no, el progreso no avanza (o decae ligeramente)
+    } else if (props.isMultiplayer && isFiring.value && hoveredTarget?.isTarget && (!isPeerHovering || !isPeerFiring)) {
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * 200))
     }
   }
@@ -401,7 +416,6 @@
     timeLeft.value = Math.min(99, timeLeft.value + 3)
     round.value++
 
-    // In multiplayer, the host handles board generation to keep it synced
     if (props.isMultiplayer) {
       if (isHost.value) {
         generateTargets()
@@ -415,7 +429,6 @@
       generateTargets()
     }
 
-    // Sabotatge: -2s al rival en multiplayer
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
         type: 'SABOTAGE',
@@ -442,7 +455,6 @@
     const pxMouseX = toPxX(mouseX.value)
     const pxMouseY = toPxY(mouseY.value)
 
-    // Dibuixar làser local
     if (isFiring.value) {
       ctx.beginPath()
       ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
@@ -455,18 +467,27 @@
       ctx.shadowBlur = 0
     }
 
-    // Dibuixar làsers remots
     if (props.isMultiplayer) {
       const cursors = Object.values(multiplayerStore.remoteCursors)
       for (const c of cursors) {
+        if (c.isFiring) {
+          ctx.beginPath()
+          ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
+          ctx.lineTo(toPxX(c.x), toPxY(c.y))
+          ctx.strokeStyle = 'rgba(255, 193, 7, 0.6)'
+          ctx.lineWidth = 2
+          ctx.setLineDash([5, 5])
+          ctx.stroke()
+          ctx.setLineDash([])
+        }
+        
+        // Dibujar Cursor Remoto (Círculo)
+        const pxX = toPxX(c.x)
+        const pxY = toPxY(c.y)
+        ctx.fillStyle = '#ffc107'
         ctx.beginPath()
-        ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
-        ctx.lineTo(toPxX(c.x), toPxY(c.y))
-        ctx.strokeStyle = 'rgba(255, 193, 7, 0.6)'
-        ctx.lineWidth = 2
-        ctx.setLineDash([5, 5])
-        ctx.stroke()
-        ctx.setLineDash([])
+        ctx.arc(pxX, pxY, 6, 0, Math.PI * 2)
+        ctx.fill()
       }
     }
 
@@ -505,17 +526,6 @@
     ctx.strokeStyle = isFiring.value ? '#00e5ff' : '#ffffff'
     ctx.lineWidth = 2
     ctx.stroke()
-
-    // Remote cursor indicators
-    if (props.isMultiplayer) {
-      const cursors = Object.values(multiplayerStore.remoteCursors)
-      for (const c of cursors) {
-        ctx.beginPath()
-        ctx.arc(toPxX(c.x), toPxY(c.y), toPxSize(12), 0, Math.PI * 2)
-        ctx.strokeStyle = '#ffc107'
-        ctx.stroke()
-      }
-    }
   }
 
   function gameLoop (ts) {
@@ -528,10 +538,16 @@
   }
 
   function beginFiring () {
-    if (isPlaying.value) isFiring.value = true
+    if (isPlaying.value) {
+      isFiring.value = true
+      if (props.isMultiplayer) sendMouseMove(mouseX.value, mouseY.value)
+    }
   }
   function stopFiring () {
-    isFiring.value = false
+    if (isFiring.value) {
+      isFiring.value = false
+      if (props.isMultiplayer) sendMouseMove(mouseX.value, mouseY.value)
+    }
   }
 
   function startGame () {
@@ -545,9 +561,11 @@
     isPenaltyActive.value = false
     holdProgressMs.value = 0
     isPlaying.value = true
+    roundStartTime = null
     resizeCanvas()
     mouseX.value = 500
     mouseY.value = 750
+    lastTick = Date.now()
 
     if (props.isMultiplayer) {
       if (isHost.value) {
@@ -555,8 +573,10 @@
         multiplayerStore.sendGameAction({
           type: 'SYMMETRY_BOARD_SYNC',
           targets: targets.value,
-          challenge: currentChallenge.value,
+          challenge: currentChallenge.value
         })
+        multiplayerStore.sendGameAction({ type: 'START_SESSION' })
+        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
       }
     } else {
       generateTargets()
@@ -568,11 +588,10 @@
 
   function endGame (silent = false) {
     if (props.isMultiplayer && !silent) {
-      isPlaying.value = false
-      isFiring.value = false
-      cancelAnimationFrame(animationFrame)
-      // Solo el host tiene autoridad para cerrar la ronda
       if (isHost.value) {
+        isPlaying.value = false
+        isFiring.value = false
+        cancelAnimationFrame(animationFrame)
         multiplayerStore.submitRoundResult()
       }
       return
@@ -594,11 +613,20 @@
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
     if (props.isMultiplayer) {
-      startGame()
+      if (isHost.value) {
+        showStartOverlay.value = true
+      } else {
+        showStartOverlay.value = false
+        // Espera de sincronización por parte del host
+        setTimeout(() => {
+          if (targets.value.length === 0 && props.isMultiplayer && !isHost.value) {
+            multiplayerStore.sendGameAction({ type: 'REQUEST_SYMMETRY_SYNC' })
+          }
+        }, 3000)
+      }
     }
   })
 
-  // Listener para eventos multijugador
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
@@ -610,24 +638,42 @@
     }
 
     if (msg.type === 'GAME_ACTION') {
-      // Rebre sabotatge del rival: restar temps al propi rellotge
       if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
         if (timeLeft.value <= 0 && isPlaying.value) endGame()
       }
 
       if (msg.action?.type === 'SYMMETRY_BOARD_SYNC') {
-        targets.value = msg.action.targets // Ya vienen en coords lógicas
+        targets.value = msg.action.targets
         currentChallenge.value = msg.action.challenge
         triggerRoundHint(currentChallenge.value.target)
         holdProgressMs.value = 0
       }
+
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+      }
+
+      if (msg.action?.type === 'START_SESSION' && !isHost.value) {
+        showStartOverlay.value = false
+      }
+
+      if (msg.action?.type === 'SCORE_UPDATE' && !isHost.value) {
+        score.value = msg.action.score
+      }
+
+      if (msg.action?.type === 'REQUEST_SYMMETRY_SYNC' && isHost.value) {
+        multiplayerStore.sendGameAction({
+          type: 'SYMMETRY_BOARD_SYNC',
+          targets: targets.value,
+          challenge: currentChallenge.value
+        })
+      }
     }
   })
 
-  // Notificar puntuación al servidor en modo multijugador
   watch(score, newScore => {
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer && isHost.value) {
       multiplayerStore.sendGameAction({
         type: 'SCORE_UPDATE',
         score: newScore,
@@ -667,7 +713,13 @@ canvas {
   height: 100%;
 }
 
-.hide-cursor { cursor: none; }
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10000;
+  will-change: left, top;
+}
+
 
 .hud-pill {
   background: rgba(15, 23, 42, 0.9);
