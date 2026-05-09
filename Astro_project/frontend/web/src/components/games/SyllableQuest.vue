@@ -323,9 +323,17 @@
 
     timerInterval = setInterval(() => {
       if (gameFinished.value) return
-      timeLeft.value = Math.max(0, timeLeft.value - 1)
-      if (timeLeft.value === 0) {
-        finishGame()
+      
+      if (!props.isMultiplayer || isHost.value) {
+        timeLeft.value = Math.max(0, timeLeft.value - 1)
+        
+        if (props.isMultiplayer && isHost.value) {
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+        }
+
+        if (timeLeft.value === 0) {
+          finishGame()
+        }
       }
     }, 1000)
   }
@@ -374,6 +382,11 @@
       if (msg.action?.type === 'SYLLABLE_RESET') {
         sharedSyllables.value = 0
         userSyllables.value = 0
+      }
+
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) finishGame()
       }
     }
   })

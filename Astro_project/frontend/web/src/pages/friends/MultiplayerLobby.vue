@@ -28,7 +28,7 @@
             <!-- Centro: VS + ronda + Indicador Tiempo -->
             <div class="hud-center-unit mx-8 text-center position-relative">
               <div v-if="!isTeammate" class="vs-text">VS</div>
-              <div v-else class="vs-text" style="opacity: 0.3">COOP</div>
+              <div v-else class="vs-text text-cyan-accent-2">COOP</div>
               <div class="round-text">RONDA {{ multiplayerStore.room?.gameConfig?.currentRound + 1 || 1 }} / {{ multiplayerStore.room?.gameConfig?.totalRounds || '?' }}</div>
 
               <!-- Notificacions de sabotatge (flotants) -->
@@ -60,6 +60,7 @@
         <div class="game-content">
           <component
             :is="activeGameComponent"
+            :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
             :is-multiplayer="true"
             @game-over="onGameFinished"
           />
@@ -93,6 +94,7 @@
       :scores="finalScores"
       :total-rounds="multiplayerStore.room?.gameConfig?.totalRounds || 0"
       :winner="matchWinnerName"
+      :is-teammate="isTeammate"
       @rematch="requestRematch"
       @return-to-lobby="returnToLobby"
     />
@@ -651,7 +653,7 @@
     // Sincronització crítica: Si arriba MATCH_STARTING, forçar muntatge del joc
     if (msg.type === 'MATCH_STARTING') {
       showRoulette.value = false
-      activeGameComponent.value = null // Reset per assegurar remuntatge
+      // showRoulette.value = false (already above)
       const gameName = msg.room?.gameConfig?.currentGame
       if (gameName && gameComponents[gameName]) {
         activeGameComponent.value = gameComponents[gameName]

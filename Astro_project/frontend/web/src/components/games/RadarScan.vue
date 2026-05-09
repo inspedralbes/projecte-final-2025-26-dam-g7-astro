@@ -281,7 +281,11 @@
       })
 
       if (!isCorrect) {
-        timeLeft.value = Math.max(0, timeLeft.value - 2)
+        // Penalización de tiempo en cooperativo (5s)
+        timeLeft.value = Math.max(0, timeLeft.value - 5)
+        score.value = Math.max(0, score.value - 5)
+        clickedIndices.value.set(index, 'incorrect')
+        setTimeout(() => clickedIndices.value.delete(index), 500)
         return
       }
 
@@ -325,7 +329,7 @@
       }
     } else {
       clickedIndices.value.set(index, 'incorrect')
-      timeLeft.value = Math.max(0, timeLeft.value - 3)
+      timeLeft.value = Math.max(0, timeLeft.value - 5)
       score.value = Math.max(0, score.value - 5)
       if (timeLeft.value === 0) endGame()
       setTimeout(() => clickedIndices.value.delete(index), 500)
@@ -413,6 +417,7 @@
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) endGame()
       }
 
       if (msg.action?.type === 'START_TIME_SYNC') {

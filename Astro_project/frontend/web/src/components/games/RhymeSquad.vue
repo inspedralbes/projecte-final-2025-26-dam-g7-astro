@@ -63,7 +63,7 @@
 
           <div class="text-center px-10 target-box rounded-xl py-3">
             <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimes amb:</div>
-            <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget.word }}</div>
+            <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget?.word || '---' }}</div>
           </div>
 
           <div class="d-flex align-center gap-6">
@@ -202,7 +202,7 @@
   const isPlaying = ref(false)
   const isGameOver = ref(false)
   const score = ref(0)
-  const lives = ref(3)
+  const lives = ref(10)
   const timeLeft = ref(60)
   const combo = ref(0)
   const maxCombo = ref(0)
@@ -223,7 +223,10 @@
 
   function startGame () {
     score.value = 0
-    lives.value = 3
+    // Solo resetear vidas si no es multijugador o si es el Host
+    if (!props.isMultiplayer || isHost.value) {
+      lives.value = 10
+    }
     timeLeft.value = 60
     combo.value = 0
     maxCombo.value = 0
@@ -242,6 +245,7 @@
       // Enviar target inicial inmediatamente
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
+        multiplayerStore.sendGameAction({ type: 'RHYME_START' }) // Notificar inicio al Guest
       }
       gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
     }
@@ -258,7 +262,7 @@
           lastTick += delta * 1000
           
           if (props.isMultiplayer) {
-            multiplayerStore.sendGameAction({ type: 'RHYME_TIME_SYNC', timeLeft: timeLeft.value })
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
 
           if (timeLeft.value <= 0) {
@@ -399,14 +403,7 @@
     isTurbo.value = false
     
     if (lives.value <= 0) {
-      // Penalización en lugar de fin de juego
-      lives.value = 3;
-      score.value = Math.max(0, score.value - 500);
-      timeLeft.value = Math.max(0, timeLeft.value - 5);
-      
-      if (timeLeft.value <= 0) {
-        endGame()
-      }
+      endGame()
     }
   }
 
@@ -415,12 +412,22 @@
   }
 
   function endGame (silent = false) {
-    if (props.isMultiplayer && !silent && timeLeft.value > 0) {
-      // Ignorar fin de juego si todavía queda tiempo
+    if (props.isMultiplayer && !silent && timeLeft.value > 0 && lives.value > 0) {
+      // Ignorar fin de juego si todavía queda tiempo y vidas
       return
     }
+    
+    // Si llegamos aquí, forzamos el fin
     if (props.isMultiplayer && !silent) {
       if (isHost.value) {
+        isPlaying.value = false
+        isGameOver.value = true
+        clearInterval(gameLoopInterval)
+        clearInterval(timerInterval)
+        activeWords.value = []
+        multiplayerStore.submitRoundResult()
+      } else if (lives.value <= 0 || timeLeft.value <= 0) {
+        // El guest también debe limpiar su estado si ha terminado por vidas o tiempo
         isPlaying.value = false
         isGameOver.value = true
         clearInterval(gameLoopInterval)
@@ -452,11 +459,14 @@
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'RHYME_TIME_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) endGame()
       }
       if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value) {
         currentTarget.value = msg.action.target
+        // Si el Guest todavía no ha empezado, forzar inicio
+        if (!isPlaying.value && !isGameOver.value) startGame()
       }
       if (msg.action?.type === 'RHYME_START' && !isHost.value) startGame()
       if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value) activeWords.value.push(msg.action.word)
@@ -465,24 +475,24 @@
          const index = activeWords.value.findIndex(w => w.id === id)
          if (index !== -1) {
            activeWords.value[index].status = msg.action.status
+           if (msg.action.status === 'correct' && isHost.value) {
+             score.value += isTurbo.value ? 20 : 10
+             // No hace falta enviar SCORE_UPDATE aquí porque el watcher lo hará
+           }
            setTimeout(() => { removeWord(id, true) }, 350)
          }
       }
-      if (msg.action?.type === 'SPAWN_WORD' && !isHost.value) {
-        activeWords.value.push(msg.action.word)
-      }
-      if (msg.action?.type === 'TARGET_SYNC' && !isHost.value) {
-        currentTarget.value = msg.action.target
-      }
       if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value) takeDamage()
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) timeLeft.value = msg.action.timeLeft
       if (msg.action?.type === 'LIVES_SYNC' && !isHost.value) {
         lives.value = msg.action.lives
-        if (lives.value <= 0) { /* Handled in takeDamage logic usually */ }
+        if (lives.value <= 0) endGame()
       }
-      if (msg.action?.type === 'SCORE_UPDATE' && !isHost.value) score.value = msg.action.score
+      if (msg.action?.type === 'REQUEST_RHYME_SYNC' && isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
+        multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
+      }
     }
-  })
+  }, { immediate: true })
 
   watch(score, newScore => {
     if (props.isMultiplayer && isHost.value) {
@@ -494,6 +504,12 @@
     clearInterval(gameLoopInterval)
     clearInterval(timerInterval)
     if (bonusTimeout) clearTimeout(bonusTimeout)
+  })
+
+  onMounted(() => {
+    if (props.isMultiplayer && !isHost.value) {
+      multiplayerStore.sendGameAction({ type: 'REQUEST_RHYME_SYNC' })
+    }
   })
 
   function getWordStatusClass (status) {

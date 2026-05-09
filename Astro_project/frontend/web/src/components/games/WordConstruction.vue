@@ -100,8 +100,8 @@
       </v-alert>
     </v-card>
 
-    <!-- Pantalla de Final de Joc -->
-    <v-card v-else width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
+    <!-- Pantalla de Final de Joc (Només en solitari, en multijugador mana el Lobby) -->
+    <v-card v-else-if="!props.isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
       <v-icon icon="mdi-trophy" color="yellow-accent-4" size="80" class="mb-4"></v-icon>
       <h2 class="text-h4 text-white mb-2">¡Construcció Completada!</h2>
       <p class="text-h5 text-cyan-accent-2 mb-2">Punts Totals: {{ score }}</p>
@@ -287,7 +287,7 @@ const gameFinished = ref(false);
 const letterId = ref(0);
 const isRoundLocked = ref(false);
 let isUpdatingFromSync = false;
-const totalTime = 60;
+const totalTime = 90;
 const timeLeft = ref(totalTime);
 let timerInterval = null;
 
@@ -371,19 +371,20 @@ const checkAnswer = (fromRemote = false) => {
   const guess = orderedGuess.value.toUpperCase().trim();
   const correct = currentWordObj.value.word.toUpperCase();
 
-  // En cooperativo, si nosotros hemos acertado, avisamos al otro
-  if (props.isMultiplayer && !fromRemote && guess === correct) {
-     multiplayerStore.sendGameAction({ type: 'ANSWER_CHECKED', guess });
-  }
-
-  if (guess === correct || (fromRemote)) {
+  // Solo aceptamos la respuesta si es correcta localmente o si el mensaje remoto confirma el éxito
+  if (guess === correct) {
+    // Si somos nosotros los que hemos acertado, avisamos al compañero
+    if (props.isMultiplayer && !fromRemote) {
+       multiplayerStore.sendGameAction({ type: 'ANSWER_CHECKED', guess });
+    }
+    
     isRoundLocked.value = true;
 
     // Recompensa base
     let pointsGained = 100 + (level.value * 10);
     
     // Bonus per temps (guanyes temps)
-    timeLeft.value = Math.min(totalTime, timeLeft.value + 5);
+    timeLeft.value = Math.min(90, timeLeft.value + 5);
 
     // Bonus per diferencia de punts (si l'altre va molt enrere)
     if (props.isMultiplayer && opponentName.value) {
@@ -405,13 +406,18 @@ const checkAnswer = (fromRemote = false) => {
     currentStep.value++;
     messageType.value = "success";
     
-    // Notificar éxito al compañero
+    // Sincronizar progreso
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
         type: 'WORD_SUCCESS',
         currentStep: currentStep.value,
         score: score.value
       });
+      // El Host además sync el tiempo
+      if (isHost.value) {
+        timeLeft.value = Math.min(90, timeLeft.value + 5);
+        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value });
+      }
     }
 
     setTimeout(() => {
@@ -428,13 +434,16 @@ const checkAnswer = (fromRemote = false) => {
 
 const finishGame = async (silent = false) => {
   if (gameFinished.value) return;
+  
+  console.log(`[WordConstruction] Finalizando juego. ¿Soy Host?: ${isHost.value}`);
+  gameFinished.value = true;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
 
   if (props.isMultiplayer && !silent) {
-    if (isHost.value) {
-      gameFinished.value = true;
-      if (timerInterval) clearInterval(timerInterval);
-      multiplayerStore.submitRoundResult();
-    }
+    multiplayerStore.submitRoundResult();
     return;
   }
 
@@ -491,9 +500,13 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   if (!msg) return;
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    // El servidor ha cerrado la ronda, emitimos game-over para que el Lobby lo gestione
-    gameFinished.value = true;
-    emitExit(); 
+    // Solo cerramos si la partida NO ha terminado ya
+    if (!gameFinished.value) {
+      console.log("[WordConstruction] Ronda finalizada por el servidor. Saliendo...");
+      gameFinished.value = true;
+      if (timerInterval) clearInterval(timerInterval);
+      emitExit(); 
+    }
   }
 
   // REBRE SABOTATGE: Restar temps (Solo en Individual)
@@ -520,12 +533,14 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
 
   // REBRE RESPOSTA COOPERATIVA
   if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
-     checkAnswer(true);
+      // Forzamos la comprobación local con el estado que tenga el compañero
+      checkAnswer(true);
   }
 
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) finishGame()
       }
       if (msg.action?.type === 'WORD_SUCCESS') {
         currentStep.value = msg.action.currentStep;
@@ -537,13 +552,13 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
     }
 
   // SYNC PUNTUACIÓ I PROGRÉS (Del Host)
-  if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SCORE_UPDATE' && !isHost.value) {
-    score.value = msg.action.score;
-    if (msg.action.currentStep !== undefined) {
-      currentStep.value = msg.action.currentStep;
-    }
-  }
-});
+      if (msg.action?.type === 'SCORE_UPDATE' && !isHost.value) {
+        score.value = msg.action.score;
+        if (msg.action.currentStep !== undefined) {
+          currentStep.value = msg.action.currentStep;
+        }
+      }
+}, { immediate: true });
 
 // Enviar sync d'ordre
 watch(scrambledLetters, (newVal) => {

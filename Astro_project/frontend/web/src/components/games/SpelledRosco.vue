@@ -412,7 +412,7 @@
     { char: 'L', question: 'Gran felí conegut com el rei de la selva.', answer: 'LLEO', hieroglyphs: ['🦁', '👑', '🌿'] },
     { char: 'T', question: 'Rèptil amb closca dura que es mou lentament.', answer: 'TORTUGA', hieroglyphs: ['🐢', '🐚', '🐌'] },
     { char: 'C', question: 'Animal amb vuit tentacles que viu al fons del mar.', answer: 'CRANC', hieroglyphs: ['🦀', '🐚', '🏖️'] },
-    { char: 'P', question: 'Ocell tropical de colors vius que pot imitar sons.', answer: 'LLORO', hieroglyphs: ['🦜', '🌴', '🗣️'] },
+    { char: 'L', question: 'Ocell tropical de colors vius que pot imitar sons.', answer: 'LLORO', hieroglyphs: ['🦜', '🌴', '🗣️'] },
     { char: 'A', question: 'La unitat bàsica de la matèria.', answer: 'ATOM', hieroglyphs: ['⚛️', '🔬', '1️⃣'] },
     { char: 'C', question: 'Unitat bàsica dels éssers vius.', answer: 'CELULA', hieroglyphs: ['🧬', '🔬', '🥚'] },
     { char: 'G', question: 'Força que atrau els objectes cap al centre de la Terra.', answer: 'GRAVETAT', hieroglyphs: ['🍎', '⬇️', '🌍'] },
@@ -434,7 +434,7 @@
     { char: 'X', question: 'Dolç elaborat amb cacau.', answer: 'XOCOLATA', hieroglyphs: ['🍫', '🍫', '😋'] },
     { char: 'P', question: 'Plat italià amb base de massa, tomàquet i formatge.', answer: 'PIZZA', hieroglyphs: ['🍕', '🇮🇹', '🍕'] },
     { char: 'M', question: 'Producte dolç que fan las abelles.', answer: 'MEL', hieroglyphs: ['🍯', '🐝', '🍯'] },
-    { char: 'A', question: 'Fruita vermella o verda que creix als arbres.', answer: 'POMA', hieroglyphs: ['🍎', '🍏', '🌳'] },
+    { char: 'P', question: 'Fruita vermella o verda que creix als arbres.', answer: 'POMA', hieroglyphs: ['🍎', '🍏', '🌳'] },
     { char: 'F', question: 'Esport d\'equip amb una pilota rodona i porteries.', answer: 'FUTBOL', hieroglyphs: ['⚽', '🥅', '🏟️'] },
     { char: 'B', question: 'Esport on es llança una pilota a una cistella.', answer: 'BASQUET', hieroglyphs: ['🏀', '🗑️', '🏀'] },
     { char: 'N', question: 'Esport aquàtic on es fan braçades a la piscina.', answer: 'NATACIO', hieroglyphs: ['🏊', '🌊', '🏊'] },
@@ -487,7 +487,7 @@
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
   }))
 
-  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 90, timeLeft = ref(totalTime), attempts = ref(0), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 120, timeLeft = ref(totalTime), attempts = ref(0), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
 
   const currentLetter = computed(() => roscoLetters.value.length ? roscoLetters.value[currentIndex.value] : { char: '?', question: '', hieroglyphs: [] })
@@ -504,7 +504,12 @@
         const shuffled = [...allLettersData].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
         roscoLetters.value = data
         currentIndex.value = 0
-        if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+        rocketPos.x = starPoints[0].x
+        rocketPos.y = starPoints[0].y
+        if (props.isMultiplayer) {
+          multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+          multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
+        }
       } else {
         // El no-host pide sincronización si todavía no tiene datos
         multiplayerStore.sendGameAction({ type: 'REQUEST_ROSCO_SYNC' })
@@ -527,8 +532,12 @@
       }
       advanceTurn()
     }
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) { roscoLetters.value = msg.action.data; currentIndex.value = 0 }
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) { 
+      roscoLetters.value = msg.action.data; 
+      currentIndex.value = 0;
+      rocketPos.x = starPoints[0].x;
+      rocketPos.y = starPoints[0].y;
+    }
     
     if (msg.type === 'GAME_ROLES_SWAPPED') {
       feedbackMessage.value = '¡CAMBIO DE ROLES!'; feedbackColor.value = 'warning'; showFeedback.value = true
@@ -536,15 +545,37 @@
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) timeLeft.value = msg.action.timeLeft
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) finishGame()
+      }
       if (msg.action?.type === 'SCORE_UPDATE' && !isHost.value) score.value = msg.action.score
       if (msg.action?.type === 'REQUEST_ROSCO_SYNC' && isHost.value) {
         multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data: roscoLetters.value })
       }
-      // El Host recibe notificación de acierto y suma tiempo y puntos
-      if (msg.action?.type === 'ADVANCE_LETTER' && isHost.value && msg.action.status === 'correct' && msg.from !== astroStore.user) {
-        timeLeft.value = Math.min(timeLeft.value + 20, 999);
-        score.value += 100;
+      // Sincronizar avance de letra para todo el equipo (pistas, cohete, etc.)
+      if (msg.action?.type === 'ADVANCE_LETTER' && msg.from !== astroStore.user) {
+        roscoLetters.value[msg.action.index].status = msg.action.status;
+        if (msg.action.status === 'correct' && isHost.value) {
+           timeLeft.value = Math.min(timeLeft.value + 20, 999);
+           score.value += 100;
+        }
+        if (isHost.value) advanceTurn();
+      }
+      if (msg.action?.type === 'INDEX_SYNC' && !isHost.value) {
+        const nextIdx = msg.action.index;
+        const prevIdx = currentIndex.value;
+        visitedSegments.value.add(prevIdx);
+        animateRocket(prevIdx, nextIdx).then(() => {
+          currentIndex.value = nextIdx;
+          rawInput.value = '';
+        });
+      }
+      if (msg.action?.type === 'ROSCO_ROUND_END') {
+        feedbackMessage.value = '¡NIVELL COMPLETAT! GENERANT NOVES LLETRES...';
+        feedbackColor.value = 'success';
+        showFeedback.value = true;
+        setTimeout(() => showFeedback.value = false, 2800);
       }
     }
   })
@@ -585,46 +616,79 @@
     if (userAnswer === correctAnswer) {
       roscoLetters.value[currentIndex.value].status = 'correct'; score.value += 100; attempts.value = 0; feedbackMessage.value = 'Correcte!'; feedbackColor.value = 'success'
       timeLeft.value = Math.min(timeLeft.value + 20, 999);
-      if (props.isMultiplayer) { 
-        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: 15 }) 
-      }
       showFeedback.value = true; syncAndAdvance('correct')
     } else {
       attempts.value++
       if (attempts.value >= 3) {
-        roscoLetters.value[currentIndex.value].status = 'incorrect'; attempts.value = 0; feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`; feedbackColor.value = 'error'; showFeedback.value = true; syncAndAdvance('incorrect')
+        roscoLetters.value[currentIndex.value].status = 'incorrect';
+        attempts.value = 0;
+        feedbackMessage.value = `Incorrecte! Era "${currentLetter.value.answer}"`;
+        feedbackColor.value = 'error';
+        showFeedback.value = true;
+        syncAndAdvance('incorrect');
       } else {
-        feedbackMessage.value = `Incorrecte! ${attempts.value}/3`; feedbackColor.value = 'warning'; showFeedback.value = true; isChecking.value = false; setTimeout(() => showFeedback.value = false, 1000)
+        feedbackMessage.value = `Incorrecte! ${attempts.value}/3`;
+        feedbackColor.value = 'warning';
+        showFeedback.value = true;
+        isChecking.value = false;
+        setTimeout(() => showFeedback.value = false, 1000);
       }
     }
   }
 
   function syncAndAdvance (status) {
-    if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
-    setTimeout(async () => { showFeedback.value = false; rawInput.value = ''; onTyping(); await advanceTurn(); isChecking.value = false }, 1200)
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
+      setTimeout(async () => { 
+        showFeedback.value = false; rawInput.value = ''; onTyping(); 
+        if (isHost.value) await advanceTurn(); 
+        isChecking.value = false 
+      }, 1200)
+    } else {
+      setTimeout(async () => { showFeedback.value = false; rawInput.value = ''; await advanceTurn(); isChecking.value = false }, 1200)
+    }
   }
 
   function pasapalabra () {
     if (isChecking.value || isTranslator.value || isSender.value) return
     rawInput.value = ''; attempts.value = 0; onTyping()
-    if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status: 'pending', score: score.value })
-    advanceTurn()
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status: 'pending', score: score.value })
+      if (isHost.value) advanceTurn()
+    } else {
+      advanceTurn()
+    }
   }
 
   async function advanceTurn () {
+    if (gameFinished.value || !roscoLetters.value.length) return
     const prevIndex = currentIndex.value; let nextIdx = -1
     for (let i = currentIndex.value + 1; i < roscoLetters.value.length; i++) if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break }
     if (nextIdx === -1) for (let i = 0; i < currentIndex.value; i++) if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break }
     if (nextIdx === -1) {
       if (timeLeft.value > 0) {
         if (!props.isMultiplayer || isHost.value) {
-          initRosco(true)
+          if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'ROSCO_ROUND_END' });
+          feedbackMessage.value = '¡NIVELL COMPLETAT! GENERANT NOVES LLETRES...';
+          feedbackColor.value = 'success';
+          showFeedback.value = true;
+          setTimeout(() => {
+            showFeedback.value = false;
+            initRosco(true);
+          }, 3000);
         }
       } else {
         finishGame()
       }
     }
-    else { visitedSegments.value.add(prevIndex); await animateRocket(prevIndex, nextIdx); currentIndex.value = nextIdx }
+    else { 
+      visitedSegments.value.add(prevIndex); 
+      if (props.isMultiplayer && isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: nextIdx })
+      }
+      await animateRocket(prevIndex, nextIdx); 
+      currentIndex.value = nextIdx 
+    }
   }
 
   function finishGame (silent = false) {

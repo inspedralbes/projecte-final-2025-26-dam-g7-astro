@@ -133,10 +133,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'ROOM_UPDATE': {
-          this.room = { ...data.room }
-          // Actualizar subRole si existe la configuración
-          if (data.room.gameConfig?.subRoles) {
-            this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
+          if (data.room) {
+            this.room = { ...data.room }
+            // Actualizar subRole si existe la configuración
+            if (data.room.gameConfig?.subRoles) {
+              this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
+            }
           }
           break
         }
@@ -145,6 +147,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.remoteCursors = {} // Reset cursores
           this.partnerText = '' // Reset texto
           this.partnerEmojis = [] // Reset emojis
+          this.lastMessage = null // LIMPIAR MENSAJE ANTERIOR PARA EVITAR CIERRES INSTANTÁNEOS
           this.room = { ...data.room }
 
           if (data.room.gameConfig?.subRoles) {
@@ -159,7 +162,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.remoteCursors = {} // Limpiar cursores al acabar ronda
           this.partnerText = ''
           this.partnerEmojis = []
-          if (this.room) {
+          if (this.room && data.scores) {
             this.room.gameConfig.scores = data.scores
           }
           this.lastMessage = data // Para que los componentes reaccionen
@@ -175,6 +178,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.remoteCursors[data.from] = {
               x: data.action.x,
               y: data.action.y,
+              isFiring: !!data.action.isFiring
             }
           }
 
@@ -221,7 +225,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         }
         case 'MATCH_FINISHED': {
           this.returnedPlayers = [] // Reset al acabar partida
-          this.room = { ...data.room }
+          if (data.room) {
+            this.room = { ...data.room }
+          }
           this.lastMessage = data // Para que el lobby muestre el overlay de resultados
           console.log('¡PARTIDA TERMINADA! Ganador absoluto:', data.winner)
           break

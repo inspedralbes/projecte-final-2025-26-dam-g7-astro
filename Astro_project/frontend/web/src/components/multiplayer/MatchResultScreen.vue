@@ -15,7 +15,7 @@
 
     <!-- Título -->
     <h1 class="result-title mb-2" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-      {{ isWin ? '¡VICTORIA!' : (isTie ? '¡EMPATE!' : '¡DERROTA!') }}
+      {{ isTeammate ? (isWin ? '¡MISIÓN CUMPLIDA!' : '¡MISIÓN FALLIDA!') : (isWin ? '¡VICTORIA!' : (isTie ? '¡EMPATE!' : '¡DERROTA!')) }}
     </h1>
     <p class="text-h5 text-grey-lighten-2 mb-10">
       {{ isWin ? 'Has conquistado la galaxia' : (isTie ? 'Nadie domina el cosmos hoy' : 'El cosmos te ha vencido esta vez') }}
@@ -68,7 +68,7 @@
 
       <!-- VS separador -->
       <div class="vs-separator mx-8 text-center">
-        <div class="text-h3 font-weight-black text-grey-darken-1">VS</div>
+        <div class="text-h3 font-weight-black text-grey-darken-1">{{ isTeammate ? 'EQUIPO' : 'VS' }}</div>
         <div class="text-caption text-grey mt-1">{{ totalRounds }} rondas jugadas</div>
       </div>
 
@@ -195,6 +195,7 @@
     totalRounds: { type: Number, default: 0 },
     opponentName: { type: String, default: 'Oponente' },
     isHost: { type: Boolean, default: false },
+    isTeammate: { type: Boolean, default: false },
   })
 
   const emit = defineEmits(['return-to-lobby'])

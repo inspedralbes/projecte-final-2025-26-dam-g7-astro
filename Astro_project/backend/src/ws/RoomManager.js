@@ -21,6 +21,16 @@ class RoomManager {
         this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
         this.userToRoom = new Map();           // user -> roomId (AÑADIDO)
+        
+        // Duracions per defecte de cada minijoc (AÑADIDO)
+        this.gameDurations = {
+            'RadarScan': 600000,
+            'RadioSignal': 600000,
+            'RhymeSquad': 600000,
+            'SpelledRosco': 600000,
+            'SymmetryBreaker': 600000,
+            'WordConstruction': 600000
+        };
     }
 
     init(getCollections, wss) {
@@ -596,7 +606,8 @@ class RoomManager {
             clearTimeout(this.roundTimers.get(roomId));
         }
 
-        const duration = 60 * 1000; // 60 segundos por defecto
+        const currentGame = room.gameConfig.currentGame || 'default';
+        const duration = this.gameDurations[currentGame] || 60000;
         const timer = setTimeout(() => {
             console.log(`[Room ${roomId}] Tiempo agotado para la ronda.`);
             this.finishRound(roomId);
@@ -751,18 +762,33 @@ class RoomManager {
             }
 
             const scores = this.roundGameScores.get(roomId) || {};
-            scores[user] = action.score;
+            
+            // Si estem en mode equip, sincronitzem la puntuació per a tot l'equip
+            const teamId = room.gameConfig.teams ? room.gameConfig.teams[user] : null;
+            if (teamId) {
+                room.players.forEach(p => {
+                    if (room.gameConfig.teams[p] === teamId) {
+                        scores[p] = action.score;
+                        // Broadcast immediat per a cada membre de l'equip
+                        this.broadcastToRoom(roomId, {
+                            type: 'SCORE_UPDATE_LIVE',
+                            user: p,
+                            score: action.score
+                        });
+                    }
+                });
+            } else {
+                scores[user] = action.score;
+                this.broadcastToRoom(roomId, {
+                    type: 'SCORE_UPDATE_LIVE',
+                    user,
+                    score: action.score
+                });
+            }
+            
             this.roundGameScores.set(roomId, scores);
-
-            // Broadcast inmediato para que el HUD vea los puntos en vivo
-            this.broadcastToRoom(roomId, {
-                type: 'SCORE_UPDATE_LIVE',
-                user,
-                score: action.score
-            });
         }
 
-        // AÑADIDO: Progreso cooperativo de SpelledRosco (DESACTIVADO SWAP A PETICIÓN DEL USUARIO)
         if (action.type === 'ROSCO_PROGRESS_UPDATE') {
             const teamId = room.gameConfig.teams ? room.gameConfig.teams[user] : null;
             if (teamId) {
@@ -813,47 +839,6 @@ class RoomManager {
             type: 'GAME_ROLES_SWAPPED',
             subRoles: room.gameConfig.subRoles
         });
-    }
-
-    async handlePlayerReturnToLobby(roomId, user) {
-        const room = this.rooms.get(roomId);
-        if (!room) return;
-
-        this.updateRoomActivity(roomId); // (AÑADIDO)
-        let returned = this.returnedToLobbyPlayers.get(roomId);
-        if (!returned) {
-            returned = new Set();
-            this.returnedToLobbyPlayers.set(roomId, returned);
-        }
-
-        returned.add(user);
-        console.log(`[Room ${roomId}] Jugador ${user} vol tornar al lobby. (${returned.size}/${room.players.size})`);
-
-        // Notificar a tots qui ha tornat
-        this.broadcastToRoom(roomId, {
-            type: 'PLAYER_RETURNED',
-            user,
-            returnedCount: returned.size,
-            totalPlayers: room.players.size
-        });
-
-        // Si tots han decidit tornar al lobby
-        if (returned.size >= room.players.size) {
-            console.log(`[Room ${roomId}] Tots els jugadors han tornat. Reset room to LOBBY.`);
-            room.status = 'LOBBY';
-            this.returnedToLobbyPlayers.delete(roomId);
-            this.roundFinishedPlayers.delete(roomId);
-            this.roundGameScores.delete(roomId);
-
-            // Volver a iniciar el timer de inactividad
-            if (room.idleTimer) clearTimeout(room.idleTimer);
-            room.idleTimer = this.createLobbyTimeout(roomId);
-
-            this.broadcastToRoom(roomId, {
-                type: 'ROOM_UPDATE',
-                room: this.getRoom(roomId)
-            });
-        }
     }
 }
 
