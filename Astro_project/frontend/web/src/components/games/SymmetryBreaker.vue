@@ -295,6 +295,9 @@
     }
 
     if (timeLeft.value <= 0) {
+      if (props.isMultiplayer && isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'SYMMETRY_TIME_UP' })
+      }
       endGame(); return
     }
 
@@ -459,25 +462,33 @@
           const rx = (cursor.x / 1000) * gameCanvas.value.width
           const ry = (cursor.y / 1000) * gameCanvas.value.height
 
+          // Laser del compañero (si está disparando)
           if (cursor.isFiring) {
             ctx.beginPath()
             ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
             ctx.lineTo(rx, ry)
-            ctx.strokeStyle = 'rgba(255, 193, 7, 0.7)'
+            ctx.strokeStyle = 'rgba(255, 235, 59, 0.4)'
             ctx.lineWidth = 2
+            ctx.setLineDash([5, 5]) // Línea discontinua para el compañero
             ctx.stroke()
+            ctx.setLineDash([])
           }
 
+          // Cursor neón del compañero
           ctx.beginPath()
-          ctx.arc(rx, ry, 15, 0, Math.PI * 2)
-          ctx.strokeStyle = '#ffc107'
-          ctx.lineWidth = 2
+          ctx.arc(rx, ry, 18, 0, Math.PI * 2)
+          ctx.strokeStyle = '#ffeb3b'
+          ctx.lineWidth = 3
+          ctx.shadowBlur = 15
+          ctx.shadowColor = '#ffeb3b'
           ctx.stroke()
+          ctx.shadowBlur = 0
 
-          ctx.fillStyle = '#ffc107'
-          ctx.font = '12px Roboto Mono'
+          // Etiqueta de nombre
+          ctx.fillStyle = '#ffeb3b'
+          ctx.font = 'bold 14px Roboto Mono'
           ctx.textAlign = 'center'
-          ctx.fillText(uid, rx, ry - 25)
+          ctx.fillText(uid.toUpperCase(), rx, ry - 30)
         }
       }
     }
@@ -585,6 +596,11 @@
     resizeCanvas()
 
     if (props.isMultiplayer) {
+      // Delay para el briefing (Reducido a 3s)
+      setTimeout(() => {
+        startGame()
+      }, 3000)
+    } else {
       startGame()
     }
   })
@@ -645,6 +661,9 @@
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
         if (timeLeft.value <= 0 && isPlaying.value) endGame()
+      }
+      if (msg.action?.type === 'SYMMETRY_TIME_UP') {
+        endGame()
       }
     }
   }, { immediate: true })

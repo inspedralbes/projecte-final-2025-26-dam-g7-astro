@@ -43,7 +43,7 @@
   const emit = defineEmits(['finished'])
 
   const reelPosition = ref(0)
-  const duration = 3000 // 3 segundos de animación
+  const duration = 1500 // 1.5 segundos de animación (más rápido)
 
   // Duplicamos la lista para crear el efecto infinito
   const extendedGames = computed(() => {
@@ -88,13 +88,13 @@
     setTimeout(() => {
       isSpinning.value = false
       emit('finished')
-    }, duration + 500)
+    }, duration + 200)
   }
 
   watch(() => props.show, newVal => {
     if (newVal) {
       reelPosition.value = 0
-      setTimeout(startSpin, 500)
+      setTimeout(startSpin, 100)
     }
   })
 </script>

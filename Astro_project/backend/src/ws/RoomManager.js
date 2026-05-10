@@ -45,8 +45,8 @@ class RoomManager {
         setInterval(async () => {
             console.log("[RoomManager] Ejecutando Garbage Collector de salas...");
             const now = Date.now();
-            const LOBBY_TIMEOUT = 15 * 60 * 1000; // 15 minutos desde creación
-            const INACTIVE_TIMEOUT = 30 * 60 * 1000; // 30 minutos sin actividad total
+            const LOBBY_TIMEOUT = 10 * 60 * 1000; // 10 minutos desde creación
+            const INACTIVE_TIMEOUT = 10 * 60 * 1000; // 10 minutos sin actividad total
 
             for (const [roomId, room] of this.rooms.entries()) {
                 const createdAt = room.createdAt ? (typeof room.createdAt.getTime === 'function' ? room.createdAt.getTime() : new Date(room.createdAt).getTime()) : null;
@@ -228,7 +228,7 @@ class RoomManager {
                     }
                 }
             }
-        }, 15 * 60 * 1000);
+        }, 10 * 60 * 1000);
     }
 
     async createRoom(hostInput, isPublic = true, maxPlayers = 4, initialConfig = {}) {
@@ -467,6 +467,13 @@ class RoomManager {
         const room = this.rooms.get(roomId);
         if (!room) return;
         this.updateRoomActivity(roomId);
+
+        // Si viene maxPlayers en el config, lo actualizamos en la sala
+        if (config.maxPlayers !== undefined) {
+            room.maxPlayers = config.maxPlayers;
+            delete config.maxPlayers; // Lo quitamos del config interno para no duplicar
+        }
+
         room.gameConfig = { ...room.gameConfig, ...config };
 
         const roomUpdate = await this.getRoom(roomId);
@@ -488,9 +495,15 @@ class RoomManager {
             room.idleTimer = null;
         }
 
-        room.gameConfig.scores = {};
-        room.gameConfig.teams = {};
-        room.gameConfig.subRoles = {};
+        if (!room.gameConfig.scores) room.gameConfig.scores = {};
+        if (!room.gameConfig.teams) room.gameConfig.teams = {};
+        if (!room.gameConfig.subRoles) room.gameConfig.subRoles = {};
+        
+        // Reset scores for a new match but keep teams if they exist
+        room.players.forEach(p => {
+            room.gameConfig.scores[p] = 0;
+        });
+
         room.gameConfig.currentRound = 0;
         room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
         room.gameConfig.roundHistory = [];
@@ -580,33 +593,24 @@ class RoomManager {
                     const teams = Array.from(new Set(Object.values(room.gameConfig.teams || {})));
                     const phrases = [
                         'EL VAIXELL DAURAT BRILLA DE DIA', 'EL PETIT PAQUET VA QUEDAR AL PARC',
-                        'ELS DRACS BOTEN SOBRE LES PEDRES', 'TRES TRISTOS TIGRES MENGEN BLAT'
+                        'ELS DRACS BOTEN SOBRE LES PEDRES', 'TRES TRISTOS TIGRES MENGEN BLAT',
+                        'LA LLUNA PLENA IL·LUMINA EL CAMÍ', 'EL VENT BUFA FORT A LA MUNTANYA'
                     ];
-                    const generateRadio = () => ({
-                        frequency: Math.random() * 90 + 5,
-                        phrase: phrases[Math.floor(Math.random() * phrases.length)]
-                    });
+                    const generateRadio = () => {
+                        const p1Idx = Math.floor(Math.random() * phrases.length);
+                        let p2Idx = Math.floor(Math.random() * phrases.length);
+                        while (p2Idx === p1Idx) p2Idx = Math.floor(Math.random() * phrases.length);
+
+                        return {
+                            frequency: Math.random() * 90 + 5,
+                            phrase: phrases[p1Idx],
+                            partnerPhrase: phrases[p2Idx]
+                        };
+                    };
 
                     if (teams.length > 0) teams.forEach(tId => { room.gameConfig.radioData[tId] = generateRadio(); });
                     else room.gameConfig.radioData['default'] = generateRadio();
                 }
-
-                playerArray.forEach((p, index) => {
-                    if (isPairGame) {
-                        const pairIndex = Math.floor(index / 2);
-                        room.gameConfig.teams[p] = `team-${pairIndex + 1}`;
-                        if (currentGame === 'SpelledRosco') {
-                            room.gameConfig.subRoles[p] = (index % 2 === 0) ? ROSCO_ROLES.SENDER : ROSCO_ROLES.GUESSER;
-                        } else if (currentGame === 'RhymeSquad') {
-                            room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'catcher' : 'sniper';
-                        } else {
-                            room.gameConfig.subRoles[p] = (index % 2 === 0) ? 'listener' : 'writer';
-                        }
-                    } else {
-                        room.gameConfig.teams[p] = (index < half) ? 'red' : 'blue';
-                        room.gameConfig.subRoles[p] = null;
-                    }
-                });
 
                 this.roundGameScores.set(roomId, {});
                 this.roundFinishedPlayers.set(roomId, new Set());
@@ -682,22 +686,77 @@ class RoomManager {
         let maxScore = -1;
         let tie = false;
 
-        Object.entries(roundScores).forEach(([u, s]) => {
-            if (s > maxScore) {
-                maxScore = s;
-                winner = u;
-                tie = false;
-            } else if (s === maxScore && maxScore > 0) {
-                tie = true;
+        // Si hay equipos, calculamos el ganador por equipo
+        const hasTeams = room.gameConfig.teams && Object.keys(room.gameConfig.teams).length > 0;
+        
+        if (hasTeams) {
+            const teamScores = {};
+            Object.entries(roundScores).forEach(([u, s]) => {
+                const teamId = room.gameConfig.teams[u];
+                if (teamId) {
+                    // En cooperativo/equipos el score suele estar sincronizado, 
+                    // así que tomamos el máximo reportado por cualquier miembro del equipo
+                    teamScores[teamId] = Math.max(teamScores[teamId] || 0, s);
+                }
+            });
+
+            let winningTeam = null;
+            Object.entries(teamScores).forEach(([tId, s]) => {
+                if (s > maxScore) {
+                    maxScore = s;
+                    winningTeam = tId;
+                    tie = false;
+                } else if (s === maxScore && maxScore > 0) {
+                    tie = true;
+                }
+            });
+
+            if (winningTeam && !tie) {
+                // El ganador es el equipo (lo guardamos como string identificador)
+                winner = winningTeam;
+                // Incrementamos score para todos los miembros del equipo
+                room.players.forEach(p => {
+                    if (room.gameConfig.teams[p] === winningTeam) {
+                        room.gameConfig.scores[p] = (room.gameConfig.scores[p] || 0) + 1;
+                    }
+                });
             }
-        });
+        } else {
+            // Lógica individual clásica
+            Object.entries(roundScores).forEach(([u, s]) => {
+                if (s > maxScore) {
+                    maxScore = s;
+                    winner = u;
+                    tie = false;
+                } else if (s === maxScore && maxScore > 0) {
+                    tie = true;
+                }
+            });
+
+            if (winner && !tie) {
+                room.gameConfig.scores[winner] = (room.gameConfig.scores[winner] || 0) + 1;
+            }
+        }
 
         if (winner && !tie) {
-            room.gameConfig.scores[winner] = (room.gameConfig.scores[winner] || 0) + 1;
             console.log(`[Room ${roomId}] Ganador de ronda: ${winner}`);
         }
 
-        room.status = 'ROUND_RESULTS';
+        // Guardar en el historial de la partida para la gráfica final
+        if (!room.gameConfig.roundHistory) room.gameConfig.roundHistory = [];
+        room.gameConfig.roundHistory.push({
+            round: room.gameConfig.currentRound + 1,
+            winner: winner,
+            tie: tie,
+            currentScores: { ...room.gameConfig.scores }
+        });
+
+        // Si es la última ronda, saltamos directamente a MATCH_RESULTS
+        if (room.gameConfig.currentRound >= room.gameConfig.maxRounds - 1) {
+            room.status = 'MATCH_RESULTS';
+        } else {
+            room.status = 'ROUND_RESULTS';
+        }
 
         const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
@@ -750,7 +809,7 @@ class RoomManager {
                     room: nextRoomUpdate
                 });
             }
-        }, 5000);
+        }, 2000);
     }
 
     handleGameAction(roomId, user, action) {

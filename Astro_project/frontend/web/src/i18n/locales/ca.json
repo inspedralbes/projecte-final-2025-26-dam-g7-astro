@@ -101,7 +101,6 @@
         "inventoryBtn": "INVENTARI",
         "changePlanBtn": "CANVIAR PLA",
         "logoutBtn": "FINALITZAR CONNEXIÓ I SORTIR",
-        "logoutConfirm": "Estàs a punt de desconnectar-te del sistema central d'ASTRO. Vols continuar?",
         "topGames": "MILLORS MISSIONS (TOP 5)",
         "flightHistory": "HISTORIAL DE VOL",
         "flightHistorySub": "Els teus últims registres de missió en l'espai profund.",
@@ -369,13 +368,19 @@
         "opponent": "Oponent",
         "level": "Nivell",
         "team": "Equip",
-        "randomizeTeams": "Aleatori"
+        "randomizeTeams": "Aleatori",
+        "briefingTitle": "INSTRUCCIONS DE MISSIÓ",
+        "autoStarting": "Iniciant automàticament...",
+        "nextGameStarting": "PREPARANT SEGÜENT MISSIÓ...",
+        "roleCatcher": "RECOL·LECTOR",
+        "roleSniper": "DESTRUCTOR"
     },
     "plans": {
+        "individual": "Individual",
+        "premium": "Premium",
+        "standard": "Estàndard",
+        "individual_free": "Individual (Gratuït)",
         "selectMode": "SELECCIONA EL TEU MODE DE MISSIÓ",
-        "standard": "ESTÀNDARD",
-        "manage": "GESTIONAR",
-        "select": "SELECCIONAR",
         "individualTitle": "MODALITAT INDIVIDUAL",
         "individualSubtitle": "Defineix el teu nivell d'accés a la base de dades",
         "freeDesc": "Exploració bàsica. <br> Sense accés a telemetria avançada.",
@@ -409,7 +414,7 @@
         "cancelProtocol": "CANCEL·LAR PROTOCOL",
         "pwdMismatch": "Els codis no coincideixen",
         "individualDesc": "Enlaira't en solitari. Domina les missions bàsiques i explora el cosmos al teu propi ritme.",
-        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en temps real i panell de telemetria conjunt."
+        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en tempo real i panell de telemetria conjunt."
     },
     "spelledRosco": {
         "title": "🚀 Rosco Estel·lar",
@@ -447,7 +452,11 @@
         "errors": "Errors",
         "finalScore": "Puntuació Final: {score}",
         "maxCombo": "Combo Màxim: x{combo}",
-        "getReward": "Obtenir Recompensa"
+        "getReward": "Obtenir Recompensa",
+        "roleCatcher": "RECOL·LECTOR",
+        "catcherDesc": "¡Atrapa només les paraules que RIMIN amb la pista!",
+        "roleSniper": "DESTRUCTOR",
+        "sniperDesc": "¡Destrueix les paraules que NO rimen per protegir l'equip!"
     },
     "syllableQuest": {
         "points": "Punts: {score}",
@@ -559,139 +568,6 @@
         "limit3": "* Només vàlid durant 3 partides"
     },
     "radarScan": {
-        "points": "Punts: {score}",
-        "time": "Temps:",
-        "title": "Escàner de Ràdar",
-        "desc": "Troba la lletra diferent abans que s'esgoti el temps. Vigila, el teu camp de visió és limitat i fer clics a l'atzar et restarà temps!",
-        "startBtn": "COMENÇAR (60s)",
-        "completed": "¡Escàner Completat!",
-        "totalPoints": "Punts Totals: {score}",
-        "returnMenu": "TORNAR AL MENÚ"
-    },
-    "radioSignal": {
-        "points": "Punts: {score}",
-        "time": "Temps: {time}s",
-        "locked": "● LOCKED",
-        "scanning": "○ SCANNING",
-        "placeholder": "Escriu la frase...",
-        "send": "SEND",
-        "waiting": "ESPERANT SENYAL...",
-        "error": "✗ DADES INCORRECTES - TORNA A INTENTAR"
-    },
-    "errors": {
-        "noSession": "No hi ha una sessió activa.",
-        "invalidGame": "Nom de joc invàlid.",
-        "invalidItem": "Objecte invàlid."
-    },
-    "missionsList": {
-        "daily": {
-            "games": "Juga {goal} partides",
-            "coins": "Guanya {goal} monedes",
-            "xp": "Aconsegueix {goal} XP",
-            "item": "Utilitza {goal} Potenciadors",
-            "streak": "Activitat Diària"
-        },
-        "weekly": {
-            "games": "Mestre de Jocs ({goal} partides)",
-            "coins": "Buscador d'Or ({goal} monedes)",
-            "xp": "Ascensió Lunar (Guanya {goal} XP)",
-            "streak": "Supervivient Espacial (Ratxa {goal} dies)",
-            "item": "Interacció d'Objectes ({goal} objectes)"
-        }
-    },
-    "achievementsList": {
-        "1": {
-            "title": "Primer Vol",
-            "desc": "Completa 1 missió.",
-            "metric": "Partides"
-        },
-        "2": {
-            "title": "Tripulant Actiu",
-            "desc": "Completa 5 missions.",
-            "metric": "Partides"
-        },
-        "3": {
-            "title": "Veterà Estel·lar",
-            "desc": "Completa 20 missions.",
-            "metric": "Partides"
-        },
-        "4": {
-            "title": "Primer Botí",
-            "desc": "Acumula 1.200 monedes.",
-            "metric": "Monedes"
-        },
-        "5": {
-            "title": "Fortuna Galàctica",
-            "desc": "Acumula 3.000 monedes.",
-            "metric": "Monedes"
-        },
-        "6": {
-            "title": "Primer Col·leccionable",
-            "desc": "Aconsegueix 1 objecte a l'inventari.",
-            "metric": "Objectes"
-        },
-        "7": {
-            "title": "Col·leccionista",
-            "desc": "Aconsegueix 5 objectes a l'inventari.",
-            "metric": "Objectes"
-        },
-        "8": {
-            "title": "Museu Orbital",
-            "desc": "Aconsegueix 10 objectes a l'inventari.",
-            "metric": "Objectes"
-        },
-        "9": {
-            "title": "Pujant de Rang",
-            "desc": "Assoleix el nivell 3.",
-            "metric": "Nivell"
-        },
-        "10": {
-            "title": "Capità Novell",
-            "desc": "Assoleix el nivell 5.",
-            "metric": "Nivell"
-        },
-        "11": {
-            "title": "Comandant",
-            "desc": "Assoleix el nivell 8.",
-            "metric": "Nivell"
-        },
-        "12": {
-            "title": "Energia Infinita",
-            "desc": "Aconsegueix 500 XP.",
-            "metric": "XP"
-        },
-        "13": {
-            "title": "Estrateg Galàctic",
-            "desc": "Completa 10 missions.",
-            "metric": "Missions"
-        },
-        "14": {
-            "title": "Mercader d'Estrelles",
-            "desc": "Acumula 2.000 monedes.",
-            "metric": "Monedes"
-        },
-        "15": {
-            "title": "Heroi del Cosmos",
-            "desc": "Completa 50 missions.",
-            "metric": "Missions"
-        },
-        "16": {
-            "title": "Magnat de la Nebulosa",
-            "desc": "Acumula 5.000 monedes.",
-            "metric": "Monedes"
-        },
-        "17": {
-            "title": "Sobirà del Buit",
-            "desc": "Assoleix el nivell 10.",
-            "metric": "Nivell"
-        },
-        "18": {
-            "title": "Conqueridor de Galàxies",
-            "desc": "Aconsegueix 1.000 XP.",
-            "metric": "XP"
-        }
-    },
-    "radarScan": {
         "title": "Escàner de Ràdar",
         "points": "Punts: {score}",
         "time": "Temps: ",
@@ -724,6 +600,27 @@
         "success": "¡SENYAL DESXIFRADA!",
         "successDesc": "+150 PTS | +15s"
     },
+    "errors": {
+        "noSession": "No hi ha una sessió activa.",
+        "invalidGame": "Nom de joc invàlid.",
+        "invalidItem": "Objecte invàlid."
+    },
+    "missionsList": {
+        "daily": {
+            "games": "Juga {goal} partides",
+            "coins": "Guanya {goal} crèdits",
+            "xp": "Aconsegueix {goal} XP",
+            "item": "Utilitza {goal} objectes",
+            "streak": "Manté la teva racha"
+        },
+        "weekly": {
+            "games": "Mestre de Jocs ({goal} partides)",
+            "coins": "Cercador d'Or ({goal} crèdits)",
+            "xp": "Ascensió Lunar ({goal} XP)",
+            "streak": "Supervivient (Racha {goal} dies)",
+            "item": "Interacció Pro ({goal} objectes)"
+        }
+    },
     "games": {
         "SymmetryBreaker": "Simetria Estel·lar",
         "symmetry-breaker": "Simetria Estel·lar",
@@ -746,8 +643,8 @@
         "RadioSignal": "Senyal de Ràdio",
         "radio-signal": "Senyal de Ràdio",
         "radiosignal": "Senyal de Ràdio",
-        "Preparativos": "Preparatius",
-        "preparativos": "Preparatius",
+        "Preparativos": "Construcció de Paraules",
+        "preparativos": "Construcció de Paraules",
         "Despegue": "Enlairament!",
         "despegue": "Enlairament!",
         "Gravedad": "Trencant la Gravetat",
@@ -761,33 +658,11 @@
         "Recarga": "Recàrrega Solar",
         "recarga": "Recàrrega Solar",
         "Reparacion": "Reparació Exprés",
-        "reparacion": "Reparació Exprés"
-    },
-    "plans": {
-        "individual": "Individual",
-        "premium": "Premium",
-        "standard": "Estàndard",
-        "individual_free": "Individual (Gratuït)"
-    },
-    "multiplayerResult": {
-        "victory": "¡VICTÒRIA!",
-        "tie": "¡EMPAT!",
-        "defeat": "¡DERROTA!",
-        "winDesc": "Has conquerit la galàxia",
-        "tieDesc": "Ningú domina el cosmos avui",
-        "defeatDesc": "El cosmos t'ha vençut aquest cop",
-        "you": "TU",
-        "roundsWon": "rondes guanyades",
-        "winner": "GUANYADOR",
-        "loser": "PERDEDOR",
-        "ready": "PREPARAT",
-        "waiting": "ESPERANT...",
-        "pending": "PENDENT",
-        "vs": "VS",
-        "roundsPlayed": "{total} rondes jugades",
-        "missionHistory": "HISTORIAL DE LA MISSIÓ",
-        "backToLobby": "TORNAR A LA SALA",
-        "waitingTeam": "Esperant que l'equip torni..."
+        "reparacion": "Reparació Exprés",
+        "multiplayer": "Multijugador",
+        "Multiplayer": "Multijugador",
+        "Minijuego": "Minijoc",
+        "Minijoc": "Minijoc"
     },
     "shop": {
         "spinError": "Error en girar",
@@ -804,7 +679,7 @@
         "support": "Suport Tècnic",
         "x": "Twitter / X",
         "github": "Repositori GitHub",
-        "discord": "Comunitat Discord",
+        "discord": "Comunidad Discord",
         "reddit": "Fòrum Reddit"
     },
     "educational": {
@@ -881,45 +756,29 @@
             }
         }
     },
-    "games": {
-        "word-construction": "Construcció de Paraules",
-        "WordConstruction": "Construcció de Paraules",
-        "radar-scan": "Escàner de Radar",
-        "radar-scanner": "Escàner de Radar",
-        "RadarScan": "Escàner de Radar",
-        "RadarScanner": "Escàner de Radar",
-        "radio-signal": "Senyal de Ràdio",
-        "RadioSignal": "Senyal de Ràdio",
-        "spelled-rosco": "Rosco Estelar",
-        "SpelledRosco": "Rosco Estelar",
-        "rhyme-squad": "Squad de Rimes",
-        "RhymeSquad": "Squad de Rimes",
-        "symmetry-breaker": "Rompedor de Simetries",
-        "SymmetryBreaker": "Rompedor de Simetries",
-        "syllable-quest": "Missió de Síl·labes",
-        "SyllableQuest": "Missió de Síl·labes",
-        "multiplayer": "Multijugador",
-        "Multiplayer": "Multijugador",
-        "Minijuego": "Minijoc",
-        "Minijoc": "Minijoc",
-        "Preparativos": "Construcció de Paraules",
-        "Preparatius": "Construcció de Paraules",
-        "Preparativos de Vuelo": "Construcció de Paraules",
-        "¡Despegue!": "Escàner de Radar",
-        "Despegue": "Escàner de Radar",
-        "Despegue!": "Escàner de Radar",
-        "Gravedad": "Senyal de Ràdio",
-        "Rompiendo la Gravedad": "Senyal de Ràdio",
-        "Desacoplamiento": "Rosco Estelar",
-        "Desacoplamiento Orbital": "Rosco Estelar",
-        "Ruta": "Squad de Rimes",
-        "Ruta Estelar": "Squad de Rimes",
-        "Base": "Senyal de Ràdio",
-        "Llamando a la Base": "Senyal de Ràdio",
-        "Recarga": "Rompedor de Simetries",
-        "Recarga Solar": "Rompedor de Simetries",
-        "Reparación": "Escàner de Radar",
-        "Reparación Express": "Escàner de Radar"
+    "multiplayerResult": {
+        "victory": "¡VICTÒRIA!",
+        "tie": "¡EMPATE!",
+        "defeat": "¡DERROTA!",
+        "winDesc": "Has conquistat la galàxia",
+        "tieDesc": "Ningú domina el cosmos avui",
+        "defeatDesc": "El cosmos t'ha vençut aquesta vegada",
+        "you": "TU",
+        "roundsWon": "rondes guanyades",
+        "winner": "GUANYADOR",
+        "loser": "PERDEDOR",
+        "ready": "PREPARAT",
+        "waiting": "ESPERANT...",
+        "pending": "PENDENT",
+        "vs": "VS",
+        "team": "EQUIP",
+        "winQuote": "¡Has dominat la galàxia amb honor!",
+        "tieQuote": "Un equilibri perfecte de forces.",
+        "defeatQuote": "La derrota és només un pas més cap al coneixement.",
+        "roundsPlayed": "{total} rondes jugades",
+        "missionHistory": "HISTORIAL DE LA MISSIÓ",
+        "backToLobby": "TORNAR A LA SALA",
+        "waitingTeam": "Esperant que l'equip torni..."
     },
     "ranks": [
         "Cadet de Vol",
@@ -937,21 +796,5 @@
         "Arquitecte de Realitats",
         "Deitat de la Singularitat",
         "Omniscient del Cosmos"
-    ],
-    "missionsList": {
-        "daily": {
-            "games": "Juga {goal} partides",
-            "coins": "Guanya {goal} crèdits",
-            "xp": "Aconsegueix {goal} XP",
-            "item": "Utilitza {goal} objectes",
-            "streak": "Manté la teva racha"
-        },
-        "weekly": {
-            "games": "Mestre de Jocs ({goal} partides)",
-            "coins": "Cercador d'Or ({goal} crèdits)",
-            "xp": "Ascensió Lunar ({goal} XP)",
-            "streak": "Supervivent (Racha {goal} dies)",
-            "item": "Interacció Pro ({goal} objectes)"
-        }
-    }
+    ]
 }

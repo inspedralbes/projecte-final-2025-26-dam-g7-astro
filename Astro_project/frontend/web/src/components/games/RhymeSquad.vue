@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4" fluid>
+  <v-container class="d-flex flex-column align-center justify-start game-container pa-0" fluid style="height: 100vh; overflow: hidden;">
 
     <v-card
       v-if="!isPlaying && !isGameOver"
@@ -14,14 +14,30 @@
 
       <!-- AVISOS DE ROLES MULTIJUGADOR -->
       <div v-if="isMultiplayer" class="mb-8">
-        <div v-if="subRole === 'catcher'" class="pa-4 rounded-lg bg-green-darken-4 mb-4">
-          <h2 class="text-h4 font-weight-black text-green-accent-3 mb-2">{{ $t('rhymeSquad.roleCatcher') || 'ETS EL RECOL·LECTOR' }}</h2>
-          <p class="text-body-1 text-white">{{ $t('rhymeSquad.catcherDesc') || '¡Atrapa només les paraules que rimin amb la pista!' }}</p>
-        </div>
-        <div v-if="subRole === 'sniper'" class="pa-4 rounded-lg bg-red-darken-4 mb-4">
-          <h2 class="text-h4 font-weight-black text-red-accent-3 mb-2">{{ $t('rhymeSquad.roleSniper') || 'ETS EL DESTRUCTOR' }}</h2>
-          <p class="text-body-1 text-white">{{ $t('rhymeSquad.sniperDesc') || '¡Destrueix les paraules que NO rimin per protegir al company!' }}</p>
-        </div>
+        <v-row>
+          <v-col cols="12" md="6">
+            <div
+              class="pa-6 rounded-xl border-2 mb-4 h-100 d-flex flex-column align-center justify-center transition-all"
+              :class="subRole === 'catcher' ? 'bg-green-darken-4 border-green' : 'bg-grey-darken-3 opacity-50'"
+            >
+              <v-icon :color="subRole === 'catcher' ? 'green-accent-3' : 'grey'" size="64" class="mb-4">mdi-basket-fill</v-icon>
+              <h2 class="text-h4 font-weight-black mb-2" :class="subRole === 'catcher' ? 'text-green-accent-3' : 'text-grey'">{{ $t('rhymeSquad.roleCatcher') || 'RECOL·LECTOR' }}</h2>
+              <p class="text-body-1 text-white">{{ $t('rhymeSquad.catcherDesc') || '¡Atrapa només les paraules que rimin amb la pista!' }}</p>
+              <v-chip v-if="subRole === 'catcher'" color="green-accent-3" class="mt-4 font-weight-bold">TEU ROL</v-chip>
+            </div>
+          </v-col>
+          <v-col cols="12" md="6">
+            <div
+              class="pa-6 rounded-xl border-2 mb-4 h-100 d-flex flex-column align-center justify-center transition-all"
+              :class="subRole === 'sniper' ? 'bg-red-darken-4 border-red' : 'bg-grey-darken-3 opacity-50'"
+            >
+              <v-icon :color="subRole === 'sniper' ? 'red-accent-3' : 'grey'" size="64" class="mb-4">mdi-target</v-icon>
+              <h2 class="text-h4 font-weight-black mb-2" :class="subRole === 'sniper' ? 'text-red-accent-3' : 'text-grey'">{{ $t('rhymeSquad.roleSniper') || 'DESTRUCTOR' }}</h2>
+              <p class="text-body-1 text-white">{{ $t('rhymeSquad.sniperDesc') || '¡Destrueix les paraules que NO rimin per protegir al company!' }}</p>
+              <v-chip v-if="subRole === 'sniper'" color="red-accent-3" class="mt-4 font-weight-bold">TEU ROL</v-chip>
+            </div>
+          </v-col>
+        </v-row>
 
         <div v-if="!isHost" class="mt-4 text-center">
           <v-progress-circular color="cyan-accent-3" indeterminate size="32" />
@@ -30,7 +46,7 @@
       </div>
 
       <v-btn
-        v-if="!isMultiplayer || isHost"
+        v-if="!isMultiplayer"
         block
         class="font-weight-black text-black text-h6"
         color="cyan-accent-3"
@@ -41,60 +57,54 @@
       >
         {{ $t('rhymeSquad.startMission') }}
       </v-btn>
+      <div v-else-if="isHost" class="text-h6 text-cyan-accent-2 animate-pulse mt-4">
+        {{ $t('multiplayerLobby.autoStarting') || 'LA MISIÓN COMENZARÁ TRAS EL BRIEFING...' }}
+      </div>
     </v-card>
 
     <template v-else-if="isPlaying">
-      <v-card
-        class="rhyme-header mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0"
-        max-width="1200"
-        rounded="xl"
-        style="z-index: 10;"
-        width="100%"
-      >
-        <div class="d-flex justify-space-between align-center">
-          <div>
-            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">{{ $t('rhymeSquad.phonologicalSquad') }}</h2>
-            <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
-              <span class="font-weight-bold">{{ $t('rhymeSquad.points', { score }) }}</span>
-              <span class="mx-3">|</span>
-              <span class="font-weight-bold" :class="timeLeft <= 15 ? 'text-red-accent-2 animate-pulse' : 'text-blue-lighten-2'">
-                {{ $t('rhymeSquad.time', { time: timeLeft }) }}
-              </span>
-              <span class="mx-3">|</span>
-              <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">{{ $t('rhymeSquad.lives', { lives }) }}</span>
-            </div>
+      <!-- Header Arcade Persistente -->
+      <div class="arcade-hud w-100 pa-4 d-flex justify-space-between align-center">
+        <div class="hud-left d-flex gap-4">
+          <div class="arcade-stat score">
+            <span class="label">SCORE</span>
+            <span class="value">{{ score.toString().padStart(6, '0') }}</span>
           </div>
-
-          <div class="text-center px-10 target-box rounded-xl py-3">
-            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">{{ $t('rhymeSquad.findRhymes') }}</div>
-            <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget?.word || '---' }}</div>
+          <div class="arcade-stat combo" v-if="combo > 0">
+            <span class="label">COMBO</span>
+            <span class="value text-cyan-accent-2">x{{ combo }}</span>
           </div>
+        </div>
 
-          <div class="d-flex align-center gap-6">
-            <v-chip
-              v-if="combo > 0"
-              class="font-weight-bold text-h6"
-              :class="{ 'animate-pulse': isTurbo }"
-              :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'"
-              size="x-large"
-            >
-              {{ $t('rhymeSquad.combo', { combo, turbo: isTurbo ? '🔥' : '' }) }}
-            </v-chip>
-            <v-btn
-              color="grey"
-              icon="mdi-close"
-              size="large"
-              variant="text"
-              @click="forceEndGame"
+        <div class="hud-center">
+          <div class="mission-objective pa-4 rounded-xl">
+            <div class="objective-label">{{ $t('rhymeSquad.findRhymes') }}</div>
+            <div class="objective-word glow-text">{{ currentTarget?.word || '---' }}</div>
+          </div>
+        </div>
+
+        <div class="hud-right d-flex gap-4 align-center">
+          <div class="arcade-stat time" :class="{ 'critical': timeLeft <= 10 }">
+            <v-icon icon="mdi-timer-outline" class="mr-2" />
+            <span class="value">{{ timeLeft }}s</span>
+          </div>
+          <div class="lives-display d-flex gap-1">
+            <v-icon 
+              v-for="i in (props.isMultiplayer ? 10 : 3)" 
+              :key="i"
+              :icon="i <= lives ? 'mdi-heart' : 'mdi-heart-outline'"
+              :color="i <= lives ? 'red-accent-2' : 'grey-darken-2'"
+              size="24"
+              class="heart-icon"
             />
           </div>
         </div>
-      </v-card>
+      </div>
 
       <div
-        class="play-area position-relative rounded-xl overflow-hidden w-100 mt-2"
+        class="play-area position-relative w-100"
         :class="{ 'turbo-mode': isTurbo }"
-        style="max-width: 1200px; flex: 1; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
+        style="flex: 1; min-height: 0; background: radial-gradient(circle at center, rgba(13, 2, 33, 0.4) 0%, transparent 100%);"
         @click.self="missClick"
       >
         <div v-if="isTurbo" class="nebula-bg" />
@@ -156,13 +166,7 @@
       </v-btn>
     </v-card>
 
-    <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
-        <v-progress-circular class="mb-4" color="cyan-accent-3" indeterminate size="64" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('rhymeSquad.assemblingResults') || 'Muntant resultats...' }}</h2>
-        <p class="text-body-1 text-grey-lighten-1">{{ $t('rhymeSquad.waitingForPartner') || 'Esperant que el company acabi la seva missió.' }}</p>
-      </v-card>
-    </v-overlay>
+
 
   </v-container>
 </template>
@@ -266,6 +270,9 @@
 
           if (timeLeft.value <= 0) {
             timeLeft.value = 0
+            if (props.isMultiplayer && isHost.value) {
+              multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
+            }
             endGame()
           }
         }
@@ -450,7 +457,7 @@
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    if (msg.type === 'ROUND_ENDED_BY_WINNER' && !isGameOver.value && isPlaying.value) {
       isPlaying.value = false
       isGameOver.value = true
       emitExit()
@@ -485,6 +492,9 @@
         lives.value = msg.action.lives
         if (lives.value <= 0) endGame()
       }
+      if (msg.action?.type === 'RHYME_TIME_UP') {
+        endGame()
+      }
       if (msg.action?.type === 'REQUEST_RHYME_SYNC' && isHost.value) {
         multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
         multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
@@ -505,8 +515,21 @@
   })
 
   onMounted(() => {
-    if (props.isMultiplayer && !isHost.value) {
-      multiplayerStore.sendGameAction({ type: 'REQUEST_RHYME_SYNC' })
+    if (props.isMultiplayer) {
+      if (!isHost.value) {
+        multiplayerStore.sendGameAction({ type: 'REQUEST_RHYME_SYNC' })
+      }
+      
+      // Cargamos el primer target de inmediato
+      if (isHost.value) pickNewTarget()
+
+      // Pero no empezamos el spawn de palabras ni el tiempo hasta que pase el briefing (Reducido a 1.5s)
+      setTimeout(() => {
+        if (!isPlaying.value) {
+          if (isHost.value) handleStartClick()
+          else startGame()
+        }
+      }, 1500)
     }
   })
 
@@ -518,27 +541,144 @@
 </script>
 
 <style scoped>
-.game-container { background-color: transparent; }
-.hide-cursor { cursor: none; }
-.target-box { background: rgba(0, 229, 255, 0.1); border: 2px solid rgba(0, 229, 255, 0.4); }
+.game-container { 
+  background: radial-gradient(circle at center, #0d0221 0%, #020617 100%);
+  color: white;
+}
+
+.arcade-hud {
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
+
+.arcade-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.arcade-stat .label {
+  font-size: 0.7rem;
+  color: rgba(0, 229, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+.arcade-stat .value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.mission-objective {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  min-width: 300px;
+  text-align: center;
+  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+.objective-label {
+  font-size: 0.8rem;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+
+.objective-word {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.critical .value {
+  color: #ff5252;
+  animation: pulse-red 0.5s infinite alternate;
+}
+
+.heart-icon {
+  filter: drop-shadow(0 0 5px rgba(255, 82, 82, 0.5));
+}
+
 .glow-text { text-shadow: 0 0 20px rgba(0, 229, 255, 0.8); }
-.border-cyan { border-color: #00e5ff !important; border-width: 2px; border-style: solid; }
-.play-area { background: radial-gradient(circle at 50% 10%, #1a233a 0%, #05070d 100%); cursor: crosshair; }
-.turbo-mode.play-area { background: radial-gradient(circle at 50% 10%, #311042 0%, #0b051a 100%); }
-.nebula-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; background: radial-gradient(circle, rgba(224, 64, 251, 0.1) 0%, transparent 60%); pointer-events: none; animation: pulse-bg 2s infinite alternate; }
-.falling-word { position: absolute; top: -100px; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 1.3rem; color: white; user-select: none; animation-name: fallAnimation; animation-timing-function: linear; animation-fill-mode: forwards; transition: all 0.2s ease; z-index: 10; }
-.word-falling { background: rgba(30, 41, 59, 0.9); border: 3px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
-.word-falling:hover { transform: scale(1.1); border-color: #00e5ff; }
-.word-correct { background: #00c853 !important; border: 3px solid #b9f6ca !important; box-shadow: 0 0 35px rgba(0, 200, 83, 0.9) !important; transform: scale(1.2); color: white; z-index: 20; }
-.word-incorrect { background: #d50000 !important; border: 3px solid #ff8a80 !important; box-shadow: 0 0 35px rgba(213, 0, 0, 0.9) !important; transform: scale(0.9) rotate(5deg); color: white; z-index: 20; }
-.time-bonus-feedback { position: absolute; top: 30px; right: 50px; z-index: 30; pointer-events: none; text-shadow: 0 0 15px rgba(0, 200, 83, 0.9); }
-@keyframes fallAnimation { 0% { top: -100px; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-@keyframes pulse-bg { 0% { opacity: 0.5; } 100% { opacity: 1; } }
-.animate-pulse { animation: pulse-chip 1s infinite alternate; }
-@keyframes pulse-chip { 0% { transform: scale(1); box-shadow: 0 0 15px rgba(224, 64, 251, 0.5); } 100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(224, 64, 251, 0.9); } }
-.fade-leave-active { transition: opacity 0.3s; }
-.fade-leave-to { opacity: 0; }
+
+.play-area { 
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.falling-word { 
+  position: absolute; 
+  top: -100px; 
+  padding: 12px 24px; 
+  border-radius: 12px; 
+  font-weight: 900; 
+  font-size: 1.2rem; 
+  color: white; 
+  user-select: none; 
+  animation-name: fallAnimation; 
+  animation-timing-function: linear; 
+  animation-fill-mode: forwards; 
+  transition: transform 0.1s ease; 
+  z-index: 10; 
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.word-falling { 
+  background: rgba(15, 23, 42, 0.9); 
+  border: 1px solid rgba(0, 229, 255, 0.3); 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+}
+
+.word-falling:hover { 
+  transform: scale(1.1) rotate(2deg); 
+  border-color: #00e5ff; 
+  background: rgba(30, 41, 59, 1);
+}
+
+.word-correct {
+  background: rgba(76, 175, 80, 0.9);
+  border-color: #4caf50;
+  transform: scale(1.2);
+}
+
+.word-incorrect {
+  background: rgba(244, 67, 54, 0.9);
+  border-color: #f44336;
+  transform: scale(0.8);
+}
+
+.turbo-mode {
+  box-shadow: inset 0 0 100px rgba(224, 64, 251, 0.2);
+}
+
+@keyframes pulse-red { 0% { opacity: 1; } 100% { opacity: 0.5; } }
+@keyframes fallAnimation { 
+  0% { top: -10%; opacity: 0; } 
+  10% { opacity: 1; } 
+  90% { opacity: 1; } 
+  100% { top: 110%; opacity: 0; } 
+}
+
+.time-bonus-feedback {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 50;
+}
+
 .fade-up-enter-active, .fade-up-leave-active { transition: all 0.5s ease; }
-.fade-up-enter-from { opacity: 0; transform: translateY(20px); }
-.fade-up-leave-to { opacity: 0; transform: translateY(-20px); }
+.fade-up-enter-from { opacity: 0; transform: translate(-50%, 20px); }
+.fade-up-leave-to { opacity: 0; transform: translate(-50%, -50px); }
+
 </style>

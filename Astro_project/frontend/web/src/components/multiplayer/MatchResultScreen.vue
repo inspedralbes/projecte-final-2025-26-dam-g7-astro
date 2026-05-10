@@ -14,17 +14,54 @@
     </div>
 
     <!-- Título -->
-    <h1 class="result-title mb-2" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-      <template v-if="isTeammate">
-        {{ isWin ? $t('multiplayerResult.missionAccomplished') : $t('multiplayerResult.missionFailed') }}
-      </template>
-      <template v-else>
-        {{ isWin ? $t('multiplayerResult.victory') : (isTie ? $t('multiplayerResult.tie') : $t('multiplayerResult.defeat')) }}
-      </template>
+    <h1 class="result-title mb-2 italic glow-text" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
+      {{ resultMainTitle }}
     </h1>
-    <p class="text-h5 text-grey-lighten-2 mb-10">
+
+    <div v-if="winner && winner.startsWith('team-')" class="team-winner-banner mb-8 pa-4 rounded-pill">
+      <v-icon icon="mdi-account-group" class="mr-2" />
+      <span class="text-h4 font-weight-black text-uppercase">{{ $t('multiplayerResult.team') }} {{ winner.split('-')[1] }} {{ $t('multiplayerResult.winsTheMatch') || 'GUANYA LA PARTIDA' }}</span>
+    </div>
+
+    <p class="text-h5 text-grey-lighten-2 mb-10 text-center px-4 max-width-800">
+      <span v-if="isWin" class="text-amber-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.winQuote') || '¡Has dominat la galàxia amb honor!' }}</span>
+      <span v-else-if="isTie" class="text-cyan-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.tieQuote') || 'Un equilibri perfecte de forces.' }}</span>
+      <span v-else class="text-red-lighten-3 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.defeatQuote') || 'La derrota és només un pas més cap al coneixement.' }}</span>
       {{ isWin ? $t('multiplayerResult.winDesc') : (isTie ? $t('multiplayerResult.tieDesc') : $t('multiplayerResult.defeatDesc')) }}
     </p>
+
+    <!-- GRÀFICA DE PUNTUACIÓ (Line Chart) -->
+    <div v-if="chartData.length > 0" class="score-chart-container mb-12 w-100 max-width-800">
+      <div class="text-overline text-cyan-accent-2 mb-4 text-center tracking-widest">TELEMETRIA DE RENDIMENT HISTÒRIC</div>
+      <div class="chart-wrapper pa-6 rounded-xl border-cyan bg-black-opacity-40">
+        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="score-svg" preserveAspectRatio="none">
+          <!-- Cuadrícula -->
+          <line v-for="i in 4" :key="'grid-h-'+i" x1="0" :y1="(chartHeight/4)*i" :x2="chartWidth" :y2="(chartHeight/4)*i" stroke="rgba(0,229,255,0.05)" stroke-width="1" />
+          <line v-for="i in chartData.length" :key="'grid-v-'+i" :x1="(chartWidth/chartData.length)*i" y1="0" :x2="(chartWidth/chartData.length)*i" y2="chartHeight" stroke="rgba(0,229,255,0.05)" stroke-width="1" />
+          
+          <!-- Líneas de todos los equipos/jugadores -->
+          <template v-for="(path, id) in allPaths" :key="'path-'+id">
+            <path 
+              :d="path.d" 
+              fill="none" 
+              :stroke="path.color" 
+              :stroke-width="path.isMe ? 6 : 3" 
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              class="line-path"
+              :class="{ 'me-path': path.isMe, 'opponent-path': !path.isMe }"
+            />
+            <circle v-for="(p, idx) in path.points" :key="'point-'+id+'-'+idx" :cx="p.x" :cy="p.y" :r="path.isMe ? 6 : 4" :fill="path.color" />
+          </template>
+        </svg>
+        <div class="d-flex justify-space-between mt-4 px-2">
+          <div v-for="(legend, id) in chartLegends" :key="'legend-'+id" class="d-flex align-center mr-4">
+            <div class="legend-color mr-2" :style="{ backgroundColor: legend.color }" />
+            <span class="text-caption font-weight-bold" :class="legend.isMe ? 'text-white' : 'text-grey'">{{ legend.name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Marcador final -->
     <div class="score-board d-flex align-center mb-12">
@@ -190,9 +227,11 @@
 
 <script setup>
   import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
+  const { t } = useI18n()
   const props = defineProps({
     scores: { type: Object, default: () => ({}) },
     winner: { type: String, default: null }, // null = empate
@@ -209,7 +248,101 @@
   const multiplayerStore = useMultiplayerStore()
 
   const myName = computed(() => astroStore.user)
-  const isWin = computed(() => !props.isTie && props.winner === myName.value)
+  const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.[myName.value])
+
+  const resultMainTitle = computed(() => {
+    if (props.isTie) return t('multiplayerResult.tie')
+    if (isWin.value) return t('multiplayerResult.victory')
+    return t('multiplayerResult.defeat')
+  })
+
+  // Lógica de Gráfica Mejorada
+  const chartWidth = 800
+  const chartHeight = 300
+  const chartData = computed(() => multiplayerStore.room?.gameConfig?.roundHistory || [])
+  
+  const chartLegends = computed(() => {
+    const teams = multiplayerStore.room?.gameConfig?.teams || {}
+    const players = multiplayerStore.room?.players || []
+    
+    // Si hay equipos, mostramos por equipo
+    if (Object.keys(teams).length > 0) {
+      const uniqueTeams = [...new Set(Object.values(teams))].sort()
+      return uniqueTeams.map(tId => ({
+        id: tId,
+        name: t('multiplayerLobby.team') + ' ' + tId.split('-')[1],
+        color: getTeamHexColor(tId),
+        isMe: myTeam.value === tId
+      }))
+    }
+    
+    // Si no hay equipos, mostramos por jugador
+    return players.map(p => {
+      const pName = typeof p === 'string' ? p : (p.username || p.user)
+      return {
+        id: pName,
+        name: pName === myName.value ? t('multiplayerResult.you') : pName,
+        color: pName === myName.value ? '#00e5ff' : '#ff5252',
+        isMe: pName === myName.value
+      }
+    })
+  })
+
+  const allPaths = computed(() => {
+    if (!chartData.value.length) return {}
+    
+    const legends = chartLegends.value
+    const maxVal = Math.max(...chartData.value.map(h => Math.max(...Object.values(h.currentScores))), 5)
+    
+    const paths = {}
+    legends.forEach(legend => {
+      const points = [{ x: 0, y: chartHeight }]
+      
+      chartData.value.forEach((h, i) => {
+        let score = 0
+        if (legend.id.startsWith('team-')) {
+          // Score de equipo (máximo de sus miembros)
+          const teamPlayers = Object.entries(multiplayerStore.room.gameConfig.teams)
+            .filter(([_, tId]) => tId === legend.id)
+            .map(([u, _]) => u)
+          score = Math.max(...teamPlayers.map(u => h.currentScores[u] || 0))
+        } else {
+          score = h.currentScores[legend.id] || 0
+        }
+        
+        points.push({
+          x: (chartWidth / chartData.value.length) * (i + 1),
+          y: chartHeight - (score / maxVal) * chartHeight * 0.8 - 20 // Offset para que no toque arriba
+        })
+      })
+      
+      paths[legend.id] = {
+        d: `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`,
+        points,
+        color: legend.color,
+        isMe: legend.isMe
+      }
+    })
+    
+    return paths
+  })
+
+  function getTeamHexColor(tId) {
+    const colors = {
+      'team-1': '#ff5252',
+      'team-2': '#00e676',
+      'team-3': '#ffab40',
+      'team-4': '#e040fb'
+    }
+    return colors[tId] || '#ffffff'
+  }
+
+  const isWin = computed(() => {
+    if (props.isTie || !props.winner) return false
+    // Si el ganador es mi nombre o mi equipo
+    return props.winner === myName.value || props.winner === myTeam.value
+  })
+
   const hasMeReturned = computed(() => multiplayerStore.returnedPlayers.includes(myName.value))
 
   function handleReturn () {
@@ -269,6 +402,15 @@
   text-shadow: 0 0 40px currentColor;
 }
 
+.team-winner-banner {
+  background: rgba(255, 193, 7, 0.15);
+  border: 2px solid #ffc107;
+  color: #ffc107;
+  text-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+  box-shadow: 0 0 30px rgba(255, 193, 7, 0.2);
+  animation: slide-in-top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .score-board {
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid rgba(0, 229, 255, 0.2);
@@ -284,8 +426,27 @@
   box-shadow: 0 0 30px rgba(255, 193, 7, 0.6);
 }
 
-.max-width-600 {
-  max-width: 600px;
+.max-width-800 {
+  max-width: 800px;
+}
+
+.bg-black-opacity-40 {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.me-path {
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.opponent-path {
+  stroke-dasharray: 8, 4;
+  opacity: 0.8;
 }
 
 .round-history-card {
@@ -348,5 +509,41 @@
   transform: scale(1.4);
   transform-origin: center center;
   object-position: center center;
+}
+
+.score-chart-container {
+  animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chart-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.score-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.2));
+}
+
+.line-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-line 2s forwards ease-in-out;
+}
+
+@keyframes slide-in-top {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes draw-line {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

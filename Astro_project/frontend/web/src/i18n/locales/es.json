@@ -393,7 +393,12 @@
         "opponent": "Oponente",
         "level": "Nivel",
         "team": "Equipo",
-        "randomizeTeams": "Aleatorio"
+        "randomizeTeams": "Aleatorio",
+        "briefingTitle": "INSTRUCCIONES DE MISIÓN",
+        "autoStarting": "Iniciando automáticamente...",
+        "nextGameStarting": "PREPARANDO SIGUIENTE MISIÓN...",
+        "roleCatcher": "RECOLECTOR",
+        "roleSniper": "DESTRUCTOR"
     },
     "plans": {
         "selectMode": "SELECCIONA TU MODO DE MISIÓN",
@@ -476,7 +481,11 @@
         "errors": "Errores",
         "finalScore": "Puntuación Final: {score}",
         "maxCombo": "Combo Máximo: x{combo}",
-        "getReward": "Obtener Recompensa"
+        "getReward": "Obtener Recompensa",
+        "roleCatcher": "RECOLECTOR",
+        "catcherDesc": "¡Atrapa solo las palabras que RIMEN con la pista!",
+        "roleSniper": "DESTRUCTOR",
+        "sniperDesc": "¡Destruye las palabras que NO riman para proteger al equipo!"
     },
     "syllableQuest": {
         "points": "Puntos: {score}",

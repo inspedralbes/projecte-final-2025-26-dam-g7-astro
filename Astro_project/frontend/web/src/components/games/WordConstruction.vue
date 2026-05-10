@@ -1,15 +1,16 @@
 <template>
-  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center" style="position: relative;" @mousemove="updateMouse">
+  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" style="position: relative;">
 
     <!-- Cursors remots -->
-    <div
-      v-for="(cursor, id) in multiplayerStore.remoteCursors"
-      v-if="props.isMultiplayer"
-      :key="'cursor-'+id"
-    >
-      <div v-if="id !== astroStore.user" class="remote-cursor" :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }">
-        <v-icon class="cursor-glow" color="amber-accent-3" size="32">mdi-cursor-default</v-icon>
-        <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold shadow-sm">{{ id }}</span>
+    <div v-if="props.isMultiplayer" class="remote-cursors-container">
+      <div
+        v-for="(pos, username) in multiplayerStore.remoteCursors"
+        :key="username"
+        class="remote-cursor"
+        :style="{ left: pos.x + '%', top: pos.y + '%' }"
+      >
+        <div class="cursor-pointer" />
+        <div class="cursor-label">{{ username }}</div>
       </div>
     </div>
 
@@ -108,28 +109,42 @@
 
     <!-- Pantalla de Final de Joc -->
     <v-card
-      v-else-if="!props.isMultiplayer"
+      v-else-if="gameFinished"
       class="pa-8 text-center bg-grey-darken-4 border-cyan"
       max-width="500"
       rounded="xl"
       width="100%"
     >
       <v-icon class="mb-4" color="yellow-accent-4" icon="mdi-trophy" size="80" />
-      <h2 class="text-h4 text-white mb-2">{{ $t('wordConstruction.completedTitle') }}</h2>
+      <h2 class="text-h4 text-white mb-2">{{ $t('wordConstruction.completedTitle') || 'MISSIÓ COMPLETADA' }}</h2>
       <p class="text-h5 text-cyan-accent-2 mb-2">{{ $t('wordConstruction.totalPoints', { score: score }) }}</p>
-      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('wordConstruction.timeRemaining', { time: timeLeft }) }}</p>
-      <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('wordConstruction.reward', { reward: finalReward }) }}</p>
-
-      <v-btn
-        color="cyan-accent-3"
-        rounded="pill"
-        size="large"
-        class="text-black font-weight-bold"
-        variant="flat"
-        @click="emitExit"
-      >
-        {{ $t('wordConstruction.getReward') }}
-      </v-btn>
+      
+      <template v-if="!props.isMultiplayer">
+        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('wordConstruction.timeRemaining', { time: timeLeft }) }}</p>
+        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('wordConstruction.reward', { reward: finalReward }) }}</p>
+        <v-btn
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          class="text-black font-weight-bold"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('wordConstruction.getReward') }}
+        </v-btn>
+      </template>
+      <template v-else>
+        <v-btn
+          class="text-black font-weight-bold"
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('wordConstruction.getReward') }}
+        </v-btn>
+      </template>
     </v-card>
 
   </v-container>
@@ -151,42 +166,7 @@
 
   const gameArea = ref(null)
 
-  function throttle (func, limit) {
-    let lastRan
-    let lastFunc
-    return function (...args) {
-      if (lastRan) {
-        clearTimeout(lastFunc)
-        lastFunc = setTimeout(function () {
-          if (Date.now() - lastRan >= limit) {
-            func(...args)
-            lastRan = Date.now()
-          }
-        }, limit - (Date.now() - lastRan))
-      } else {
-        func(...args)
-        lastRan = Date.now()
-      }
-    }
-  }
 
-  const sendMouseMove = throttle((x, y) => {
-    if (props.isMultiplayer && gameArea.value) {
-      multiplayerStore.sendGameAction({
-        type: 'MOUSE_MOVE',
-        x: Math.round((x / gameArea.value.$el.clientWidth) * 1000),
-        y: Math.round((y / gameArea.value.$el.clientHeight) * 1000),
-      })
-    }
-  }, 25)
-
-  function updateMouse (e) {
-    if (!gameArea.value || !props.isMultiplayer) return
-    const rect = gameArea.value.$el.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    sendMouseMove(x, y)
-  }
 
   const props = defineProps({
     isMultiplayer: {
@@ -216,6 +196,7 @@
   let isUpdatingFromSync = false
   const totalTime = 90
   const timeLeft = ref(totalTime)
+  const isPlaying = ref(false)
   let timerInterval = null
 
   const currentStep = ref(0)
@@ -342,6 +323,7 @@
     if (gameFinished.value) return
 
     gameFinished.value = true
+    isPlaying.value = false
     if (timerInterval) {
       clearInterval(timerInterval)
       timerInterval = null
@@ -358,6 +340,7 @@
   }
 
   function startTimer () {
+    isPlaying.value = true
     if (timerInterval) {
       clearInterval(timerInterval)
     }
@@ -377,7 +360,10 @@
             multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
 
-          if (timeLeft.value === 0) {
+          if (timeLeft.value <= 0) {
+            if (props.isMultiplayer && isHost.value) {
+              multiplayerStore.sendGameAction({ type: 'WC_TIME_UP' })
+            }
             finishGame()
           }
         }
@@ -385,23 +371,44 @@
     }, 500)
   }
 
+  // ---- MULTIJUGADOR: SEGUIMIENTO DE RATÓN ----
+  function handleMouseMove (e) {
+    if (!props.isMultiplayer || gameFinished.value) return
+    const container = document.querySelector('.word-construction-container')
+    if (!container) return
+
+    const rect = container.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+
+    multiplayerStore.updateCursor(x, y)
+  }
+
   onMounted(async () => {
+    window.addEventListener('mousemove', handleMouseMove)
     if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT') {
       await groupStore.fetchActiveSupplySetForStudent(astroStore.user, 'WordConstruction')
     }
 
-    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
-      currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10_000)
+    if (props.isMultiplayer) {
+      if (multiplayerStore.room?.gameConfig?.seed) {
+        currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10_000)
+      }
+      loadNextWord()
+      // El temporizador sí espera al briefing (10s)
+      setTimeout(() => {
+        startTimer()
+      }, 10000)
+    } else {
+      loadNextWord()
+      startTimer()
     }
-
-    loadNextWord()
-    startTimer()
   })
 
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
-    if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value) {
+    if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value && isPlaying.value) {
       gameFinished.value = true
       if (timerInterval) clearInterval(timerInterval)
       emitExit()
@@ -428,6 +435,10 @@
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
       checkAnswer(true)
+    }
+
+    if (msg.action?.type === 'WC_TIME_UP') {
+      finishGame()
     }
 
     if (msg.type === 'GAME_ACTION') {
@@ -477,6 +488,7 @@
   })
 
   onUnmounted(() => {
+    window.removeEventListener('mousemove', handleMouseMove)
     if (timerInterval) {
       clearInterval(timerInterval)
     }
@@ -498,18 +510,45 @@
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
 }
 
+.remote-cursors-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
 .remote-cursor {
   position: absolute;
   pointer-events: none;
-  z-index: 10000;
-  will-change: left, top;
+  z-index: 100;
+  transition: all 0.1s ease-out;
+  transform: translate(-50%, -50%);
 }
 
-.cursor-glow {
-  filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
+.cursor-pointer {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
-.hide-cursor {
-  cursor: none;
+.cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #00e5ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  font-weight: bold;
+  border: 1px solid rgba(0, 229, 255, 0.3);
 }
 </style>

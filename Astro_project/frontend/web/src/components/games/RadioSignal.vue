@@ -174,6 +174,8 @@
 
   const emit = defineEmits(['game-over'])
 
+  const subRole = computed(() => multiplayerStore.subRole)
+  const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.[astroStore.user])
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
   const localTransmitText = ref('')
 
@@ -204,25 +206,23 @@
     phraseToSolve.value = shuffledPhrases.value[0]
     phraseToHear.value = shuffledPhrases.value[0]
 
-    // SINCRONIZACIÓN DE ESTADO ASIMÉTRICO (Host -> Guest)
-    if (props.isMultiplayer && isHost.value) {
-      const p1 = shuffledPhrases.value[0]
-      const p2 = shuffledPhrases.value[1]
-
-      phraseToSolve.value = p1
-      phraseToHear.value = p2
-
-      setTimeout(() => {
-        if (isHost.value) {
-          multiplayerStore.sendGameAction({
-            type: 'RADIO_INIT_ASYNC',
-            newFreq: targetFrequency.value,
-            hostSolve: p1,
-            guestSolve: p2,
-          })
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+    // SINCRONIZACIÓN DE ESTADO ASIMÉTRICO (Desde el Server)
+    if (props.isMultiplayer) {
+      const room = multiplayerStore.room
+      if (room?.gameConfig?.radioData && myTeam.value) {
+        const teamData = room.gameConfig.radioData[myTeam.value]
+        if (teamData) {
+          targetFrequency.value = teamData.frequency
+          // Asimetría: uno resuelve una parte y el otro la otra
+          if (subRole.value === 'listener') {
+            phraseToSolve.value = teamData.phrase
+            phraseToHear.value = teamData.partnerPhrase || phrases.value[1]
+          } else {
+            phraseToSolve.value = teamData.partnerPhrase || phrases.value[1]
+            phraseToHear.value = teamData.phrase
+          }
         }
-      }, 1000)
+      }
     }
   })
 
@@ -477,26 +477,12 @@
       targetFrequency.value = Math.random() * 90 + 5
 
       if (props.isMultiplayer) {
-        if (isHost.value) {
-          // El Host ha resuelto la frase que el Guest le dictó
-          phraseIndex.value++
-          const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
-          phraseToSolve.value = nextPhrase
-
-          multiplayerStore.sendGameAction({
-            type: 'RADIO_SUCCESS_HOST',
-            pointsGained: 150,
-            newFreq: targetFrequency.value,
-            nextSolveForHost: nextPhrase
-          })
-        } else {
-          // El Guest ha resuelto la frase que el Host le dictó
-          multiplayerStore.sendGameAction({
-            type: 'RADIO_SUCCESS_GUEST',
-            pointsGained: 150,
-            newFreq: targetFrequency.value
-          })
-        }
+        multiplayerStore.sendGameAction({
+          type: 'RADIO_PHRASE_SOLVED',
+          teamId: myTeam.value,
+          pointsGained: 150,
+          newFreq: targetFrequency.value
+        })
       } else {
         phraseIndex.value++
         const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
@@ -568,7 +554,14 @@
 
   onMounted(() => {
     drawWaves()
-    startTimer()
+    if (props.isMultiplayer) {
+      // Delay para el briefing (Reducido a 3s)
+      setTimeout(() => {
+        startTimer()
+      }, 3000)
+    } else {
+      startTimer()
+    }
   })
 
   // Listener para eventos multijugador
@@ -590,29 +583,22 @@
         phraseToHear.value = msg.action.hostSolve
       }
 
-      if (msg.action?.type === 'RADIO_SUCCESS_HOST' && !isHost.value) {
-        // El Host resolvió su parte, nosotros (Guest) tenemos que cambiar lo que OÍMOS (phraseToHear)
+      if (msg.action?.type === 'RADIO_PHRASE_SOLVED' && msg.action.teamId === myTeam.value) {
         score.value += msg.action.pointsGained
-        phraseToHear.value = msg.action.nextSolveForHost
-      }
-
-      if (msg.action?.type === 'RADIO_SUCCESS_GUEST' && isHost.value) {
-        // El Guest resolvió su parte, nosotros (Host) tenemos que darle una NUEVA frase para que resuelva
-        score.value += msg.action.pointsGained
-        phraseIndex.value++
-        const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
-        phraseToHear.value = nextPhrase // Cambiamos lo que oímos para dictárselo al guest
-        
-        multiplayerStore.sendGameAction({
-          type: 'RADIO_NEW_TARGET_GUEST',
-          newFreq: msg.action.newFreq,
-          newPhraseForGuest: nextPhrase
-        })
-      }
-
-      if (msg.action?.type === 'RADIO_NEW_TARGET_GUEST' && !isHost.value) {
         targetFrequency.value = msg.action.newFreq
-        phraseToSolve.value = msg.action.newPhraseForGuest
+        
+        // Rotamos frases para el equipo
+        phraseIndex.value++
+        const p1 = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
+        const p2 = shuffledPhrases.value[phraseIndex.value + 1] || phrases.value[1]
+
+        if (subRole.value === 'listener') {
+          phraseToSolve.value = p1
+          phraseToHear.value = p2
+        } else {
+          phraseToSolve.value = p2
+          phraseToHear.value = p1
+        }
       }
 
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {

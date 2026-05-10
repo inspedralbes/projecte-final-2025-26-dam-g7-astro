@@ -260,16 +260,16 @@
       </v-col>
     </v-row>
 
-    <!-- Pantalla Final (només en single player) -->
+    <!-- Pantalla Final -->
     <v-card
-      v-else-if="!isMultiplayer"
+      v-else-if="gameFinished"
       class="pa-8 text-center bg-grey-darken-4 border-cyan"
       max-width="500"
       rounded="xl"
       width="100%"
     >
       <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-school" size="80" />
-      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') }}</h2>
+      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') || 'MISSIÓ COMPLETADA' }}</h2>
       <div class="d-flex justify-space-around my-6">
         <div class="text-center">
           <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
@@ -281,19 +281,33 @@
         </div>
       </div>
       <p class="text-h5 text-white mb-2">{{ $t('spelledRosco.finalScore', { score: score }) }}</p>
-      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
-      <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
-
-      <v-btn
-        class="text-black font-weight-bold"
-        color="cyan-accent-3"
-        rounded="pill"
-        size="large"
-        variant="flat"
-        @click="emitExit"
-      >
-        {{ $t('spelledRosco.getReward') }}
-      </v-btn>
+      
+      <template v-if="!isMultiplayer">
+        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
+        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
+        <v-btn
+          class="text-black font-weight-bold"
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('spelledRosco.getReward') }}
+        </v-btn>
+      </template>
+      <template v-else>
+        <v-btn
+          class="text-black font-weight-bold"
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('spelledRosco.getReward') }}
+        </v-btn>
+      </template>
     </v-card>
 
     <v-snackbar v-model="showFeedback" :color="feedbackColor" location="top" timeout="2000">
@@ -367,7 +381,7 @@
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
   }))
 
-  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 120, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
 
   const props = defineProps({
@@ -442,7 +456,14 @@
   }
 
   onMounted(() => {
-    initRosco(); startTimer()
+    initRosco()
+    if (props.isMultiplayer) {
+      setTimeout(() => {
+        startTimer()
+      }, 3000)
+    } else {
+      startTimer()
+    }
   })
   watch(() => multiplayerStore.room, () => initRosco(), { deep: true })
   const emitTyping = throttle(text => {
@@ -549,7 +570,16 @@
       loops++
     }
     if (loops >= roscoLetters.value.length) {
-      finishGame()
+      if (timeLeft.value > 5) {
+        feedbackMessage.value = t('spelledRosco.msgAllCorrectNext') || '¡COMPLETADO! Generando nuevo rosco...'
+        feedbackColor.value = 'success'
+        showFeedback.value = true
+        setTimeout(() => {
+          if (!gameFinished.value) initRosco(true)
+        }, 3000)
+      } else {
+        finishGame()
+      }
     } else {
       animateRocket(currentIndex.value, next).then(() => {
         currentIndex.value = next
@@ -582,6 +612,12 @@
       }
     }, 1000)
   }
+
+  watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+  })
 
   function finishGame () {
     gameFinished.value = true

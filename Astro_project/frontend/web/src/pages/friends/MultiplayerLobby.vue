@@ -11,7 +11,25 @@
     <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
       <div v-if="activeGameComponent || isTransitioning" class="game-active-overlay">
-        <!-- HUD redissenyat: dades flotants al voltant del VS central -->
+        <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
+        <div v-if="isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
+          <CoopScoreBar :max-score="5000" :score="totalCoopScore" />
+        </div>
+
+        <!-- Puntuación por Equipos (VS por Parejas) -->
+        <div v-else-if="teamsList.length > 1" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
+          <CoopScoreBar
+            v-for="team in teamsList"
+            :key="team.id"
+            :compact="true"
+            :max-score="8000"
+            :score="getTeamScore(team.id)"
+            :team-name="team.name"
+            :theme="team.theme"
+            :time="getTeamTime(team.id)"
+          />
+        </div>
+
         <div class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
             <!-- Jugador local -->
@@ -37,25 +55,6 @@
               <div class="global-timer" :class="{ 'timer-low': multiplayerStore.timeLeft <= 10 }">
                 <v-icon class="mr-1" :icon="multiplayerStore.timeLeft <= 10 ? 'mdi-timer-alert' : 'mdi-timer-outline'" size="small" />
                 {{ Math.ceil(multiplayerStore.timeLeft) }}s
-              </div>
-
-              <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
-              <div v-if="isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
-                <CoopScoreBar :max-score="5000" :score="totalCoopScore" />
-              </div>
-
-              <!-- Puntuación por Equipos (VS por Parejas) - APILADOS VERTICALMENTE -->
-              <div v-else-if="teamsList.length > 1" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
-                <CoopScoreBar
-                  v-for="team in teamsList"
-                  :key="team.id"
-                  :compact="true"
-                  :max-score="8000"
-                  :score="getTeamScore(team.id)"
-                  :team-name="team.name"
-                  :theme="team.theme"
-                  :time="getTeamTime(team.id)"
-                />
               </div>
 
               <!-- Notificacions de sabotatge (flotants) -->
@@ -113,16 +112,49 @@
           <!-- Pantalla de Transición -->
           <div v-if="isTransitioning" class="transition-screen d-flex flex-column align-center justify-center">
             <v-progress-circular color="cyan" indeterminate size="64" width="6" />
-            <h2 class="text-h2 font-weight-black text-white mt-8 glow-text">{{ $t('multiplayerLobby.nextGameStarting') || 'SIGUIENTE JUEGO EN CAMINO...' }}</h2>
-            <p class="text-h5 text-cyan-accent-2 mt-4 font-italic">{{ multiplayerStore.room?.gameConfig?.currentGame }}</p>
+            <h2 class="text-h2 font-weight-black text-white mt-8 glow-text">{{ $t('multiplayerLobby.nextGameStarting') || 'PREPARANDO SIGUIENTE MISIÓN...' }}</h2>
+            <p class="text-h4 text-cyan-accent-2 mt-4 font-italic tracking-widest">{{ multiplayerStore.room?.gameConfig?.currentGame?.toUpperCase() }}</p>
           </div>
+
+          <!-- Pop-up de Briefing Automático (10s) -->
+          <transition name="fade-zoom">
+            <div v-if="showBriefing" class="briefing-overlay d-flex flex-column align-center justify-center">
+              <div class="briefing-card pa-10 text-center rounded-xl elevation-24">
+                <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-shield-airplane" size="80" />
+                <h2 class="text-h3 font-weight-black text-white mb-2">{{ $t('multiplayerLobby.briefingTitle') || 'INSTRUCCIONES DE MISIÓN' }}</h2>
+                <div class="briefing-timer mb-6">{{ briefingCountdown }}s</div>
+                
+                <div class="role-explanation pa-6 rounded-xl bg-slate-800 border-cyan mb-8">
+                  <template v-if="multiplayerStore.room?.gameConfig?.currentGame === 'RhymeSquad'">
+                    <div v-if="multiplayerStore.subRole === 'catcher'" class="text-green-accent-3">
+                      <v-icon icon="mdi-basket-fill" size="48" class="mb-2" />
+                      <h3 class="text-h4 font-weight-bold">RECOLECTOR</h3>
+                      <p class="text-body-1 text-white mt-2">¡Atrapa solo las palabras que RIMEN con la pista!</p>
+                    </div>
+                    <div v-else class="text-red-accent-3">
+                      <v-icon icon="mdi-target" size="48" class="mb-2" />
+                      <h3 class="text-h4 font-weight-bold">DESTRUCTOR</h3>
+                      <p class="text-body-1 text-white mt-2">¡Destruye las palabras que NO riman para proteger al equipo!</p>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <p class="text-h5 text-white">¡Colaborad para conseguir la máxima puntuación!</p>
+                    <p class="text-body-1 text-grey-lighten-1 mt-2">La comunicación es clave para el éxito de la misión.</p>
+                  </template>
+                </div>
+
+                <div class="text-overline text-cyan-accent-1 animate-pulse">Iniciando automáticamente...</div>
+              </div>
+            </div>
+          </transition>
         </div>
 
         <!-- Overlay de Resultados de Ronda -->
         <transition name="scale">
           <div v-if="showRoundResults" class="round-result-overlay d-flex flex-column align-center justify-center">
             <v-avatar class="mb-4 border-cyan glow-cyan" size="120">
-              <v-img v-if="roundWinner" :src="getPlayerAvatar(roundWinner)" />
+              <v-img v-if="roundWinner && !roundWinner.startsWith('team-')" :src="getPlayerAvatar(roundWinner)" />
+              <v-icon v-else-if="roundWinner && roundWinner.startsWith('team-')" color="cyan-accent-2" icon="mdi-account-group" size="80" />
               <v-icon v-else-if="isRoundTie" color="amber-accent-2" icon="mdi-handshake" size="80" />
               <v-icon v-else color="grey-lighten-1" icon="mdi-timer-off" size="80" />
             </v-avatar>
@@ -130,7 +162,7 @@
               {{ roundWinner ? $t('multiplayerLobby.roundWinner') : (isRoundTie ? $t('multiplayerLobby.tie') : $t('multiplayerLobby.timeout')) }}
             </h2>
             <h1 class="text-h1 font-weight-black text-white glow-text">
-              {{ roundWinner ? (roundWinner === astroStore.user ? $t('multiplayerLobby.you') : roundWinner) : (isRoundTie ? $t('multiplayerLobby.tie') : '-') }}
+              {{ roundWinner ? (roundWinner.startsWith('team-') ? $t('multiplayerLobby.team') + ' ' + roundWinner.split('-')[1] : (roundWinner === astroStore.user ? $t('multiplayerLobby.you') : roundWinner)) : (isRoundTie ? $t('multiplayerLobby.tie') : '-') }}
             </h1>
           </div>
         </transition>
@@ -201,7 +233,11 @@
                   md="4"
                   sm="6"
                 >
-                  <v-card class="crew-card pa-4 rounded-xl text-center" variant="outlined">
+                  <v-card 
+                    class="crew-card pa-4 rounded-xl text-center" 
+                    :class="'team-' + (getPlayerTeam(getPlayerName(player)) || 1)"
+                    variant="outlined"
+                  >
                     <v-badge
                       v-if="getPlayerName(player) === multiplayerStore.room.host"
                       color="amber-accent-2"
@@ -244,24 +280,33 @@
                       {{ $t('multiplayerLobby.crewmate') }}
                     </v-chip>
 
-                    <!-- Selector de Equipo (Solo Host) -->
-                    <div v-if="selectedModality !== '1vs1'" class="team-selector-mini mt-2">
-                      <div class="text-caption text-grey-lighten-1 mb-1">{{ $t('multiplayerLobby.team') }}</div>
-                      <div class="d-flex justify-center gap-1">
-                        <v-btn
-                          v-for="tId in [1, 2, 3, 4]"
-                          :key="tId"
-                          :color="getTeamColor(tId)"
-                          density="comfortable"
-                          :disabled="!isHost"
-                          icon
-                          size="x-small"
-                          :variant="getPlayerTeam(getPlayerName(player)) == tId ? 'flat' : 'outlined'"
-                          @click="assignTeam(getPlayerName(player), tId)"
-                        >
-                          {{ tId }}
-                        </v-btn>
+                    <!-- Selector de Equipo con Flechas -->
+                    <div v-if="selectedModality !== '1vs1'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
+                      <v-btn
+                        icon="mdi-chevron-left"
+                        variant="text"
+                        density="compact"
+                        size="small"
+                        :disabled="!isHost"
+                        :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
+                        @click="prevTeam(getPlayerName(player))"
+                      />
+                      
+                      <div class="team-label-box px-4 py-1 rounded-pill" :class="'bg-' + getTeamColor(getPlayerTeam(getPlayerName(player)))">
+                        <span class="text-caption font-weight-black text-black">
+                          {{ getSquadName(getPlayerTeam(getPlayerName(player))) }}
+                        </span>
                       </div>
+
+                      <v-btn
+                        icon="mdi-chevron-right"
+                        variant="text"
+                        density="compact"
+                        size="small"
+                        :disabled="!isHost"
+                        :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
+                        @click="cycleTeam(getPlayerName(player))"
+                      />
                     </div>
                   </v-card>
                 </v-col>
@@ -348,45 +393,6 @@
                       />
                     </div>
 
-                    <div class="mb-6">
-                      <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest">{{ $t('multiplayerLobby.maxPlayers') }}</div>
-                      <v-select
-                        v-model="maxPlayers"
-                        bg-color="rgba(255,255,255,0.05)"
-                        class="player-limit-select"
-                        density="comfortable"
-                        hide-details
-                        :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
-                        :menu-props="{ maxHeight: '300' }"
-                        prepend-inner-icon="mdi-account-group"
-                        rounded="pill"
-                        variant="solo-filled"
-                      >
-                        <template #selection="{ item }">
-                          <span class="text-white font-weight-bold">{{ item.title }} {{ $t('multiplayerLobby.astronauts') }}</span>
-                        </template>
-                      </v-select>
-                    </div>
-
-                    <div class="mb-6">
-                      <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest">{{ $t('multiplayerLobby.roundsCount') }}</div>
-                      <v-select
-                        v-model="pointsToWin"
-                        bg-color="rgba(255,255,255,0.05)"
-                        class="points-limit-select"
-                        density="comfortable"
-                        hide-details
-                        :items="[1, 2, 3, 4, 5]"
-                        prepend-inner-icon="mdi-trophy-outline"
-                        rounded="pill"
-                        variant="solo-filled"
-                      >
-                        <template #selection="{ item }">
-                          <span class="text-white font-weight-bold">{{ item.title }} {{ $t('multiplayerLobby.rounds') }}</span>
-                        </template>
-                      </v-select>
-                    </div>
-
                     <v-btn
                       block
                       class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan"
@@ -441,6 +447,49 @@
               <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-gamepad-variant" />
               {{ $t('multiplayerLobby.selectModality') }}
             </h3>
+
+            <!-- CONFIGURACIÓN DE SALA (Solo Host en Lobby) -->
+            <div v-if="multiplayerStore.room && isHost" class="room-settings-in-lobby mb-6 pa-4 rounded-xl bg-slate-900 border-light">
+              <div class="mb-4">
+                <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest text-uppercase">{{ $t('multiplayerLobby.maxPlayers') }}</div>
+                <v-select
+                  v-model="maxPlayers"
+                  bg-color="rgba(255,255,255,0.05)"
+                  class="player-limit-select-mini"
+                  density="compact"
+                  hide-details
+                  :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
+                  :menu-props="{ maxHeight: '300' }"
+                  prepend-inner-icon="mdi-account-group"
+                  rounded="pill"
+                  variant="solo-filled"
+                >
+                  <template #selection="{ item }">
+                    <span class="text-white font-weight-bold text-caption">{{ item.title }} {{ $t('multiplayerLobby.astronauts') }}</span>
+                  </template>
+                </v-select>
+              </div>
+
+              <div>
+                <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest text-uppercase">{{ $t('multiplayerLobby.roundsCount') }}</div>
+                <v-select
+                  v-model="pointsToWin"
+                  bg-color="rgba(255,255,255,0.05)"
+                  class="points-limit-select-mini"
+                  density="compact"
+                  hide-details
+                  :items="[1, 2, 3, 4, 5]"
+                  prepend-inner-icon="mdi-trophy-outline"
+                  rounded="pill"
+                  variant="solo-filled"
+                >
+                  <template #selection="{ item }">
+                    <span class="text-white font-weight-bold text-caption">{{ item.title }} {{ $t('multiplayerLobby.rounds') }}</span>
+                  </template>
+                </v-select>
+              </div>
+            </div>
+
             <v-row dense>
               <v-col v-for="mode in modalities" :key="mode.id" cols="6">
                 <v-card
@@ -663,10 +712,13 @@
 
   const snackbar = ref({ show: false, text: '', color: 'success' })
   const isPublic = ref(true)
-  const maxPlayers = ref(4)
-  const pointsToWin = ref(3)
+  const maxPlayers = ref(Number(localStorage.getItem('astro_mp_maxPlayers')) || 4)
+  const pointsToWin = ref(Number(localStorage.getItem('astro_mp_pointsToWin')) || 3)
   const roomCode = ref('')
   const showRoulette = ref(false)
+  const showBriefing = ref(false)
+  const briefingCountdown = ref(10)
+  let briefingTimer = null
   const activeGameComponent = shallowRef(null)
   const roundWinner = ref(null)
   const isRoundTie = ref(false)
@@ -674,12 +726,13 @@
   const showMatchResult = ref(false)
   const finalScores = ref({})
   const matchWinnerName = ref(null)
-  const selectedModality = ref('1vs1')
+  const selectedModality = ref(localStorage.getItem('astro_mp_modality') || '1vs1')
 
   const globalTimeLeft = computed(() => multiplayerStore.timeLeft)
 
   watch(globalTimeLeft, (newVal) => {
-    if (newVal === 0 && multiplayerStore.room?.status === 'PLAYING' && isHost.value) {
+    // Si el tiempo es menor o igual a 0, forzamos el fin
+    if (newVal <= 0 && multiplayerStore.room?.status === 'PLAYING' && isHost.value) {
       console.log('TIEMPO AGOTADO: El host fuerza el fin de la ronda')
       multiplayerStore.submitRoundResult()
     }
@@ -736,10 +789,20 @@
       }
       case 'ROUND_RESULTS': {
         showRoundResults.value = true
+        if (isHost.value) {
+          // Salto a la siguiente ronda mucho más rápido (3s en lugar de 8s)
+          setTimeout(() => {
+            if (multiplayerStore.room?.status === 'ROUND_RESULTS') {
+              multiplayerStore.nextRound()
+            }
+          }, 1500)
+        }
         break
       }
-      case 'GAME_OVER': {
+      case 'GAME_OVER':
+      case 'MATCH_RESULTS': {
         showRoundResults.value = false
+        activeGameComponent.value = null
         break
       }
       case 'LOBBY': {
@@ -764,13 +827,13 @@
       showRoulette.value = false
       isTransitioning.value = true
       
-      const gameName = msg.room?.gameConfig?.currentGame
       if (gameName && gameComponents[gameName]) {
-        // Delay de 3 segundos para que los jugadores vean los resultados o respiren
+        // Reducimos el delay para una transición más fluida
         setTimeout(() => {
           activeGameComponent.value = gameComponents[gameName]
           isTransitioning.value = false
-        }, 3000)
+          startBriefing()
+        }, 300)
       }
     }
 
@@ -942,9 +1005,34 @@
   }
 
   function assignTeam (playerName, teamId) {
-    if (!isHost.value) return
+    if (!isHost.value && playerName !== astroStore.user) return
     const currentTeams = { ...multiplayerStore.room?.gameConfig?.teams, [playerName]: teamId }
     multiplayerStore.updateGameConfig({ teams: currentTeams })
+  }
+
+  function getSquadName (tId) {
+    const names = {
+      1: 'ALPHA',
+      2: 'BETA',
+      3: 'GAMMA',
+      4: 'DELTA',
+    }
+    return names[tId] || 'SQUAD'
+  }
+
+  function cycleTeam (playerName) {
+    if (!isHost.value) return
+    const currentTeam = getPlayerTeam(playerName) || 1
+    const nextTeam = (currentTeam % 4) + 1
+    assignTeam(playerName, nextTeam)
+  }
+
+  function prevTeam (playerName) {
+    if (!isHost.value) return
+    const currentTeam = getPlayerTeam(playerName) || 1
+    let nextTeam = currentTeam - 1
+    if (nextTeam < 1) nextTeam = 4
+    assignTeam(playerName, nextTeam)
   }
 
   function randomizeTeams () {
@@ -1060,9 +1148,20 @@
   }
 
   function handleAbort () {
-    multiplayerStore.leaveRoom()
-    router.push('/plans')
+    if (isHost.value) {
+      multiplayerStore.setRoomStatus('LOBBY')
+    } else {
+      multiplayerStore.leaveRoom()
+      // Forzamos que se quede en esta página (el lobby) en lugar de redirigir a /plans
+      // multiplayerStore.leaveRoom() suele redirigir, así que lo sobreescribimos si es necesario
+      setTimeout(() => {
+        if (router.currentRoute.value.path !== '/multiplayer') {
+          router.push('/multiplayer')
+        }
+      }, 100)
+    }
   }
+
 
   function requestRematch () {
     showMatchResult.value = false
@@ -1071,14 +1170,45 @@
     multiplayerStore.startMatch()
   }
 
+  // Persistencia de preferencias
+  watch(selectedModality, (newVal) => localStorage.setItem('astro_mp_modality', newVal))
+  watch(maxPlayers, (newVal) => {
+    localStorage.setItem('astro_mp_maxPlayers', String(newVal))
+    if (isHost.value && multiplayerStore.room) {
+      multiplayerStore.updateGameConfig({ maxPlayers: newVal })
+    }
+  })
+  watch(pointsToWin, (newVal) => {
+    localStorage.setItem('astro_mp_pointsToWin', String(newVal))
+    if (isHost.value && multiplayerStore.room) {
+      multiplayerStore.updateGameConfig({ pointsToWin: newVal })
+    }
+  })
+
   onMounted(() => {
     if (!multiplayerStore.isConnected) {
       multiplayerStore.connect()
     }
   })
 
+  function startBriefing () {
+    showBriefing.value = true
+    briefingCountdown.value = 1.5
+    
+    if (briefingTimer) clearInterval(briefingTimer)
+    
+    briefingTimer = setInterval(() => {
+      briefingCountdown.value--
+      if (briefingCountdown.value <= 0) {
+        clearInterval(briefingTimer)
+        showBriefing.value = false
+        // El juego ya está montado, simplemente el overlay se va y empieza la acción
+      }
+    }, 1000)
+  }
+
   onUnmounted(() => {
-  // Opcional: no desconectar para mantener chat si es global
+    if (briefingTimer) clearInterval(briefingTimer)
   })
 </script>
 
@@ -1102,20 +1232,65 @@
 }
 
 .crew-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(0, 229, 255, 0.1) !important;
-  transition: all 0.3s ease;
+  background: rgba(15, 23, 42, 0.4) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.crew-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  transition: background 0.3s ease;
 }
 
 .crew-card:hover {
-  border-color: rgba(0, 229, 255, 0.4) !important;
-  transform: translateY(-5px);
-  background: rgba(0, 229, 255, 0.05) !important;
+  transform: translateY(-8px);
+  border-color: rgba(0, 229, 255, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.6) !important;
 }
 
-.crew-card-empty {
-  border: 1px dashed rgba(255, 255, 255, 0.1) !important;
-  background: transparent !important;
+/* Bordes de equipo */
+.crew-card.team-1 { border-top: 4px solid #ff5252 !important; }
+.crew-card.team-2 { border-top: 4px solid #00e676 !important; }
+.crew-card.team-3 { border-top: 4px solid #ffab40 !important; }
+.crew-card.team-4 { border-top: 4px solid #e040fb !important; }
+
+.squad-badge-btn {
+  letter-spacing: 1.5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.squad-badge-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.team-arrow-selector {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.team-label-box {
+  min-width: 100px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.team-label-box span {
+  letter-spacing: 1px;
 }
 
 .player-glow-avatar {
@@ -1125,16 +1300,28 @@
 
 .start-mission-btn {
   height: 64px !important;
-  font-size: 1.2rem !important;
-  letter-spacing: 2px;
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 4px !important;
+  text-transform: uppercase !important;
   background: linear-gradient(45deg, #ff9100, #ffab40) !important;
   color: #000 !important;
+  box-shadow: 0 0 30px rgba(255, 145, 0, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+.start-mission-btn:hover:not(:disabled) {
+  transform: scale(1.05) translateY(-2px) !important;
+  box-shadow: 0 0 50px rgba(255, 145, 0, 0.6) !important;
+  filter: brightness(1.1);
 }
 
 .setup-panel {
   background: rgba(15, 23, 42, 0.6) !important;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(0, 229, 255, 0.1) !important;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
 }
 
 .border-light {
@@ -1207,12 +1394,14 @@
 }
 
 .hud-main-bar {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
   border-radius: 999px;
-  height: 70px;
-  backdrop-filter: blur(15px);
+  height: 80px;
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 50;
 }
 
 .abort-btn-hud {
@@ -1257,21 +1446,19 @@
 
 .hud-score-coop-modern {
   position: absolute;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 500px;
+  top: 20px;
+  left: 100px;
+  width: 400px;
   z-index: 220;
 }
 
 .hud-score-teams-modern {
   position: absolute;
-  top: 70px; /* Bajamos un poco para no solapar el temporizador global */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 800px;
+  top: 20px;
+  left: 100px;
+  width: 400px;
   pointer-events: none;
-  justify-content: center;
+  align-items: flex-start !important;
 }
 
 .round-text {
@@ -1355,7 +1542,7 @@
 :deep(.radio-cabinet .session-hud),
 :deep(.word-construction-header),
 :deep(.hud-pill),
-:deep(.game-container > .v-card:first-child:not(.rhyme-header)),
+:deep(.game-container > .v-card:first-child:not(.rhyme-header):not(.bg-grey-darken-4)),
 :deep(.radio-cabinet + .session-hud) {
   display: none !important;
 }
@@ -1403,5 +1590,36 @@
 @keyframes timer-pulse {
   from { transform: scale(1); }
   to { transform: scale(1.15); }
+}
+.briefing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+}
+
+.briefing-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 50px rgba(0, 229, 255, 0.2);
+  max-width: 600px;
+  width: 90%;
+}
+
+.briefing-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #00e5ff;
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+}
+
+.role-explanation {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
 }
 </style>

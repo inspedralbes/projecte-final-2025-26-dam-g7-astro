@@ -35,14 +35,16 @@
     />
 
     <!-- Cursors remots -->
-    <div v-if="props.isMultiplayer">
+    <div v-if="props.isMultiplayer" class="remote-cursors-container">
       <div
         v-for="(cursor, id) in multiplayerStore.remoteCursors"
         :key="'cursor-'+id"
       >
         <div v-if="id !== astroStore.user" class="remote-cursor" :style="{ left: (cursor.x / 10) + '%', top: (cursor.y / 10) + '%' }">
-          <v-icon color="amber-accent-3" size="32">mdi-cursor-default</v-icon>
-          <span class="text-caption bg-amber-accent-3 text-black px-2 py-0 rounded-pill font-weight-bold">{{ id }}</span>
+          <div class="cursor-pointer-visual">
+            <v-icon color="cyan-accent-3" size="32">mdi-rhombus-outline</v-icon>
+            <span class="cursor-label">{{ id }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -54,6 +56,7 @@
           {{ $t('radarScan.desc') }}
         </p>
         <v-btn
+          v-if="!isMultiplayer"
           class="font-weight-black text-black block"
           color="cyan-accent-3"
           rounded="xl"
@@ -62,6 +65,9 @@
         >
           {{ $t('radarScan.startBtn') }}
         </v-btn>
+        <div v-else class="text-h6 text-cyan-accent-2 animate-pulse mt-4">
+          {{ $t('multiplayerLobby.autoStarting') || 'LA MISIÓN COMENZARÁ TRAS EL BRIEFING...' }}
+        </div>
       </v-card>
     </v-overlay>
 
@@ -180,7 +186,7 @@
     if (!gameArea.value) return {}
     const tunnelSize = currentTunnelSize.value
     const lightSpots = [
-      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`,
+      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 40%, rgba(11,17,32,0) 100%)`,
     ]
 
     // Añadir focos de compañeros en multiplayer
@@ -189,7 +195,7 @@
         if (id !== astroStore.user && gameArea.value) {
           const pxX = (cursor.x / 1000) * gameArea.value.clientWidth
           const pxY = (cursor.y / 1000) * gameArea.value.clientHeight
-          lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`)
+          lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 40%, rgba(11,17,32,0) 100%)`)
         }
       }
     }
@@ -355,7 +361,12 @@
             multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
 
-          if (timeLeft.value <= 0) endGame()
+          if (timeLeft.value <= 0) {
+            if (props.isMultiplayer && isHost.value) {
+              multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+            }
+            endGame()
+          }
         }
       }
     }, 500)
@@ -377,7 +388,10 @@
 
   onMounted(() => {
     if (props.isMultiplayer) {
-      startGame()
+      // Delay para el briefing (Reducido a 3s)
+      setTimeout(() => {
+        startGame()
+      }, 3000)
     }
   })
 
@@ -413,6 +427,10 @@
         setTimeout(() => {
           isTransitioning.value = false
         }, 200)
+      }
+
+      if (msg.action?.type === 'RADAR_TIME_UP') {
+        endGame()
       }
 
       if (msg.action?.type === 'RADAR_CLICK') {
@@ -525,10 +543,38 @@
   backdrop-filter: blur(4px);
 }
 
+.remote-cursors-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
 .remote-cursor {
   position: absolute;
   pointer-events: none;
-  z-index: 10000;
+  transform: translate(-50%, -50%);
   will-change: left, top;
+}
+
+.cursor-pointer-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cursor-label {
+  font-size: 0.75rem;
+  background: #00e5ff;
+  color: black;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 </style>

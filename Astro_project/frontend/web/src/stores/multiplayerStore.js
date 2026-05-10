@@ -177,6 +177,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
+          this.timeLeft = 60
           break
         }
         case 'ROUND_ENDED_BY_WINNER': {
@@ -222,6 +223,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.lastMessage = data
           }
 
+          if (data.action?.type === 'SCORE_UPDATE') {
+            this.roundScores[data.from] = data.action.score
+          }
+
           if (data.action?.type === 'TIME_SYNC') {
             this.timeLeft = data.action.timeLeft
           }
@@ -235,10 +240,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.partnerText = ''
           this.partnerEmojis = []
           this.room = { ...data.room }
+          this.lastMessage = null // Limpiamos para la nueva ronda
 
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
+          this.timeLeft = 60
           break
         }
         case 'MATCH_FINISHED': {
