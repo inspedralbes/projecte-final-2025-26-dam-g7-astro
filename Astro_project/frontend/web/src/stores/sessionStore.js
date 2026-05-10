@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import {
-  STORAGE_KEYS,
-  SESSION_TIMEOUT_MS,
   requestJson,
+  SESSION_TIMEOUT_MS,
+  STORAGE_KEYS,
   storageGetItem,
   storageRemoveItem,
   storageSetItem,
@@ -24,7 +24,6 @@ export const useSessionStore = defineStore('session', {
     role: storageGetItem(STORAGE_KEYS.role) || null,
     parentId: storageGetItem(STORAGE_KEYS.parentId) || null,
     avatar: storageGetItem(STORAGE_KEYS.avatar) || 'Astronauta_blanc.jpg',
-    mascot: storageGetItem(STORAGE_KEYS.mascot) || null, // Mantenido de multijugador
     selectedTitle: storageGetItem('astro_selected_title') || null,
     displayName: storageGetItem('astro_display_name') || null,
     nameChangesCount: Number(storageGetItem('astro_name_changes')) || 0,
@@ -72,7 +71,9 @@ export const useSessionStore = defineStore('session', {
     },
 
     checkSessionExpiration () {
-      if (!this.token) return false
+      if (!this.token) {
+        return false
+      }
 
       const lastActivity = Number(storageGetItem(STORAGE_KEYS.lastActivity))
       const now = Date.now()
@@ -88,11 +89,6 @@ export const useSessionStore = defineStore('session', {
     setAvatar (avatar) {
       this.avatar = avatar || 'Astronauta_blanc.jpg'
       persistNullable(STORAGE_KEYS.avatar, this.avatar)
-    },
-
-    setMascot (mascot) {
-      this.mascot = mascot || null
-      persistNullable(STORAGE_KEYS.mascot, this.mascot)
     },
 
     setSelectedTitle (title) {
@@ -121,9 +117,6 @@ export const useSessionStore = defineStore('session', {
 
       if (profile.avatar) {
         this.setAvatar(profile.avatar)
-      }
-      if (profile.mascot) {
-        this.setMascot(profile.mascot)
       }
       if (profile.selectedTitle !== undefined) {
         this.setSelectedTitle(profile.selectedTitle)
@@ -229,7 +222,9 @@ export const useSessionStore = defineStore('session', {
       this.setAvatar(seed)
       console.log('👤 Avatar actualizado localmente:', seed)
 
-      if (!this.user) return
+      if (!this.user) {
+        return
+      }
 
       try {
         const { response, data } = await requestJson('/api/user/avatar', {
@@ -254,7 +249,9 @@ export const useSessionStore = defineStore('session', {
       this.setSelectedTitle(title)
       console.log('👑 Título actualizado localmente:', title)
 
-      if (!this.user) return
+      if (!this.user) {
+        return
+      }
 
       try {
         const { response, data } = await requestJson('/api/user/title', {
@@ -262,7 +259,7 @@ export const useSessionStore = defineStore('session', {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user: this.user,
-            title: title,
+            title,
           }),
         })
 
@@ -306,14 +303,18 @@ export const useSessionStore = defineStore('session', {
     },
 
     async scheduleAccountDeletion () {
-      if (!this.user) return { success: false, message: 'Usuario no identificado' }
+      if (!this.user) {
+        return { success: false, message: 'Usuario no identificado' }
+      }
       try {
         const { response, data } = await requestJson('/api/user/delete-request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user: this.user }),
         })
-        if (!response.ok) throw new Error(data.message || 'Error al solicitar eliminación')
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al solicitar eliminación')
+        }
 
         this.setDeletionScheduled(data.deletionScheduledAt)
         return { success: true }
@@ -324,14 +325,18 @@ export const useSessionStore = defineStore('session', {
     },
 
     async cancelAccountDeletion () {
-      if (!this.user) return { success: false, message: 'Usuario no identificado' }
+      if (!this.user) {
+        return { success: false, message: 'Usuario no identificado' }
+      }
       try {
         const { response, data } = await requestJson('/api/user/delete-cancel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user: this.user }),
         })
-        if (!response.ok) throw new Error(data.message || 'Error al cancelar eliminación')
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al cancelar eliminación')
+        }
 
         this.setDeletionScheduled(null)
         return { success: true }
@@ -341,11 +346,6 @@ export const useSessionStore = defineStore('session', {
       }
     },
 
-    updateMascot (mascotFile) {
-      this.setMascot(mascotFile)
-      console.log('🐾 Mascota actualizada localmente:', mascotFile)
-    },
-
     clearSession () {
       this.user = null
       this.plan = 'INDIVIDUAL_FREE'
@@ -353,7 +353,6 @@ export const useSessionStore = defineStore('session', {
       this.role = null
       this.parentId = null
       this.avatar = 'Astronauta_blanc.jpg'
-      this.mascot = null
       this.selectedTitle = null
       this.displayName = null
       this.nameChangesCount = 0
@@ -362,7 +361,7 @@ export const useSessionStore = defineStore('session', {
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
-      ;[
+      for (const key of [
         STORAGE_KEYS.token,
         STORAGE_KEYS.user,
         STORAGE_KEYS.rank,
@@ -370,16 +369,15 @@ export const useSessionStore = defineStore('session', {
         STORAGE_KEYS.parentId,
         STORAGE_KEYS.plan,
         STORAGE_KEYS.avatar,
-        STORAGE_KEYS.mascot,
         STORAGE_KEYS.lastActivity,
         'astro_selected_title',
         'astro_display_name',
         'astro_name_changes',
         'astro_deletion_scheduled',
-      ].forEach(key => {
+      ]) {
         storageRemoveItem(key, false) // Session
         storageRemoveItem(key, true) // Local
-      })
+      }
     },
   },
 })

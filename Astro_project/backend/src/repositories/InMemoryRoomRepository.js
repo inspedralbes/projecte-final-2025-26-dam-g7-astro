@@ -32,6 +32,20 @@ class InMemoryRoomRepository extends RoomRepository {
     async findById(roomId) {
         return this.rooms.get(roomId) || null;
     }
+
+    async deleteMany(query) {
+        // Implementación básica para tests: borramos todo lo que coincida con el status si viene en la query
+        let deletedCount = 0;
+        if (query && query.status) {
+            for (const [id, room] of this.rooms.entries()) {
+                if (room.status === query.status) {
+                    this.rooms.delete(id);
+                    deletedCount++;
+                }
+            }
+        }
+        return { deletedCount };
+    }
 }
 
 module.exports = InMemoryRoomRepository;

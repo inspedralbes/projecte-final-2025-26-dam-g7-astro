@@ -2,18 +2,18 @@
   <v-dialog v-model="visible" max-width="450" persistent z-index="3000">
     <v-card class="streak-loss-card pa-6 rounded-xl text-center overflow-hidden">
       <!-- Decoración de fondo -->
-      <div class="glow-bg"></div>
-      
+      <div class="glow-bg" />
+
       <div class="content-wrapper position-relative">
         <div class="icon-stack mb-4">
-          <v-icon icon="mdi-fire-off" color="grey-lighten-1" size="80" class="base-icon"></v-icon>
-          <v-icon icon="mdi-snowflake" color="cyan-accent-2" size="40" class="overlay-icon"></v-icon>
+          <v-icon class="base-icon" color="grey-lighten-1" icon="mdi-fire-off" size="80" />
+          <v-icon class="overlay-icon" color="cyan-accent-2" icon="mdi-snowflake" size="40" />
         </div>
 
         <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">
           {{ $t('streak.loss_title') }}
         </h2>
-        
+
         <p class="text-body-1 text-blue-grey-lighten-3 mb-6 px-4">
           {{ $t('streak.loss_desc', { streak: progressStore.previousStreak }) }}
         </p>
@@ -21,7 +21,7 @@
         <div v-if="progressStore.streakFreezes > 0" class="recovery-box pa-4 rounded-lg mb-6">
           <div class="text-overline text-cyan-accent-2 mb-1">{{ $t('streak.available_freezes') }}</div>
           <div class="d-flex align-center justify-center">
-            <v-icon icon="mdi-snowflake" color="cyan-accent-2" class="mr-2"></v-icon>
+            <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-snowflake" />
             <span class="text-h5 font-weight-bold text-white">{{ progressStore.streakFreezes }}</span>
           </div>
         </div>
@@ -35,37 +35,37 @@
         <div class="actions-stack d-flex flex-column gap-3">
           <v-btn
             v-if="progressStore.streakFreezes > 0"
-            color="cyan-accent-2"
-            size="x-large"
             block
-            rounded="pill"
             class="font-weight-black text-black shadow-cyan"
-            @click="handleRecover"
+            color="cyan-accent-2"
             :loading="loading"
+            rounded="pill"
+            size="x-large"
+            @click="handleRecover"
           >
-            <v-icon icon="mdi-auto-fix" start></v-icon>
+            <v-icon icon="mdi-auto-fix" start />
             {{ $t('streak.recover_btn') }}
           </v-btn>
 
           <v-btn
             v-else
-            color="amber-accent-2"
-            variant="tonal"
-            size="large"
             block
-            rounded="pill"
             class="font-weight-bold"
+            color="amber-accent-2"
+            rounded="pill"
+            size="large"
             to="/shop"
+            variant="tonal"
             @click="visible = false"
           >
-            <v-icon icon="mdi-cart" start></v-icon>
+            <v-icon icon="mdi-cart" start />
             {{ $t('streak.go_to_shop') }}
           </v-btn>
 
           <v-btn
-            variant="text"
-            color="grey-lighten-1"
             class="text-none"
+            color="grey-lighten-1"
+            variant="text"
             @click="handleClose"
           >
             {{ $t('streak.continue_anyway') }}
@@ -77,43 +77,43 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
-import { useProgressStore } from '@/stores/progressStore';
+  import { ref, watch } from 'vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useProgressStore } from '@/stores/progressStore'
 
-const astroStore = useAstroStore();
-const progressStore = useProgressStore();
+  const astroStore = useAstroStore()
+  const progressStore = useProgressStore()
 
-const visible = ref(false);
-const loading = ref(false);
+  const visible = ref(false)
+  const loading = ref(false)
 
-// Observar si el store detecta que necesitamos un freeze
-watch(() => progressStore.needsFreeze, (newValue) => {
-  if (newValue === true) {
-    visible.value = true;
-  }
-}, { immediate: true });
-
-const handleRecover = async () => {
-  loading.value = true;
-  try {
-    const result = await astroStore.useStreakFreeze();
-    if (result.success) {
-      visible.value = false;
-      // El store ya actualiza needsFreeze a false
+  // Observar si el store detecta que necesitamos un freeze
+  watch(() => progressStore.needsFreeze, newValue => {
+    if (newValue === true) {
+      visible.value = true
     }
-  } catch (error) {
-    console.error("Error al recuperar racha:", error);
-  } finally {
-    loading.value = false;
-  }
-};
+  }, { immediate: true })
 
-const handleClose = () => {
-  visible.value = false;
-  progressStore.setNeedsFreeze(false);
+  async function handleRecover () {
+    loading.value = true
+    try {
+      const result = await astroStore.useStreakFreeze()
+      if (result.success) {
+        visible.value = false
+      // El store ya actualiza needsFreeze a false
+      }
+    } catch (error) {
+      console.error('Error al recuperar racha:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function handleClose () {
+    visible.value = false
+    progressStore.setNeedsFreeze(false)
   // Al cerrar sin usar, la racha se perderá al jugar la siguiente partida según la lógica del backend
-};
+  }
 </script>
 
 <style scoped>

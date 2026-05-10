@@ -15,7 +15,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
 
         roomRepo = new InMemoryRoomRepository();
         userRepo = new InMemoryUserRepository();
-        
+
         mockWss = {
             clients: new Set()
         };
@@ -28,11 +28,11 @@ describe('Room Manager (Multiplayer Logic)', () => {
 
         expect(roomId).toBeDefined();
         expect(roomManager.rooms.has(roomId)).toBe(true);
-        
+
         const roomInDb = await roomRepo.findById(roomId);
         expect(roomInDb).toBeDefined();
         expect(roomInDb.host).toBe('HostUser');
-        
+
         const room = await roomManager.getRoom(roomId);
         expect(room.host).toBe('HostUser');
         expect(room.players.map(p => p.username)).toContain('HostUser');
@@ -45,7 +45,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
         expect(result.success).toBe(true);
         const room = await roomManager.getRoom(roomId);
         expect(room.players.map(p => p.username)).toContain('SecondUser');
-        
+
         const roomInDb = await roomRepo.findById(roomId);
         expect(roomInDb.players).toContain('SecondUser');
     });
@@ -62,7 +62,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
     test('leaveRoom debe migrar el host si el host sale', async () => {
         const roomId = await roomManager.createRoom('HostUser');
         await roomManager.joinRoom(roomId, 'SecondUser');
-        
+
         await roomManager.leaveRoom(roomId, 'HostUser');
 
         const room = await roomManager.getRoom(roomId);
@@ -80,7 +80,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
     test('startMatch debe iniciar la partida con 2 jugadores', async () => {
         const roomId = await roomManager.createRoom('HostUser');
         await roomManager.joinRoom(roomId, 'SecondUser');
-        
+
         const result = await roomManager.startMatch(roomId);
 
         expect(result.success).toBe(true);
@@ -101,7 +101,7 @@ describe('Room Manager (Multiplayer Logic)', () => {
 
         expect(room.players.length).toBe(1);
         const player = room.players[0];
-        
+
         expect(player.username).toBe('RichUser');
         expect(player.level).toBe(42);
         expect(player.rank).toBe('Comandante');

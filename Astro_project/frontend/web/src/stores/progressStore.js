@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { useAchievementsStore } from './achievementsStore'
 import i18n from '@/i18n'
+import { useAchievementsStore } from './achievementsStore'
 import {
   normalizeActiveBoosters,
   readStoredObject,
@@ -167,7 +167,9 @@ export const useProgressStore = defineStore('progress', {
     async fetchUserStats () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
 
       try {
         const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/stats`)
@@ -230,7 +232,9 @@ export const useProgressStore = defineStore('progress', {
     async fetchUserBalance () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
 
       try {
         const { response, data } = await requestJson(`/api/shop/balance/${encodeURIComponent(user)}`)
@@ -263,8 +267,12 @@ export const useProgressStore = defineStore('progress', {
       this.error = null
       const user = this.resolveUser()
 
-      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
-      if (!game) return { success: false, message: i18n.global.t('errors.invalidGame') }
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
+      if (!game) {
+        return { success: false, message: i18n.global.t('errors.invalidGame') }
+      }
 
       try {
         const { response, data } = await requestJson('/api/games/complete', {
@@ -282,11 +290,11 @@ export const useProgressStore = defineStore('progress', {
           throw new Error(data.message || 'No se pudo registrar la partida.')
         }
 
-        this.setCoins(data.newBalance !== undefined ? data.newBalance : this.coins)
-        this.setLevel(data.newLevel !== undefined ? data.newLevel : this.level)
-        this.setXp(data.newXp !== undefined ? data.newXp : this.xp)
-        this.setPartides(data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1))
-        this.setStreak(data.streak !== undefined ? data.streak : this.streak)
+        this.setCoins(data.newBalance === undefined ? this.coins : data.newBalance)
+        this.setLevel(data.newLevel === undefined ? this.level : data.newLevel)
+        this.setXp(data.newXp === undefined ? this.xp : data.newXp)
+        this.setPartides(data.gamesPlayed === undefined ? (this.partides + 1) : data.gamesPlayed)
+        this.setStreak(data.streak === undefined ? this.streak : data.streak)
         this.setActiveBoosters(data.activeBoosters ?? this.activeBoosters)
         this.setDailyMissions(data.dailyMissions || this.dailyMissions)
         this.setWeeklyMissions(data.weeklyMissions || this.weeklyMissions)
@@ -296,10 +304,18 @@ export const useProgressStore = defineStore('progress', {
           this.setMapLevel(data.newMapLevel)
         }
 
-        if (data.gameHistory) this.gameHistory = data.gameHistory
-        if (data.maxScores) this.maxScores = data.maxScores
-        if (data.totalGamesPlayed !== undefined) this.totalGamesPlayed = data.totalGamesPlayed
-        if (data.totalPoints !== undefined) this.totalPoints = data.totalPoints
+        if (data.gameHistory) {
+          this.gameHistory = data.gameHistory
+        }
+        if (data.maxScores) {
+          this.maxScores = data.maxScores
+        }
+        if (data.totalGamesPlayed !== undefined) {
+          this.totalGamesPlayed = data.totalGamesPlayed
+        }
+        if (data.totalPoints !== undefined) {
+          this.totalPoints = data.totalPoints
+        }
 
         const now = new Date().toISOString()
         this.setLastActivity(now)
@@ -316,7 +332,9 @@ export const useProgressStore = defineStore('progress', {
     async claimMissionReward (missionId, type = 'daily') {
       this.error = null
       const user = this.resolveUser()
-      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
 
       try {
         const { response, data } = await requestJson('/api/missions/claim', {
@@ -347,7 +365,9 @@ export const useProgressStore = defineStore('progress', {
     async useStreakFreeze () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
 
       try {
         const { response, data } = await requestJson('/api/user/use-freeze', {

@@ -367,7 +367,9 @@
             "torneig": "Torneig"
         },
         "opponent": "Oponent",
-        "level": "Nivell"
+        "level": "Nivell",
+        "team": "Equip",
+        "randomizeTeams": "Aleatori"
     },
     "plans": {
         "selectMode": "SELECCIONA EL TEU MODE DE MISSIÓ",
@@ -713,7 +715,14 @@
         "commsReceiver": "RECEPTOR DE COMUNICACIONS",
         "targetLabel": "OBJECTIU",
         "signalLabel": "SENYAL",
-        "incomingTransmission": "TRANSMISSIÓ ENTRANT"
+        "incomingTransmission": "TRANSMISSIÓ ENTRANT",
+        "partnerComms": "COMUNICACIÓ AMB EL COMPANY",
+        "partner": "COMPANY",
+        "youHear": "SINTONITZES:",
+        "typeAndEnter": "Escriu un missatge i prem Enter...",
+        "you": "TU",
+        "success": "¡SENYAL DESXIFRADA!",
+        "successDesc": "+150 PTS | +15s"
     },
     "games": {
         "SymmetryBreaker": "Simetria Estel·lar",

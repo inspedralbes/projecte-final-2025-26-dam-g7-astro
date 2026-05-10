@@ -101,7 +101,6 @@
         "inventoryBtn": "INVENTARIO",
         "changePlanBtn": "CAMBIAR PLAN",
         "logoutBtn": "FINALIZAR CONEXIÓN Y SALIR",
-        "logoutConfirm": "Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?",
         "topGames": "MEJORES MISIONES (TOP 5)",
         "flightHistory": "HISTORIAL DE VUELO",
         "flightHistorySub": "Tus últimos registros de misión en el espacio profundo.",
@@ -257,7 +256,17 @@
         "emptySubtitle": "Inicia la transmisión.",
         "placeholder": "Transmitir mensaje...",
         "send": "Enviar (Enter)",
-        "hint": "Enter para enviar · Shift+Enter nueva línea"
+        "hint": "Enter para enviar · Shift+Enter nueva línea",
+        "challengeReceived": "¡Has recibido un desafío!",
+        "challengeAccepted": "Duelo aceptado con {user}",
+        "challengeRejected": "{user} ha rechazado el duelo",
+        "challengeExpired": "El desafío ha caducado",
+        "accept": "ACEPTAR",
+        "decline": "RECHAZAR",
+        "duelTitle": "DUELO ESPACIAL",
+        "duelAccepted": "DUELO ACEPTADO",
+        "duelRejected": "DUELO RECHAZADO",
+        "duelExpired": "DESAFÍO CADUCADO"
     },
     "symmetryBreaker": {
         "points": "Puntos: {score}",
@@ -382,7 +391,9 @@
             "torneig": "Torneo"
         },
         "opponent": "Oponente",
-        "level": "Nivel"
+        "level": "Nivel",
+        "team": "Equipo",
+        "randomizeTeams": "Aleatorio"
     },
     "plans": {
         "selectMode": "SELECCIONA TU MODO DE MISIÓN",
@@ -424,7 +435,10 @@
         "cancelProtocol": "CANCELAR PROTOCOLO",
         "pwdMismatch": "Los códigos no coinciden",
         "individualDesc": "Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.",
-        "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto."
+        "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.",
+        "individual": "Individual",
+        "premium": "Premium",
+        "individual_free": "Individual (Gratis)"
     },
     "spelledRosco": {
         "title": "🚀 Rosco Estelar",
@@ -575,23 +589,36 @@
     },
     "radarScan": {
         "points": "Puntos: {score}",
-        "time": "Tiempo:",
+        "time": "Tiempo: ",
         "title": "Escáner de Radar",
-        "desc": "Encuentra la letra diferente antes de que se agote el tiempo. ¡Cuidado, tu campo de visión es limitado y hacer clics al azar te restará tiempo!",
-        "startBtn": "COMENZAR (60s)",
+        "desc": "¡Encuentra el objetivo usando el escáner! Cuidado, tu campo de visión es limitado y los fallos restan tiempo.",
+        "startBtn": "INICIAR MISIÓN",
         "completed": "¡Escáner Completado!",
         "totalPoints": "Puntos Totales: {score}",
         "returnMenu": "VOLVER AL MENÚ"
     },
     "radioSignal": {
         "points": "Puntos: {score}",
+        "pointsLabel": "PUNTOS",
         "time": "Tiempo: {time}s",
-        "locked": "● LOCKED",
-        "scanning": "○ SCANNING",
-        "placeholder": "Escribe la frase...",
-        "send": "SEND",
+        "timeLabel": "TIEMPO",
+        "locked": "SINCRONIZADO",
+        "scanning": "ESCANER...",
+        "placeholder": "Introduce la frase...",
+        "send": "ENVIAR",
         "waiting": "ESPERANDO SEÑAL...",
-        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR"
+        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR",
+        "commsReceiver": "RECEPTOR DE COMUNICACIONES",
+        "targetLabel": "OBJETIVO",
+        "signalLabel": "SEÑAL",
+        "incomingTransmission": "TRANSMISIÓN ENTRANTE",
+        "partnerComms": "COMUNICACIÓN CON EL COMPAÑERO",
+        "partner": "COMPAÑERO",
+        "youHear": "SINTONIZAS:",
+        "typeAndEnter": "Escribe un mensaje y pulsa Enter...",
+        "you": "TÚ",
+        "success": "¡SEÑAL DESXIFRADA!",
+        "successDesc": "+150 PTS | +15s"
     },
     "errors": {
         "noSession": "No hay una sesión activa.",
@@ -601,17 +628,17 @@
     "missionsList": {
         "daily": {
             "games": "Juega {goal} partidas",
-            "coins": "Gana {goal} monedas",
+            "coins": "Gana {goal} créditos",
             "xp": "Consigue {goal} XP",
-            "item": "Usa {goal} Potenciadores",
-            "streak": "Actividad Diaria"
+            "item": "Usa {goal} objetos",
+            "streak": "Mantén tu racha"
         },
         "weekly": {
             "games": "Maestro de Juegos ({goal} partidas)",
-            "coins": "Buscador de Oro ({goal} monedas)",
-            "xp": "Ascensión Lunar (Gana {goal} XP)",
-            "streak": "Superviviente Espacial (Racha {goal} días)",
-            "item": "Interacción de Objetos ({goal} objetos)"
+            "coins": "Buscador de Oro ({goal} créditos)",
+            "xp": "Ascensión Lunar ({goal} XP)",
+            "streak": "Superviviente (Racha {goal} días)",
+            "item": "Interacción Pro ({goal} objetos)"
         }
     },
     "achievementsList": {
@@ -706,58 +733,34 @@
             "metric": "XP"
         }
     },
-    "radarScan": {
-        "title": "Radar Scan",
-        "points": "Puntos: {score}",
-        "time": "Tiempo: ",
-        "desc": "¡Encuentra el objetivo usando el escáner!",
-        "startBtn": "INICIAR MISIÓN",
-        "completed": "Fin del Escaneo",
-        "totalPoints": "Puntuación Final: {score}",
-        "returnMenu": "Obtener Recompensa"
-    },
-    "radioSignal": {
-        "title": "Señal de Radio",
-        "points": "Puntos: {score}",
-        "pointsLabel": "PUNTOS",
-        "time": "Tiempo: {time}s",
-        "timeLabel": "TIEMPO",
-        "locked": "SINCRONIZADO",
-        "scanning": "ESCANER...",
-        "placeholder": "Introduce la frase...",
-        "send": "ENVIAR",
-        "waiting": "Esperando señal...",
-        "commsReceiver": "RECEPTOR DE COMUNICACIONES",
-        "targetLabel": "OBJETIVO",
-        "signalLabel": "SEÑAL",
-        "incomingTransmission": "TRANSMISIÓN ENTRANTE"
-    },
     "games": {
-        "RadioSignal": "Señal de Radio",
+        "word-construction": "Construcción de Palabras",
+        "WordConstruction": "Construcción de Palabras",
+        "radar-scan": "Escáner de Radar",
+        "radar-scanner": "Escáner de Radar",
+        "RadarScan": "Escáner de Radar",
+        "RadarScanner": "Escáner de Radar",
         "radio-signal": "Señal de Radio",
-        "radiosignal": "Señal de Radio",
-        "Preparativos": "Preparativos",
-        "preparativos": "Preparativos",
-        "Despegue": "¡Despegue!",
-        "despegue": "¡Despegue!",
-        "Gravedad": "Rompiendo la Gravedad",
-        "gravedad": "Rompiendo la Gravedad",
-        "Desacoplamiento": "Desacoplamiento Orbital",
-        "desacoplamiento": "Desacoplamiento Orbital",
-        "Ruta": "Ruta Estelar",
-        "ruta": "Ruta Estelar",
-        "Base": "Llamando a la Base",
-        "base": "Llamando a la Base",
-        "Recarga": "Recarga Solar",
-        "recarga": "Recarga Solar",
-        "Reparacion": "Reparación Express",
-        "reparacion": "Reparación Express"
-    },
-    "plans": {
-        "individual": "Individual",
-        "premium": "Premium",
-        "standard": "Estándar",
-        "individual_free": "Individual (Gratis)"
+        "RadioSignal": "Señal de Radio",
+        "spelled-rosco": "Rosco Estelar",
+        "SpelledRosco": "Rosco Estelar",
+        "rhyme-squad": "Escuadrón de Rimas",
+        "RhymeSquad": "Escuadrón de Rimas",
+        "symmetry-breaker": "Rompedor de Simetrías",
+        "SymmetryBreaker": "Rompedor de Simetrías",
+        "syllable-quest": "Misión de Sílabas",
+        "SyllableQuest": "Misión de Sílabas",
+        "multiplayer": "Multijugador",
+        "Multiplayer": "Multijugador",
+        "Minijuego": "Minijuego",
+        "preparativos": "Construcción de Palabras",
+        "despegue": "Escáner de Radar",
+        "gravedad": "Señal de Radio",
+        "desacoplamiento": "Rosco Estelar",
+        "ruta": "Escuadrón de Rimas",
+        "base": "Señal de Radio",
+        "recarga": "Rompedor de Simetrías",
+        "reparacion": "Escáner de Radar"
     },
     "multiplayerResult": {
         "victory": "¡VICTORIA!",
@@ -871,43 +874,6 @@
             }
         }
     },
-    "games": {
-        "word-construction": "Construcción de Palabras",
-        "WordConstruction": "Construcción de Palabras",
-        "radar-scan": "Escáner de Radar",
-        "radar-scanner": "Escáner de Radar",
-        "RadarScan": "Escáner de Radar",
-        "RadarScanner": "Escáner de Radar",
-        "radio-signal": "Señal de Radio",
-        "RadioSignal": "Señal de Radio",
-        "spelled-rosco": "Rosco Estelar",
-        "SpelledRosco": "Rosco Estelar",
-        "rhyme-squad": "Escuadrón de Rimas",
-        "RhymeSquad": "Escuadrón de Rimas",
-        "symmetry-breaker": "Rompedor de Simetrías",
-        "SymmetryBreaker": "Rompedor de Simetrías",
-        "syllable-quest": "Misión de Sílabas",
-        "SyllableQuest": "Misión de Sílabas",
-        "multiplayer": "Multijugador",
-        "Multiplayer": "Multijugador",
-        "Minijuego": "Minijuego",
-        "Preparativos": "Construcción de Palabras",
-        "Preparativos de Vuelo": "Construcción de Palabras",
-        "¡Despegue!": "Escáner de Radar",
-        "Despegue": "Escáner de Radar",
-        "Gravedad": "Señal de Radio",
-        "Rompiendo la Gravedad": "Señal de Radio",
-        "Desacoplamiento": "Rosco Estelar",
-        "Desacoplamiento Orbital": "Rosco Estelar",
-        "Ruta": "Escuadrón de Rimas",
-        "Ruta Estelar": "Escuadrón de Rimas",
-        "Base": "Señal de Radio",
-        "Llamando a la Base": "Señal de Radio",
-        "Recarga": "Rompedor de Simetrías",
-        "Recarga Solar": "Rompedor de Simetrías",
-        "Reparación": "Escáner de Radar",
-        "Reparación Express": "Escáner de Radar"
-    },
     "ranks": [
         "Cadete de Vuelo",
         "Explorador Estelar",
@@ -924,21 +890,5 @@
         "Arquitecto de Realidades",
         "Deidad de la Singularidad",
         "Omnisciente del Cosmos"
-    ],
-    "missionsList": {
-        "daily": {
-            "games": "Juega {goal} partidas",
-            "coins": "Gana {goal} créditos",
-            "xp": "Consigue {goal} XP",
-            "item": "Usa {goal} objetos",
-            "streak": "Mantén tu racha"
-        },
-        "weekly": {
-            "games": "Maestro de Juegos ({goal} partidas)",
-            "coins": "Buscador de Oro ({goal} créditos)",
-            "xp": "Ascensión Lunar ({goal} XP)",
-            "streak": "Superviviente (Racha {goal} días)",
-            "item": "Interacción Pro ({goal} objetos)"
-        }
-    }
+    ]
 }

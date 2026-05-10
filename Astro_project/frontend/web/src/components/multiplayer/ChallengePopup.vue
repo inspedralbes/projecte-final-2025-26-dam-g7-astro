@@ -1,72 +1,78 @@
 <template>
-  <div class="challenge-notification" v-if="currentChallenge">
+  <div v-if="currentChallenge" class="challenge-notification">
     <div class="rl-card">
       <div class="rl-content">
         <div class="rl-icon">
-          <v-icon icon="mdi-sword-cross" color="cyan-accent-2" size="24"></v-icon>
+          <v-icon color="cyan-accent-2" icon="mdi-sword-cross" size="24" />
         </div>
         <div class="rl-text">
-          <div class="rl-title">DESAFÍO RECIBIDO</div>
+          <div class="rl-title">{{ $t('chat.challengeReceived') }}</div>
           <div class="rl-name">{{ currentChallenge.from }}</div>
         </div>
         <div class="rl-actions">
           <button class="rl-btn rl-accept" @click="respond(true)">
-            <v-icon icon="mdi-check" size="20"></v-icon>
+            <v-icon icon="mdi-check" size="20" />
           </button>
           <button class="rl-btn rl-decline" @click="respond(false)">
-            <v-icon icon="mdi-close" size="20"></v-icon>
+            <v-icon icon="mdi-close" size="20" />
           </button>
         </div>
       </div>
-      <div class="rl-progress-bar"></div>
+      <div class="rl-progress-bar" />
     </div>
   </div>
 
   <!-- Notificación de rechazo -->
-  <v-snackbar v-model="rejectSnackbar.show" color="error" timeout="4000" location="top right" class="custom-snackbar">
+  <v-snackbar
+    v-model="rejectSnackbar.show"
+    class="custom-snackbar"
+    color="error"
+    location="top right"
+    timeout="4000"
+  >
     <div class="d-flex align-center">
-      <v-icon icon="mdi-sword-cross" class="mr-3"></v-icon>
+      <v-icon class="mr-3" icon="mdi-sword-cross" />
       <span class="font-weight-bold">{{ rejectSnackbar.text }}</span>
     </div>
   </v-snackbar>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
+  import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useRouter } from 'vue-router'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
-const router = useRouter();
+  const { t } = useI18n()
+  const multiplayerStore = useMultiplayerStore()
+  const router = useRouter()
 
-const currentChallenge = computed(() => multiplayerStore.challengeRequests[0] || null);
+  const currentChallenge = computed(() => multiplayerStore.challengeRequests[0] || null)
 
-const rejectSnackbar = ref({
-  show: false,
-  text: ''
-});
+  const rejectSnackbar = ref({
+    show: false,
+    text: '',
+  })
 
-const respond = (accepted) => {
-  if (currentChallenge.value) {
-    multiplayerStore.respondToChallenge(currentChallenge.value.from, accepted);
+  function respond (accepted) {
+    if (currentChallenge.value) {
+      multiplayerStore.respondToChallenge(currentChallenge.value.from, accepted)
+    }
   }
-};
 
-watch(() => multiplayerStore.lastMessage, (newMsg) => {
-  if (!newMsg) return;
+  watch(() => multiplayerStore.lastMessage, newMsg => {
+    if (!newMsg) return
 
-  if (newMsg.type === 'CHALLENGE_ACCEPTED') {
-    router.push('/multiplayer');
-  } else if (newMsg.type === 'CHALLENGE_REJECTED') {
-    rejectSnackbar.value = {
-      show: true,
-      text: `${newMsg.from} ha rechazado tu desafío.`
-    };
-    multiplayerStore.lastMessage = null;
-  }
-});
+    if (newMsg.type === 'CHALLENGE_ACCEPTED') {
+      router.push('/multiplayer')
+    } else if (newMsg.type === 'CHALLENGE_REJECTED') {
+      rejectSnackbar.value = {
+        show: true,
+        text: t('chat.challengeRejected', { user: newMsg.from }),
+      }
+      multiplayerStore.lastMessage = null
+    }
+  })
 </script>
 
 <style scoped>
@@ -183,4 +189,3 @@ watch(() => multiplayerStore.lastMessage, (newMsg) => {
   to { width: 0%; }
 }
 </style>
-

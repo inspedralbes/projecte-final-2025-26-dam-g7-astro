@@ -23,7 +23,7 @@ class RoomManager {
         this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
         this.userToRoom = new Map();           // user -> roomId
-        
+
         // Duracions per defecte de cada minijoc
         this.gameDurations = {
             'RadarScan': 600000,
@@ -41,18 +41,35 @@ class RoomManager {
         this.wss = wss;
         console.log("🛠️ RoomManager inicializado con Repositorios y WSS");
 
-        // Garbage Collector: Limpieza de salas inactivas cada 10 minutos
+        // Garbage Collector: Limpieza de salas inactivas cada 5 minutos
         setInterval(async () => {
             console.log("[RoomManager] Ejecutando Garbage Collector de salas...");
             const now = Date.now();
-            const inactivityLimit = 10 * 60 * 1000; 
+            const LOBBY_TIMEOUT = 15 * 60 * 1000; // 15 minutos desde creación
+            const INACTIVE_TIMEOUT = 30 * 60 * 1000; // 30 minutos sin actividad total
 
             for (const [roomId, room] of this.rooms.entries()) {
-                if (now - room.lastActivity > inactivityLimit) {
-                    console.log(`[RoomManager] GC: Eliminando sala ${roomId} por inactividad prolongada.`);
-                    
+                const createdAt = room.createdAt ? (typeof room.createdAt.getTime === 'function' ? room.createdAt.getTime() : new Date(room.createdAt).getTime()) : null;
+                const age = createdAt ? (now - createdAt) : (now - room.lastActivity);
+                const idleTime = now - room.lastActivity;
+
+                let shouldDelete = false;
+                let reason = '';
+
+                // Si no tiene createdAt, es una sala vieja que debemos limpiar
+                if (room.status === 'LOBBY' && (!createdAt || age > LOBBY_TIMEOUT)) {
+                    shouldDelete = true;
+                    reason = !createdAt ? 'sala sin fecha de creación (antigua)' : 'tiempo de espera en lobby agotado (15 min)';
+                } else if (idleTime > INACTIVE_TIMEOUT) {
+                    shouldDelete = true;
+                    reason = 'inactividad prolongada (30 min)';
+                }
+
+                if (shouldDelete) {
+                    console.log(`[RoomManager] GC: Eliminando sala ${roomId}. Motivo: ${reason}`);
+
                     this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'timeout' });
-                    
+
                     room.players.forEach(user => {
                         if (this.userToRoom.get(user) === roomId) {
                             this.userToRoom.delete(user);
@@ -78,8 +95,30 @@ class RoomManager {
                     }
                 }
             }
+
+            // Limpieza profunda en DB: Cualquier sala LOBBY sin createdAt o muy vieja
+            if (this.roomRepo) {
+                try {
+                    const threshold = new Date(Date.now() - LOBBY_TIMEOUT);
+                    // Borramos salas viejas O salas que ni siquiera tengan el campo createdAt
+                    const deleted = await this.roomRepo.deleteMany({
+                        status: 'LOBBY',
+                        $or: [
+                            { createdAt: { $lt: threshold } },
+                            { createdAt: { $exists: false } },
+                            { lastActivity: { $lt: Date.now() - INACTIVE_TIMEOUT } }
+                        ]
+                    });
+                    if (deleted && deleted.deletedCount > 0) {
+                        console.log(`[RoomManager] DB Cleanup: ¡Éxito! Borradas ${deleted.deletedCount} salas antiguas de la base de datos.`);
+                    }
+                } catch (e) {
+                    console.error("[RoomManager] Error en DB Cleanup:", e);
+                }
+            }
+
             await this.syncGlobalRooms();
-        }, 60 * 1000); 
+        }, 5 * 60 * 1000);
     }
 
     addSession(user, ws) {
@@ -165,13 +204,16 @@ class RoomManager {
     }
 
     createLobbyTimeout(roomId) {
+        // No es necesario recrear el timeout cada vez si el GC ya lo controla, 
+        // pero lo dejamos como seguro adicional de 15 minutos exactos.
         return setTimeout(async () => {
             const room = this.rooms.get(roomId);
             if (room && room.status === 'LOBBY') {
-                console.log(`[Room ${roomId}] Auto-cleanup: sala eliminada per inactividad (>10 min al lobby).`);
+                console.log(`[Room ${roomId}] Auto-cleanup: sala eliminada por tiempo límite (15 min).`);
                 this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'inactive' });
 
                 this.rooms.delete(roomId);
+                // ... limpieza de mapas internos ...
                 this.roundGameScores.delete(roomId);
                 this.roundFinishedPlayers.delete(roomId);
                 this.playedGames.delete(roomId);
@@ -186,7 +228,7 @@ class RoomManager {
                     }
                 }
             }
-        }, 10 * 60 * 1000); 
+        }, 15 * 60 * 1000);
     }
 
     async createRoom(hostInput, isPublic = true, maxPlayers = 4, initialConfig = {}) {
@@ -238,6 +280,7 @@ class RoomManager {
             status: 'LOBBY',
             isPublic,
             gameConfig: roomData.gameConfig,
+            createdAt: roomData.createdAt,
             idleTimer: this.createLobbyTimeout(roomId),
             lastActivity: Date.now()
         });
@@ -263,11 +306,11 @@ class RoomManager {
         if (room) {
             const now = Date.now();
             room.lastActivity = now;
-            
+
             if (!room.lastDbActivityUpdate || (now - room.lastDbActivityUpdate > 30000)) {
                 room.lastDbActivityUpdate = now;
                 if (this.roomRepo) {
-                    this.roomRepo.update({ id: roomId, lastActivity: now }).catch(() => {});
+                    this.roomRepo.update({ id: roomId, lastActivity: now }).catch(() => { });
                 }
             }
         }
@@ -323,7 +366,7 @@ class RoomManager {
 
     async leaveRoom(roomId, user) {
         const room = this.rooms.get(roomId);
-        
+
         if (this.userToRoom.get(user) === roomId) {
             this.userToRoom.delete(user);
         }
@@ -336,7 +379,7 @@ class RoomManager {
         if (room.players.size === 0) {
             console.log(`Sala ${roomId} vacía. Eliminando de memoria y DB...`);
             if (room.idleTimer) clearTimeout(room.idleTimer);
-            
+
             this.rooms.delete(roomId);
             this.roundGameScores.delete(roomId);
             this.roundFinishedPlayers.delete(roomId);
@@ -570,11 +613,11 @@ class RoomManager {
                 this.startRoundTimer(roomId);
             } catch (error) {
                 console.error(`[Room ${roomId}] ERROR CRÍTICO AL INICIAR PARTIDA:`, error);
-                this.broadcastToRoom(roomId, { 
-                    type: 'ERROR', 
-                    message: 'Hubo un problema al iniciar el minijuego. Volviendo al centro de mando.' 
+                this.broadcastToRoom(roomId, {
+                    type: 'ERROR',
+                    message: 'Hubo un problema al iniciar el minijuego. Volviendo al centro de mando.'
                 });
-                room.status = 'LOBBY'; 
+                room.status = 'LOBBY';
             }
         }
 
@@ -655,7 +698,7 @@ class RoomManager {
         }
 
         room.status = 'ROUND_RESULTS';
-        
+
         const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
             type: 'ROUND_ENDED_BY_WINNER',
@@ -719,11 +762,11 @@ class RoomManager {
         }
 
         const teamSpecificActions = [
-            'MOUSE_MOVE', 
-            'FREQ_SYNC', 
-            'TYPING_SYNC', 
-            'PARTNER_TYPING', 
-            'EMOJI_CHAT', 
+            'MOUSE_MOVE',
+            'FREQ_SYNC',
+            'TYPING_SYNC',
+            'PARTNER_TYPING',
+            'EMOJI_CHAT',
             'PARTNER_EMOJI',
             'ADVANCE_LETTER'
         ];
@@ -753,7 +796,7 @@ class RoomManager {
 
             const scores = this.roundGameScores.get(roomId) || {};
             const teamId = room.gameConfig.teams ? room.gameConfig.teams[user] : null;
-            
+
             if (teamId) {
                 room.players.forEach(p => {
                     if (room.gameConfig.teams[p] === teamId) {
@@ -826,7 +869,7 @@ class RoomManager {
     async handlePlayerReturnToLobby(roomId, user) {
         const room = this.rooms.get(roomId);
         if (!room) return;
-        
+
         let returned = this.returnedToLobbyPlayers.get(roomId);
         if (!returned) {
             returned = new Set();

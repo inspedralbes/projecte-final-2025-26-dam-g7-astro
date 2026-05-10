@@ -16,12 +16,17 @@ let database = null;
 
 async function connectDB() {
     try {
+        const isAtlas = uri.includes('mongodb.net');
+        console.log(`🔌 Conectando a MongoDB (${isAtlas ? 'Atlas' : 'Local'})...`);
+        
         await client.connect();
-        console.log(' Connectat a MongoDB Atlas');
+        console.log(`✅ Conectado con éxito a: ${isAtlas ? 'MongoDB Atlas' : 'Instancia Local'}`);
+        
         database = client.db('Astro');
         return database;
     } catch (error) {
-        console.error(' Error connectant a MongoDB:', error);
+        console.error('❌ Error crítico al conectar a MongoDB:', error.message);
+        console.error('   Asegúrate de que la URI es correcta y que tienes acceso de red.');
         throw error;
     }
 }

@@ -20,6 +20,10 @@ class RoomRepository {
     async findById(roomId) {
         throw new Error('Not implemented');
     }
+
+    async deleteMany(query) {
+        throw new Error('Not implemented');
+    }
 }
 
 module.exports = RoomRepository;
