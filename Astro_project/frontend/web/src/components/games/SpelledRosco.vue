@@ -389,6 +389,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -529,6 +533,9 @@
       timeLeft.value = Math.min(timeLeft.value + 20, 999)
       feedbackMessage.value = t('spelledRosco.msgCorrect')
       feedbackColor.value = 'success'
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(20) // Recarga 20% por palabra (es más difícil)
+      }
       if (props.isMultiplayer) {
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 30 : 15 })

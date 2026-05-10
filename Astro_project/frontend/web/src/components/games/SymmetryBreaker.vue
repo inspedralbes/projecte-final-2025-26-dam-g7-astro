@@ -105,6 +105,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -385,6 +389,11 @@
     successfulLocks.value += 1
     timeLeft.value = Math.min(99, timeLeft.value + 3)
     round.value++
+    
+    if (props.isRace) {
+      multiplayerStore.rechargeFuel(15) // Recarga 15% por cada bloqueo exitoso
+    }
+    
     generateTargets()
   }
 

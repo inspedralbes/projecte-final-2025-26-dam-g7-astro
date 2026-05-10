@@ -372,6 +372,10 @@
         "briefingTitle": "INSTRUCCIONS DE MISSIÓ",
         "autoStarting": "Iniciant automàticament...",
         "nextGameStarting": "PREPARANT SEGÜENT MISSIÓ...",
+        "nextPlanet": "VIATJANT AL SEGÜENT PLANETA...",
+        "selectRoute": "SELECCIONA RUTA DE CARRERA",
+        "fuel": "COMBUSTIBLE QUÀNTIC",
+        "lowFuel": "¡COMBUSTIBLE CRÍTIC!",
         "roleCatcher": "RECOL·LECTOR",
         "roleSniper": "DESTRUCTOR"
     },

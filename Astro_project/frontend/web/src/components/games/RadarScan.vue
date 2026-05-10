@@ -114,6 +114,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   // --- VARIABLES D'ESTAT ---
@@ -318,6 +322,10 @@
             isTransitioning.value = false
           }, 200)
         }, 800)
+      }
+
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(12) // Recarga 12% por ronda
       }
     } else {
       clickedIndices.value.set(index, 'incorrect')

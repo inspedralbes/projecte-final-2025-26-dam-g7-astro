@@ -10,9 +10,15 @@
 
     <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
-      <div v-if="activeGameComponent || isTransitioning" class="game-active-overlay">
+      <div v-if="activeGameComponent || isTransitioning || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
+        <!-- MODO CARRERA HUD -->
+        <RaceHUD 
+          v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'" 
+          :sequence="RACE_SEQUENCE" 
+        />
+
         <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
-        <div v-if="isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
           <CoopScoreBar :max-score="5000" :score="totalCoopScore" />
         </div>
 
@@ -30,7 +36,7 @@
           />
         </div>
 
-        <div class="game-hud-container d-flex justify-center align-center">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE'" class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
             <!-- Jugador local -->
             <div class="hud-item d-flex align-center gap-3">
@@ -101,19 +107,37 @@
         </div>
 
         <div class="game-content">
+          <!-- MAPA DE CARRERA (Solo en Modo RACE y cuando no hay juego activo) -->
+          <transition name="fade">
+            <RaceMap 
+              v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE' && !activeGameComponent && !isTransitioning"
+              @select-planet="onPlanetSelected"
+            />
+          </transition>
+
           <component
             :is="activeGameComponent"
             v-if="activeGameComponent && !isTransitioning"
             :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
-            :is-multiplayer="true"
+            :is-multiplayer="multiplayerStore.room?.gameConfig?.mode === 'RACE' ? false : true"
+            :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
             @game-over="onGameFinished"
           />
 
           <!-- Pantalla de Transición -->
           <div v-if="isTransitioning" class="transition-screen d-flex flex-column align-center justify-center">
             <v-progress-circular color="cyan" indeterminate size="64" width="6" />
-            <h2 class="text-h2 font-weight-black text-white mt-8 glow-text">{{ $t('multiplayerLobby.nextGameStarting') || 'PREPARANDO SIGUIENTE MISIÓN...' }}</h2>
-            <p class="text-h4 text-cyan-accent-2 mt-4 font-italic tracking-widest">{{ multiplayerStore.room?.gameConfig?.currentGame?.toUpperCase() }}</p>
+            <template v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'">
+              <h2 class="text-h2 font-weight-black text-white mt-8 glow-text">{{ $t('multiplayerLobby.nextPlanet') || 'VIATJANT AL SEGÜENT PLANETA...' }}</h2>
+              <p class="text-h1 text-cyan-accent-2 mt-4 font-italic tracking-widest">{{ currentPlanets[multiplayerStore.raceProgress]?.toUpperCase() }}</p>
+              <div class="planet-decoration mt-8">
+                 <v-icon icon="mdi-planet" size="120" color="cyan-lighten-2" class="planet-pulse" />
+              </div>
+            </template>
+            <template v-else>
+              <h2 class="text-h2 font-weight-black text-white mt-8 glow-text">{{ $t('multiplayerLobby.nextGameStarting') || 'PREPARANDO SIGUIENTE MISIÓN...' }}</h2>
+              <p class="text-h4 text-cyan-accent-2 mt-4 font-italic tracking-widest">{{ multiplayerStore.room?.gameConfig?.currentGame?.toUpperCase() }}</p>
+            </template>
           </div>
 
           <!-- Pop-up de Briefing Automático (10s) -->
@@ -183,7 +207,7 @@
       @return-to-lobby="returnToLobby"
     />
 
-    <div v-if="!activeGameComponent" class="w-100">
+    <div v-if="!activeGameComponent && multiplayerStore.room?.status !== 'PLAYING' && multiplayerStore.room?.status !== 'MATCH_STARTING'" class="w-100">
       <div class="mb-10 text-center">
         <div class="d-flex align-center justify-center mb-6">
           <v-icon class="mr-4" color="orange-accent-2" icon="mdi-sword-cross" size="x-large" />
@@ -280,8 +304,8 @@
                       {{ $t('multiplayerLobby.crewmate') }}
                     </v-chip>
 
-                    <!-- Selector de Equipo con Flechas -->
-                    <div v-if="selectedModality !== '1vs1'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
+                    <!-- Selector de Equipo con Flechas (Oculto en Carrera) -->
+                    <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
                       <v-btn
                         icon="mdi-chevron-left"
                         variant="text"
@@ -328,7 +352,7 @@
               </v-row>
 
               <div class="mt-12 d-flex flex-column align-center">
-                <div v-if="isHost && selectedModality !== '1vs1'" class="team-actions mb-4 d-flex gap-3">
+                <div v-if="isHost && selectedModality !== '1vs1' && selectedModality !== 'carrera'" class="team-actions mb-4 d-flex gap-3">
                   <v-btn
                     color="cyan-accent-2"
                     prepend-icon="mdi-dice-5"
@@ -512,6 +536,43 @@
                 </v-card>
               </v-col>
             </v-row>
+
+            <!-- SELECTOR DE RUTA VISUAL (Solo en Carrera) -->
+            <div v-if="selectedModality === 'carrera'" class="mt-6">
+              <div class="text-overline text-cyan-accent-2 font-weight-bold mb-3 tracking-widest d-flex align-center">
+                <v-icon icon="mdi-map-marker-path" size="small" class="mr-2" />
+                {{ $t('multiplayerLobby.selectRoute') }}
+              </div>
+              
+              <v-row dense>
+                <v-col v-for="(route, id) in raceRoutes" :key="id" cols="12">
+                  <v-card
+                    class="route-card mb-2 pa-3 rounded-xl cursor-pointer transition-all"
+                    :class="{ 'active-route': selectedRouteId === id, 'opacity-50': !isHost && selectedRouteId !== id }"
+                    variant="flat"
+                    @click="isHost ? selectedRouteId = id : null"
+                  >
+                    <div class="d-flex align-center">
+                      <div class="route-icon-box mr-4 rounded-lg d-flex align-center justify-center">
+                        <v-icon :icon="id === 'SISTEMA_SOLAR' ? 'mdi-earth' : 'mdi-vortex'" color="cyan-accent-2" />
+                      </div>
+                      <div class="flex-grow-1">
+                        <div class="text-subtitle-2 font-weight-black text-white">{{ route.name }}</div>
+                        <div class="text-7px text-grey-lighten-1">{{ route.planets.length }} PLANETAS · {{ route.sequence.length }} MISIONES</div>
+                      </div>
+                      <v-radio v-if="isHost" :model-value="selectedRouteId === id" color="cyan-accent-2" hide-details density="compact" />
+                    </div>
+                    
+                    <div v-if="selectedRouteId === id" class="mt-3 planet-mini-path d-flex align-center gap-1">
+                      <template v-for="(planet, idx) in route.planets" :key="idx">
+                        <div class="mini-node" :title="planet" />
+                        <div v-if="idx < route.planets.length - 1" class="mini-connector" />
+                      </template>
+                    </div>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </div>
           </v-card>
 
           <!-- Invitaciones -->
@@ -685,6 +746,8 @@
   import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import CoopScoreBar from '@/components/multiplayer/CoopScoreBar.vue'
+  import RaceHUD from '@/components/multiplayer/RaceHUD.vue'
+  import RaceMap from '@/components/multiplayer/RaceMap.vue'
   import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
@@ -709,6 +772,23 @@
   }
 
   const availableGames = Object.keys(gameComponents)
+  
+  const raceRoutes = {
+    'SISTEMA_SOLAR': {
+      name: 'Sistema Solar',
+      sequence: ['WordConstruction', 'RadioSignal', 'RadarScan', 'SymmetryBreaker', 'SpelledRosco', 'RhymeSquad'],
+      planets: ['Terra', 'Mart', 'Júpiter', 'Saturn', 'Urà', 'Neptú'],
+    },
+    'NEBULOSA_KALI': {
+      name: 'Nebulosa Kali',
+      sequence: ['RadarScan', 'RadioSignal', 'SyllableQuest', 'WordConstruction'],
+      planets: ['Kali-1', 'Kali-2', 'Kali-Alpha', 'Vortex'],
+    },
+  }
+
+  const selectedRouteId = ref('SISTEMA_SOLAR')
+  const RACE_SEQUENCE = computed(() => raceRoutes[selectedRouteId.value].sequence)
+  const currentPlanets = computed(() => raceRoutes[selectedRouteId.value].planets)
 
   const snackbar = ref({ show: false, text: '', color: 'success' })
   const isPublic = ref(true)
@@ -738,11 +818,19 @@
     }
   })
 
+  // Watcher para el combustible en modo carrera
+  watch(() => multiplayerStore.raceFuel, (newFuel) => {
+    if (newFuel <= 0 && multiplayerStore.room?.status === 'PLAYING') {
+      console.log('COMBUSTIBLE AGOTADO: Game Over local')
+      onGameFinished() // O forzar submitRoundResult
+    }
+  })
+
   const modalities = [
     { id: '1vs1', name: 'Mode 1vs1', icon: 'mdi-sword-cross', active: true },
     { id: '2vs2', name: 'Mode 2vs2', icon: 'mdi-account-group', active: true },
     { id: 'boss', name: 'Mode Boss', icon: 'mdi-skull', active: false },
-    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: false },
+    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true },
     { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false },
   ]
 
@@ -772,9 +860,11 @@
       roundWinner.value = null
       showRoundResults.value = false
 
-      const gameName = multiplayerStore.room?.gameConfig?.currentGame
-      if (gameName && gameComponents[gameName]) {
-        activeGameComponent.value = gameComponents[gameName]
+      if (multiplayerStore.room?.gameConfig?.mode !== 'RACE') {
+        const gameName = multiplayerStore.room?.gameConfig?.currentGame
+        if (gameName && gameComponents[gameName]) {
+          activeGameComponent.value = gameComponents[gameName]
+        }
       }
       return
     }
@@ -827,13 +917,15 @@
       showRoulette.value = false
       isTransitioning.value = true
       
-      if (gameName && gameComponents[gameName]) {
-        // Reducimos el delay para una transición más fluida
+      const gameName = multiplayerStore.room?.gameConfig?.currentGame
+      if (gameName && gameComponents[gameName] && multiplayerStore.room?.gameConfig?.mode !== 'RACE') {
         setTimeout(() => {
           activeGameComponent.value = gameComponents[gameName]
           isTransitioning.value = false
           startBriefing()
         }, 300)
+      } else {
+        isTransitioning.value = false
       }
     }
 
@@ -935,7 +1027,7 @@
 
   const allPlayersHaveTeam = computed(() => {
     if (!multiplayerStore.room) return false
-    if (selectedModality.value === '1vs1') return true
+    if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera') return true
     const teams = multiplayerStore.room.gameConfig?.teams || {}
     return multiplayerStore.room.players.every(p => teams[getPlayerName(p)])
   })
@@ -1109,8 +1201,10 @@
 
   function createRoom () {
     const initialConfig = {
-      pointsToWin: pointsToWin.value,
+      pointsToWin: selectedModality.value === 'carrera' ? 1 : pointsToWin.value,
       modality: selectedModality.value,
+      mode: selectedModality.value === 'carrera' ? 'RACE' : 'NORMAL',
+      routeId: selectedRouteId.value,
     }
     multiplayerStore.createRoom(astroStore.user, isPublic.value, maxPlayers.value, initialConfig)
   }
@@ -1138,8 +1232,43 @@
     }
   }
 
-  function onGameFinished (_score) {
-    multiplayerStore.submitRoundResult()
+  function onGameFinished (score) {
+    if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
+      // Recargar combustible
+      multiplayerStore.rechargeFuel(25)
+      
+      // Avanzar al siguiente juego
+      const nextIndex = multiplayerStore.raceProgress + 1
+      if (nextIndex < RACE_SEQUENCE.length) {
+        multiplayerStore.updateRaceProgress(nextIndex)
+        
+        // Pequeño delay visual para la transición de vuelta al mapa
+        isTransitioning.value = true
+        setTimeout(() => {
+          activeGameComponent.value = null // Volver al mapa
+          isTransitioning.value = false
+        }, 1500)
+      } else {
+        // Carrera terminada!
+        multiplayerStore.submitRoundResult()
+      }
+    } else {
+      multiplayerStore.submitRoundResult()
+    }
+  }
+
+  function onPlanetSelected ({ id, game }) {
+    if (game && gameComponents[game]) {
+      isTransitioning.value = true
+      setTimeout(() => {
+        activeGameComponent.value = gameComponents[game]
+        isTransitioning.value = false
+      }, 1000)
+    }
+  }
+
+  function returnToMap () {
+    activeGameComponent.value = null
   }
 
   function returnToLobby () {
@@ -1182,6 +1311,18 @@
     localStorage.setItem('astro_mp_pointsToWin', String(newVal))
     if (isHost.value && multiplayerStore.room) {
       multiplayerStore.updateGameConfig({ pointsToWin: newVal })
+    }
+  })
+
+  watch(selectedRouteId, (newId) => {
+    if (isHost.value && multiplayerStore.room) {
+      multiplayerStore.updateGameConfig({ routeId: newId })
+    }
+  })
+
+  watch(() => multiplayerStore.room?.gameConfig?.routeId, (newId) => {
+    if (newId && newId !== selectedRouteId.value) {
+      selectedRouteId.value = newId
     }
   })
 
@@ -1621,5 +1762,65 @@
 .role-explanation {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+}
+.planet-pulse {
+  animation: planet-glow 2s infinite alternate ease-in-out;
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.4));
+}
+
+@keyframes planet-glow {
+  from { transform: scale(1); filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.2)); }
+  to { transform: scale(1.1); filter: drop-shadow(0 0 40px rgba(0, 229, 255, 0.6)); }
+}
+
+.planet-preview-list {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.route-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.route-card:hover {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(0, 229, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.active-route {
+  background: rgba(0, 229, 255, 0.1) !important;
+  border-color: rgba(0, 229, 255, 0.5) !important;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+.route-icon-box {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 229, 255, 0.1);
+}
+
+.planet-mini-path {
+  padding-left: 2px;
+}
+
+.mini-node {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 5px #00e5ff;
+}
+
+.mini-connector {
+  width: 12px;
+  height: 2px;
+  background: rgba(0, 229, 255, 0.3);
+}
+
+.transition-all {
+  transition: all 0.3s ease;
 }
 </style>

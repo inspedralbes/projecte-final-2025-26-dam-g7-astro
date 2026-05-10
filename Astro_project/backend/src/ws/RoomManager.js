@@ -269,7 +269,10 @@ class RoomManager {
                 totalRounds: initialConfig.pointsToWin || 3,
                 currentRound: 0,
                 scores: { [host]: 0 },
-                currentGame: null
+                currentGame: null,
+                mode: initialConfig.mode || 'NORMAL',
+                modality: initialConfig.modality || '1vs1',
+                routeId: initialConfig.routeId || null
             }
         };
 
@@ -488,7 +491,9 @@ class RoomManager {
         if (!room || room.players.size < 2) return { error: 'Se necesitan al menos 2 jugadores' };
 
         this.updateRoomActivity(roomId);
-        room.status = 'ROULETTE';
+        
+        const isRace = room.gameConfig.mode === 'RACE';
+        room.status = isRace ? 'PLAYING' : 'ROULETTE';
 
         if (room.idleTimer) {
             clearTimeout(room.idleTimer);
@@ -538,6 +543,15 @@ class RoomManager {
         if (!room) return;
 
         const playerArray = Array.from(room.players);
+        
+        if (room.gameConfig.mode === 'RACE') {
+            playerArray.forEach(p => {
+                room.gameConfig.teams[p] = p; // Cada uno en su equipo (su propio nombre)
+                room.gameConfig.subRoles[p] = null;
+            });
+            return;
+        }
+
         const isPairGame = ['RadioSignal', 'SpelledRosco', 'RhymeSquad', 'RadarScan', 'SyllableQuest'].includes(gameName);
         const half = Math.ceil(playerArray.length / 2);
 
@@ -797,7 +811,8 @@ class RoomManager {
                 }, 10 * 60 * 1000);
 
             } else {
-                currentRoom.status = 'ROULETTE';
+                const isRace = currentRoom.gameConfig.mode === 'RACE';
+                currentRoom.status = isRace ? 'PLAYING' : 'ROULETTE';
                 const nextGame = this.pickNextGame(roomId);
                 currentRoom.gameConfig.currentGame = nextGame;
                 this.assignRoles(roomId, nextGame, true);

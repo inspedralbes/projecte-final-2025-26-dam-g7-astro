@@ -34,7 +34,7 @@
     <div v-if="chartData.length > 0" class="score-chart-container mb-12 w-100 max-width-800">
       <div class="text-overline text-cyan-accent-2 mb-4 text-center tracking-widest">TELEMETRIA DE RENDIMENT HISTÒRIC</div>
       <div class="chart-wrapper pa-6 rounded-xl border-cyan bg-black-opacity-40">
-        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="score-svg" preserveAspectRatio="none">
+        <svg :viewBox="`0 0 ${chartWidth || 800} ${chartHeight || 300}`" class="score-svg" preserveAspectRatio="none">
           <!-- Cuadrícula -->
           <line v-for="i in 4" :key="'grid-h-'+i" x1="0" :y1="(chartHeight/4)*i" :x2="chartWidth" :y2="(chartHeight/4)*i" stroke="rgba(0,229,255,0.05)" stroke-width="1" />
           <line v-for="i in chartData.length" :key="'grid-v-'+i" :x1="(chartWidth/chartData.length)*i" y1="0" :x2="(chartWidth/chartData.length)*i" y2="chartHeight" stroke="rgba(0,229,255,0.05)" stroke-width="1" />
@@ -196,9 +196,7 @@
                   variant="tonal"
                 >{{ $t('multiplayerResult.tie') }}</v-chip>
               </div>
-              <div class="round-scores text-caption text-grey-lighten-1 font-weight-bold">
-                {{ h.scores[myName] || 0 }} - {{ h.scores[opponentName] || 0 }}
-              </div>
+                {{ (h.scores && h.scores[myName]) || 0 }} - {{ (h.scores && h.scores[opponentName]) || 0 }}
             </div>
           </v-card>
         </v-col>
@@ -302,12 +300,12 @@
         let score = 0
         if (legend.id.startsWith('team-')) {
           // Score de equipo (máximo de sus miembros)
-          const teamPlayers = Object.entries(multiplayerStore.room.gameConfig.teams)
+          const teamPlayers = Object.entries(multiplayerStore.room.gameConfig.teams || {})
             .filter(([_, tId]) => tId === legend.id)
             .map(([u, _]) => u)
-          score = Math.max(...teamPlayers.map(u => h.currentScores[u] || 0))
+          score = Math.max(...teamPlayers.map(u => (h.currentScores && h.currentScores[u]) || 0))
         } else {
-          score = h.currentScores[legend.id] || 0
+          score = (h.currentScores && h.currentScores[legend.id]) || 0
         }
         
         points.push({

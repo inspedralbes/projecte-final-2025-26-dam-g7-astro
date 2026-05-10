@@ -173,6 +173,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -288,6 +292,10 @@
       score.value += pointsGained
       currentStep.value++
       messageType.value = 'success'
+
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(10) // Recarga 10% por cada bloque
+      }
 
       if (props.isMultiplayer) {
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0

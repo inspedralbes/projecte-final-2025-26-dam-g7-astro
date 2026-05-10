@@ -170,6 +170,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -488,6 +492,10 @@
         const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
         phraseToSolve.value = nextPhrase
         phraseToHear.value = nextPhrase
+      }
+
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(15) // Recarga 15% por cada frase
       }
 
       isTuned.value = false

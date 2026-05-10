@@ -30,6 +30,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     reconnectAttempts: 0,
     maxReconnectAttempts: 5,
     timeLeft: 0,
+    // --- RACE MODE STATE ---
+    raceFuel: 100,
+    raceProgress: 0,
+    partnerProgress: 0,
+    fuelInterval: null,
   }),
 
   getters: {
@@ -178,6 +183,16 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
           this.timeLeft = 60
+          
+          // Reset Race Mode state
+          this.raceFuel = 100
+          this.raceProgress = 0
+          this.partnerProgress = 0
+          this.stopFuelTimer()
+          
+          if (this.room?.gameConfig?.mode === 'RACE') {
+            this.startFuelTimer()
+          }
           break
         }
         case 'ROUND_ENDED_BY_WINNER': {
@@ -231,6 +246,16 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.timeLeft = data.action.timeLeft
           }
 
+          if (data.action?.type === 'RACE_PROGRESS_UPDATE') {
+            if (data.from !== sessionStore.user) {
+              this.partnerProgress = data.action.progress
+            }
+          }
+
+          if (data.action?.type === 'FUEL_RECHARGE') {
+            this.rechargeFuel(data.action.amount)
+          }
+
           this.lastMessage = data
           break
         }
@@ -254,6 +279,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.room = { ...data.room }
           }
           this.lastMessage = data
+          this.stopFuelTimer()
           break
         }
         case 'PLAYER_RETURNED': {
@@ -491,6 +517,54 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         user: sessionStore.user,
       }))
       this.room = null
+      this.stopFuelTimer()
+    },
+
+    // --- RACE MODE ACTIONS ---
+    updateRaceProgress (index) {
+      const sessionStore = this.getSession()
+      this.raceProgress = index
+      if (!this.isConnected || !this.room || !this.socket) return
+
+      this.socket.send(JSON.stringify({
+        type: 'GAME_ACTION',
+        roomId: this.room.id,
+        user: sessionStore.user,
+        action: {
+          type: 'RACE_PROGRESS_UPDATE',
+          progress: index,
+        },
+      }))
+    },
+
+    rechargeFuel (amount = 20) {
+      this.raceFuel = Math.min(100, this.raceFuel + amount)
+    },
+
+    consumeFuel (amount = 10) {
+      this.raceFuel = Math.max(0, this.raceFuel - amount)
+    },
+
+    startFuelTimer () {
+      this.stopFuelTimer()
+      this.raceFuel = 100
+      this.fuelInterval = setInterval(() => {
+        if (this.raceFuel > 0) {
+          this.raceFuel -= 0.5 // Baja 0.5% cada medio segundo (1% por segundo)
+          if (this.raceFuel <= 0) {
+            this.raceFuel = 0
+            this.stopFuelTimer()
+            // El componente HUD o el Game Manager detectarán el 0 y activarán Game Over
+          }
+        }
+      }, 500)
+    },
+
+    stopFuelTimer () {
+      if (this.fuelInterval) {
+        clearInterval(this.fuelInterval)
+        this.fuelInterval = null
+      }
     },
   },
 })
