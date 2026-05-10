@@ -23,10 +23,52 @@ class UserService {
         return avatar;
     }
 
+    async updateSelectedTitle(username, title) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        user.selectedTitle = title;
+        await this.userRepo.update(user);
+        return title;
+    }
+
+    async changePassword(username, oldPassword, newPassword) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        const validCredentials = await this.userRepo.findByCredentials(username, oldPassword);
+        if (!validCredentials) throw new Error("Contraseña actual incorrecta");
+
+        const updated = await this.userRepo.updatePassword(username, newPassword);
+        if (!updated) throw new Error("No se pudo actualizar la contraseña");
+        return true;
+    }
+
     async getAllExplorers() {
         // En una app real, el repositori hauria de tenir un mètode findAll simplificat
         // Per ara, usem la col·lecció directament via repo si l'exposem o afegim el mètode.
         return await this.userRepo.findAllExplorers();
+    }
+
+    async requestAccountDeletion(username) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        const deletionDate = new Date();
+        deletionDate.setDate(deletionDate.getDate() + 30);
+        
+        user.deletionScheduledAt = deletionDate.toISOString();
+        await this.userRepo.update(user);
+        return user.deletionScheduledAt;
+    }
+
+    async cancelAccountDeletion(username) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        user.deletionScheduledAt = null;
+        await this.userRepo.update(user);
+        return true;
     }
 }
 

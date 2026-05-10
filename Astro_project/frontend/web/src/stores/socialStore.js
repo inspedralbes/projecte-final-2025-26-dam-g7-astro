@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { requestJson } from './astroShared'
 import { useSessionStore } from './sessionStore'
+import i18n from '@/i18n'
+import { requestJson } from './astroShared'
 
 export const useSocialStore = defineStore('social', {
   state: () => ({
@@ -48,9 +49,7 @@ export const useSocialStore = defineStore('social', {
     async addFriendAction (friendName) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson('/api/friends/add', {
@@ -74,9 +73,7 @@ export const useSocialStore = defineStore('social', {
     async removeFriendAction (friendName) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson('/api/friends/remove', {
@@ -102,9 +99,7 @@ export const useSocialStore = defineStore('social', {
     async sendFriendRequest (friendName) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: 'No hay sesión activa.' }
 
       try {
         const { response, data } = await requestJson('/api/friends/request', {
@@ -127,9 +122,7 @@ export const useSocialStore = defineStore('social', {
     async acceptFriendRequest (friendName) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: 'No hay sesión activa.' }
 
       try {
         const { response, data } = await requestJson('/api/friends/accept', {
@@ -155,9 +148,7 @@ export const useSocialStore = defineStore('social', {
     async rejectFriendRequest (friendName) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: 'No hay sesión activa.' }
 
       try {
         const { response, data } = await requestJson('/api/friends/reject', {

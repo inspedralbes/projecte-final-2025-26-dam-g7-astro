@@ -1,17 +1,35 @@
 <template>
   <v-container class="pa-0 main-container" fluid>
     <!-- Navbar (Simplified & Professional) -->
-    <v-app-bar class="px-8 mt-4" color="transparent" flat>
-      <div class="d-flex align-center">
-        <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
-      </div>
+    <v-app-bar class="px-8" color="transparent" flat height="100">
+      <v-app-bar-title class="pl-0">
+        <v-img
+          class="logo-header"
+          contain
+          height="40"
+          position="left"
+          src="/logo/logo astro final.png"
+          width="150"
+          @click="router.push('/')"
+        />
+      </v-app-bar-title>
       <v-spacer />
-      <v-btn class="text-white mx-2 font-weight-bold" to="/login" variant="text">
-        LOGIN
-      </v-btn>
-      <v-btn class="mx-2 px-6 rounded-pill font-weight-black" color="primary" to="/register" variant="flat">
-        UNIRSE
-      </v-btn>
+
+      <div class="d-flex align-center">
+        <LanguageSelector class="mr-4" />
+        <v-btn class="text-white mx-2 font-weight-bold" to="/login" variant="text">
+          {{ $t('home.login') }}
+        </v-btn>
+        <v-btn
+          class="mx-2 px-8 rounded-pill font-weight-black"
+          color="primary"
+          height="48"
+          to="/register"
+          variant="flat"
+        >
+          {{ $t('home.register') }}
+        </v-btn>
+      </div>
     </v-app-bar>
 
     <!-- Hero Section -->
@@ -22,32 +40,29 @@
       <div class="content-wrapper px-4">
         <div class="system-status mb-6">
           <span class="pulse-dot" />
-          SYSTEM ONLINE: NEURAL TRAINING INTERFACE
+          {{ $t('home.systemOnline') }}
         </div>
 
         <h1 class="hero-title mb-4">
-          PROYECTO <span class="primary-gradient-text">ASTRO</span>
+          {{ $t('home.title', { name: 'ASTRO' }) }}
         </h1>
 
-        <p class="hero-subtitle mb-10 mx-auto">
-          Plataforma de entrenamiento neurocognitivo de alto rendimiento.<br>
-          Optimiza tu capacidad de procesamiento visual y agilidad mental.
-        </p>
+        <p class="hero-subtitle mb-10 mx-auto">{{ $t('home.subtitle') }}</p>
 
         <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
           <v-btn
-            class="action-button px-12 py-6 rounded-lg"
+            class="action-button rounded-lg custom-btn-hero"
             color="primary"
             size="x-large"
             :to="isLoggedIn ? '/singleplayer' : '/register'"
             variant="flat"
           >
-            {{ isLoggedIn ? 'CONTINUAR MISIÓN' : 'INICIAR ENTRENAMIENTO' }}
-            <v-icon class="ms-2" end icon="mdi-chevron-right" />
+            <span class="text-center">{{ isLoggedIn ? $t('home.continue') : $t('home.start') }}</span>
+            <v-icon class="btn-icon-right" icon="mdi-chevron-right" />
           </v-btn>
 
-          <v-btn class="action-button px-12 py-6 rounded-lg" color="white" size="x-large" variant="outlined">
-            SABER MÁS
+          <v-btn class="action-button rounded-lg custom-btn-hero" color="white" size="x-large" variant="outlined">
+            {{ $t('home.learnMore') }}
           </v-btn>
         </div>
       </div>
@@ -67,6 +82,10 @@
 
 <script setup>
   import { computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import LanguageSelector from '@/components/layout/LanguageSelector.vue'
+
+  const router = useRouter()
 
   const isLoggedIn = computed(() => {
     return !!localStorage.getItem('user-session')
@@ -134,14 +153,6 @@
   color: white;
 }
 
-.primary-gradient-text {
-  background: linear-gradient(to right, #00f2ff, #7000ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.3));
-}
-
 .hero-subtitle {
   font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.6);
@@ -150,6 +161,7 @@
   font-family: 'Inter', sans-serif;
   text-transform: none;
   letter-spacing: 0;
+  white-space: pre-line;
 }
 
 .action-button {
@@ -183,7 +195,28 @@
     letter-spacing: 2px;
 }
 
-.tracking-tighter {
-    letter-spacing: -2px;
+.logo-header {
+    filter: brightness(0) invert(1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logo-header:hover {
+    opacity: 0.8;
+}
+
+.custom-btn-hero {
+    min-width: 280px !important;
+    height: 64px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+}
+
+.btn-icon-right {
+    position: absolute !important;
+    right: 24px !important;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height d-flex flex-column justify-center align-center" fluid>
-    <h1 class="text-h2 mb-6 font-weight-bold tracking-wide">Modo Multijugador</h1>
-    <p class="text-h5 mb-10 text-grey-lighten-1">Página en desarrollo...</p>
+    <h1 class="text-h2 mb-6 font-weight-bold tracking-wide">{{ $t('multiplayer.title') }}</h1>
+    <p class="text-h5 mb-10 text-grey-lighten-1">{{ $t('multiplayer.description') }}</p>
     <v-btn
       color="cyan-accent-3"
       rounded="xl"
@@ -9,7 +9,7 @@
       to="/"
       variant="outlined"
     >
-      Volver al Menú
+      {{ $t('multiplayer.backButton') }}
     </v-btn>
   </v-container>
 </template>

@@ -1,19 +1,33 @@
-# Documentació
-Llistat d'alguns dels punts que han de quedar explicats en aquesta carpeta. Poden ser tots en aquest fitxer o en diversos fitxers enllaçats.
+# Documentació Tècnica del Projecte Astro
 
-És obligatori modificar aquest document!!
+Benvingut al repositori de documentació d'Astro. Aquí trobaràs tota la informació necessària per entendre l'arquitectura, el funcionament i el flux de treball del projecte.
 
-## Documentació bàsica MÍNIMA
- * Objectius
- * Arquitectura bàsica
-   * Tecnologies utilitzades
-   * Interrelació entre els diversos components
- * Com crees l'entorn de desenvolupament
- * Com desplegues l'aplicació a producció
- * Llistat d'endpoints de l'API de backend (també podeu documentar-ho amb swagger)
-    * Rutes
-   * Exemples de JSON de peticó
-   * Exemples de JSON de resposta i els seus codis d'estat 200? 404?
- * Aplicació Android
- * Altres elements importants.
- * ...
+## 📁 Estructura de Documentació
+
+La documentació està dividida en dues àrees principals per facilitar la navegació:
+
+### 1. [Context del Projecte](./context/)
+Aquesta carpeta conté el "Cervell" del projecte. És vital per a nous desenvolupadors i per mantenir el context de la IA.
+- **[00_OBJECTIVE](./context/00_OBJECTIVE.md)**: Visió general, objectius i públic objectiu.
+- **[01_SCOPE](./context/01_SCOPE.md)**: Abast funcional de la web, mòbil i backend.
+- **[02_ARCHITECTURE](./context/02_ARCHITECTURE.md)**: Stack tecnològic, diagrames i infraestructura.
+- **[03_DECISIONS](./context/03_DECISIONS.md)**: Registre de decisions arquitectòniques (ADR).
+- **[04_CONVENTIONS](./context/04_CONVENTIONS.md)**: Guia d'estil, nomenclatura i bones pràctiques.
+- **[05_SYSTEM_MAP](./context/05_SYSTEM_MAP.md)**: Topologia de serveis i rutes principals.
+- **[AI_WORKFLOW](./context/AI_WORKFLOW.md)**: Com col·laborar amb agents d'IA utilitzant OpenSpec.
+
+### 2. [OpenSpec (Especificacions)](./openspec/)
+Aquí es troben les especificacions detallades de les funcionalitats.
+- **Specs**: Requisits detallats, escenaris d'usuari i criteris d'acceptació.
+- **Tasks**: Llistat de tasques tècniques derivades de les specs.
+
+## 🛠️ Desenvolupament Local
+
+Per començar a treballar en el projecte, consulta el fitxer de configuració de Docker al directori arrel i la guia d'arquitectura a la carpeta de context.
+
+### Requisits previs
+- Docker i Docker Compose instal·lats.
+- Node.js (v18+) per al desenvolupament local sense contenidors.
+
+---
+© 2026 Equip DAM-G7 - Astro Project

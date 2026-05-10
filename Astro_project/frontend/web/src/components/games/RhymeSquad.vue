@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4">
+  <v-container class="fill-height d-flex flex-column align-center justify-center game-container pa-4" fluid>
 
     <v-card
       v-if="!isPlaying && !isGameOver"
@@ -8,40 +8,44 @@
       rounded="xl"
       width="100%"
     >
+      <v-icon class="mb-6 animate-bounce" color="cyan-accent-3" icon="mdi-timer-sand" size="100" />
+      <h1 class="text-h2 font-weight-black text-white mb-6">{{ $t('rhymeSquad.title') }}</h1>
+      <p class="text-h5 text-grey-lighten-1 mb-10" v-html="$t('rhymeSquad.desc')" />
+
       <!-- AVISOS DE ROLES MULTIJUGADOR -->
-      <div v-if="isMultiplayer && subRole === 'catcher'" class="mb-6 p-4 rounded-lg bg-green-darken-4">
-        <h2 class="text-h3 font-weight-black text-green-accent-3 mb-2">ETS EL RECOL·LECTOR</h2>
-        <p class="text-h5 text-white">¡Atrapa només les paraules que rimin amb la pista!</p>
-      </div>
+      <div v-if="isMultiplayer" class="mb-8">
+        <div v-if="subRole === 'catcher'" class="pa-4 rounded-lg bg-green-darken-4 mb-4">
+          <h2 class="text-h4 font-weight-black text-green-accent-3 mb-2">{{ $t('rhymeSquad.roleCatcher') || 'ETS EL RECOL·LECTOR' }}</h2>
+          <p class="text-body-1 text-white">{{ $t('rhymeSquad.catcherDesc') || '¡Atrapa només les paraules que rimin amb la pista!' }}</p>
+        </div>
+        <div v-if="subRole === 'sniper'" class="pa-4 rounded-lg bg-red-darken-4 mb-4">
+          <h2 class="text-h4 font-weight-black text-red-accent-3 mb-2">{{ $t('rhymeSquad.roleSniper') || 'ETS EL DESTRUCTOR' }}</h2>
+          <p class="text-body-1 text-white">{{ $t('rhymeSquad.sniperDesc') || '¡Destrueix les paraules que NO rimin per protegir al company!' }}</p>
+        </div>
 
-      <div v-if="isMultiplayer && subRole === 'sniper'" class="mb-6 p-4 rounded-lg bg-red-darken-4">
-        <h2 class="text-h3 font-weight-black text-red-accent-3 mb-2">ETS EL DESTRUCTOR</h2>
-        <p class="text-h5 text-white">¡Destrueix les paraules que NO rimin per protegir al company!</p>
-      </div>
-
-      <div v-if="isMultiplayer && !isHost" class="mt-8 text-center">
-        <v-progress-circular color="cyan-accent-3" indeterminate size="32"></v-progress-circular>
-        <p class="text-h6 text-cyan-accent-3 mt-4">Esperant que el Comandant iniciï la missió...</p>
+        <div v-if="!isHost" class="mt-4 text-center">
+          <v-progress-circular color="cyan-accent-3" indeterminate size="32" />
+          <p class="text-h6 text-cyan-accent-3 mt-4">{{ $t('rhymeSquad.waitingForHost') || 'Esperant que el Comandant iniciï la missió...' }}</p>
+        </div>
       </div>
 
       <v-btn
         v-if="!isMultiplayer || isHost"
         block
-        class="font-weight-black text-black text-h6 mt-4"
+        class="font-weight-black text-black text-h6"
         color="cyan-accent-3"
         height="60"
         rounded="pill"
         size="x-large"
         @click="handleStartClick"
       >
-        INICIAR MISSIÓ
+        {{ $t('rhymeSquad.startMission') }}
       </v-btn>
     </v-card>
 
     <template v-else-if="isPlaying">
-
       <v-card
-        class="mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0"
+        class="rhyme-header mb-4 pa-6 bg-deep-purple-darken-4 elevation-10 flex-shrink-0"
         max-width="1200"
         rounded="xl"
         style="z-index: 10;"
@@ -49,20 +53,20 @@
       >
         <div class="d-flex justify-space-between align-center">
           <div>
-            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">🎧 Escuadró Fonològic</h2>
+            <h2 class="text-h4 font-weight-bold text-cyan-accent-2 mb-2">{{ $t('rhymeSquad.phonologicalSquad') }}</h2>
             <div class="text-subtitle-1 text-grey-lighten-2 mt-1">
-              <span class="font-weight-bold">Punts: {{ score }}</span>
+              <span class="font-weight-bold">{{ $t('rhymeSquad.points', { score }) }}</span>
               <span class="mx-3">|</span>
               <span class="font-weight-bold" :class="timeLeft <= 15 ? 'text-red-accent-2 animate-pulse' : 'text-blue-lighten-2'">
-                Temps: {{ timeLeft }}s
+                {{ $t('rhymeSquad.time', { time: timeLeft }) }}
               </span>
               <span class="mx-3">|</span>
-              <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">Vides: {{ lives }}</span>
+              <span :class="lives === 1 ? 'text-red-accent-2 font-weight-bold' : 'text-green-accent-3'">{{ $t('rhymeSquad.lives', { lives }) }}</span>
             </div>
           </div>
 
           <div class="text-center px-10 target-box rounded-xl py-3">
-            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">Busca rimes amb:</div>
+            <div class="text-h6 text-cyan-accent-1 text-uppercase font-weight-bold">{{ $t('rhymeSquad.findRhymes') }}</div>
             <div class="text-h2 font-weight-black text-white glow-text my-1">{{ currentTarget?.word || '---' }}</div>
           </div>
 
@@ -74,7 +78,7 @@
               :color="isTurbo ? 'purple-accent-3' : 'amber-accent-3'"
               size="x-large"
             >
-              COMBO x{{ combo }} {{ isTurbo ? '🔥' : '' }}
+              {{ $t('rhymeSquad.combo', { combo, turbo: isTurbo ? '🔥' : '' }) }}
             </v-chip>
             <v-btn
               color="grey"
@@ -88,9 +92,9 @@
       </v-card>
 
       <div
-        class="play-area position-relative rounded-xl overflow-hidden w-100"
+        class="play-area position-relative rounded-xl overflow-hidden w-100 mt-2"
         :class="{ 'turbo-mode': isTurbo }"
-        style="max-width: 1200px; height: 75vh; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
+        style="max-width: 1200px; flex: 1; min-height: 600px; border: 2px solid rgba(255, 255, 255, 0.1);"
         @click.self="missClick"
       >
         <div v-if="isTurbo" class="nebula-bg" />
@@ -123,21 +127,21 @@
       width="100%"
     >
       <v-icon class="mb-4" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" size="100" />
-      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? '¡Temps Agotat!' : '¡Missió Fallida!' }}</h2>
+      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? $t('rhymeSquad.timeOut') : $t('rhymeSquad.missionFailed') }}</h2>
 
       <div class="d-flex justify-space-around my-8">
         <div class="text-center">
           <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
-          <div class="text-subtitle-1">Rimes Atrapades</div>
+          <div class="text-subtitle-1">{{ $t('rhymeSquad.rhymesCaught') }}</div>
         </div>
         <div class="text-center">
           <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
-          <div class="text-subtitle-1">Errors i Omissions</div>
+          <div class="text-subtitle-1">{{ $t('rhymeSquad.errors') }}</div>
         </div>
       </div>
 
-      <p class="text-h4 text-white mb-2">Puntuació Final: {{ score }}</p>
-      <p class="text-h6 text-grey-lighten-1 mb-8">Combo Màxim: x{{ maxCombo }}</p>
+      <p class="text-h4 text-white mb-2">{{ $t('rhymeSquad.finalScore', { score: score }) }}</p>
+      <p class="text-h6 text-grey-lighten-1 mb-8">{{ $t('rhymeSquad.maxCombo', { combo: maxCombo }) }}</p>
 
       <v-btn
         color="cyan-accent-3"
@@ -148,15 +152,15 @@
         class="text-black font-weight-bold text-h6 block w-100"
         @click="emitExit"
       >
-        Obtenir Recompensa
+        {{ $t('rhymeSquad.getReward') }}
       </v-btn>
     </v-card>
 
     <v-overlay v-model="isWaitingForOthers" class="align-center justify-center" persistent z-index="150">
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
         <v-progress-circular class="mb-4" color="cyan-accent-3" indeterminate size="64" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">Muntant resultats...</h2>
-        <p class="text-body-1 text-grey-lighten-1">Esperant que el company acabi la seva missió.</p>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('rhymeSquad.assemblingResults') || 'Muntant resultats...' }}</h2>
+        <p class="text-body-1 text-grey-lighten-1">{{ $t('rhymeSquad.waitingForPartner') || 'Esperant que el company acabi la seva missió.' }}</p>
       </v-card>
     </v-overlay>
 
@@ -164,10 +168,13 @@
 </template>
 
 <script setup>
-  import { onMounted, onUnmounted, ref, watch, computed } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { rhymeData } from '@/data/rhymeGamesData'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
+  const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
@@ -184,25 +191,14 @@
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
   const isWaitingForOthers = ref(false)
 
-  function handleStartClick() {
-    if (props.isMultiplayer && isHost.value) {
-      multiplayerStore.sendGameAction({ type: 'RHYME_START' })
-    }
-    startGame()
-  }
-
-  const dictionary = [
-    { word: 'BOTÓ', ending: 'Ó', rhymes: ['LLEÓ', 'AVIÓ', 'CAMIÓ', 'BALÓ', 'MELÓ', 'RATÓ', 'CORAZÓ'], fakes: ['CASA', 'GOS', 'TAULA', 'GAT', 'LLIBRE', 'CADIRA', 'COTXE'] },
-    { word: 'LLUNA', ending: 'UNA', rhymes: ['CUNA', 'DUNA', 'FORTUNA', 'VACUNA', 'OLIVA', 'CAPUNA'], fakes: ['SOL', 'MAR', 'TERRA', 'FOC', 'AIRE', 'AIGUA', 'CEL'] },
-    { word: 'CANTAR', ending: 'AR', rhymes: ['JUGAR', 'SALTAR', 'BALLAR', 'VOLAR', 'PENSAR', 'PLORAR', 'AMAR'], fakes: ['CÓRRER', 'DORMIR', 'VIURE', 'RIURE', 'MENJAR', 'BEURE', 'LLEGIR'] },
-    { word: 'FORMATGE', ending: 'ATGE', rhymes: ['VIATGE', 'PAISATGE', 'MISSATGE', 'SALVATGE', 'CORATGE'], fakes: ['PA', 'AIGUA', 'VI', 'LLET', 'FRUITA', 'CARN', 'SOPA'] },
-    { word: 'MIRALL', ending: 'ALL', rhymes: ['TREBALL', 'RETRALL', 'VALL', 'REBULL', 'TALL'], fakes: ['CRISTAL', 'PARET', 'PORTA', 'FINESTRA', 'TERRA'] },
-  ]
+  const currentDictionary = computed(() => {
+    return rhymeData[locale.value] || rhymeData['es']
+  })
 
   const isPlaying = ref(false)
   const isGameOver = ref(false)
   const score = ref(0)
-  const lives = ref(10)
+  const lives = ref(props.isMultiplayer ? 10 : 3)
   const timeLeft = ref(60)
   const combo = ref(0)
   const maxCombo = ref(0)
@@ -221,12 +217,16 @@
   let currentSpeed = 5
   let bonusTimeout = null
 
+  function handleStartClick () {
+    if (props.isMultiplayer && isHost.value) {
+      multiplayerStore.sendGameAction({ type: 'RHYME_START' })
+    }
+    startGame()
+  }
+
   function startGame () {
     score.value = 0
-    // Solo resetear vidas si no es multijugador o si es el Host
-    if (!props.isMultiplayer || isHost.value) {
-      lives.value = 10
-    }
+    lives.value = props.isMultiplayer ? 10 : 3
     timeLeft.value = 60
     combo.value = 0
     maxCombo.value = 0
@@ -242,10 +242,9 @@
 
     if (!props.isMultiplayer || isHost.value) {
       pickNewTarget()
-      // Enviar target inicial inmediatamente
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
-        multiplayerStore.sendGameAction({ type: 'RHYME_START' }) // Notificar inicio al Guest
+        multiplayerStore.sendGameAction({ type: 'RHYME_START' })
       }
       gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
     }
@@ -253,14 +252,14 @@
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (!isPlaying.value) return
-      
+
       if (!props.isMultiplayer || isHost.value) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
         if (delta >= 1) {
           timeLeft.value = Math.max(0, timeLeft.value - delta)
           lastTick += delta * 1000
-          
+
           if (props.isMultiplayer) {
             multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
@@ -275,8 +274,8 @@
   }
 
   function pickNewTarget () {
-    const randomIndex = Math.floor(Math.random() * dictionary.length)
-    currentTarget.value = dictionary[randomIndex]
+    const randomIndex = Math.floor(Math.random() * currentDictionary.value.length)
+    currentTarget.value = currentDictionary.value[randomIndex]
   }
 
   function spawnWord () {
@@ -294,6 +293,7 @@
       const isRhyme = Math.random() < 0.35
       const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes
       const wordText = wordList[Math.floor(Math.random() * wordList.length)]
+
       const targetZone = zones[i % zones.length]
       const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min
 
@@ -324,13 +324,11 @@
     if (!isPlaying.value || word.status !== 'falling') return
 
     let isActionCorrect = false
-    
+
     if (props.isMultiplayer) {
       if (subRole.value === 'catcher') {
-        // El catcher debe atrapar rimas
         isActionCorrect = word.isRhyme
       } else if (subRole.value === 'sniper') {
-        // El sniper debe destruir fakes (no rimas)
         isActionCorrect = !word.isRhyme
       }
     } else {
@@ -346,7 +344,7 @@
       combo.value++
       if (combo.value > maxCombo.value) maxCombo.value = combo.value
       if (combo.value >= 10) isTurbo.value = true
-      if (combo.value % 5 === 0) pickNewTarget()
+      if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
     } else {
       word.status = 'incorrect'
       incorrectHits.value++
@@ -357,13 +355,17 @@
       multiplayerStore.sendGameAction({ type: 'RHYME_CATCH', id: word.id, status: word.status })
     }
 
-    setTimeout(() => { removeWord(word.id, true) }, 350)
+    setTimeout(() => {
+      removeWord(word.id, true)
+    }, 350)
   }
 
   function triggerTimeBonusVisual () {
     showTimeBonus.value = true
     if (bonusTimeout) clearTimeout(bonusTimeout)
-    bonusTimeout = setTimeout(() => { showTimeBonus.value = false }, 500)
+    bonusTimeout = setTimeout(() => {
+      showTimeBonus.value = false
+    }, 500)
   }
 
   function removeWord (id, clicked) {
@@ -372,7 +374,6 @@
       const word = activeWords.value[wordIndex]
       activeWords.value.splice(wordIndex, 1)
 
-      // Si nadie la clicó y era una rima, el Catcher falló su misión
       if (!clicked && word.isRhyme && word.status === 'falling') {
         incorrectHits.value++
         takeDamage()
@@ -393,7 +394,7 @@
         multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
       } else {
         multiplayerStore.sendGameAction({ type: 'TAKE_DAMAGE' })
-        return // El host nos enviará el LIVES_SYNC
+        return
       }
     } else {
       lives.value = Math.max(0, lives.value - 1)
@@ -401,7 +402,7 @@
 
     combo.value = 0
     isTurbo.value = false
-    
+
     if (lives.value <= 0) {
       endGame()
     }
@@ -413,11 +414,9 @@
 
   function endGame (silent = false) {
     if (props.isMultiplayer && !silent && timeLeft.value > 0 && lives.value > 0) {
-      // Ignorar fin de juego si todavía queda tiempo y vidas
       return
     }
-    
-    // Si llegamos aquí, forzamos el fin
+
     if (props.isMultiplayer && !silent) {
       if (isHost.value) {
         isPlaying.value = false
@@ -427,7 +426,6 @@
         activeWords.value = []
         multiplayerStore.submitRoundResult()
       } else if (lives.value <= 0 || timeLeft.value <= 0) {
-        // El guest también debe limpiar su estado si ha terminado por vidas o tiempo
         isPlaying.value = false
         isGameOver.value = true
         clearInterval(gameLoopInterval)
@@ -465,22 +463,22 @@
       }
       if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value) {
         currentTarget.value = msg.action.target
-        // Si el Guest todavía no ha empezado, forzar inicio
         if (!isPlaying.value && !isGameOver.value) startGame()
       }
       if (msg.action?.type === 'RHYME_START' && !isHost.value) startGame()
       if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value) activeWords.value.push(msg.action.word)
       if (msg.action?.type === 'RHYME_CATCH') {
-         const id = msg.action.id
-         const index = activeWords.value.findIndex(w => w.id === id)
-         if (index !== -1) {
-           activeWords.value[index].status = msg.action.status
-           if (msg.action.status === 'correct' && isHost.value) {
-             score.value += isTurbo.value ? 20 : 10
-             // No hace falta enviar SCORE_UPDATE aquí porque el watcher lo hará
-           }
-           setTimeout(() => { removeWord(id, true) }, 350)
-         }
+        const id = msg.action.id
+        const index = activeWords.value.findIndex(w => w.id === id)
+        if (index !== -1) {
+          activeWords.value[index].status = msg.action.status
+          if (msg.action.status === 'correct' && isHost.value) {
+            score.value += isTurbo.value ? 20 : 10
+          }
+          setTimeout(() => {
+            removeWord(id, true)
+          }, 350)
+        }
       }
       if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value) takeDamage()
       if (msg.action?.type === 'LIVES_SYNC' && !isHost.value) {

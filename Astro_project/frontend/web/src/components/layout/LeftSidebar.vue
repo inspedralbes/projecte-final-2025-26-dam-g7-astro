@@ -7,8 +7,15 @@
     permanent
     width="280"
   >
-    <div class="menu-header d-flex flex-column justify-center align-center py-12">
+    <div class="menu-header d-flex flex-column justify-center align-center py-8">
       <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
+      <v-img
+        class="my-2 logo-sidebar-img"
+        contain
+        height="50"
+        src="/logo/logo astro final.png"
+        width="50"
+      />
       <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
     </div>
 
@@ -26,13 +33,16 @@
           <v-icon class="mr-4 item-icon" :icon="item.icon" size="22" />
         </template>
         <v-list-item-title class="text-subtitle-1 font-weight-bold">
-          {{ item.title }}
+          {{ $t(item.titleKey) }}
         </v-list-item-title>
       </v-list-item>
     </v-list>
 
     <template #append>
       <div class="pa-4">
+        <div class="d-flex justify-center mb-6">
+          <LanguageSelector />
+        </div>
         <v-btn
           block
           class="logout-btn"
@@ -41,7 +51,7 @@
           variant="text"
           @click="showLogoutDialog = true"
         >
-          Desconectarse
+          {{ $t('profile.logoutBtn') }}
         </v-btn>
       </div>
     </template>
@@ -50,9 +60,9 @@
     <v-dialog v-model="showLogoutDialog" max-width="400">
       <v-card class="glass-panel pa-6 text-center shadow-xl">
         <v-icon class="mb-4 pulse-error" color="error" icon="mdi-alert-circle-outline" size="64" />
-        <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">¿CERRAR SESIÓN?</h2>
+        <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
         <p class="text-body-2 text-grey-lighten-1 mb-8">
-          Estás a punto de desconectarte del sistema central de ASTRO. ¿Deseas continuar?
+          {{ $t('profile.logoutConfirm') }}
         </p>
         <div class="d-flex justify-center mt-4">
           <v-btn
@@ -62,7 +72,7 @@
             variant="outlined"
             @click="showLogoutDialog = false"
           >
-            CANCELAR
+            {{ $t('general.cancel').toUpperCase() }}
           </v-btn>
           <v-btn
             class="rounded-lg flex-grow-1 ml-2"
@@ -71,7 +81,7 @@
             variant="flat"
             @click="handleLogout"
           >
-            DESCONECTAR
+            {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
           </v-btn>
         </div>
       </v-card>
@@ -80,8 +90,9 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import LanguageSelector from '@/components/layout/LanguageSelector.vue'
   import { useAstroStore } from '@/stores/astroStore'
 
   const router = useRouter()
@@ -95,14 +106,22 @@
     router.push('/')
   }
 
-  const menuItems = ref([
-    { title: 'Un Jugador', icon: 'mdi-account', to: '/singleplayer' },
-    { title: 'Multijugador', icon: 'mdi-sword-cross', to: '/multiplayer' },
-    { title: 'Tienda', icon: 'mdi-store', to: '/shop' },
-    { title: 'Logros', icon: 'mdi-trophy-variant', to: '/achievements' },
-    { title: 'Amigos', icon: 'mdi-account-group', to: '/friends' },
-    { title: 'Perfil', icon: 'mdi-card-account-details', to: '/profile' },
-  ])
+  const menuItems = computed(() => {
+    const items = [
+      { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
+      { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
+      { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
+      { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
+      { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
+      { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
+    ]
+
+    if (store.role === 'TEACHER' || store.role === 'CENTER') {
+      items.push({ titleKey: 'sidebar.educational', icon: 'mdi-school', to: '/educational' })
+    }
+
+    return items
+  })
 </script>
 
 <style scoped>
@@ -111,6 +130,10 @@
     backdrop-filter: blur(25px);
     border-right: 1px solid rgba(0, 242, 255, 0.1) !important;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.logo-sidebar-img {
+    filter: brightness(0) invert(1);
 }
 
 .letter-spacing-2 {
@@ -142,6 +165,8 @@
     background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%) !important;
     color: #00f2ff !important;
     border-left: 3px solid #00f2ff !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
 }
 
 .active-menu-item .item-icon {

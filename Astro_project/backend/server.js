@@ -18,6 +18,8 @@ const AchievementService = require('./src/services/achievementService');
 const SocialService = require('./src/services/socialService');
 const MissionService = require('./src/services/missionService');
 const UserService = require('./src/services/userService');
+const GroupService = require('./src/services/groupService');
+const SupplyService = require('./src/services/supplyService');
 const MultiplayerService = require('./src/services/multiplayerService');
 const { normalizeAchievementIds } = require('./src/utils/achievements');
 const boosterUtils = require('./src/utils/boosters');
@@ -28,6 +30,8 @@ const { registerAuthRoutes } = require('./src/routes/authRoutes');
 const { registerShopRoutes } = require('./src/routes/shopRoutes');
 const { registerAchievementRoutes } = require('./src/routes/achievementRoutes');
 const { registerPlanRoutes } = require('./src/routes/planRoutes');
+const { registerGroupRoutes } = require('./src/routes/groupRoutes');
+const { registerSupplyRoutes } = require('./src/routes/supplyRoutes');
 const { registerInventoryRoutes } = require('./src/routes/inventoryRoutes');
 const { registerMissionRoutes } = require('./src/routes/missionRoutes');
 const { registerFriendRoutes } = require('./src/routes/friendRoutes');
@@ -54,16 +58,8 @@ const userRepository = new MongoUserRepository(() => getCollections().users);
 const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
 const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
 
-roomManager.init(getCollections, wss);
+roomManager.init(roomRepository, userRepository, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
-
-const getUserStats = createGetUserStats({
-    userRepository,
-    partidaRepository,
-    normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
-    getInventoryQuantity: inventoryService.getInventoryQuantity,
-    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
-});
 
 const updateStreak = createUpdateStreak({
     userRepository,
@@ -119,9 +115,29 @@ const userServiceInstance = new UserService({
     userRepository
 });
 
+const groupService = new GroupService({
+    userRepository
+});
+
+const supplyService = new SupplyService({
+    getCollection: () => getCollections().supplies
+});
+
 const multiplayerService = new MultiplayerService({
     roomRepository
 });
+
+// We need to access the StatsService instance. It's currently hidden inside createGetUserStats.
+// Let's instantiate it properly.
+const statsServiceInstance = new (require('./src/services/statsService').StatsService)({
+    userRepository,
+    partidaRepository,
+    normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
+    getInventoryQuantity: inventoryService.getInventoryQuantity,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
+});
+
+const getUserStats = (username) => statsServiceInstance.getUserStats(username);
 
 registerStatsRoutes(app, { getUserStats });
 registerGameRoutes(app, { gameService });
@@ -134,6 +150,8 @@ registerAuthRoutes(app, {
 registerShopRoutes(app, { shopService });
 registerAchievementRoutes(app, { achievementService });
 registerPlanRoutes(app, { userService: userServiceInstance });
+registerGroupRoutes(app, { groupService, statsService: statsServiceInstance });
+registerSupplyRoutes(app, { supplyService, userRepository });
 registerInventoryRoutes(app, { inventoryService: inventoryServiceInstance });
 
 registerMissionRoutes(app, { missionService });
@@ -182,3 +200,88 @@ app.put('/api/user/avatar', async (req, res) => {
         res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
     }
 });
+
+app.put('/api/user/title', async (req, res) => {
+    const { user, title } = req.body;
+    if (!user) {
+        return res.status(400).json({ message: 'Usuario requerido.' });
+    }
+
+    try {
+        await userServiceInstance.updateSelectedTitle(user, title);
+        console.log(`👤 Título actualizado en DB para ${user}: ${title}`);
+        res.json({ success: true, title });
+    } catch (error) {
+        console.error("❌ Error al actualizar título en DB:", error);
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
+    }
+});
+
+app.post('/api/user/change-name', async (req, res) => {
+    const { user, newDisplayName } = req.body;
+    if (!user || !newDisplayName) {
+        return res.status(400).json({ message: 'Usuario y nuevo apodo requeridos.' });
+    }
+
+    try {
+        const userObj = await userRepository.findByUsername(user);
+        if (!userObj) {
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+
+        if (userObj.nameChangesCount > 0) {
+            let normalizedInventory = await inventoryServiceInstance.normalizeAndPersistInventory(userObj);
+            const itemIndex = normalizedInventory.findIndex((entry) => entry.id === 6);
+            if (itemIndex === -1 || normalizedInventory[itemIndex].quantity <= 0) {
+                return res.status(400).json({ message: 'No tienes suministros de Cambio de Nombre.' });
+            }
+            if (normalizedInventory[itemIndex].quantity > 1) {
+                normalizedInventory[itemIndex].quantity -= 1;
+            } else {
+                normalizedInventory.splice(itemIndex, 1);
+            }
+            userObj.inventory = inventoryServiceInstance.serializeInventory(normalizedInventory);
+        }
+
+        userObj.displayName = newDisplayName;
+        userObj.nameChangesCount = (userObj.nameChangesCount || 0) + 1;
+        await userRepository.update(userObj);
+
+        res.json({
+            success: true,
+            displayName: userObj.displayName,
+            nameChangesCount: userObj.nameChangesCount,
+            inventory: inventoryServiceInstance.enrichInventory(userObj.inventory)
+        });
+    } catch (error) {
+        console.error("❌ Error al cambiar apodo:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.post('/api/user/delete-request', async (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ message: 'Usuario requerido.' });
+
+    try {
+        const deletionScheduledAt = await userServiceInstance.requestAccountDeletion(user);
+        res.json({ success: true, deletionScheduledAt });
+    } catch (error) {
+        console.error("❌ Error al solicitar eliminación:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.post('/api/user/delete-cancel', async (req, res) => {
+    const { user } = req.body;
+    if (!user) return res.status(400).json({ message: 'Usuario requerido.' });
+
+    try {
+        await userServiceInstance.cancelAccountDeletion(user);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("❌ Error al cancelar eliminación:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+

@@ -12,9 +12,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
+    ChallengePopup: typeof import('./src/components/multiplayer/ChallengePopup.vue')['default']
     ChatDrawer: typeof import('./src/components/layout/ChatDrawer.vue')['default']
+    LanguageSelector: typeof import('./src/components/layout/LanguageSelector.vue')['default']
     LeftSidebar: typeof import('./src/components/layout/LeftSidebar.vue')['default']
-    LuckyWheel: typeof import('./src/components/shop/LuckyWheel.vue')['default']
     MatchResultScreen: typeof import('./src/components/multiplayer/MatchResultScreen.vue')['default']
     Medal: typeof import('./src/components/achievements/Medal.vue')['default']
     RadarScan: typeof import('./src/components/games/RadarScan.vue')['default']
@@ -30,6 +31,8 @@ declare module 'vue' {
     Scratch_symmetry: typeof import('./src/components/games/scratch_symmetry.vue')['default']
     Scratch_symmetry_utf8: typeof import('./src/components/games/scratch_symmetry_utf8.vue')['default']
     SpelledRosco: typeof import('./src/components/games/SpelledRosco.vue')['default']
+    StreakLossDialog: typeof import('./src/components/layout/StreakLossDialog.vue')['default']
+    SupplyEditor: typeof import('./src/components/educational/SupplyEditor.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
     SymmetryBreaker: typeof import('./src/components/games/SymmetryBreaker.vue')['default']
     WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']

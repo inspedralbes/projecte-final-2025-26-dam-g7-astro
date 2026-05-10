@@ -3,7 +3,7 @@
     <div v-if="show" class="roulette-overlay d-flex align-center justify-center">
       <div class="roulette-container pa-8 rounded-xl text-center">
         <h2 class="text-h4 font-weight-black text-cyan-accent-2 mb-8 tracking-widest">
-          SELECCIONANDO MISIÓN...
+          {{ $t('multiplayerLobby.selectingMission') }}
         </h2>
 
         <div class="slot-machine-wrapper mb-8">
@@ -11,7 +11,9 @@
             <div class="slot-reel" :style="reelStyle">
               <div v-for="(game, index) in extendedGames" :key="index" class="slot-item py-4" :class="{ 'selected-glow': !isSpinning && game === targetGame }">
                 <v-icon class="mb-2" :color="!isSpinning && game === targetGame ? 'cyan-accent-2' : 'white'" :icon="getGameIcon(game)" size="x-large" />
-                <div class="text-h5 font-weight-bold" :class="!isSpinning && game === targetGame ? 'text-cyan-accent-2' : 'text-white'">{{ game }}</div>
+                <div class="text-h5 font-weight-bold" :class="!isSpinning && game === targetGame ? 'text-cyan-accent-2' : 'text-white'">
+                  {{ $te('games.' + game) ? $t('games.' + game) : game }}
+                </div>
               </div>
             </div>
           </div>
@@ -30,7 +32,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
 
   const props = defineProps({
     show: Boolean,
@@ -99,7 +101,7 @@
 
 <style scoped>
 .roulette-overlay {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;

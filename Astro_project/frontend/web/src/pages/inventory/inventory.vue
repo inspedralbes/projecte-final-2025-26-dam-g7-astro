@@ -6,10 +6,11 @@
         <v-col class="text-center mb-8" cols="12">
           <div class="d-flex align-center justify-center mb-2">
             <v-icon class="mr-3" color="cyan-accent-3" size="40">mdi-archive-outline</v-icon>
-            <h1 class="text-h2 font-weight-bold tracking-wide text-white">MI INVENTARIO</h1>
+            <h1 class="text-h2 font-weight-bold tracking-wide text-white">{{ $t('inventory.title') }}</h1>
           </div>
-          <p class="text-h6 text-cyan-accent-1 opacity-75">Gestiona tu equipo y personaliza tu presencia
-            estelar</p>
+          <p class="text-h6 text-cyan-accent-1 opacity-75">
+            {{ $t('inventory.subtitle') }}
+          </p>
         </v-col>
 
         <!-- Categorías -->
@@ -22,7 +23,7 @@
               class="mb-2 rounded-lg category-item"
               :class="{ 'active-cat': activeCategory === cat.id }"
               :prepend-icon="cat.icon"
-              :title="cat.name"
+              :title="$t(`inventory.categories.${cat.id}`)"
               :value="cat.id"
               @click="activeCategory = cat.id"
             />
@@ -50,11 +51,11 @@
                 >
                   <v-icon :color="item.color" size="45">{{ item.icon }}</v-icon>
                 </v-avatar>
-                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ item.name }}</h3>
+                <h3 class="text-h6 font-weight-bold text-white mb-1">{{ getItemKey(item) ? $t(getItemKey(item)) : item.name }}</h3>
                 <v-chip class="mb-2" color="cyan-accent-3" size="small" variant="tonal">
                   x{{ item.quantity }} / {{ item.maxQuantity || 99 }}
                 </v-chip>
-                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ item.desc }}</p>
+                <p class="text-caption text-grey-lighten-1 text-center mb-4">{{ getDescKey(item) ? $t(getDescKey(item)) : item.desc }}</p>
                 <v-chip
                   v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
                   class="mb-2"
@@ -62,7 +63,7 @@
                   size="x-small"
                   variant="tonal"
                 >
-                  ACTIVO: {{ getBoosterGamesLeft(item) }} partidas
+                  {{ $t('inventory.active', { games: getBoosterGamesLeft(item) }) }}
                 </v-chip>
                 <v-spacer />
                 <v-btn
@@ -82,9 +83,9 @@
           <v-row v-else align="center" justify="center" style="min-height: 300px;">
             <v-col class="text-center" cols="12">
               <v-icon class="mb-4" color="grey-darken-2" size="80">mdi-package-variant</v-icon>
-              <h3 class="text-h5 text-grey">Aún no tienes equipo en esta categoría</h3>
+              <h3 class="text-h5 text-grey">{{ $t('inventory.empty') }}</h3>
               <v-btn class="mt-4" color="cyan-accent-3" to="/shop" variant="text">
-                Visitar la Tienda
+                {{ $t('inventory.goToShop') }}
               </v-btn>
             </v-col>
           </v-row>
@@ -96,22 +97,23 @@
 
 <script setup>
   import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const activeCategory = ref('all')
-  const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4])
+  const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4, 5])
 
   const categories = [
-    { id: 'all', name: 'Todo', icon: 'mdi-apps' },
-    { id: 'skin', name: 'Skins', icon: 'mdi-palette' },
-    { id: 'pets', name: 'Compañeros', icon: 'mdi-robot' },
-    { id: 'collectible', name: 'Coleccionables', icon: 'mdi-trophy' },
-    { id: 'trails', name: 'Rastros', icon: 'mdi-creation' },
-    { id: 'items', name: 'Objetos', icon: 'mdi-flask-outline' },
+    { id: 'all', icon: 'mdi-apps' },
+    { id: 'skin', icon: 'mdi-palette' },
+    { id: 'pets', icon: 'mdi-robot' },
+    { id: 'collectible', icon: 'mdi-trophy' },
+    { id: 'trails', icon: 'mdi-creation' },
+    { id: 'items', icon: 'mdi-flask-outline' },
   ]
 
-  // Usamos SIEMPRE el estado global de Pinia
   const inventoryItems = computed(() => astroStore.inventory || [])
 
   const filteredItems = computed(() => {
@@ -119,7 +121,6 @@
     return inventoryItems.value.filter(item => item.cat === activeCategory.value)
   })
 
-  // Solo un onMounted para traer los datos al cargar la vista
   onMounted(async () => {
     if (astroStore.user) {
       await astroStore.fetchUserInventory()
@@ -128,12 +129,9 @@
 
   async function toggleEquip (item) {
     if (!isEquipable(item)) return
-
-    // 1. Usamos la variable de entorno. Si no existe, usa localhost como backup.
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
     try {
-      // 2. Reemplazamos la URL fija por el Template Literal
       const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,7 +143,6 @@
 
       const data = await response.json()
       if (data.success) {
-        // Actualizamos el estado global con el inventario devuelto por el servidor
         astroStore.setInventory(data.inventory || [])
       }
     } catch (error) {
@@ -165,13 +162,14 @@
     const itemId = Number(item?.id)
     if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0
     if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0
+    if (itemId === 5) return Number(astroStore.activeBoosters?.sabotageGamesLeft) || 0
     return 0
   }
 
   function getItemActionLabel (item) {
-    if (isUsableBooster(item)) return 'UTILIZAR'
-    if (!isEquipable(item)) return 'NO EQUIPABLE'
-    return item.equipped ? 'EQUIPADO' : 'EQUIPAR'
+    if (isUsableBooster(item)) return t('inventory.use')
+    if (!isEquipable(item)) return t('inventory.unequipable')
+    return item.equipped ? t('inventory.equipped') : t('inventory.equip')
   }
 
   function getItemActionColor (item) {
@@ -195,12 +193,45 @@
     if (isUsableBooster(item)) {
       const result = await astroStore.useInventoryItem(item.id)
       if (!result.success) {
-        alert(result.message || 'No se pudo usar el objeto.')
+        alert(result.message || t('inventory.useError'))
       }
       return
     }
-
     await toggleEquip(item)
+  }
+
+  function getItemKey (item) {
+    const idMap = {
+      1: 'vidas',
+      2: 'racha',
+      3: 'dobleMonedas',
+      4: 'doblePuntos',
+      5: 'sabotageRay',
+      102: 'cyberpunk',
+      103: 'dron',
+      104: 'neon',
+      105: 'titleUnstoppable',
+      106: 'titleLegend',
+      107: 'titleDestroyer',
+    }
+    const key = idMap[item.id]
+    return key ? `shopItems.${key}.name` : null
+  }
+
+  function getDescKey (item) {
+    const idMap = {
+      1: 'vidas',
+      2: 'racha',
+      3: 'dobleMonedas',
+      4: 'doblePuntos',
+      5: 'sabotageRay',
+      102: 'cyberpunk',
+      103: 'dron',
+      104: 'neon',
+    }
+    if ([105, 106, 107].includes(Number(item.id))) return 'shopItems.titleDesc'
+    const key = idMap[item.id]
+    return key ? `shopItems.${key}.desc` : null
   }
 </script>
 

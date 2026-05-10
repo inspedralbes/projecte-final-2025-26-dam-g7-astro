@@ -8,13 +8,13 @@
       <div class="path-container">
         <template v-for="(level, index) in levelSequence" :key="index">
 
-          <div v-if="level.phaseTitle" class="phase-divider-wrapper mt-2 mb-4 w-100">
+          <div v-if="level.phaseTitleKey" class="phase-divider-wrapper mt-2 mb-4 w-100">
             <div class="d-flex align-center w-100" :class="level.phaseAlign === 'right' ? 'flex-row-reverse' : 'flex-row'">
 
               <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
-                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ level.phaseSubtitle }}</div>
+                <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ $t(level.phaseSubtitleKey) }}</div>
                 <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
-                  {{ level.phaseTitle }}
+                  {{ $t(level.phaseTitleKey) }}
                 </h2>
               </div>
 
@@ -27,7 +27,6 @@
               <div class="phase-icon-box text-center">
                 <v-icon class="phase-watermark" :icon="level.phaseIcon" size="90" />
               </div>
-
             </div>
           </div>
 
@@ -36,12 +35,13 @@
               class="node-wrapper"
               :class="{
                 'pos-left': index % 2 === 0,
-                'pos-right': index % 2 !== 0
+                'pos-right': index % 2 !== 0,
+                'on-top': activePreviewIndex === index
               }"
             >
 
               <div
-                v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitle"
+                v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitleKey"
                 class="path-connector"
                 :class="{ 'connector-flip': index % 2 !== 0 }"
               >
@@ -59,11 +59,11 @@
                 class="floating-label"
                 :class="getLevelState(index)"
               >
-                {{ level.name }}
+                {{ $t(level.nameKey) }}
               </div>
 
               <div v-if="getLevelState(index) === 'current'" class="target-score-label">
-                Meta: {{ level.minScore }} pts
+                {{ $t('singleplayer.goal', { score: level.minScore }) }}
               </div>
 
               <button
@@ -102,7 +102,12 @@
 
               <!-- Viñeta de Previsualización -->
               <transition name="pop-in">
-                <div v-if="activePreviewIndex === index" class="level-preview-card" @click.stop>
+                <div
+                  v-if="activePreviewIndex === index"
+                  class="level-preview-card"
+                  :class="index % 2 === 0 ? 'preview-right' : 'preview-left'"
+                  @click.stop
+                >
                   <div class="preview-gif-container">
                     <img alt="Preview" class="preview-gif" :src="level.previewGif || '/previews/placeholder.gif'">
                     <div class="preview-overlay">
@@ -110,7 +115,7 @@
                     </div>
                   </div>
                   <div class="preview-content">
-                    <h3 class="preview-title">{{ level.name }}</h3>
+                    <h3 class="preview-title">{{ $t(level.nameKey) }}</h3>
                     <v-btn
                       block
                       class="play-btn-preview font-weight-black"
@@ -120,7 +125,7 @@
                       @click.stop="startGame(index)"
                     >
                       <v-icon icon="mdi-play" start />
-                      ¡JUGAR!
+                      {{ $t('singleplayer.start_simple') }}
                     </v-btn>
                   </div>
                   <div class="preview-arrow" />
@@ -159,7 +164,7 @@
         </div>
 
         <h2 class="text-h3 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter">
-          ¡NIVELL {{ newLevelData.level }}!
+          {{ $t('singleplayer.level_up', { level: newLevelData.level }) }}
         </h2>
 
         <div
@@ -167,13 +172,12 @@
           class="my-5 pa-4 rounded-lg"
           style="background: rgba(0, 229, 255, 0.05); border: 1px dashed #00e5ff;"
         >
-          <div class="text-overline text-grey-lighten-1">Nou Rang Assolit</div>
+          <div class="text-overline text-grey-lighten-1">{{ $t('singleplayer.new_rank') }}</div>
           <div class="text-h5 font-weight-bold text-white">{{ newLevelData.rank }}</div>
         </div>
 
         <p class="text-body-1 text-blue-grey-lighten-3 mb-8">
-          Has acumulat <span class="text-white font-weight-bold">{{ astroStore.xp }} XP</span>
-          <br>i ets un pas més a prop de dominar la galàxia.
+          {{ $t('singleplayer.accumulated_xp', { xp: astroStore.xp }) }}
         </p>
 
         <v-btn
@@ -185,7 +189,7 @@
           variant="elevated"
           @click="showLevelUpDialog = false"
         >
-          CONTINUAR EXPLORACIÓ
+          {{ $t('singleplayer.continue') }}
         </v-btn>
       </v-card>
     </v-dialog>
@@ -198,17 +202,16 @@
 
         <v-icon class="mb-4 pulse-red" color="red-accent-2" icon="mdi-alert-octagon" size="80" />
 
-        <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">Misión Fallida</h2>
+        <h2 class="text-h4 font-weight-black text-white mb-2 uppercase">{{ $t('singleplayer.almost_there') }}</h2>
 
         <div class="py-4">
-          <div class="text-overline text-red-accent-1">Puntuación Obtenida</div>
+          <div class="text-overline text-red-accent-1">{{ $t('singleplayer.obtained') }}</div>
           <div class="text-h2 font-weight-black text-white mb-4">{{ lastScore }}</div>
 
           <v-divider class="border-red-accent-2 opacity-30 mb-6" />
 
           <p class="text-body-1 text-blue-grey-lighten-2">
-            Necesitas alcanzar los <span class="text-white font-weight-bold">{{ requiredScore }} pts</span><br>
-            para desbloquear este sector.
+            {{ $t('singleplayer.need', { score: requiredScore }) }}
           </p>
         </div>
 
@@ -222,7 +225,7 @@
           variant="flat"
           @click="showFailDialog = false"
         >
-          REINTENTAR MISIÓN
+          {{ $t('singleplayer.retry') }}
         </v-btn>
       </v-card>
     </v-dialog>
@@ -232,8 +235,8 @@
 
 <script setup>
   import { ref, shallowRef } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import RadarScan from '@/components/games/RadarScan.vue'
-
   import RadioSignal from '@/components/games/RadioSignal.vue'
   import RhymeSquad from '@/components/games/RhymeSquad.vue'
   import SpelledRosco from '@/components/games/SpelledRosco.vue'
@@ -241,6 +244,7 @@
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import { useAstroStore } from '@/stores/astroStore'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const activeGameComponent = shallowRef(null)
   const currentPlayingIndex = ref(null)
@@ -259,14 +263,14 @@
   })
 
   const levelSequence = [
-    { name: 'Preparativos', component: WordConstruction, minScore: 100, phaseTitle: 'Entrenamiento', phaseSubtitle: 'Fase 1: La Tierra', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
-    { name: '¡Despegue!', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
-    { name: 'Rompiendo la Gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
-    { name: 'Desacoplamiento Orbital', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
-    { name: 'Ruta Estelar', component: RhymeSquad, minScore: 750, phaseTitle: 'El Viaje Comienza', phaseSubtitle: 'Fase 2: Espacio Cercano', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { name: 'Llamando a la Base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
-    { name: 'Recarga Solar', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
-    { name: 'Reparación Express', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
+    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
+    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
   ]
 
   function getLevelState (index) {
@@ -292,7 +296,7 @@
 
   async function handleGameOver (finalScore) {
     const levelIndex = currentPlayingIndex.value
-    const gameName = levelSequence[levelIndex]?.name || 'Minijuego'
+    const gameName = levelSequence[levelIndex]?.id || 'Minijuego'
 
     activeGameComponent.value = null
     lastScore.value = finalScore
@@ -424,6 +428,10 @@
     z-index: 10;
 }
 
+.node-wrapper.on-top {
+    z-index: 1000 !important;
+}
+
 .pos-left { transform: translateX(-70px); }
 .pos-right { transform: translateX(70px); }
 
@@ -552,14 +560,15 @@ svg {
 }
 
 .game-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: absolute;
+    inset: 0;
     background: #0b0f19;
     z-index: 100;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    overflow-y: auto;
+    padding: 60px 20px;
 }
 
 .close-game-btn {
@@ -610,69 +619,83 @@ svg {
 
 .level-preview-card {
     position: absolute;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 220px;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(12px);
-    border: 2px solid rgba(0, 229, 255, 0.3);
-    border-radius: 16px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1);
-    z-index: 100;
+    top: 50%;
+    width: 240px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 20px;
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.7),
+        0 0 20px rgba(0, 229, 255, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    z-index: 1001;
     overflow: visible;
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.level-preview-card:hover {
+    border-color: rgba(0, 229, 255, 0.5);
+    box-shadow:
+        0 30px 60px -12px rgba(0, 0, 0, 0.8),
+        0 0 30px rgba(0, 229, 255, 0.15),
+        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.preview-left {
+    right: 100px;
+    transform: translateY(-50%);
+}
+
+.preview-right {
+    left: 100px;
+    transform: translateY(-50%);
 }
 
 .preview-gif-container {
     width: 100%;
-    height: 120px;
-    position: relative;
-    border-radius: 14px 14px 0 0;
+    height: 140px;
+    border-radius: 19px 19px 0 0;
     overflow: hidden;
-    background: #000;
+    position: relative;
 }
 
 .preview-gif {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
-}
-
-.level-preview-card:hover .preview-gif {
-    transform: scale(1.05);
 }
 
 .preview-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.8) 0%, transparent 60%);
 }
 
 .preview-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    bottom: 10px;
+    right: 12px;
     background: rgba(0, 229, 255, 0.2);
-    border: 1px solid rgba(0, 229, 255, 0.5);
-    color: #00e5ff;
+    border: 1px solid rgba(0, 229, 255, 0.4);
     padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 0.65rem;
+    border-radius: 6px;
+    color: #00e5ff;
+    font-size: 11px;
     font-weight: 800;
+    backdrop-filter: blur(4px);
 }
 
 .preview-content {
-    padding: 12px;
-    text-align: center;
+    padding: 16px;
 }
 
 .preview-title {
-    font-size: 0.9rem;
-    font-weight: 800;
     color: white;
+    font-size: 0.95rem;
+    font-weight: 800;
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -680,43 +703,51 @@ svg {
 
 .play-btn-preview {
     letter-spacing: 1px;
-    transition: all 0.3s ease;
-}
-
-.play-btn-preview:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4);
+    height: 38px !important;
 }
 
 .preview-arrow {
     position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid rgba(15, 23, 42, 0.85);
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: #1e293b;
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    transform: translateY(-50%) rotate(45deg);
 }
 
-/* ANIMACIÓN POP-IN */
-.pop-in-enter-active {
-    animation: pop-in-kf 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.preview-left .preview-arrow {
+    right: -7px;
+    border-left: none;
+    border-bottom: none;
 }
 
-.pop-in-leave-active {
-    animation: pop-in-kf 0.2s reverse ease-in;
+.preview-right .preview-arrow {
+    left: -7px;
+    border-right: none;
+    border-top: none;
 }
 
-@keyframes pop-in-kf {
-    0% {
-        opacity: 0;
-        transform: translateX(-50%) scale(0.5) translateY(20px);
+.pop-in-enter-active { animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pop-in-leave-active { animation: pop-in 0.2s reverse ease-in; }
+
+@keyframes pop-in {
+    0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@media (max-width: 600px) {
+    .path-row { height: 180px; }
+    .node-wrapper { transform: none !important; }
+    .level-preview-card {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        top: auto;
+        width: auto;
+        transform: none !important;
     }
-    100% {
-        opacity: 1;
-        transform: translateX(-50%) scale(1) translateY(0);
-    }
+    .preview-arrow { display: none; }
 }
 </style>

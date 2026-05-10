@@ -32,6 +32,10 @@ class UserRepository {
     async findAllExplorers() {
         throw new Error('Not implemented: findAllExplorers');
     }
+
+    async updatePassword(username, newPassword) {
+        throw new Error('Not implemented: updatePassword');
+    }
 }
 
 module.exports = UserRepository;

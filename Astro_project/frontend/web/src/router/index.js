@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import login from '@/pages/auth/login.vue'
+
 import register from '@/pages/auth/register.vue'
 import Plans from '@/pages/plans/plans.vue'
+import { STORAGE_KEYS, storageGetItem } from '@/stores/astroShared'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,6 +50,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/educational',
+      name: 'Educational',
+      component: () => import('@/pages/plans/educational.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/inventory',
       name: 'Inventory',
       component: () => import('@/pages/inventory/inventory.vue'),
@@ -79,8 +86,11 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
-  const isAuthenticated = !!localStorage.getItem('astro_token')
+  // Comprobamos token y usuario para asegurar una sesión válida
+  const token = storageGetItem(STORAGE_KEYS.token) || localStorage.getItem('astro_token')
+  const username = storageGetItem(STORAGE_KEYS.user) || localStorage.getItem('astro_user')
+
+  const isAuthenticated = !!(token && username)
 
   if (requiresAuth && !isAuthenticated) {
     // Si la ruta es privada y no hay token, al login

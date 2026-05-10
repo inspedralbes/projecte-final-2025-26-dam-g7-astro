@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
+import { useSessionStore } from './sessionStore'
+import i18n from '@/i18n'
 import {
   normalizeInventoryItems,
   requestJson,
   toPositiveInteger,
 } from './astroShared'
-import { useSessionStore } from './sessionStore'
 
 export const useInventoryStore = defineStore('inventory', {
   state: () => ({
@@ -34,9 +35,7 @@ export const useInventoryStore = defineStore('inventory', {
     async fetchUserInventory () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.', inventory: [] }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession'), inventory: [] }
 
       try {
         const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/inventory`)
@@ -61,9 +60,7 @@ export const useInventoryStore = defineStore('inventory', {
     async buyItem (item) {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson('/api/shop/buy', {
@@ -88,12 +85,12 @@ export const useInventoryStore = defineStore('inventory', {
       this.error = null
       const user = this.resolveUser()
       if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
+        return { success: false, message: i18n.global.t('errors.noSession') }
       }
 
       const parsedItemId = toPositiveInteger(itemId)
       if (!parsedItemId) {
-        return { success: false, message: 'Objeto inválido.' }
+        return { success: false, message: i18n.global.t('errors.invalidItem') }
       }
 
       try {

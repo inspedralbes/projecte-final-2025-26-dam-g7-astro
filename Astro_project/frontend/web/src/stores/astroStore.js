@@ -15,13 +15,20 @@ export const useAstroStore = defineStore('astro', () => {
   const socialStore = useSocialStore()
   const multiplayerStore = useMultiplayerStore()
 
+  // Session State
   const user = computed({ get: () => sessionStore.user, set: value => sessionStore.setUser(value) })
   const plan = computed({ get: () => sessionStore.plan, set: value => sessionStore.setPlan(value) })
+  const role = computed({ get: () => sessionStore.role, set: value => sessionStore.setRole(value) })
+  const parentId = computed({ get: () => sessionStore.parentId, set: value => sessionStore.setParentId(value) })
   const rank = computed({ get: () => sessionStore.rank, set: value => sessionStore.setRank(value) })
+  const selectedTitle = computed({ get: () => sessionStore.selectedTitle, set: value => sessionStore.setSelectedTitle(value) })
+  const displayName = computed({ get: () => sessionStore.displayName, set: value => sessionStore.setDisplayName(value) })
+  const nameChangesCount = computed({ get: () => sessionStore.nameChangesCount, set: value => sessionStore.setNameChangesCount(value) })
   const avatar = computed({ get: () => sessionStore.avatar, set: value => sessionStore.setAvatar(value) })
-  const mascot = computed({ get: () => sessionStore.mascot, set: value => sessionStore.setMascot(value) })
   const token = computed({ get: () => sessionStore.token, set: value => sessionStore.setToken(value) })
+  const deletionScheduledAt = computed({ get: () => sessionStore.deletionScheduledAt, set: value => sessionStore.setDeletionScheduled(value) })
 
+  // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
   const partides = computed({ get: () => progressStore.partides, set: value => progressStore.setPartides(value) })
   const level = computed({ get: () => progressStore.level, set: value => progressStore.setLevel(value) })
@@ -34,28 +41,27 @@ export const useAstroStore = defineStore('astro', () => {
   const lastGame = computed({ get: () => progressStore.lastGame, set: value => progressStore.setLastGame(value) })
   const dailyMissions = computed({ get: () => progressStore.dailyMissions, set: value => progressStore.setDailyMissions(value) })
   const weeklyMissions = computed({ get: () => progressStore.weeklyMissions, set: value => progressStore.setWeeklyMissions(value) })
-
-  const inventory = computed({ get: () => inventoryStore.inventory, set: value => inventoryStore.setInventory(value) })
-  const selectedAchievements = computed({ get: () => achievementsStore.selectedAchievements, set: value => achievementsStore.setSelectedAchievements(value) })
-  const unlockedAchievements = computed({ get: () => achievementsStore.unlockedAchievements, set: value => achievementsStore.setUnlockedAchievements(value) })
-  const friends = computed({ get: () => socialStore.friends, set: value => socialStore.setFriends(value) })
-  const explorers = computed({ get: () => socialStore.explorers, set: value => socialStore.setExplorers(value) })
-
-  // NUEVO: Estado para las solicitudes de amistad
-  const friendRequests = computed({ get: () => socialStore.friendRequests, set: value => socialStore.setFriendRequests(value) })
-
-  // NUEVO: Sincronización de misiones completadas
   const missionsCompleted = computed({ get: () => progressStore.missionsCompleted, set: value => progressStore.setMissionsCompleted(value) })
   const totalPoints = computed({ get: () => progressStore.totalPoints, set: value => {
     progressStore.totalPoints = value
   } })
+  const mapLevel = computed({ get: () => progressStore.mapLevel, set: value => progressStore.setMapLevel(value) })
+  const gameHistory = computed(() => progressStore.gameHistory)
+  const topGames = computed(() => progressStore.topGames)
+  const maxScores = computed(() => progressStore.maxScores)
+  const totalGamesPlayed = computed(() => progressStore.totalGamesPlayed)
 
-  // NUEVO: Propiedad reactiva para el nivel del mapa (desvinculado de la XP de cuenta)
-  const mapLevel = computed({
-    get: () => progressStore.mapLevel,
-    set: value => progressStore.setMapLevel(value),
-  })
+  // Inventory & Achievements
+  const inventory = computed({ get: () => inventoryStore.inventory, set: value => inventoryStore.setInventory(value) })
+  const selectedAchievements = computed({ get: () => achievementsStore.selectedAchievements, set: value => achievementsStore.setSelectedAchievements(value) })
+  const unlockedAchievements = computed({ get: () => achievementsStore.unlockedAchievements, set: value => achievementsStore.setUnlockedAchievements(value) })
 
+  // Social
+  const friends = computed({ get: () => socialStore.friends, set: value => socialStore.setFriends(value) })
+  const explorers = computed({ get: () => socialStore.explorers, set: value => socialStore.setExplorers(value) })
+  const friendRequests = computed({ get: () => socialStore.friendRequests, set: value => socialStore.setFriendRequests(value) })
+
+  // Multiplayer
   const socket = computed(() => multiplayerStore.socket)
   const isConnected = computed(() => multiplayerStore.isConnected)
 
@@ -69,6 +75,7 @@ export const useAstroStore = defineStore('astro', () => {
   const isStreakActiveToday = computed(() => progressStore.isStreakActiveToday)
   const inventoryUnits = computed(() => inventoryStore.inventoryUnits)
 
+  // Actions
   async function registerTripulante (userData) {
     return sessionStore.registerTripulante(userData)
   }
@@ -83,7 +90,6 @@ export const useAstroStore = defineStore('astro', () => {
     progressStore.applyProfile(profile)
     achievementsStore.applyProfile(profile)
 
-    // Sincronizar listas sociales al iniciar sesión
     if (Array.isArray(profile.friends)) {
       socialStore.setFriends(profile.friends)
     }
@@ -96,9 +102,7 @@ export const useAstroStore = defineStore('astro', () => {
       progressStore.setActiveBoosters(inventoryResult.data.activeBoosters)
     }
 
-    // Cargar stats completas (misiones, amigos, logros, historial) inmediatamente tras login
     await progressStore.fetchUserStats()
-
     multiplayerStore.connect()
     return { success: true }
   }
@@ -106,7 +110,6 @@ export const useAstroStore = defineStore('astro', () => {
   async function fetchUserStats () {
     const result = await progressStore.fetchUserStats()
     if (result.success && result.stats) {
-      // Sincronizar también datos de perfil en el sessionStore
       if (result.stats.rank) {
         sessionStore.setRank(result.stats.rank)
       }
@@ -116,11 +119,16 @@ export const useAstroStore = defineStore('astro', () => {
       if (result.stats.avatar) {
         sessionStore.setAvatar(result.stats.avatar)
       }
-      if (result.stats.mascot) {
-        sessionStore.setMascot(result.stats.mascot)
+      if (result.stats.selectedTitle !== undefined) {
+        sessionStore.setSelectedTitle(result.stats.selectedTitle)
+      }
+      if (result.stats.displayName !== undefined) {
+        sessionStore.setDisplayName(result.stats.displayName)
+      }
+      if (result.stats.nameChangesCount !== undefined) {
+        sessionStore.setNameChangesCount(result.stats.nameChangesCount)
       }
 
-      // Sincronizar también listas sociales
       socialStore.setFriends(result.stats.friends || [])
       socialStore.setFriendRequests(result.stats.friendRequests || [])
     }
@@ -134,14 +142,11 @@ export const useAstroStore = defineStore('astro', () => {
     return progressStore.fetchUserBalance()
   }
 
-  // MODIFICADO: Añadido parámetro "completedMapNode"
   async function registerCompletedGame (game, score = 0, completedMapNode = null) {
     const result = await progressStore.registerCompletedGame(game, score, completedMapNode)
-
     if (result.success && result.data?.newRank) {
       sessionStore.setRank(result.data.newRank)
     }
-
     return result
   }
 
@@ -155,13 +160,11 @@ export const useAstroStore = defineStore('astro', () => {
     if (data.newBalance !== undefined) {
       progressStore.setCoins(data.newBalance)
     }
-
     if (data.streakFreezes !== undefined) {
       progressStore.setStreakFreezes(data.streakFreezes)
     } else if (Number(item?.id) === 2) {
       progressStore.setStreakFreezes(progressStore.streakFreezes + 1)
     }
-
     return { success: true, data }
   }
 
@@ -181,7 +184,6 @@ export const useAstroStore = defineStore('astro', () => {
     if (Array.isArray(data.weeklyMissions)) {
       progressStore.setWeeklyMissions(data.weeklyMissions)
     }
-
     return { success: true, data }
   }
 
@@ -204,7 +206,7 @@ export const useAstroStore = defineStore('astro', () => {
     return achievementsStore.syncUnlockedAchievements(nextIds)
   }
 
-  // ACCIONES SOCIALES
+  // Social Actions
   async function addFriendAction (friendName) {
     return socialStore.addFriendAction(friendName)
   }
@@ -238,14 +240,51 @@ export const useAstroStore = defineStore('astro', () => {
   function updateAvatar (seed) {
     sessionStore.updateAvatar(seed)
   }
-  function updateMascot (mascotFile) {
-    sessionStore.updateMascot(mascotFile)
+  function updateSelectedTitle (title) {
+    sessionStore.updateSelectedTitle(title)
   }
   async function updateAchievements (achievements) {
     return achievementsStore.updateAchievements(achievements)
   }
   async function updatePlan (planType) {
     return sessionStore.updatePlan(planType)
+  }
+  async function changePassword (oldPassword, newPassword) {
+    return sessionStore.changePassword(oldPassword, newPassword)
+  }
+  async function scheduleAccountDeletion () {
+    return sessionStore.scheduleAccountDeletion()
+  }
+  async function cancelAccountDeletion () {
+    return sessionStore.cancelAccountDeletion()
+  }
+
+  async function changeDisplayName (newDisplayName) {
+    if (!user.value) {
+      return { success: false, message: 'No hay usuario' }
+    }
+    try {
+      const { requestJson } = await import('./astroShared')
+      const { response, data } = await requestJson('/api/user/change-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: user.value, newDisplayName }),
+      })
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al cambiar apodo')
+      }
+
+      sessionStore.setDisplayName(data.displayName)
+      sessionStore.setNameChangesCount(data.nameChangesCount)
+      if (data.inventory) {
+        inventoryStore.setInventory(data.inventory)
+      }
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Error cambiando apodo:', error)
+      return { success: false, message: error.message }
+    }
   }
 
   async function useStreakFreeze () {
@@ -266,28 +305,17 @@ export const useAstroStore = defineStore('astro', () => {
     inventoryStore.setInventory(items)
   }
 
-  const gameHistory = computed(() => progressStore.gameHistory)
-  const topGames = computed(() => progressStore.topGames)
-  const maxScores = computed(() => progressStore.maxScores)
-  const totalGamesPlayed = computed(() => progressStore.totalGamesPlayed)
-
   return {
-    user, plan, rank, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
-    inventory, selectedAchievements, unlockedAchievements, avatar, mascot, token, lastActivity, lastGame,
+    user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
+    inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
-
-    friendRequests, // EXPORTADO
-    missionsCompleted, // EXPORTADO
-    totalPoints, // EXPORTADO
-
-    mapLevel, // EXPORTADO
-
+    friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
     isStreakActiveToday, inventoryUnits,
     registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
     buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
-    addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, // EXPORTADAS
-    connectWebSocket, logout, updateAvatar, updateMascot, updateAchievements,
-    updatePlan, useStreakFreeze, setCoins, setInventory,
+    addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,
+    connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
+    updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, changeDisplayName, useStreakFreeze, setCoins, setInventory,
   }
 })

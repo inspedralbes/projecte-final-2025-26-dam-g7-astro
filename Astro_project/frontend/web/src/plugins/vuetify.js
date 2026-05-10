@@ -33,7 +33,7 @@ export default createVuetify({
     },
   },
   defaults: {
-    vButton: {
+    VBtn: {
       style: 'text-transform: none; letter-spacing: 0.5px; font-family: "Rajdhani", sans-serif; font-weight: 600;',
     },
   },

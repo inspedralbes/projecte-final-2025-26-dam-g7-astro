@@ -9,15 +9,23 @@
 
     <!-- Chat drawer global: persiste entre rutas -->
     <ChatDrawer />
+
+    <!-- Popup de desafíos globales -->
+    <ChallengePopup />
+
+    <!-- Diálogo de pérdida de racha -->
+    <StreakLossDialog />
   </v-app>
 </template>
 
 <script setup>
-  import { computed, onMounted } from 'vue'
+  import { computed, onMounted, onUnmounted, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import ChatDrawer from '@/components/layout/ChatDrawer.vue'
   import LeftSidebar from '@/components/layout/LeftSidebar.vue'
   import RightSidebar from '@/components/layout/RightSidebar.vue'
+  import StreakLossDialog from '@/components/layout/StreakLossDialog.vue'
+  import ChallengePopup from '@/components/multiplayer/ChallengePopup.vue'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
   import { useSessionStore } from '@/stores/sessionStore'
 
@@ -25,15 +33,58 @@
   const sessionStore = useSessionStore()
   const multiplayerStore = useMultiplayerStore()
 
-  // Reconectar WS si el usuario ya tiene sesión activa (ej: recarga de página)
-  onMounted(() => {
-    if (sessionStore.user && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+  // Reconectar WS si el usuario ya tiene sesión activa o acaba de iniciarla
+  watch(() => sessionStore.user, newUser => {
+    if (newUser && (!multiplayerStore.socket || multiplayerStore.socket.readyState !== WebSocket.OPEN)) {
+      console.log(`🔌 Detectada sesión para ${newUser}, conectando WS...`)
       multiplayerStore.connect()
     }
+  }, { immediate: true })
+
+  // Control de inactividad
+  function handleActivity () {
+    if (sessionStore.token) {
+      sessionStore.updateLastActivity()
+    }
+  }
+
+  let interval = null
+
+  onMounted(() => {
+    // Comprobar si la sesión ha expirado al cargar
+    const expired = sessionStore.checkSessionExpiration()
+    if (expired) {
+      window.location.href = '/login'
+      return
+    }
+
+    // Escuchar eventos de usuario para mantener la sesión viva
+    window.addEventListener('mousemove', handleActivity)
+    window.addEventListener('keydown', handleActivity)
+    window.addEventListener('click', handleActivity)
+    window.addEventListener('scroll', handleActivity)
+
+    // Comprobación periódica cada minuto
+    interval = setInterval(() => {
+      if (sessionStore.checkSessionExpiration()) {
+        window.location.href = '/login'
+      }
+    }, 60_000)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('mousemove', handleActivity)
+    window.removeEventListener('keydown', handleActivity)
+    window.removeEventListener('click', handleActivity)
+    window.removeEventListener('scroll', handleActivity)
+    if (interval) clearInterval(interval)
   })
 
   // Define routes where sidebars should be hidden
   const showLayoutElements = computed(() => {
+    // Si estamos en medio de una partida multijugador, OCULTAMOS TODO el layout
+    if (multiplayerStore.isInGame) return false
+
     const hiddenPaths = ['/', '/login', '/register', '/plans', '/planes']
     const hiddenNames = ['index', 'register', 'login', 'Plans']
 

@@ -7,7 +7,7 @@
 
     <!-- Panel del Chat -->
     <Transition name="chat-drawer">
-      <div v-if="chatStore.isOpen" aria-label="Chat privado" class="chat-drawer" role="dialog">
+      <div v-if="chatStore.isOpen" :aria-label="$t('chat.title')" class="chat-drawer" role="dialog">
 
         <!-- ── HEADER ──────────────────────────────────────── -->
         <div class="chat-header">
@@ -23,15 +23,15 @@
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
                 </span>
               </v-avatar>
-              <span class="online-dot" title="Online" />
+              <span class="online-dot" :title="$t('chat.online')" />
             </div>
             <div class="friend-info">
               <div class="friend-name">{{ activeFriend?.user }}</div>
-              <div class="friend-status">Canal de comunicación privado</div>
+              <div class="friend-status">{{ $t('chat.privateChannel') }}</div>
             </div>
           </div>
 
-          <button class="close-btn" title="Cerrar comunicación" @click="chatStore.closeChat()">
+          <button class="close-btn" :title="$t('chat.close')" @click="chatStore.closeChat()">
             <v-icon icon="mdi-close" size="20" />
           </button>
         </div>
@@ -41,7 +41,7 @@
           <!-- Estado vacío -->
           <div v-if="chatStore.activeMessages.length === 0" class="chat-empty">
             <v-icon color="rgba(0,229,255,0.3)" icon="mdi-satellite-variant" size="48" />
-            <p class="chat-empty-text">Canal abierto.<br>Inicia la transmisión.</p>
+            <p class="chat-empty-text">{{ $t('chat.emptyTitle') }}<br>{{ $t('chat.emptySubtitle') }}</p>
           </div>
 
           <!-- Burbujas de mensajes -->
@@ -70,7 +70,51 @@
               </v-avatar>
 
               <div class="msg-bubble-wrap">
+                <!-- Mensaje de Desafío Especial -->
+                <div v-if="msg.msgType === 'challenge'" class="challenge-msg-card">
+                  <div class="challenge-msg-header">
+                    <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-sword-cross" size="18" />
+                    <span>{{ $t('chat.duelTitle') }}</span>
+                  </div>
+                  <div class="challenge-msg-body">
+                    {{ msg.content }}
+                  </div>
+                  <div v-if="msg.from !== myUser" class="challenge-msg-actions">
+                    <template v-if="isLastChallenge(index) && msg.status === 'pending'">
+                      <button class="chat-challenge-btn chat-challenge-btn--accept" @click="respondToChallenge(msg.from, true)">
+                        <v-icon class="mr-1" icon="mdi-check" size="14" />
+                        {{ $t('chat.accept') }}
+                      </button>
+                      <button class="chat-challenge-btn chat-challenge-btn--decline" @click="respondToChallenge(msg.from, false)">
+                        <v-icon class="mr-1" icon="mdi-close" size="14" />
+                        {{ $t('chat.decline') }}
+                      </button>
+                    </template>
+                    <div v-else-if="msg.status === 'accepted'" class="challenge-msg-result challenge-msg-result--accepted">
+                      <v-icon class="mr-1" icon="mdi-check-circle" size="14" />
+                      {{ $t('chat.duelAccepted') }}
+                    </div>
+                    <div v-else-if="msg.status === 'rejected'" class="challenge-msg-result challenge-msg-result--rejected">
+                      <v-icon class="mr-1" icon="mdi-close-circle" size="14" />
+                      {{ $t('chat.duelRejected') }}
+                    </div>
+                    <div v-else class="challenge-msg-expired">
+                      <v-icon class="mr-1" icon="mdi-history" size="14" />
+                      {{ $t('chat.duelExpired') }}
+                    </div>
+                  </div>
+                  <div v-else class="challenge-msg-status">
+                    <span v-if="msg.status === 'accepted'" class="status-accepted">{{ $t('chat.duelAccepted') }}</span>
+                    <span v-else-if="msg.status === 'rejected'" class="status-rejected">{{ $t('chat.duelRejected') }}</span>
+                    <span v-else-if="msg.status === 'expired'" class="expired-text">{{ $t('chat.duelExpired') }}</span>
+                    <span v-else-if="isLastChallenge(index)">Invitación enviada...</span>
+                    <span v-else class="expired-text">{{ $t('chat.duelExpired') }}</span>
+                  </div>
+                </div>
+
+                <!-- Mensaje de Texto Normal -->
                 <div
+                  v-else
                   class="msg-bubble"
                   :class="msg.from === myUser ? 'msg-bubble--mine' : 'msg-bubble--theirs'"
                 >
@@ -96,8 +140,7 @@
               ref="inputRef"
               v-model="inputText"
               class="chat-input"
-              maxlength="500"
-              placeholder="Transmitir mensaje..."
+              :placeholder="$t('chat.placeholder')"
               rows="1"
               @input="autoResize"
               @keydown.enter.exact.prevent="sendMessage"
@@ -106,13 +149,13 @@
               class="send-btn"
               :class="{ 'send-btn--active': inputText.trim() }"
               :disabled="!inputText.trim()"
-              title="Enviar (Enter)"
+              :title="$t('chat.send')"
               @click="sendMessage"
             >
               <v-icon icon="mdi-send" size="18" />
             </button>
           </div>
-          <div class="input-hint">Enter para enviar · Shift+Enter nueva línea</div>
+          <div class="input-hint">{{ $t('chat.hint') }}</div>
         </div>
 
       </div>
@@ -122,11 +165,15 @@
 
 <script setup>
   import { computed, nextTick, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useChatStore } from '@/stores/chatStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
   import { useSessionStore } from '@/stores/sessionStore'
 
+  const { t, locale } = useI18n()
   const chatStore = useChatStore()
   const sessionStore = useSessionStore()
+  const multiplayerStore = useMultiplayerStore()
 
   const myUser = computed(() => sessionStore.user)
   const activeFriend = computed(() => chatStore.activeFriend)
@@ -134,7 +181,19 @@
   const inputText = ref('')
   const messagesContainer = ref(null)
   const inputRef = ref(null)
-  const isTyping = ref(false) // reservado para fase 2
+  const isTyping = ref(false)
+
+  function respondToChallenge (from, accepted) {
+    multiplayerStore.respondToChallenge(from, accepted)
+  }
+
+  function isLastChallenge (index) {
+    const messages = chatStore.activeMessages
+    for (let i = messages.length - 1; i > index; i--) {
+      if (messages[i].msgType === 'challenge') return false
+    }
+    return true
+  }
 
   /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -146,7 +205,8 @@
   function formatTime (isoString) {
     if (!isoString) return ''
     const date = new Date(isoString)
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const localeStr = locale.value === 'en' ? 'en-US' : (locale.value === 'ca' ? 'ca-ES' : 'es-ES')
+    return date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })
   }
 
   function autoResize () {
@@ -189,7 +249,7 @@
     },
   )
 
-  // Scroll inmediato al abrir el chat (historial cargado)
+  // Scroll inmediato al abrir el chat
   watch(
     () => chatStore.isOpen,
     open => {
@@ -209,9 +269,6 @@
 </script>
 
 <style scoped>
-/* ══════════════════════════════════════════════
-   OVERLAY
-══════════════════════════════════════════════ */
 .chat-overlay {
   position: fixed;
   inset: 0;
@@ -221,9 +278,6 @@
   pointer-events: auto;
 }
 
-/* ══════════════════════════════════════════════
-   DRAWER PANEL
-══════════════════════════════════════════════ */
 .chat-drawer {
   position: fixed;
   right: 0;
@@ -240,9 +294,6 @@
   backdrop-filter: blur(20px);
 }
 
-/* ══════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════ */
 .chat-header {
   display: flex;
   align-items: center;
@@ -328,9 +379,6 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ══════════════════════════════════════════════
-   MENSAJES
-══════════════════════════════════════════════ */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -348,7 +396,6 @@
   border-radius: 10px;
 }
 
-/* Estado vacío */
 .chat-empty {
   flex: 1;
   display: flex;
@@ -369,7 +416,6 @@
   letter-spacing: 1px;
 }
 
-/* Filas de mensaje */
 .msg-row {
   display: flex;
   align-items: flex-end;
@@ -402,7 +448,6 @@
   align-items: flex-end;
 }
 
-/* Burbujas */
 .msg-bubble {
   padding: 10px 14px;
   border-radius: 18px;
@@ -433,7 +478,133 @@
   padding: 0 4px;
 }
 
-/* Typing indicator */
+.challenge-msg-card {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.challenge-msg-header {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: #00e5ff;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+}
+
+.challenge-msg-body {
+  font-size: 0.85rem;
+  color: white;
+  font-weight: 500;
+}
+
+.challenge-msg-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.chat-challenge-btn {
+  flex: 1;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+}
+
+.chat-challenge-btn--accept {
+  background: #4caf50;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.chat-challenge-btn--accept:hover {
+  background: #66bb6a;
+  transform: translateY(-1px);
+}
+
+.chat-challenge-btn--decline {
+  background: #f44336;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.chat-challenge-btn--decline:hover {
+  background: #ef5350;
+  transform: translateY(-1px);
+}
+
+.challenge-msg-status {
+  font-size: 0.7rem;
+  color: rgba(0, 229, 255, 0.5);
+  font-style: italic;
+  text-align: right;
+}
+
+.challenge-msg-expired {
+  flex: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.challenge-msg-result {
+  flex: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.challenge-msg-result--accepted {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.challenge-msg-result--rejected {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.status-accepted { color: #4caf50; font-weight: bold; }
+.status-rejected { color: #f44336; font-weight: bold; }
+
+.expired-text {
+  color: rgba(255, 255, 255, 0.2);
+  text-decoration: line-through;
+}
+
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -460,9 +631,6 @@
   30%           { transform: translateY(-6px); opacity: 1; }
 }
 
-/* ══════════════════════════════════════════════
-   INPUT
-══════════════════════════════════════════════ */
 .chat-input-area {
   padding: 12px 16px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -527,48 +695,18 @@
   box-shadow: 0 4px 15px rgba(0, 172, 193, 0.4);
 }
 
-.send-btn--active:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 172, 193, 0.5);
-}
-
-.send-btn:disabled {
-  cursor: not-allowed;
-}
-
 .input-hint {
-  margin-top: 6px;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.2);
+  margin-top: 6px;
   text-align: center;
   letter-spacing: 0.5px;
 }
 
-/* ══════════════════════════════════════════════
-   TRANSITIONS
-══════════════════════════════════════════════ */
-.chat-overlay-enter-active,
-.chat-overlay-leave-active {
-  transition: opacity 0.25s ease;
-}
-.chat-overlay-enter-from,
-.chat-overlay-leave-to {
-  opacity: 0;
-}
+/* Transiciones */
+.chat-drawer-enter-active, .chat-drawer-leave-active { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.chat-drawer-enter-from, .chat-drawer-leave-to { transform: translateX(100%); }
 
-.chat-drawer-enter-active,
-.chat-drawer-leave-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.chat-drawer-enter-from,
-.chat-drawer-leave-to {
-  transform: translateX(100%);
-}
-
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .chat-drawer {
-    width: 100vw;
-  }
-}
+.chat-overlay-enter-active, .chat-overlay-leave-active { transition: opacity 0.4s; }
+.chat-overlay-enter-from, .chat-overlay-leave-to { opacity: 0; }
 </style>

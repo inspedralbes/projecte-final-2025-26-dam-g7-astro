@@ -1,17 +1,17 @@
 <template>
-  <v-container class="text-center d-flex justify-center align-center fill-height">
-    <v-card class="pa-6 bg-slate-900 border-amber game-shell" max-width="560" rounded="xl" width="100%">
+  <v-container class="text-center d-flex justify-center align-center fill-height" fluid>
+    <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10" max-width="560" rounded="xl" width="100%">
       <div class="hud-row mb-6">
-        <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">Punts: {{ score }}</div>
+        <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
         <div class="text-subtitle-1 font-weight-bold" :class="timeLeft <= 10 ? 'text-red-accent-2' : 'text-cyan-accent-2'">
-          Temps: {{ timeLeft }}s
+          {{ $t('syllableQuest.time', { time: timeLeft }) }}
         </div>
       </div>
 
       <template v-if="!gameFinished">
         <div v-if="!isMultiplayer">
           <div class="text-h4 mb-2">{{ currentWord.text }}</div>
-          <div class="text-caption text-grey-lighten-1 mb-6">Paraula {{ currentWordIndex + 1 }} / {{ words.length }}</div>
+          <div class="text-caption text-grey-lighten-1 mb-6">{{ $t('syllableQuest.missionProgress', { current: currentWordIndex + 1, total: words.length }) }}</div>
 
           <div class="d-flex justify-center gap-4 mb-8">
             <v-avatar
@@ -33,7 +33,7 @@
             @click="addSyllable"
           />
 
-          <p class="text-subtitle-1 mb-4">Fes un "clic" per cada síl·laba!</p>
+          <p class="text-subtitle-1 mb-4">{{ $t('syllableQuest.clickInstruction') }}</p>
 
           <v-btn
             block
@@ -42,7 +42,7 @@
             rounded="lg"
             @click="checkSyllables"
           >
-            Comprovar
+            {{ $t('syllableQuest.check') }}
           </v-btn>
         </div>
 
@@ -87,10 +87,10 @@
 
       <template v-else>
         <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="70" />
-        <h2 class="text-h4 mb-3">Missió completada</h2>
-        <p class="text-h6 mb-1">Punts: {{ score }}</p>
-        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">Temps restant: {{ timeLeft }}s</p>
-        <p class="text-h6 text-cyan-accent-2 mb-6">Recompensa: {{ finalReward }}</p>
+        <h2 class="text-h4 mb-3">{{ $t('syllableQuest.completedTitle') }}</h2>
+        <p class="text-h6 mb-1">{{ $t('syllableQuest.finalScore', { score: score }) }}</p>
+        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('syllableQuest.timeRemaining', { time: timeLeft }) }}</p>
+        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('syllableQuest.reward', { reward: finalReward }) }}</p>
 
         <v-btn
           class="text-black font-weight-bold"
@@ -99,7 +99,7 @@
           size="large"
           @click="emitExit"
         >
-          Obtenir Recompensa
+          {{ $t('syllableQuest.getReward') }}
         </v-btn>
       </template>
     </v-card>
@@ -109,9 +109,12 @@
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { syllableData } from '@/data/syllableGamesData'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
+  const { locale, t } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
@@ -124,23 +127,18 @@
   })
 
   // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
-  const words = [
-    { text: 'OR-DI-NA-DOR', syllables: 4 },
-    { text: 'GA-LÀ-XI-A', syllables: 4 },
-    { text: 'COET', syllables: 2 },
-    { text: 'TE-LES-CO-PI', syllables: 4 },
-  ]
+  const words = computed(() => syllableData[locale.value] || syllableData['es'])
 
   const currentWordIndex = ref(0)
-  const currentWord = ref(words[0])
-  const remoteWord = ref(null) // Mantingut per retrocompatibilitat si cal, però no s'usa en el nou disseny
-  const totalSyllablesGoal = computed(() => {
-    if (!props.isMultiplayer || !remoteWord.value) return currentWord.value.syllables
-    return currentWord.value.syllables + remoteWord.value.syllables
-  })
-
+  const currentWord = computed(() => words.value[currentWordIndex.value])
   const userSyllables = ref(0)
-  const sharedSyllables = ref(0)
+  const score = ref(0)
+  const timeLeft = ref(60)
+  const gameFinished = ref(false)
+  const message = ref('')
+  const messageType = ref('info')
+  const finalReward = computed(() => score.value + timeLeft.value)
+  let timerInterval = null
 
   // --- LÒGICA MULTIPLAYER (ORDENAR FRASES) ---
   const multiplayerPhrases = [
@@ -180,7 +178,6 @@
           correct: true,
         })
       } else {
-        // En teoria no s'arriba aquí si no és multiplayer, però per si de cas
         processCorrectClick(index, clickedWord)
       }
     } else {
@@ -244,27 +241,8 @@
 
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
-  const score = ref(0)
-  const timeLeft = ref(60)
-  const gameFinished = ref(false)
-  const message = ref('')
-  const messageType = ref('info')
-  const finalReward = computed(() => score.value + timeLeft.value)
-  let timerInterval = null
-
   function addSyllable () {
     if (gameFinished.value) return
-
-    if (props.isMultiplayer) {
-      // Això ja no s'hauria d'usar pel redisseny, però ho mantenim per si de cas
-      multiplayerStore.sendGameAction({
-        type: 'SYLLABLE_CLICK',
-        user: astroStore.user,
-      })
-      userSyllables.value = (userSyllables.value + 1) % 9
-      return
-    }
-
     if (userSyllables.value < 8) userSyllables.value++
   }
 
@@ -288,15 +266,14 @@
   function checkSyllables () {
     if (gameFinished.value) return
 
-    const currentGoal = totalSyllablesGoal.value
-    const currentCount = props.isMultiplayer ? sharedSyllables.value : userSyllables.value
+    const currentGoal = currentWord.value.syllables
 
-    if (currentCount === currentGoal) {
+    if (userSyllables.value === currentGoal) {
       score.value += 60
-      message.value = 'Correcte!'
+      message.value = t('syllableQuest.msgCorrect')
       messageType.value = 'success'
 
-      if (currentWordIndex.value >= words.length - 1) {
+      if (currentWordIndex.value >= words.value.length - 1) {
         finishGame()
         if (props.isMultiplayer) emitExit()
         return
@@ -304,15 +281,11 @@
 
       currentWordIndex.value++
       userSyllables.value = 0
-      sharedSyllables.value = 0
     } else {
       score.value = Math.max(0, score.value - 10)
-      message.value = 'Incorrecte, torna a provar.'
+      message.value = t('syllableQuest.msgIncorrect')
       messageType.value = 'error'
       userSyllables.value = 0
-      if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({ type: 'SYLLABLE_RESET' })
-      }
     }
   }
 
@@ -323,12 +296,12 @@
 
     timerInterval = setInterval(() => {
       if (gameFinished.value) return
-      
+
       if (!props.isMultiplayer || isHost.value) {
         timeLeft.value = Math.max(0, timeLeft.value - 1)
-        
+
         if (props.isMultiplayer && isHost.value) {
-            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         }
 
         if (timeLeft.value === 0) {
@@ -372,16 +345,6 @@
         } else {
           processIncorrectClick()
         }
-      }
-
-      // Mantenim handlers antics per si de cas, tot i que el redisseny els ignora
-      if (msg.action?.type === 'SYLLABLE_CLICK') {
-        sharedSyllables.value++
-      }
-
-      if (msg.action?.type === 'SYLLABLE_RESET') {
-        sharedSyllables.value = 0
-        userSyllables.value = 0
       }
 
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {

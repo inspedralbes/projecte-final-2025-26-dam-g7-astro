@@ -2,8 +2,8 @@
   <div ref="gameArea" class="game-container" @mousemove="updateFlashlight">
     <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
-        <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
-        <div class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
+        <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('radarScan.points', { score }) }}</div>
+        <div class="text-h5 font-weight-bold text-cyan-accent-3">{{ $t('radarScan.time') }} <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
       </div>
     </div>
 
@@ -34,7 +34,7 @@
       :style="flashlightStyle"
     />
 
-    <!-- Cursors remots (Task 4.3) -->
+    <!-- Cursors remots -->
     <div v-if="props.isMultiplayer">
       <div
         v-for="(cursor, id) in multiplayerStore.remoteCursors"
@@ -49,9 +49,9 @@
 
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
-        <h2 class="text-h4 font-weight-bold text-white mb-4">Escàner de Ràdar</h2>
+        <h2 class="text-h4 font-weight-bold text-white mb-4">{{ $t('radarScan.title') }}</h2>
         <p class="text-body-1 text-grey-lighten-1 mb-6">
-          Troba la lletra diferent abans que s'esgoti el temps. Vigila, el teu camp de visió és limitat i fer clics a l'atzar et restarà temps!
+          {{ $t('radarScan.desc') }}
         </p>
         <v-btn
           class="font-weight-black text-black block"
@@ -60,7 +60,7 @@
           size="x-large"
           @click="startGame"
         >
-          COMENÇAR (60s)
+          {{ $t('radarScan.startBtn') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -74,8 +74,8 @@
     >
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
         <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="80" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">¡Escàner Completat!</h2>
-        <p class="text-h6 text-cyan-accent-3 mb-8">Punts Totals: {{ score }}</p>
+        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radarScan.completed') }}</h2>
+        <p class="text-h6 text-cyan-accent-3 mb-8">{{ $t('radarScan.totalPoints', { score }) }}</p>
         <v-btn
           class="font-weight-black text-black px-8"
           color="cyan-accent-3"
@@ -83,7 +83,7 @@
           size="x-large"
           @click="returnToMenu"
         >
-          TORNAR AL MENÚ
+          {{ $t('radarScan.returnMenu') }}
         </v-btn>
       </v-card>
     </v-overlay>
@@ -93,9 +93,12 @@
 
 <script setup>
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { radarScanData } from '@/data/radarScanData'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
+  const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
@@ -123,7 +126,7 @@
   const mouseY = ref(0)
   const gameArea = ref(null)
 
-  // Throttle per enviar posició del rató al servidor (cada 50ms)
+  // Throttle per enviar posició del rató al servidor (cada 25ms)
   function throttle (func, limit) {
     let lastRan
     let lastFunc
@@ -156,28 +159,25 @@
   // --- LÒGICA DEL TAULER ---
   const board = ref([])
   const currentLevel = ref(1)
-  const targetIndices = ref([]) // Cambiado a array para soportar múltiples objetivos
+  const targetIndices = ref([])
+  const clickedIndices = ref(new Map())
+  const completedTargets = ref(new Set())
 
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
   // --- CONFIGURACIÓ DE NIVELLS ---
-  const levels = [
-    { distractor: 'p', target: 'q', grid: 5, tunnel: 250 },
-    { distractor: 'b', target: 'd', grid: 7, tunnel: 200 },
-    { distractor: 'm', target: 'n', grid: 9, tunnel: 150 },
-    { distractor: 'O', target: 'Q', grid: 12, tunnel: 120 },
-    { distractor: 'E', target: 'F', grid: 15, tunnel: 100 },
-  ]
+  const levels = computed(() => radarScanData[locale.value] || radarScanData['es'])
 
   // --- COMPUTADES ---
   const currentConfig = computed(() => {
-    return levels[Math.min(currentLevel.value - 1, levels.length - 1)]
+    return levels.value[Math.min(currentLevel.value - 1, levels.value.length - 1)]
   })
   const currentTunnelSize = computed(() => currentConfig.value.tunnel)
   const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid))
   const boardSize = computed(() => currentConfig.value.grid * cellSize.value)
 
   const flashlightStyle = computed(() => {
+    if (!gameArea.value) return {}
     const tunnelSize = currentTunnelSize.value
     const lightSpots = [
       `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`,
@@ -185,13 +185,13 @@
 
     // Añadir focos de compañeros en multiplayer
     if (props.isMultiplayer) {
-      Object.entries(multiplayerStore.remoteCursors).forEach(([id, cursor]) => {
+      for (const [id, cursor] of Object.entries(multiplayerStore.remoteCursors)) {
         if (id !== astroStore.user && gameArea.value) {
           const pxX = (cursor.x / 1000) * gameArea.value.clientWidth
           const pxY = (cursor.y / 1000) * gameArea.value.clientHeight
           lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgb(255,255,255) 0%, rgb(11,17,32) 80%)`)
         }
-      })
+      }
     }
 
     return {
@@ -224,7 +224,6 @@
     if (props.isMultiplayer) {
       if (isHost.value) {
         const newBoard = Array.from({ length: totalCells }, () => config.distractor)
-        // Generamos 2 objetivos para multijugador
         const t1 = Math.floor(Math.random() * totalCells)
         let t2
         do {
@@ -234,7 +233,6 @@
         newBoard[t1] = config.target
         newBoard[t2] = config.target
         targetIndices.value = [t1, t2]
-
         board.value = newBoard
 
         multiplayerStore.sendGameAction({
@@ -244,7 +242,6 @@
         })
       }
     } else {
-      // Modo individual original: 1 objetivo
       const newBoard = Array.from({ length: totalCells }, () => config.distractor)
       const target = Math.floor(Math.random() * totalCells)
       targetIndices.value = [target]
@@ -252,9 +249,6 @@
       board.value = newBoard
     }
   }
-
-  const clickedIndices = ref(new Map())
-  const completedTargets = ref(new Set()) // Track targets completed (by index instead of user)
 
   function nextRound () {
     score.value += (currentLevel.value * 10)
@@ -266,13 +260,11 @@
 
   function checkLetter (index) {
     if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return
-    if (completedTargets.value.has(index)) return // Ignorar si ya está encontrado
+    if (completedTargets.value.has(index)) return
 
     const isCorrect = targetIndices.value.includes(index)
 
-    // En multijugador, validamos si es el objetivo compartido
     if (props.isMultiplayer) {
-      // Notificamos el click para sincronización visual inmediata
       multiplayerStore.sendGameAction({
         type: 'RADAR_CLICK',
         index,
@@ -281,7 +273,6 @@
       })
 
       if (!isCorrect) {
-        // Penalización de tiempo en cooperativo (5s)
         timeLeft.value = Math.max(0, timeLeft.value - 5)
         score.value = Math.max(0, score.value - 5)
         clickedIndices.value.set(index, 'incorrect')
@@ -289,15 +280,12 @@
         return
       }
 
-      // Si es correcto, lo marcamos
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
       timeLeft.value = Math.min(60, timeLeft.value + 3)
 
-      // Verificamos si se han encontrado todas las letras objetivo (2 en multi)
       if (completedTargets.value.size >= targetIndices.value.length) {
         isTransitioning.value = true
-        // En lugar de cerrar la partida (submitRoundResult), avanzamos ronda como en el individual
         if (isHost.value) {
           setTimeout(() => {
             multiplayerStore.sendGameAction({ type: 'RADAR_NEXT_ROUND' })
@@ -308,11 +296,9 @@
           }, 800)
         }
       }
-
       return
     }
 
-    // Lógica original individual
     if (isCorrect) {
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
@@ -364,7 +350,7 @@
         if (delta >= 1) {
           timeLeft.value = Math.max(0, timeLeft.value - delta)
           lastTick += delta * 1000
-          
+
           if (props.isMultiplayer && isHost.value) {
             multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
@@ -377,17 +363,12 @@
 
   function endGame (silent = false) {
     clearInterval(timerInterval)
-
     if (props.isMultiplayer) {
       multiplayerStore.submitRoundResult()
       return
     }
-
-    if (silent) {
-      emit('game-over', score.value)
-    } else {
-      showGameOverOverlay.value = true
-    }
+    if (silent) emit('game-over', score.value)
+    else showGameOverOverlay.value = true
   }
 
   function returnToMenu () {
@@ -400,17 +381,11 @@
     }
   })
 
-  // Listener para acciones multijugador
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       emit('game-over', score.value)
-      return
-    }
-
-    if (msg.type === 'ROUND_FINISHED') {
-      nextRound()
       return
     }
 
@@ -421,16 +396,13 @@
       }
 
       if (msg.action?.type === 'START_TIME_SYNC') {
-        console.log('Sincronización de tiempo recibida')
         startTime.value = msg.action.startTime
         totalDuration.value = msg.action.duration
       }
 
-      if (msg.action?.type === 'BOARD_SYNC') {
-        console.log('Tablero sincronizado recibido')
+      if (msg.action?.type === 'BOARD_SYNC' && !isHost.value) {
         board.value = msg.action.board
         targetIndices.value = msg.action.targetIndices
-        // Reseteamos estados visuales
         isTransitioning.value = false
         clickedIndices.value.clear()
         completedTargets.value.clear()
@@ -451,7 +423,6 @@
         } else if (status === 'correct') {
           clickedIndices.value.set(index, 'correct')
           completedTargets.value.add(index)
-
           if (completedTargets.value.size >= targetIndices.value.length) {
             isTransitioning.value = true
             if (isHost.value) {
@@ -469,7 +440,6 @@
     }
   })
 
-  // Notificar puntuación al servidor en modo multijugador
   watch(score, newScore => {
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
@@ -496,10 +466,6 @@
   align-items: center;
   overflow: hidden;
   user-select: none;
-}
-
-.hide-cursor {
-  cursor: none;
 }
 
 .board {
@@ -548,7 +514,6 @@
   opacity: 0 !important;
 }
 
-.bg-slate-800 { background-color: #1e293b; }
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 1px solid #00e5ff; }
 

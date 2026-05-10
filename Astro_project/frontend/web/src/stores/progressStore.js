@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAchievementsStore } from './achievementsStore'
+import i18n from '@/i18n'
 import {
   normalizeActiveBoosters,
   readStoredObject,
@@ -31,6 +32,7 @@ export const useProgressStore = defineStore('progress', {
     streakFreezes: Number(storageGetItem(STORAGE_KEYS.streakFreezes)) || 0,
     activeBoosters: normalizeActiveBoosters(readStoredObject(STORAGE_KEYS.activeBoosters, {})),
     needsFreeze: false,
+    previousStreak: 0, // AÑADIDO: Para control de recuperación de racha
     lastActivity: storageGetItem(STORAGE_KEYS.lastActivity) || null,
     lastGame: storageGetItem(STORAGE_KEYS.lastGame) || null,
     dailyMissions: [],
@@ -78,7 +80,6 @@ export const useProgressStore = defineStore('progress', {
       storageSetItem(STORAGE_KEYS.level, this.level)
     },
 
-    // NUEVO: Setter para el mapa
     setMapLevel (level) {
       this.mapLevel = Number(level) || 1
       storageSetItem('astro_mapLevel', this.mapLevel)
@@ -139,10 +140,10 @@ export const useProgressStore = defineStore('progress', {
       this.setStreakFreezes(profile.streakFreezes ?? this.streakFreezes)
       this.setActiveBoosters(profile.activeBoosters ?? this.activeBoosters)
       this.setNeedsFreeze(profile.needsFreeze)
+      this.previousStreak = profile.previousStreak || 0
       this.setLastActivity(profile.lastActivity ?? this.lastActivity)
       this.setLastGame(profile.lastGame ?? this.lastGame)
 
-      // NUEVO: Sincronizar el mapa al hacer login
       if (profile.mapLevel !== undefined) {
         this.setMapLevel(profile.mapLevel)
       }
@@ -166,9 +167,7 @@ export const useProgressStore = defineStore('progress', {
     async fetchUserStats () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay una sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson(`/api/users/${encodeURIComponent(user)}/stats`)
@@ -231,9 +230,7 @@ export const useProgressStore = defineStore('progress', {
     async fetchUserBalance () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay una sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson(`/api/shop/balance/${encodeURIComponent(user)}`)
@@ -262,18 +259,12 @@ export const useProgressStore = defineStore('progress', {
       }
     },
 
-    // MODIFICADO: Aceptar completedMapNode y enviarlo al servidor
     async registerCompletedGame (game, score = 0, completedMapNode = null) {
       this.error = null
       const user = this.resolveUser()
 
-      if (!user) {
-        return { success: false, message: 'No hay una sesión activa.' }
-      }
-
-      if (!game) {
-        return { success: false, message: 'Nombre de juego inválido.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+      if (!game) return { success: false, message: i18n.global.t('errors.invalidGame') }
 
       try {
         const { response, data } = await requestJson('/api/games/complete', {
@@ -291,33 +282,24 @@ export const useProgressStore = defineStore('progress', {
           throw new Error(data.message || 'No se pudo registrar la partida.')
         }
 
-        this.setCoins(data.newBalance === undefined ? this.coins : data.newBalance)
-        this.setLevel(data.newLevel === undefined ? this.level : data.newLevel)
-        this.setXp(data.newXp === undefined ? this.xp : data.newXp)
-        this.setPartides(data.gamesPlayed === undefined ? (this.partides + 1) : data.gamesPlayed)
-        this.setStreak(data.streak === undefined ? this.streak : data.streak)
+        this.setCoins(data.newBalance !== undefined ? data.newBalance : this.coins)
+        this.setLevel(data.newLevel !== undefined ? data.newLevel : this.level)
+        this.setXp(data.newXp !== undefined ? data.newXp : this.xp)
+        this.setPartides(data.gamesPlayed !== undefined ? data.gamesPlayed : (this.partides + 1))
+        this.setStreak(data.streak !== undefined ? data.streak : this.streak)
         this.setActiveBoosters(data.activeBoosters ?? this.activeBoosters)
         this.setDailyMissions(data.dailyMissions || this.dailyMissions)
         this.setWeeklyMissions(data.weeklyMissions || this.weeklyMissions)
         this.setNeedsFreeze(data.needsFreeze)
 
-        // NUEVO: Recibir si hemos avanzado en el mapa
         if (data.newMapLevel !== undefined) {
           this.setMapLevel(data.newMapLevel)
         }
 
-        if (data.gameHistory) {
-          this.gameHistory = data.gameHistory
-        }
-        if (data.maxScores) {
-          this.maxScores = data.maxScores
-        }
-        if (data.totalGamesPlayed !== undefined) {
-          this.totalGamesPlayed = data.totalGamesPlayed
-        }
-        if (data.totalPoints !== undefined) {
-          this.totalPoints = data.totalPoints
-        }
+        if (data.gameHistory) this.gameHistory = data.gameHistory
+        if (data.maxScores) this.maxScores = data.maxScores
+        if (data.totalGamesPlayed !== undefined) this.totalGamesPlayed = data.totalGamesPlayed
+        if (data.totalPoints !== undefined) this.totalPoints = data.totalPoints
 
         const now = new Date().toISOString()
         this.setLastActivity(now)
@@ -334,9 +316,7 @@ export const useProgressStore = defineStore('progress', {
     async claimMissionReward (missionId, type = 'daily') {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson('/api/missions/claim', {
@@ -367,9 +347,7 @@ export const useProgressStore = defineStore('progress', {
     async useStreakFreeze () {
       this.error = null
       const user = this.resolveUser()
-      if (!user) {
-        return { success: false, message: 'No hay sesión activa.' }
-      }
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
 
       try {
         const { response, data } = await requestJson('/api/user/use-freeze', {
@@ -409,10 +387,7 @@ export const useProgressStore = defineStore('progress', {
       this.lastGame = null
       this.dailyMissions = []
       this.weeklyMissions = []
-
-      // NUEVO: Limpiar mapa
       this.mapLevel = 1
-
       this.error = null
 
       storageRemoveItem(STORAGE_KEYS.level)
@@ -422,7 +397,7 @@ export const useProgressStore = defineStore('progress', {
       storageRemoveItem(STORAGE_KEYS.activeBoosters)
       storageRemoveItem(STORAGE_KEYS.lastActivity)
       storageRemoveItem(STORAGE_KEYS.lastGame)
-      storageRemoveItem('astro_mapLevel') // Limpieza local
+      storageRemoveItem('astro_mapLevel')
     },
   },
 })

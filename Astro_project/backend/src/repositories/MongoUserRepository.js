@@ -99,7 +99,8 @@ class MongoUserRepository extends UserRepository {
                 avatar: 1,
                 streak: 1,
                 selectedAchievements: 1,
-                friendRequests: 1
+                friendRequests: 1,
+                selectedTitle: 1
             }
         }).toArray();
 
@@ -109,10 +110,31 @@ class MongoUserRepository extends UserRepository {
         }));
     }
 
+    async updatePassword(username, newPassword) {
+        if (username === undefined || username === null || !newPassword) return false;
+
+        const filter = {
+            $or: [{ user: username }]
+        };
+
+        const numUser = Number(username);
+        if (!isNaN(numUser) && username !== '') {
+            filter.$or.push({ user: numUser });
+        }
+
+        const result = await this.collection.updateOne(filter, {
+            $set: { pass: newPassword }
+        });
+
+        return result.modifiedCount > 0;
+    }
+
     _toMongoDoc(user) {
         return {
             user: user.username,
             plan: user.plan,
+            role: user.role,
+            parentId: user.parentId,
             rank: user.rank,
             level: user.level,
             xp: user.xp,
@@ -138,7 +160,11 @@ class MongoUserRepository extends UserRepository {
             missionsCompleted: user.missionsCompleted,
             gameHistory: user.gameHistory,
             totalGamesPlayed: user.totalGamesPlayed,
-            totalPoints: user.totalPoints
+            totalPoints: user.totalPoints,
+            selectedTitle: user.selectedTitle,
+            displayName: user.displayName,
+            nameChangesCount: user.nameChangesCount,
+            deletionScheduledAt: user.deletionScheduledAt
         };
     }
 }

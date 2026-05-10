@@ -15,6 +15,25 @@ class MongoRoomRepository extends RoomRepository {
     async findPublicLobbies() {
         return await this.collection.find({ status: 'LOBBY', isPublic: true }).toArray();
     }
+
+    async save(room) {
+        await this.collection.insertOne(room);
+        return room;
+    }
+
+    async update(room) {
+        // Asumimos que el objeto room tiene un campo 'id' (el string autogenerado)
+        const { id, ...updateData } = room;
+        await this.collection.updateOne({ id: id }, { $set: updateData });
+    }
+
+    async deleteById(roomId) {
+        await this.collection.deleteOne({ id: roomId });
+    }
+
+    async findById(roomId) {
+        return await this.collection.findOne({ id: roomId });
+    }
 }
 
 module.exports = MongoRoomRepository;

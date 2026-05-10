@@ -26,6 +26,9 @@ function registerWsHandlers(wss, getDB) {
                         // Enviar conteo de mensajes no leídos al conectar
                         try {
                             const db = getDB();
+                            // Marcar desafíos expirados antes de contar no leídos
+                            await chatService.markExpiredChallenges(db, 5);
+                            
                             const unread = await chatService.getUnreadByConversation(db, currentUser);
                             ws.send(JSON.stringify({ type: 'CHAT_UNREAD_COUNTS', counts: unread }));
                         } catch (_) { /* DB puede no estar lista en tests */ }
@@ -58,7 +61,7 @@ function registerWsHandlers(wss, getDB) {
                         } else {
                             ws.send(JSON.stringify({
                                 type: 'JOIN_SUCCESS',
-                                room: roomManager.getRoom(msg.roomId)
+                                room: await roomManager.getRoom(msg.roomId)
                             }));
                         }
                         break;
@@ -139,11 +142,93 @@ function registerWsHandlers(wss, getDB) {
                         break;
                     }
 
+                    case 'CHALLENGE': {
+                        // { type: 'CHALLENGE', from: 'UserA', to: 'UserB' }
+                        try {
+                            console.log(`⚔️ Desafío de ${msg.from} para ${msg.to}`);
+                            
+                            // Notificar por el canal de desafíos (para el popup)
+                            const sent = roomManager.sendToUser(msg.to, {
+                                type: 'CHALLENGE_RECEIVED',
+                                from: msg.from
+                            });
+
+                            if (!sent) {
+                                console.warn(`⚠️ Usuario ${msg.to} no está conectado. El desafío solo aparecerá en su chat.`);
+                            }
+
+                            // También enviar como mensaje de chat especial
+                            const dbC = getDB();
+                            const saved = await chatService.saveMessage(dbC, {
+                                from: msg.from,
+                                to: msg.to,
+                                content: '¡Te he desafiado a un duelo!',
+                                type: 'challenge'
+                            });
+
+                            const chatMsg = {
+                                type: 'CHAT_MESSAGE',
+                                from: msg.from,
+                                to: msg.to,
+                                content: saved.content,
+                                at: saved.at.toISOString(),
+                                msgType: 'challenge'
+                            };
+
+                            roomManager.sendToUser(msg.to, chatMsg);
+                            ws.send(JSON.stringify(chatMsg)); // Confirmar al emisor
+                        } catch (e) {
+                            console.error('❌ Error procesando desafío:', e);
+                            ws.send(JSON.stringify({ type: 'ERROR', message: 'No se pudo enviar el desafío.' }));
+                        }
+                        break;
+                    }
+
+                    case 'CHALLENGE_RESPONSE': {
+                        // { type: 'CHALLENGE_RESPONSE', from: 'UserB', to: 'UserA', accepted: true/false }
+                        console.log(`⚔️ Respuesta al desafío de ${msg.from} para ${msg.to}: ${msg.accepted ? 'ACEPTADO' : 'RECHAZADO'}`);
+                        
+                        const dbR = getDB();
+                        const newStatus = msg.accepted ? 'accepted' : 'rejected';
+                        
+                        // Persistir en DB: msg.to es el challenger (UserA), msg.from es el receptor (UserB)
+                        await chatService.updateLatestChallengeStatus(dbR, msg.to, msg.from, newStatus);
+
+                        if (msg.accepted) {
+                            // Crear una sala privada para los dos
+                            const roomId = await roomManager.createRoom(msg.to, false, 2); // El que desafió es el host
+                            await roomManager.joinRoom(roomId, msg.from); // El que aceptó se une
+                            
+                            const acceptedMsg = {
+                                type: 'CHALLENGE_ACCEPTED',
+                                from: msg.to,   // El challenger
+                                to: msg.from,   // El que aceptó
+                                roomId
+                            };
+                            
+                            roomManager.sendToUser(msg.to, acceptedMsg);
+                            roomManager.sendToUser(msg.from, acceptedMsg);
+                        } else {
+                            const rejectedMsg = {
+                                type: 'CHALLENGE_REJECTED',
+                                from: msg.from, // El que rechazó
+                                to: msg.to      // El challenger
+                            };
+                            roomManager.sendToUser(msg.to, rejectedMsg);
+                            ws.send(JSON.stringify(rejectedMsg)); // También al que rechazó para confirmar
+                        }
+                        break;
+                    }
+
                     case 'CHAT_FETCH_HISTORY': {
                         // { type: 'CHAT_FETCH_HISTORY', userA: 'yo', userB: 'amigo' }
                         if (!msg.userA || !msg.userB) break;
 
                         const dbH = getDB();
+                        
+                        // 1. Marcar desafíos expirados (5 min) antes de devolver historial
+                        await chatService.markExpiredChallenges(dbH, 5);
+
                         const history = await chatService.getHistory(dbH, msg.userA, msg.userB);
 
                         // Marcar como leídos los mensajes que el amigo envió a este usuario
@@ -157,7 +242,9 @@ function registerWsHandlers(wss, getDB) {
                                 to: m.to,
                                 content: m.content,
                                 at: m.at.toISOString(),
-                                read: m.read
+                                read: m.read,
+                                msgType: m.type || 'text',
+                                status: m.status // Incluir estado para la UI
                             }))
                         }));
                         break;

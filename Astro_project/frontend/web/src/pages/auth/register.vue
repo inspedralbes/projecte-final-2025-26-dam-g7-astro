@@ -17,7 +17,7 @@
           @click="router.push('/')"
         >
           <v-icon size="small" start>mdi-chevron-left</v-icon>
-          <span class="text-caption font-weight-bold">ABORTAR / VOLVER A BASE</span>
+          <span class="text-caption font-weight-bold">{{ $t('auth.abortCmd') }}</span>
         </v-btn>
       </div>
 
@@ -26,48 +26,48 @@
           <v-icon class="pulse-icon" color="cyan-accent-3" size="64">mdi-shield-account-outline</v-icon>
         </div>
         <h1 class="text-h3 font-weight-black text-white tracking-widest neon-text mb-2">
-          ALISTAMIENTO
+          {{ $t('auth.enlistment') }}
         </h1>
         <div class="text-overline text-cyan-lighten-3 tracking-wide border-bottom-pulse">
-          NUEVO TRIPULANTE ASTRO
+          {{ $t('auth.newAstroCrew') }}
         </div>
       </div>
 
       <v-form ref="registerForm" @submit.prevent="handleRegister">
         <v-row dense>
           <v-col cols="12">
-            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">IDENTIFICACIÓN</div>
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.identification') }}</div>
             <v-text-field
               v-model="formData.username"
               bg-color="rgba(0, 20, 40, 0.6)"
               class="future-input"
               color="cyan-accent-3"
               hide-details="auto"
-              placeholder="NOMBRE DE USUARIO (TU ID)"
+              :placeholder="$t('auth.usernameID')"
               prepend-inner-icon="mdi-account-box-outline"
-              :rules="[v => !!v || 'ID Requerido']"
+              :rules="[v => !!v || $t('auth.idReq')]"
               variant="solo-filled"
             />
           </v-col>
 
           <v-col class="mt-4" cols="12" sm="6">
-            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">CREDENCIALES</div>
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.credentials') }}</div>
             <v-text-field
               v-model="formData.password"
               bg-color="rgba(0, 20, 40, 0.6)"
               class="future-input"
               color="cyan-accent-3"
               hide-details="auto"
-              placeholder="CONTRASEÑA"
+              :placeholder="$t('auth.password')"
               prepend-inner-icon="mdi-lock-outline"
-              :rules="[v => !!v || 'Código Requerido']"
+              :rules="[v => !!v || $t('auth.codeReq')]"
               type="password"
               variant="solo-filled"
             />
           </v-col>
 
           <v-col class="mt-4" cols="12" sm="6">
-            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">VERIFICACIÓN</div>
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.verif') }}</div>
             <v-text-field
               v-model="formData.confirmPassword"
               bg-color="rgba(0, 20, 40, 0.6)"
@@ -75,7 +75,7 @@
               color="cyan-accent-3"
               :error-messages="passwordMatchError"
               hide-details="auto"
-              placeholder="CONFIRMAR"
+              :placeholder="$t('auth.confirmPwd')"
               prepend-inner-icon="mdi-lock-check-outline"
               type="password"
               variant="solo-filled"
@@ -98,17 +98,17 @@
           type="submit"
         >
           <v-icon class="mr-2" start>mdi-rocket-launch</v-icon>
-          INICIAR PROTOCOLO DE ALTA
+          {{ $t('auth.initSignUp') }}
           <div class="btn-glow" />
         </v-btn>
       </v-form>
 
       <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
         <div class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="router.push('/login')">
-          ¿YA TIENES ID? ACCEDER
+          {{ $t('auth.alreadyHaveId') }}
         </div>
         <div class="coordinate-display text-body-2 font-weight-bold text-cyan-lighten-4 font-weight-mono">
-          COORDENADAS: <span class="text-cyan-accent-2 glow-text">SECTOR-7G</span>
+          {{ $t('auth.coordinates') }} <span class="text-cyan-accent-2 glow-text">{{ $t('auth.sector') }}</span>
         </div>
       </div>
     </v-card>
@@ -117,9 +117,11 @@
 
 <script setup>
   import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
 
+  const { t } = useI18n()
   const router = useRouter()
   const astroStore = useAstroStore()
 
@@ -136,13 +138,13 @@
     if (!formData.value.confirmPassword) return ''
     return formData.value.password === formData.value.confirmPassword
       ? ''
-      : 'Los códigos no coinciden'
+      : t('auth.codesDontMatch')
   })
 
   async function handleRegister () {
     if (passwordMatchError.value) return
     if (!formData.value.username || !formData.value.password) {
-      errorMessage.value = 'Datos incompletos'
+      errorMessage.value = t('auth.allReqs')
       return
     }
 
@@ -158,10 +160,10 @@
       if (result.success) {
         router.push('/login')
       } else {
-        errorMessage.value = result.message || 'Error en el alta'
+        errorMessage.value = result.message || t('auth.signUpErr')
       }
     } catch {
-      errorMessage.value = 'Error de conexión'
+      errorMessage.value = t('auth.serverConnErr')
     } finally {
       loading.value = false
     }

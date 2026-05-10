@@ -15,10 +15,15 @@
 
     <!-- Título -->
     <h1 class="result-title mb-2" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-      {{ isTeammate ? (isWin ? '¡MISIÓN CUMPLIDA!' : '¡MISIÓN FALLIDA!') : (isWin ? '¡VICTORIA!' : (isTie ? '¡EMPATE!' : '¡DERROTA!')) }}
+      <template v-if="isTeammate">
+        {{ isWin ? $t('multiplayerResult.missionAccomplished') : $t('multiplayerResult.missionFailed') }}
+      </template>
+      <template v-else>
+        {{ isWin ? $t('multiplayerResult.victory') : (isTie ? $t('multiplayerResult.tie') : $t('multiplayerResult.defeat')) }}
+      </template>
     </h1>
     <p class="text-h5 text-grey-lighten-2 mb-10">
-      {{ isWin ? 'Has conquistado la galaxia' : (isTie ? 'Nadie domina el cosmos hoy' : 'El cosmos te ha vencido esta vez') }}
+      {{ isWin ? $t('multiplayerResult.winDesc') : (isTie ? $t('multiplayerResult.tieDesc') : $t('multiplayerResult.defeatDesc')) }}
     </p>
 
     <!-- Marcador final -->
@@ -28,20 +33,20 @@
         <v-avatar class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'" size="80">
           <v-img :src="getPlayerAvatar(myName)" />
         </v-avatar>
-        <div class="text-overline text-cyan-accent-2 mb-1">TÚ</div>
+        <div class="text-overline text-cyan-accent-2 mb-1">{{ $t('multiplayerResult.you') }}</div>
         <div class="text-h2 font-weight-black" :class="isWin ? 'text-amber' : 'text-white'">
           {{ scores[myName] || 0 }}
         </div>
-        <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
+        <div class="text-caption text-grey-lighten-1">{{ $t('multiplayerResult.roundsWon') }}</div>
         <div class="mt-4">
-          <v-chip v-if="isWin" class="font-weight-black text-black" color="amber" size="small">GANADOR</v-chip>
+          <v-chip v-if="isWin" class="font-weight-black text-black" color="amber" size="small">{{ $t('multiplayerResult.winner') }}</v-chip>
           <v-chip
             v-else-if="!isTie"
             class="font-weight-bold"
             color="red-lighten-1"
             size="small"
             variant="tonal"
-          >PERDEDOR</v-chip>
+          >{{ $t('multiplayerResult.loser') }}</v-chip>
 
           <!-- Estado de retorno -->
           <div class="mt-2 status-container">
@@ -52,7 +57,7 @@
               size="x-small"
               variant="flat"
             >
-              PREPARADO
+              {{ $t('multiplayerResult.ready') }}
             </v-chip>
             <v-chip
               v-else
@@ -60,7 +65,7 @@
               size="x-small"
               variant="outlined"
             >
-              ESPERANDO...
+              {{ $t('multiplayerResult.waiting') }}
             </v-chip>
           </div>
         </div>
@@ -68,8 +73,8 @@
 
       <!-- VS separador -->
       <div class="vs-separator mx-8 text-center">
-        <div class="text-h3 font-weight-black text-grey-darken-1">{{ isTeammate ? 'EQUIPO' : 'VS' }}</div>
-        <div class="text-caption text-grey mt-1">{{ totalRounds }} rondas jugadas</div>
+        <div class="text-h3 font-weight-black text-grey-darken-1">{{ isTeammate ? $t('multiplayerResult.team') : $t('multiplayerResult.vs') }}</div>
+        <div class="text-caption text-grey mt-1">{{ $t('multiplayerResult.roundsPlayed', { total: totalRounds }) }}</div>
       </div>
 
       <!-- OPONENTE -->
@@ -81,16 +86,16 @@
         <div class="text-h2 font-weight-black" :class="!isWin && !isTie ? 'text-amber' : 'text-white'">
           {{ scores[opponentName] || 0 }}
         </div>
-        <div class="text-caption text-grey-lighten-1">rondas ganadas</div>
+        <div class="text-caption text-grey-lighten-1">{{ $t('multiplayerResult.roundsWon') }}</div>
         <div class="mt-4">
-          <v-chip v-if="!isWin && !isTie" class="font-weight-black text-black" color="amber" size="small">GANADOR</v-chip>
+          <v-chip v-if="!isWin && !isTie" class="font-weight-black text-black" color="amber" size="small">{{ $t('multiplayerResult.winner') }}</v-chip>
           <v-chip
             v-else-if="!isTie"
             class="font-weight-bold"
             color="red-lighten-1"
             size="small"
             variant="tonal"
-          >PERDEDOR</v-chip>
+          >{{ $t('multiplayerResult.loser') }}</v-chip>
 
           <!-- Estado de retorno oponente -->
           <div class="mt-2 status-container">
@@ -101,7 +106,7 @@
               size="x-small"
               variant="flat"
             >
-              PREPARADO
+              {{ $t('multiplayerResult.ready') }}
             </v-chip>
             <v-chip
               v-else
@@ -109,16 +114,16 @@
               size="x-small"
               variant="outlined"
             >
-              PENDIENTE
+              {{ $t('multiplayerResult.waiting') }}
             </v-chip>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Historial de rondas (NUEVO) -->
+    <!-- Historial de rondas -->
     <div v-if="multiplayerStore.room?.gameConfig?.roundHistory?.length" class="round-history-section w-100 max-width-600 mb-8">
-      <div class="text-overline text-grey-darken-1 mb-4 text-center">HISTORIAL DE LA MISIÓN</div>
+      <div class="text-overline text-grey-darken-1 mb-4 text-center">{{ $t('multiplayerResult.missionHistory') }}</div>
       <v-row dense justify="center">
         <v-col v-for="h in multiplayerStore.room?.gameConfig?.roundHistory" :key="h.round" cols="12">
           <v-card class="round-history-card pa-3 mb-2 rounded-lg" color="rgba(255,255,255,0.03)" variant="flat">
@@ -126,7 +131,7 @@
               <div class="round-num text-caption font-weight-black text-cyan-accent-2 mr-4">RD {{ h.round }}</div>
               <div class="game-info d-flex align-center flex-grow-1">
                 <v-icon class="mr-2 text-grey-darken-1" icon="mdi-controller" size="18" />
-                <div class="text-body-2 font-weight-bold text-white">{{ h.game }}</div>
+                <div class="text-body-2 font-weight-bold text-white">{{ $te('games.' + h.game) ? $t('games.' + h.game) : h.game }}</div>
               </div>
               <div class="round-winner-indicator mx-4">
                 <v-chip
@@ -136,7 +141,7 @@
                   density="compact"
                   size="x-small"
                   variant="flat"
-                >VICTORIA</v-chip>
+                >{{ $t('multiplayerResult.victory') }}</v-chip>
                 <v-chip
                   v-else-if="h.winner === opponentName"
                   class="font-weight-black"
@@ -144,7 +149,7 @@
                   density="compact"
                   size="x-small"
                   variant="flat"
-                >DERROTA</v-chip>
+                >{{ $t('multiplayerResult.defeat') }}</v-chip>
                 <v-chip
                   v-else
                   class="font-weight-black"
@@ -152,7 +157,7 @@
                   density="compact"
                   size="x-small"
                   variant="tonal"
-                >EMPATE</v-chip>
+                >{{ $t('multiplayerResult.tie') }}</v-chip>
               </div>
               <div class="round-scores text-caption text-grey-lighten-1 font-weight-bold">
                 {{ h.scores[myName] || 0 }} - {{ h.scores[opponentName] || 0 }}
@@ -173,11 +178,11 @@
         size="x-large"
         @click="handleReturn"
       >
-        <v-icon start>mdi-reply</v-icon> VOLVER A LA SALA
+        <v-icon start>mdi-reply</v-icon> {{ $t('multiplayerResult.backToLobby') }}
       </v-btn>
       <div v-else class="text-center">
         <v-progress-circular class="mb-2" color="cyan-accent-2" indeterminate size="40" />
-        <p class="text-cyan-accent-2 font-weight-bold italic">Esperando que el equipo regrese...</p>
+        <p class="text-cyan-accent-2 font-weight-bold italic">{{ $t('multiplayerResult.waitingTeam') }}</p>
       </div>
     </div>
   </div>
@@ -213,14 +218,15 @@
   }
 
   function getAvatarUrl (avatarName, username) {
-    if (avatarName && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
+    const safeUsername = (username && typeof username === 'object') ? (username.name || username.user || 'Astronauta') : username
+    if (avatarName && typeof avatarName === 'string' && (avatarName.includes('.jpg') || avatarName.includes('.png'))) {
       return `/${avatarName.trim()}`
     }
-    if (avatarName && avatarName.toLowerCase().startsWith('astronauta')) {
+    if (avatarName && typeof avatarName === 'string' && avatarName.toLowerCase().startsWith('astronauta')) {
       return `/${avatarName.trim()}`
     }
-    if (username) {
-      return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+    if (safeUsername && safeUsername !== '[object Object]') {
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(safeUsername)}`
     }
     return '/Astronauta_blanc.jpg'
   }
@@ -234,13 +240,13 @@
     if (explorer) {
       return getAvatarUrl(explorer.avatar, username)
     }
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+    return getAvatarUrl(null, username)
   }
 </script>
 
 <style scoped>
 .match-result-screen {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -310,7 +316,7 @@
 }
 
 .player-avatar {
-  background: #0a1929; /* Deep Space BG */
+  background: #0a1929;
   overflow: hidden;
   transition: box-shadow 0.3s;
 }
@@ -336,7 +342,6 @@
   z-index: -1;
 }
 
-/* Avatar Global Styling (Matching profile.vue and Lobby zoom) */
 :deep(.v-avatar .v-img__img),
 :deep(.v-avatar img) {
   border-radius: 50%;

@@ -5,112 +5,43 @@
 
         <v-col class="text-center mt-2 mb-6" cols="12">
           <h1 class="text-h3 font-weight-bold text-uppercase text-cyan-accent-3 glow-text">
-            Bazar Espacial
+            {{ $t('store.title') }}
           </h1>
           <p class="text-subtitle-1 text-grey-lighten-1 mt-2">
-            Mejora tu equipamiento para la misión
+            {{ $t('store.subtitle') }}
           </p>
         </v-col>
 
-        <v-col class="mb-12" cols="12" max-width="1200">
-          <div class="wheel-card pa-6 pa-md-10 rounded-xl elevation-10 w-100 mx-auto">
-            <v-row class="align-center w-100 mx-0">
-
-              <v-col class="d-flex justify-center position-relative py-8" cols="12" md="6">
-                <div class="nebula-bg" />
-                <LuckyWheel
-                  ref="luckyWheelRef"
-                  :user="astroStore.user"
-                  @spin-end="isSpinning = false"
-                  @spin-start="isSpinning = true"
-                  @update-balance="updateCoins"
-                  @update-inventory="updateInventory"
-                  @update-tickets="updateTickets"
-                  @win="handleWin"
-                />
-              </v-col>
-
-              <v-col class="d-flex flex-column justify-center pl-md-10 mt-6 mt-md-0" cols="12" md="6">
-                <div class="d-flex align-center mb-4 justify-center justify-md-start">
-                  <v-icon class="mr-3" color="purple-accent-3" size="x-large">mdi-black-hole</v-icon>
-                  <h2 class="text-h3 font-weight-black text-white text-uppercase" style="letter-spacing: 2px;">Vòrtex Quàntic</h2>
-                </div>
-
-                <p class="text-body-1 text-grey-lighten-1 mb-8 text-center text-md-left">
-                  Gira el vòrtex per obtenir subministraments únics, monedes o aspectes èpics. La sort afavoreix als audaços.
-                </p>
-
-                <div class="d-flex flex-column gap-4 w-100 px-4 px-md-0">
-                  <template v-if="userTickets === 0">
-                    <v-btn
-                      class="font-weight-black text-black w-100 mb-4"
-                      color="cyan-accent-3"
-                      :disabled="isSpinning"
-                      elevation="8"
-                      :loading="isSpinning"
-                      rounded="xl"
-                      size="x-large"
-                      @click="triggerSingleSpin"
-                    >
-                      <v-icon start>mdi-ticket</v-icon>
-                      EXTRAURE (100 <v-icon class="ml-1" size="small">mdi-currency-usd</v-icon>)
-                    </v-btn>
-
-                    <v-btn
-                      class="font-weight-black text-white w-100"
-                      color="purple-accent-3"
-                      :disabled="isSpinning || userCoins < 900"
-                      elevation="8"
-                      rounded="xl"
-                      size="x-large"
-                      @click="triggerMultiSpin"
-                    >
-                      <v-icon start>mdi-ticket-percent</v-icon>
-                      COMPRAR 10 TIRADES (900 <v-icon class="ml-1" size="small">mdi-currency-usd</v-icon>)
-                    </v-btn>
-                  </template>
-
-                  <template v-else>
-                    <v-btn
-                      class="font-weight-black text-black w-100 py-2 shadow-glow animate-bounce-slow"
-                      color="green-accent-4"
-                      :disabled="isSpinning"
-                      elevation="12"
-                      :loading="isSpinning"
-                      rounded="xl"
-                      size="x-large"
-                      @click="triggerSingleSpin"
-                    >
-                      <v-icon size="large" start>mdi-ticket-confirmation</v-icon>
-                      {{ userTickets }} TIRADES GRATIS
-                    </v-btn>
-                  </template>
-                </div>
-
-                <div class="mt-8 px-8 py-4 rounded-xl balance-pill d-flex align-center justify-space-between w-100 mx-auto mx-md-0">
-                  <div class="flex-grow-1">
-                    <span class="text-caption text-grey-lighten-1 block text-uppercase">Saldo disponible</span>
-                    <div class="d-flex align-center">
-                      <span class="text-h3 font-weight-black text-amber-accent-3 mr-2" style="text-shadow: 0 0 15px rgba(255, 193, 7, 0.4);">{{ userCoins }}</span>
-                      <v-icon color="amber-accent-3" size="large">mdi-currency-usd</v-icon>
-                    </div>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
+        <v-col class="mb-10 mx-auto" cols="12" md="6">
+          <div
+            class="px-8 py-6 rounded-xl balance-pill d-flex align-center justify-center text-center w-100 elevation-10"
+            style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 229, 255, 0.2);"
+          >
+            <div class="flex-grow-1">
+              <span class="text-subtitle-1 text-grey-lighten-1 block text-uppercase mb-2">{{ $t('store.balance') }}</span>
+              <div class="d-flex align-center justify-center">
+                <span class="text-h2 font-weight-black text-amber-accent-3 mr-3" style="text-shadow: 0 0 25px rgba(255, 193, 7, 0.6);">{{ userCoins }}</span>
+                <v-icon color="amber-accent-3" size="70">mdi-currency-usd</v-icon>
+              </div>
+            </div>
           </div>
         </v-col>
 
         <v-col cols="12" max-width="1200">
+
           <div class="d-flex align-center mb-6 px-2">
             <v-icon class="mr-3" color="cyan-accent-3">mdi-cube-outline</v-icon>
-            <h3 class="text-h5 font-weight-bold text-white">Suministros Básicos</h3>
+            <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
             <v-divider class="ml-4 border-cyan opacity-50" />
           </div>
 
           <v-row class="px-2 mb-10">
             <v-col v-for="item in basicItems" :key="item.id" cols="12" md="6">
-              <v-card class="mx-auto item-card rounded-xl pa-4 d-flex align-center" color="#1e293b">
+              <v-card
+                class="mx-auto item-card rounded-xl pa-4 d-flex align-center"
+                color="#1e293b"
+                height="100%"
+              >
                 <div class="d-flex align-center flex-grow-1 mr-4" style="min-width: 0;">
                   <v-avatar
                     class="mr-3 flex-shrink-0"
@@ -137,12 +68,12 @@
                       {{ item.limitacio }}
                     </div>
                     <div class="text-caption text-grey mt-1">
-                      Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong> / 99
+                      {{ $t('store.units', { qty: getItemQuantity(item.id) }) }} / 99
                     </div>
                   </div>
                 </div>
 
-                <div style="min-width: 120px;">
+                <div style="width: 130px; flex-shrink: 0;">
                   <v-btn
                     block
                     class="font-weight-bold rounded-lg text-black"
@@ -153,7 +84,7 @@
                     @click="buyProduct(item)"
                   >
                     <template v-if="hasReachedMax(item.id)">
-                      MAX 99
+                      {{ $t('store.max') }}
                     </template>
                     <template v-else>
                       {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
@@ -168,7 +99,7 @@
         <v-col class="pb-16" cols="12" max-width="1200">
           <div class="d-flex align-center mb-8 px-2">
             <v-icon class="mr-3" color="amber-accent-3">mdi-crown-outline</v-icon>
-            <h3 class="text-h5 font-weight-bold text-white">Colección de Élite</h3>
+            <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.eliteTitle') }}</h3>
             <v-divider class="ml-4 border-amber opacity-50" />
           </div>
 
@@ -184,6 +115,7 @@
                 class="mx-auto item-card premium-card rounded-xl pt-6 pb-4"
                 color="#1e293b"
                 elevation="6"
+                height="100%"
               >
                 <div class="text-center mb-4">
                   <v-avatar
@@ -198,7 +130,7 @@
                   {{ item.name }}
                 </v-card-title>
                 <div class="text-center text-caption text-grey mb-2">
-                  Unidades: <strong>x{{ getItemQuantity(item.id) }}</strong>
+                  {{ $t('store.units', { qty: getItemQuantity(item.id) }) }}
                 </div>
                 <v-card-actions class="justify-center px-4 pb-2">
                   <v-btn
@@ -211,7 +143,7 @@
                     @click="buyProduct(item)"
                   >
                     <template v-if="isOwned(item.id)">
-                      ADQUIRIDO <v-icon end>mdi-check</v-icon>
+                      {{ $t('store.owned') }} <v-icon end>mdi-check</v-icon>
                     </template>
                     <template v-else>
                       {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
@@ -225,96 +157,18 @@
 
       </v-row>
 
-      <v-dialog v-model="showWinDialog" max-width="360" persistent>
-        <v-card class="text-center pa-6 rounded-xl bg-slate-900 border-cyan elevation-20">
-          <div class="mb-4 mt-2">
-            <v-icon class="animate-bounce drop-shadow" :color="lastPrize?.color || 'white'" size="80">
-              {{ lastPrize?.icon }}
-            </v-icon>
-          </div>
-          <h3 class="text-h5 font-weight-bold mb-2 text-white">¡RECOMPENSA!</h3>
-          <p class="text-body-1 text-cyan-accent-3 mb-2">{{ lastPrize?.label }}</p>
-          <p v-if="lastPrize?.rewardMessage" class="text-body-2 text-amber-accent-3 mb-6">
-            {{ lastPrize.rewardMessage }}
-          </p>
-          <div v-else class="mb-6" />
-          <v-btn
-            block
-            class="font-weight-bold text-black"
-            color="cyan-accent-3"
-            rounded="xl"
-            variant="flat"
-            @click="showWinDialog = false"
-          >
-            Aceptar
-          </v-btn>
-        </v-card>
-      </v-dialog>
     </v-container>
   </div>
 </template>
 
 <script setup>
   import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
-  import LuckyWheel from '../../components/shop/LuckyWheel.vue'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const userCoins = computed(() => astroStore.coins)
-  const userGames = computed(() => astroStore.partides)
-  const userStreak = computed(() => astroStore.streak)
-  const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday)
-  const showWinDialog = ref(false)
-  const lastPrize = ref(null)
-  const luckyWheelRef = ref(null)
-  const isSpinning = ref(false)
-
-  const userTickets = ref(0) // Estat local per als tiquets de la botiga
-
-  function updateStats (data) {
-    astroStore.setCoins(data.coins)
-    if (data.tickets !== undefined) {
-      userTickets.value = data.tickets
-    }
-  }
-
-  async function triggerMultiSpin () {
-    if (!confirm('Vols comprar un pack de 10 tirades per 900 monedes?')) return
-
-    // 1. Definimos la URL base dinámica
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-
-    try {
-      // 2. Reemplazamos la URL estática por la variable
-      const response = await fetch(`${API_BASE}/api/shop/buy-tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: astroStore.user }),
-      })
-
-      const data = await response.json()
-      if (!response.ok || !data.success) throw new Error(data.message)
-
-      astroStore.setCoins(data.newBalance)
-      userTickets.value = data.newTickets
-    } catch (error) {
-      alert(error.message)
-    }
-  }
-  async function fetchUserBalance () {
-    const result = await astroStore.fetchUserBalance()
-    if (result.success && result.balance) {
-      userTickets.value = result.balance.tickets || 0
-    } else {
-      console.error('Error:', result.message)
-    }
-  }
-
-  function triggerSingleSpin () {
-    if (luckyWheelRef.value) {
-      luckyWheelRef.value.spin()
-    }
-  }
 
   function getItemQuantity (itemId) {
     const targetId = Number(itemId)
@@ -333,21 +187,21 @@
   async function buyProduct (item) {
     const quantity = getItemQuantity(item.id)
     if (item.cat !== 'items' && quantity > 0) {
-      alert(`¡Ya tienes ${item.name} en tu inventario!`)
+      alert(t('shopActions.alreadyOwned', { item: item.name }))
       return
     }
 
     if (item.cat === 'items' && quantity >= 99) {
-      alert(`Has alcanzado el máximo de 99 unidades para ${item.name}.`)
+      alert(t('shopActions.maxReached', { item: item.name }))
       return
     }
 
-    if (!confirm(`¿Quieres comprar ${item.name} por ${item.price} créditos?`)) return
+    if (!confirm(t('shopActions.confirmBuy', { item: item.name, price: item.price }))) return
 
     try {
       const result = await astroStore.buyItem(item)
       if (result.success) {
-        console.log('Compra exitosa')
+        console.log(t('shopActions.buySuccess'))
       } else {
         alert(result.message)
       }
@@ -356,84 +210,38 @@
     }
   }
 
-  const basicItems = ref([
-    { id: 1, name: 'Pack de Vidas', cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: 'Recupera 5 vidas inmediatamente.', bgColor: 'rgba(255, 82, 82, 0.1)' },
-    { id: 2, name: 'Congelar Racha', cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: 'Protege tu racha un día.', bgColor: 'rgba(24, 255, 255, 0.1)' },
-    { id: 3, name: 'Doble de Monedas', cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: 'Multiplica x2 las monedas ganadas.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 213, 79, 0.1)' },
-    { id: 4, name: 'Doble Puntuación', cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: 'Multiplica x2 los puntos obtenidos.', limitacio: '* Solo válido durante 3 partidas', bgColor: 'rgba(255, 152, 0, 0.1)' },
+  const basicItems = computed(() => [
+    { id: 1, name: t('shopItems.vidas.name'), cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: t('shopItems.vidas.desc'), bgColor: 'rgba(255, 82, 82, 0.1)' },
+    { id: 2, name: t('shopItems.racha.name'), cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: t('shopItems.racha.desc'), bgColor: 'rgba(24, 255, 255, 0.1)' },
+    { id: 3, name: t('shopItems.dobleMonedas.name'), cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: t('shopItems.dobleMonedas.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 213, 79, 0.1)' },
+    { id: 4, name: t('shopItems.doblePuntos.name'), cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: t('shopItems.doblePuntos.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 152, 0, 0.1)' },
+    { id: 5, name: t('shopItems.sabotageRay.name'), cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: t('shopItems.sabotageRay.desc'), limitacio: t('shopItems.sabotageRay.limit'), bgColor: 'rgba(124, 77, 255, 0.1)' },
+    { id: 6, name: t('shopItems.nameChange.name'), cat: 'items', price: 10_000, icon: 'mdi-account-edit', color: 'green-accent-2', desc: t('shopItems.nameChange.desc'), bgColor: 'rgba(0, 255, 136, 0.1)' },
   ])
 
-  const premiumItems = ref([
-    { id: 101, name: 'Pin Comandante', cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: 'Insignia dorada.', bgColor: 'rgba(255, 193, 7, 0.15)' },
-    { id: 102, name: 'Skin Cyberpunk', cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: 'Aspecto robótico.', bgColor: 'rgba(224, 64, 251, 0.15)' },
-    { id: 103, name: 'Mascota Dron', cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: 'Un compañero fiel.', bgColor: 'rgba(0, 230, 118, 0.15)' },
-    { id: 104, name: 'Rastro de Neón', cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: 'Efectos visuales.', bgColor: 'rgba(255, 64, 129, 0.15)' },
+  const premiumItems = computed(() => [
+    { id: 101, name: t('shopItems.pin.name'), cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: t('shopItems.pin.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
+    { id: 102, name: t('shopItems.cyberpunk.name'), cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: t('shopItems.cyberpunk.desc'), bgColor: 'rgba(224, 64, 251, 0.15)' },
+    { id: 103, name: t('shopItems.dron.name'), cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: t('shopItems.dron.desc'), bgColor: 'rgba(0, 230, 118, 0.15)' },
+    { id: 104, name: t('shopItems.neon.name'), cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: t('shopItems.neon.desc'), bgColor: 'rgba(255, 64, 129, 0.15)' },
+    { id: 105, name: t('shopItems.titleUnstoppable.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: t('shopItems.titleUnstoppable.desc'), bgColor: 'rgba(255, 82, 82, 0.15)' },
+    { id: 106, name: t('shopItems.titleLegend.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: t('shopItems.titleLegend.desc'), bgColor: 'rgba(0, 229, 255, 0.15)' },
+    { id: 107, name: t('shopItems.titleDestroyer.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: t('shopItems.titleDestroyer.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
   ])
 
   onMounted(async () => {
     if (astroStore.user) {
-      await Promise.all([fetchUserBalance(), astroStore.fetchUserInventory()])
+      await Promise.all([astroStore.fetchUserBalance(), astroStore.fetchUserInventory()])
     }
   })
-
-  function handleWin (prize) {
-    lastPrize.value = prize
-    showWinDialog.value = true
-  }
-
-  function updateCoins (newBalance) {
-    astroStore.setCoins(newBalance)
-  }
-
-  function updateTickets (newTicketsCount) {
-    userTickets.value = newTicketsCount
-  }
-
-  function updateInventory (inventory) {
-    if (Array.isArray(inventory)) {
-      astroStore.setInventory(inventory)
-    }
-  }
 </script>
 
 <style scoped>
-
-.animate-bounce-slow { animation: bounce 3s infinite ease-in-out; }
-
-.shadow-glow { box-shadow: 0 0 20px rgba(0, 230, 118, 0.4) !important; }
-
 .scroll-container {
     height: 100vh;
     width: 100%;
     overflow-y: auto;
     background-color: #0b1120 !important;
-}
-
-.wheel-card {
-    background: #111827;
-    border: 1px solid rgba(0, 229, 255, 0.15);
-    position: relative;
-    overflow: hidden;
-    max-width: 1200px !important;
-}
-
-.nebula-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(224, 64, 251, 0.2) 0%, rgba(0, 229, 255, 0.1) 50%, transparent 80%);
-    filter: blur(25px);
-    z-index: 0;
-    border-radius: 50%;
-    animation: pulse 4s infinite alternate;
-}
-
-@keyframes pulse {
-    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
-    100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
 }
 
 .item-card {
@@ -468,22 +276,5 @@
 
 .border-amber {
     border-color: #ffc107 !important;
-}
-
-.bg-slate-900 {
-    background-color: #0f172a !important;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.animate-bounce {
-    animation: bounce 2s infinite ease-in-out;
-}
-
-.drop-shadow {
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
 }
 </style>

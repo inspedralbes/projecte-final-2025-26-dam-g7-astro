@@ -17,7 +17,7 @@
           @click="router.push('/')"
         >
           <v-icon size="small" start>mdi-chevron-left</v-icon>
-          <span class="text-caption font-weight-bold">ABORTAR / VOLVER A BASE</span>
+          <span class="text-caption font-weight-bold">{{ $t('auth.abortCmd') }}</span>
         </v-btn>
       </div>
 
@@ -29,38 +29,38 @@
           ASTRO
         </h1>
         <div class="text-overline text-cyan-lighten-3 tracking-wide border-bottom-pulse">
-          ACCESO AL SISTEMA DE MISIÓN
+          {{ $t('auth.systemAccessTitle') }}
         </div>
       </div>
 
       <v-form @submit.prevent="handleLogin">
         <v-row dense>
           <v-col cols="12">
-            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">IDENTIFICACIÓN</div>
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.identification') }}</div>
             <v-text-field
               v-model="username"
               bg-color="rgba(0, 20, 40, 0.6)"
               class="future-input"
               color="cyan-accent-3"
               hide-details="auto"
-              placeholder="NOMBRE DE USUARIO / ID TRIPULANTE"
+              :placeholder="$t('auth.usernameIdMarker')"
               prepend-inner-icon="mdi-account-circle-outline"
-              :rules="[v => !!v || 'Identificación requerida']"
+              :rules="[v => !!v || $t('auth.usernameReq')]"
               variant="solo-filled"
             />
           </v-col>
 
           <v-col class="mt-4" cols="12">
-            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">CREDENCIALES DE VUELO</div>
+            <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.flightCredentials') }}</div>
             <v-text-field
               v-model="password"
               bg-color="rgba(0, 20, 40, 0.6)"
               class="future-input"
               color="cyan-accent-3"
               hide-details="auto"
-              placeholder="CÓDIGO DE ACCESO"
+              :placeholder="$t('auth.passcode')"
               prepend-inner-icon="mdi-lock-outline"
-              :rules="[v => !!v || 'Código requerido']"
+              :rules="[v => !!v || $t('auth.passcodeReq')]"
               type="password"
               variant="solo-filled"
             />
@@ -81,21 +81,21 @@
           type="submit"
         >
           <v-icon class="mr-2" start>mdi-radar</v-icon>
-          INICIAR SINCRONIZACIÓN
+          {{ $t('auth.syncInit') }}
           <div class="btn-glow" />
         </v-btn>
       </v-form>
 
       <div class="d-flex justify-space-between align-center mt-8 pt-4 border-top-tech">
         <div v-if="props.selectedPlan" class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="$emit('back')">
-          <v-icon size="small" start>mdi-arrow-left</v-icon> CAMBIAR PLAN
+          <v-icon size="small" start>mdi-arrow-left</v-icon> {{ $t('auth.changePlan') }}
         </div>
         <div v-else class="text-caption text-grey-lighten-1 cursor-pointer hover-bright" @click="router.push('/register')">
-          <v-icon size="small" start>mdi-account-plus</v-icon> ALISTARSE
+          <v-icon size="small" start>mdi-account-plus</v-icon> {{ $t('auth.enlist') }}
         </div>
 
         <div class="status-display text-body-2 font-weight-bold text-cyan-lighten-4 font-weight-mono d-flex align-center">
-          ESTADO: <span class="text-green-accent-3 glow-text ml-1">OPERATIVO</span>
+          {{ $t('auth.status') }} <span class="text-green-accent-3 glow-text ml-1">{{ $t('auth.statusOperative') }}</span>
         </div>
       </div>
     </v-card>
@@ -104,12 +104,14 @@
 
 <script setup>
   import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
 
   const props = defineProps(['selectedPlan'])
   const emit = defineEmits(['back'])
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const router = useRouter()
 
@@ -120,7 +122,7 @@
 
   async function handleLogin () {
     if (!username.value || !password.value) {
-      errorMessage.value = 'Identificación y código requeridos'
+      errorMessage.value = t('auth.idAndCodeReq')
       return
     }
 
@@ -139,7 +141,7 @@
       }, 1000)
     } else {
       loading.value = false
-      errorMessage.value = result.message || 'Credenciales no reconocidas'
+      errorMessage.value = result.message || t('auth.unrecognizedCreds')
     }
   }
 </script>
