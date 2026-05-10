@@ -21,6 +21,22 @@
         </template>
       </svg>
 
+      <!-- COHETES -->
+      <div
+        class="player-rocket"
+        :style="{ left: playerPos.x + '%', top: playerPos.y + '%' }"
+      >
+        <img src="/sci_fi_rocket_top_view_1778453796570.png" class="rocket-img" />
+        <div class="rocket-engine-glow" />
+      </div>
+
+      <div
+        class="partner-rocket"
+        :style="{ left: partnerPos.x + '%', top: partnerPos.y + '%' }"
+      >
+        <img src="/sci_fi_rocket_top_view_1778453796570.png" class="rocket-img partner-img" />
+      </div>
+
       <div
         v-for="(planet, id) in planets"
         :key="id"
@@ -33,18 +49,21 @@
         }"
         @click="handlePlanetClick(id)"
       >
+        <v-tooltip activator="parent" location="top" offset="20">
+          <div class="planet-tooltip-content pa-2">
+            <div class="text-subtitle-1 font-weight-bold">{{ planet.name }}</div>
+            <div v-if="planet.game" class="text-caption text-cyan-accent-2">
+              MISSIÓ: {{ $t('games.' + planet.game) || planet.game }}
+            </div>
+            <div v-else class="text-caption text-grey">PUNT DE CONTROL</div>
+          </div>
+        </v-tooltip>
+
         <div class="planet-icon-wrapper">
-          <v-icon :icon="planet.icon" :size="currentPlanetId === id ? 48 : 32" />
+          <img :src="planet.img" class="planet-image" />
           <div class="planet-glow" />
         </div>
         <div class="planet-label">{{ planet.name }}</div>
-        
-        <!-- Marcador del Rival -->
-        <div v-if="partnerPlanetId === id" class="rival-marker">
-          <v-avatar size="24" class="border-red">
-            <v-img :src="partnerAvatar" />
-          </v-avatar>
-        </div>
       </div>
     </div>
 
@@ -79,24 +98,27 @@
   const emit = defineEmits(['select-planet'])
 
   const planets = {
-    'START': { name: 'Estació Base', x: 10, y: 50, icon: 'mdi-satellite-variant', neighbors: ['PLANET_1', 'PLANET_2'], game: null },
-    'PLANET_1': { name: 'Mart', x: 30, y: 30, icon: 'mdi-planet', neighbors: ['PLANET_3'], game: 'WordConstruction' },
-    'PLANET_2': { name: 'Venus', x: 30, y: 70, icon: 'mdi-planet', neighbors: ['PLANET_3', 'PLANET_4'], game: 'RadarScan' },
-    'PLANET_3': { name: 'Júpiter', x: 60, y: 30, icon: 'mdi-planet', neighbors: ['FINISH'], game: 'RadioSignal' },
-    'PLANET_4': { name: 'Saturn', x: 60, y: 70, icon: 'mdi-planet', neighbors: ['FINISH'], game: 'SymmetryBreaker' },
-    'FINISH': { name: 'Alfa Centauri', x: 90, y: 50, icon: 'mdi-flag-checkered', neighbors: [], game: 'SpelledRosco' }
+    'START': { name: 'Estació Base', x: 10, y: 50, img: '/Astronauta_blanc.jpg', neighbors: ['PLANET_1', 'PLANET_2'], game: null, anomaly: null },
+    'PLANET_1': { name: 'Mart', x: 30, y: 30, img: '/planet_mars_futuristic_1778453321030.png', neighbors: ['PLANET_3'], game: 'WordConstruction', anomaly: 'meteorits' },
+    'PLANET_2': { name: 'Venus', x: 30, y: 70, img: '/planet_venus_futuristic_1778453938668.png', neighbors: ['PLANET_3', 'PLANET_4'], game: 'RadarScan', anomaly: 'nebulosa' },
+    'PLANET_3': { name: 'Júpiter', x: 60, y: 30, img: '/planet_jupiter_futuristic_1778453635180.png', neighbors: ['FINISH'], game: 'RadioSignal', anomaly: 'raig-alienigena' },
+    'PLANET_4': { name: 'Saturn', x: 60, y: 70, img: '/planet_saturn_futuristic_1778453954991.png', neighbors: ['FINISH'], game: 'SymmetryBreaker', anomaly: 'raig-tempesta' },
+    'FINISH': { name: 'Alfa Centauri', x: 90, y: 50, img: '/planet_crystal_nexus_1778453706790.png', neighbors: [], game: 'SpelledRosco', anomaly: null }
   }
 
-  const currentPlanetId = computed(() => {
-    // Mapear raceProgress a planetas (simplificado por ahora)
-    const keys = Object.keys(planets)
-    return keys[multiplayerStore.raceProgress] || 'START'
-  })
+  const currentPlanetId = computed(() => multiplayerStore.raceProgress)
 
-  const partnerPlanetId = computed(() => {
-    const keys = Object.keys(planets)
-    return keys[multiplayerStore.partnerProgress] || 'START'
-  })
+  const partnerPlanetId = computed(() => multiplayerStore.partnerProgress)
+
+  const playerPos = computed(() => ({
+    x: planets[currentPlanetId.value].x,
+    y: planets[currentPlanetId.value].y
+  }))
+
+  const partnerPos = computed(() => ({
+    x: planets[partnerPlanetId.value].x + 4,
+    y: planets[partnerPlanetId.value].y + 4
+  }))
 
   const partnerAvatar = computed(() => {
     if (!multiplayerStore.room) return '/Astronauta_blanc.jpg'
@@ -106,18 +128,21 @@
     return explorer?.avatar ? `/${explorer.avatar}` : '/Astronauta_blanc.jpg'
   })
 
-  function isPlanetAvailable(id) {
-    const planet = planets[currentPlanetId.value]
-    return planet.neighbors.includes(id)
+  function isPlanetAvailable (id) {
+    if (id === 'START') return true
+    // Disponible si es vecino de un planeta completado
+    return Object.entries(planets).some(([planetId, data]) => {
+      return multiplayerStore.completedPlanets.includes(planetId) && data.neighbors.includes(id)
+    })
   }
 
-  function isPlanetCompleted(id) {
-    const keys = Object.keys(planets)
-    return keys.indexOf(id) < keys.indexOf(currentPlanetId.value)
+  function isPlanetCompleted (id) {
+    return multiplayerStore.completedPlanets.includes(id)
   }
 
-  function isPathUnlocked(id1, id2) {
-    return isPlanetCompleted(id1) && (id1 === currentPlanetId.value || isPlanetCompleted(id2))
+  function isPathUnlocked (id1, id2) {
+    // El camino está desbloqueado si el primer planeta está completado
+    return multiplayerStore.completedPlanets.includes(id1)
   }
 
   function handlePlanetClick(id) {
@@ -187,6 +212,56 @@
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.player-rocket {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%) rotate(90deg);
+  z-index: 50;
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.partner-rocket {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%) rotate(90deg);
+  z-index: 45;
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.rocket-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px #00e5ff);
+}
+
+.partner-img {
+  filter: drop-shadow(0 0 5px #ff5252);
+}
+
+.rocket-engine-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 20px;
+  height: 10px;
+  background: #00e5ff;
+  filter: blur(10px);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  animation: engine-pulse 0.2s infinite alternate;
+}
+
+@keyframes engine-pulse {
+  from { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.5); }
+}
+
 .planet-icon-wrapper {
   width: 60px;
   height: 60px;
@@ -198,6 +273,23 @@
   justify-content: center;
   position: relative;
   color: #64748b;
+}
+
+.planet-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.planet-node:hover .planet-image {
+  transform: scale(1.2) rotate(5deg);
+}
+
+.planet-tooltip-content {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #00e5ff;
+  border-radius: 8px;
 }
 
 .node-available .planet-icon-wrapper {
@@ -216,6 +308,10 @@
   border-color: #facc15;
   color: #facc15;
   transform: scale(1.2);
+}
+
+.node-current .planet-image {
+  filter: drop-shadow(0 0 20px #00e5ff);
 }
 
 .planet-label {

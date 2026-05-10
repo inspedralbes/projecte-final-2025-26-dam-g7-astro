@@ -188,7 +188,7 @@
 
   const flashlightStyle = computed(() => {
     if (!gameArea.value) return {}
-    const tunnelSize = currentTunnelSize.value
+    const tunnelSize = (currentTunnelSize.value || 100) * 1.5
     const lightSpots = [
       `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 40%, rgba(11,17,32,0) 100%)`,
     ]
@@ -205,7 +205,7 @@
     }
 
     return {
-      'background-color': '#0b1120',
+      'background-color': '#1a2235',
       'background-image': lightSpots.join(', '),
       'background-blend-mode': 'lighten',
       'mix-blend-mode': 'multiply',

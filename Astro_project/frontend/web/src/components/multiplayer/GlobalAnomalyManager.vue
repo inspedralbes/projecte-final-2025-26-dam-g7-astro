@@ -20,7 +20,7 @@
         }"
         @mouseenter="onMeteorHit"
       >
-        <div class="meteor-core" />
+        <img src="/sci_fi_meteorite_fire_1778453762296.png" class="meteor-img" />
         <div class="meteor-trail" />
       </div>
     </div>
@@ -37,34 +37,67 @@
     <div v-if="activeAnomaly === 'raig-alienigena'" class="anomaly-raig">
       <div class="alien-cursor-eye" :style="cursorStyle" />
     </div>
+
+    <!-- EFEKTE: TORMENTA DE RAYOS -->
+    <div v-if="activeAnomaly === 'raig-tempesta'" class="anomaly-tempesta">
+      <div 
+        v-for="s in lightningStrikes" 
+        :key="s.id" 
+        class="lightning-strike"
+        :class="s.state"
+        :style="{ left: s.x + 'px', top: s.y + 'px' }"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
-  const activeAnomaly = ref(null) // 'nebulosa', 'meteorits', 'raig-alienigena'
+  const props = defineProps({
+    forcedAnomaly: {
+      type: String,
+      default: null,
+    },
+  })
+
+  const activeAnomaly = ref(null) // 'nebulosa', 'meteorits', 'raig-alienigena', 'raig-tempesta'
   const clickDisabled = ref(false)
   const meteors = ref([])
+  const lightningStrikes = ref([])
   const mouseX = ref(0)
   const mouseY = ref(0)
 
   let anomalyInterval = null
   let meteorInterval = null
+  let lightningInterval = null
 
   const cursorStyle = computed(() => ({
     left: mouseX.value + 'px',
     top: mouseY.value + 'px',
   }))
 
+  watch(() => props.forcedAnomaly, (newVal) => {
+    if (newVal) {
+      triggerAnomaly(newVal)
+    } else {
+      activeAnomaly.value = null
+      stopMeteorRain()
+      stopLightningStorm()
+    }
+  }, { immediate: true })
+
   function startRandomAnomalies () {
+    if (props.forcedAnomaly) return // Si está forzado, no aleatorio
+
     anomalyInterval = setInterval(() => {
       if (activeAnomaly.value) return // No solapar
       
       const rand = Math.random()
-      if (rand < 0.3) triggerAnomaly('nebulosa')
-      else if (rand < 0.6) triggerAnomaly('meteorits')
-      else if (rand < 0.9) triggerAnomaly('raig-alienigena')
+      if (rand < 0.25) triggerAnomaly('nebulosa')
+      else if (rand < 0.5) triggerAnomaly('meteorits')
+      else if (rand < 0.75) triggerAnomaly('raig-alienigena')
+      else triggerAnomaly('raig-tempesta')
     }, 15000) // Intentar cada 15s
   }
 
@@ -73,13 +106,54 @@
     console.log(`🚀 ANOMALÍA ACTIVADA: ${type}`)
     
     if (type === 'meteorits') startMeteorRain()
+    if (type === 'raig-tempesta') startLightningStorm()
     if (type === 'raig-alienigena') document.body.style.cursor = 'none'
 
-    setTimeout(() => {
-      activeAnomaly.value = null
-      if (type === 'meteorits') stopMeteorRain()
-      if (type === 'raig-alienigena') document.body.style.cursor = 'auto'
-    }, 8000) // Dura 8 segundos
+    // Si no es forzado, se quita a los 8s
+    if (!props.forcedAnomaly) {
+      setTimeout(() => {
+        activeAnomaly.value = null
+        if (type === 'meteorits') stopMeteorRain()
+        if (type === 'raig-tempesta') stopLightningStorm()
+        if (type === 'raig-alienigena') document.body.style.cursor = 'auto'
+      }, 8000)
+    }
+  }
+
+  function startLightningStorm () {
+    lightningInterval = setInterval(() => {
+      const id = Date.now() + Math.random()
+      const strike = {
+        id,
+        x: mouseX.value,
+        y: mouseY.value,
+        state: 'warning',
+      }
+      lightningStrikes.value.push(strike)
+
+      // El rayo cae después de 1 segundo de advertencia
+      setTimeout(() => {
+        const s = lightningStrikes.value.find(st => st.id === id)
+        if (!s) return
+        s.state = 'active'
+        
+        // Comprobar colisión con el ratón
+        const dist = Math.hypot(mouseX.value - s.x, mouseY.value - s.y)
+        if (dist < 60) {
+          onMeteorHit() // Usamos la misma lógica de stun
+        }
+
+        // Desaparece después de 200ms
+        setTimeout(() => {
+          lightningStrikes.value = lightningStrikes.value.filter(st => st.id !== id)
+        }, 200)
+      }, 1000)
+    }, 2000)
+  }
+
+  function stopLightningStorm () {
+    clearInterval(lightningInterval)
+    lightningStrikes.value = []
   }
 
   function startMeteorRain () {
@@ -105,7 +179,7 @@
         else meteors.value = meteors.value.filter(mt => mt.id !== id)
       }
       requestAnimationFrame(fall)
-    }, 800)
+    }, 1500)
   }
 
   function stopMeteorRain () {
@@ -157,8 +231,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%);
-  backdrop-filter: blur(8px) brightness(0.5);
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(4px) brightness(0.7);
   pointer-events: none;
 }
 
@@ -177,12 +251,11 @@
   cursor: pointer;
 }
 
-.meteor-core {
+.meteor-img {
   width: 100%;
   height: 100%;
-  background: #555;
-  border-radius: 40% 60% 50% 50%;
-  box-shadow: inset -5px -5px 10px #000, 0 0 20px #ff4500;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px #ff4500);
   position: relative;
 }
 
@@ -234,6 +307,41 @@
 @keyframes eye-scan {
   from { transform: translate(-50%, -50%) scale(1); }
   to { transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.anomaly-tempesta {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.lightning-strike {
+  position: fixed;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2500;
+}
+
+.lightning-strike.warning {
+  border: 2px dashed rgba(0, 229, 255, 0.5);
+  border-radius: 50%;
+  animation: pulse-warning 0.5s infinite;
+}
+
+.lightning-strike.active {
+  background: linear-gradient(to top, #fff, #00e5ff);
+  box-shadow: 0 0 40px #00e5ff, 0 0 100px #fff;
+  width: 20px;
+  height: 100vh;
+  transform: translate(-50%, -100%);
+  top: 100vh; /* Viene desde arriba */
+}
+
+@keyframes pulse-warning {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; }
 }
 
 .fade-enter-active, .fade-leave-active {

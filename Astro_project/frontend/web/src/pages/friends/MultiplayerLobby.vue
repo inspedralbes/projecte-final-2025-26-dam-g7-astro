@@ -16,6 +16,8 @@
           v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'" 
           :sequence="RACE_SEQUENCE" 
         />
+        
+        <GlobalAnomalyManager v-if="multiplayerStore.room?.status === 'PLAYING'" :forced-anomaly="currentAnomaly" />
 
         <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
         <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
@@ -811,7 +813,6 @@
   const globalTimeLeft = computed(() => multiplayerStore.timeLeft)
 
   watch(globalTimeLeft, (newVal) => {
-    // Si el tiempo es menor o igual a 0, forzamos el fin
     if (newVal <= 0 && multiplayerStore.room?.status === 'PLAYING' && isHost.value) {
       console.log('TIEMPO AGOTADO: El host fuerza el fin de la ronda')
       multiplayerStore.submitRoundResult()
@@ -947,6 +948,7 @@
     }
   })
 
+  const currentAnomaly = ref(null)
   const activeNotifications = ref([])
   let notifCounter = 0
 
@@ -1237,21 +1239,17 @@
       // Recargar combustible
       multiplayerStore.rechargeFuel(25)
       
-      // Avanzar al siguiente juego
-      const nextIndex = multiplayerStore.raceProgress + 1
-      if (nextIndex < RACE_SEQUENCE.length) {
-        multiplayerStore.updateRaceProgress(nextIndex)
-        
-        // Pequeño delay visual para la transición de vuelta al mapa
-        isTransitioning.value = true
-        setTimeout(() => {
-          activeGameComponent.value = null // Volver al mapa
-          isTransitioning.value = false
-        }, 1500)
-      } else {
-        // Carrera terminada!
-        multiplayerStore.submitRoundResult()
-      }
+      // Marcar planeta actual como completado
+      const completedPlanetId = multiplayerStore.raceProgress
+      multiplayerStore.updateRaceProgress(completedPlanetId, true)
+      currentAnomaly.value = null
+      
+      // Pequeño delay visual para la transición de vuelta al mapa
+      isTransitioning.value = true
+      setTimeout(() => {
+        activeGameComponent.value = null // Volver al mapa
+        isTransitioning.value = false
+      }, 1500)
     } else {
       multiplayerStore.submitRoundResult()
     }
@@ -1259,6 +1257,18 @@
 
   function onPlanetSelected ({ id, game }) {
     if (game && gameComponents[game]) {
+      // Actualizar posición antes de entrar al juego
+      multiplayerStore.updateRaceProgress(id, false)
+      
+      // Buscar anomalía del planeta
+      const planetsData = {
+        'PLANET_1': 'meteorits',
+        'PLANET_2': 'nebulosa',
+        'PLANET_3': 'raig-alienigena',
+        'PLANET_4': 'raig-tempesta'
+      }
+      currentAnomaly.value = planetsData[id] || null
+
       isTransitioning.value = true
       setTimeout(() => {
         activeGameComponent.value = gameComponents[game]

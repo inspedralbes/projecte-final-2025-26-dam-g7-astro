@@ -32,8 +32,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     timeLeft: 0,
     // --- RACE MODE STATE ---
     raceFuel: 100,
-    raceProgress: 0,
-    partnerProgress: 0,
+    raceProgress: 'START',
+    partnerProgress: 'START',
+    completedPlanets: [],
     fuelInterval: null,
   }),
 
@@ -249,6 +250,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           if (data.action?.type === 'RACE_PROGRESS_UPDATE') {
             if (data.from !== sessionStore.user) {
               this.partnerProgress = data.action.progress
+              if (data.action.completed) {
+                // Sincronizar planetas completados del rival si fuera necesario
+              }
             }
           }
 
@@ -521,9 +525,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     },
 
     // --- RACE MODE ACTIONS ---
-    updateRaceProgress (index) {
+    updateRaceProgress (id, isCompleted = false) {
       const sessionStore = this.getSession()
-      this.raceProgress = index
+      this.raceProgress = id
+      if (isCompleted && !this.completedPlanets.includes(id)) {
+        this.completedPlanets.push(id)
+      }
       if (!this.isConnected || !this.room || !this.socket) return
 
       this.socket.send(JSON.stringify({
@@ -532,7 +539,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         user: sessionStore.user,
         action: {
           type: 'RACE_PROGRESS_UPDATE',
-          progress: index,
+          progress: id,
+          completed: isCompleted,
         },
       }))
     },
@@ -550,7 +558,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.raceFuel = 100
       this.fuelInterval = setInterval(() => {
         if (this.raceFuel > 0) {
-          this.raceFuel -= 0.5 // Baja 0.5% cada medio segundo (1% por segundo)
+          this.raceFuel -= 0.2 // Baja 0.2% cada medio segundo (0.4% por segundo)
           if (this.raceFuel <= 0) {
             this.raceFuel = 0
             this.stopFuelTimer()
