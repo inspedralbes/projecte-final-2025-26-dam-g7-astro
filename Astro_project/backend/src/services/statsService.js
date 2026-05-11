@@ -75,6 +75,8 @@ class StatsService {
         return {
             user: user.username,
             plan: user.plan,
+            role: user.role || null,
+            parentId: user.parentId || null,
             rank: user.rank,
             level: user.level,
             xp: user.xp,
@@ -100,7 +102,10 @@ class StatsService {
             missionsCompleted: user.missionsCompleted || 0,
             selectedAchievements: user.selectedAchievements || [null, null, null],
             unlockedAchievements: user.unlockedAchievements || [],
-            friendRequests: user.friendRequests || []
+            friendRequests: user.friendRequests || [],
+            groupInvitations: user.groupInvitations || [],
+            groupApprovalRequests: user.groupApprovalRequests || [],
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade || null
         };
     }
 
@@ -154,13 +159,20 @@ class StatsService {
 
     async getCenterStats(centerUsername) {
         const teachers = await this.userRepo.collection.find({ parentId: centerUsername, role: 'TEACHER' }).toArray();
+        const directStudents = await this.userRepo.collection.find({ parentId: centerUsername, role: 'STUDENT' }).toArray();
         const teacherStatsPromises = teachers.map(t => this.getClassStats(t.user));
+        const directStudentStatsPromises = directStudents.map(s => this.getUserStats(s.user));
         const allClassStats = await Promise.all(teacherStatsPromises);
+        const directStudentStats = await Promise.all(directStudentStatsPromises);
 
-        const totalStudents = allClassStats.reduce((sum, c) => sum + c.totalStudents, 0);
-        const totalGames = allClassStats.reduce((sum, c) => sum + c.totalGames, 0);
+        const studentsFromTeachers = allClassStats.reduce((sum, c) => sum + c.totalStudents, 0);
+        const totalStudents = studentsFromTeachers + directStudents.length;
+        const totalGamesFromTeachers = allClassStats.reduce((sum, c) => sum + c.totalGames, 0);
+        const totalGamesFromDirect = directStudentStats.reduce((sum, s) => sum + (s?.totalGamesPlayed || 0), 0);
+        const totalGames = totalGamesFromTeachers + totalGamesFromDirect;
+        const directStudentsLevelSum = directStudentStats.reduce((sum, s) => sum + (s?.level || 0), 0);
         const avgLevel = totalStudents > 0 
-            ? allClassStats.reduce((sum, c) => sum + (c.avgLevel * c.totalStudents), 0) / totalStudents 
+            ? (allClassStats.reduce((sum, c) => sum + (c.avgLevel * c.totalStudents), 0) + directStudentsLevelSum) / totalStudents 
             : 0;
 
         return {
@@ -169,7 +181,8 @@ class StatsService {
             totalStudents,
             totalGames,
             avgLevel,
-            classes: allClassStats
+            classes: allClassStats,
+            unassignedStudents: directStudentStats
         };
     }
 }

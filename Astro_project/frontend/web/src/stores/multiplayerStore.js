@@ -337,6 +337,25 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           useSocialStore().fetchAllUsers()
           break
         }
+        case 'GROUP_INVITATION_UPDATE': {
+          sessionStore.setGroupInvitations(data.groupInvitations || [])
+          break
+        }
+        case 'GROUP_APPROVAL_UPDATE': {
+          sessionStore.setGroupApprovalRequests(data.groupApprovalRequests || [])
+          break
+        }
+        case 'GROUP_MEMBERSHIP_UPDATE': {
+          if (data.profile) {
+            sessionStore.setPlan(data.profile.plan || sessionStore.plan)
+            sessionStore.setRole(data.profile.role || null)
+            sessionStore.setParentId(data.profile.parentId || null)
+          }
+          if (Array.isArray(data.groupInvitations)) {
+            sessionStore.setGroupInvitations(data.groupInvitations)
+          }
+          break
+        }
         default: {
           break
         }

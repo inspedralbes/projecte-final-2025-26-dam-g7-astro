@@ -52,6 +52,106 @@ export const useGroupStore = defineStore('group', {
       }
     },
 
+    async createMember (managerUsername, role, memberData) {
+      try {
+        const { response, data } = await requestJson('/api/group/member', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ managerUsername, role, ...memberData }),
+        })
+        return { success: response.ok, message: data.message, data }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async inviteExistingMember (managerUsername, invitedUsername, role) {
+      try {
+        const { response, data } = await requestJson('/api/group/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ managerUsername, invitedUsername, role }),
+        })
+        return { success: response.ok, message: data.message, invitation: data.invitation }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async acceptGroupInvitation (invitationId, username) {
+      try {
+        const { response, data } = await requestJson('/api/group/invite/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: username, invitationId }),
+        })
+        return { success: response.ok, message: data.message, profile: data.profile }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async rejectGroupInvitation (invitationId, username) {
+      try {
+        const { response, data } = await requestJson('/api/group/invite/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: username, invitationId }),
+        })
+        return { success: response.ok, message: data.message }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async requestLeaveToIndividual (username) {
+      try {
+        const { response, data } = await requestJson('/api/group/leave/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: username }),
+        })
+        return { success: response.ok, message: data.message, request: data.request }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async fetchApprovalRequests (username) {
+      try {
+        const { response, data } = await requestJson(`/api/group/approvals/${username}`)
+        return { success: response.ok, requests: data.requests || [], message: data.message }
+      } catch (error) {
+        return { success: false, requests: [], message: error.message }
+      }
+    },
+
+    async approveLeaveRequest (approverUsername, requestId) {
+      try {
+        const { response, data } = await requestJson('/api/group/leave/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approverUsername, requestId }),
+        })
+        return { success: response.ok, message: data.message, profile: data.profile }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async rejectLeaveRequest (approverUsername, requestId) {
+      try {
+        const { response, data } = await requestJson('/api/group/leave/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approverUsername, requestId }),
+        })
+        return { success: response.ok, message: data.message }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
     async fetchClassStats (teacherUsername) {
       try {
         const { response, data } = await requestJson(`/api/group/stats/class/${teacherUsername}`)

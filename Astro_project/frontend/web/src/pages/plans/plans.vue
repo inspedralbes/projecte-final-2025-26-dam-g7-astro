@@ -326,57 +326,30 @@
 
         <v-row dense>
           <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.unitDesignation') }}</label>
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">Tipo de grupo</label>
           </v-col>
           <v-col class="mb-4" cols="12">
-            <v-text-field
-              v-model="newGroupName"
+            <v-select
+              v-model="groupType"
+              :items="groupTypeOptions"
               bg-color="rgba(10, 30, 20, 0.6)"
               class="tech-input-green"
               color="green-accent-3"
               hide-details
-              :placeholder="$t('plans.squadName')"
-              prepend-inner-icon="mdi-format-title"
+              prepend-inner-icon="mdi-account-group"
               variant="solo-filled"
             />
           </v-col>
 
-          <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.securityProtocols') }}</label>
-          </v-col>
-          <v-col class="mb-1" cols="12" sm="6">
-            <v-text-field
-              v-model="newGroupPassword"
-              bg-color="rgba(10, 30, 20, 0.6)"
-              class="tech-input-green"
-              color="green-accent-3"
-              hide-details
-              :placeholder="$t('plans.password')"
-              prepend-inner-icon="mdi-key-plus"
-              type="password"
-              variant="solo-filled"
-            />
-          </v-col>
-          <v-col class="mb-6" cols="12" sm="6">
-            <v-text-field
-              v-model="newGroupPasswordConfirm"
-              bg-color="rgba(10, 30, 20, 0.6)"
-              class="tech-input-green"
-              color="green-accent-3"
-              :error-messages="newGroupPassword !== newGroupPasswordConfirm ? $t('plans.pwdMismatch') : ''"
-              hide-details
-              :placeholder="$t('plans.repeatCode')"
-              prepend-inner-icon="mdi-key-check"
-              type="password"
-              variant="solo-filled"
-            />
+          <v-col class="mb-6 text-caption text-green-lighten-4 text-left" cols="12">
+            Este cambio actualiza tu cuenta actual a plan grupal y mantiene tu progreso.
           </v-col>
         </v-row>
 
         <v-btn
           class="mb-6 font-weight-bold glow-btn-success text-h6 text-black mx-auto"
           color="green-accent-3"
-          :disabled="!newGroupName || !newGroupPassword || newGroupPassword !== newGroupPasswordConfirm"
+          :disabled="!groupType"
           height="54"
           min-width="280"
           rounded="lg"
@@ -419,9 +392,11 @@
   const password = ref('')
 
   // Registration Data (Group)
-  const newGroupName = ref('')
-  const newGroupPassword = ref('')
-  const newGroupPasswordConfirm = ref('')
+  const groupType = ref('CENTER')
+  const groupTypeOptions = [
+    { title: 'Centro (gestiona profes y alumnos)', value: 'CENTER' },
+    { title: 'Profesor (gestiona alumnos)', value: 'TEACHER' },
+  ]
 
   const plans = computed(() => [
     {
@@ -462,8 +437,7 @@
     if (result.success) {
       router.push('/profile')
     } else {
-      console.error('No se pudo sincronizar el plan:', result.message)
-      router.push('/profile')
+      alert(result.message || 'No se pudo cambiar el plan')
     }
   }
 
@@ -483,23 +457,9 @@
   }
 
   async function createGroup () {
-    if (!newGroupName.value || !newGroupPassword.value) return
-
-    // Al fundar escuadra desde aquí, el usuario actual se convierte en el "CENTRO"
-    const result = await astroStore.registerTripulante({
-      username: newGroupName.value,
-      password: newGroupPassword.value,
-      plan: 'GRUPAL',
-      role: 'CENTER',
-      rank: 'Centro de Mando',
-    })
+    const result = await astroStore.updatePlan('GRUPAL', { groupType: groupType.value })
 
     if (result.success) {
-      // Hacemos login automático con el nuevo centro
-      await astroStore.loginTripulante({
-        user: newGroupName.value,
-        password: newGroupPassword.value,
-      })
       router.push('/profile')
     } else {
       alert(result.message)
