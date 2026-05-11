@@ -83,6 +83,35 @@
         <v-alert v-if="message" class="mt-4" :type="messageType" variant="tonal">
           {{ message }}
         </v-alert>
+
+        <!-- Feedback Visual Overlay -->
+        <v-overlay
+          v-model="showFeedback"
+          contained
+          class="align-center justify-center pointer-events-none"
+          persistent
+          no-click-animation
+          scrim="transparent"
+        >
+          <div class="feedback-container" :class="feedbackType">
+            <v-icon
+              v-if="feedbackType === 'success'"
+              color="success"
+              size="120"
+              class="feedback-icon animate-success"
+            >
+              mdi-check-circle
+            </v-icon>
+            <v-icon
+              v-else
+              color="error"
+              size="120"
+              class="feedback-icon animate-error"
+            >
+              mdi-close-circle
+            </v-icon>
+          </div>
+        </v-overlay>
       </template>
 
       <template v-else>
@@ -139,6 +168,28 @@
   const messageType = ref('info')
   const finalReward = computed(() => score.value + timeLeft.value)
   let timerInterval = null
+
+  // --- REFORÇ VISUAL I SONOR ---
+  const showFeedback = ref(false)
+  const feedbackType = ref('success') // 'success' o 'error'
+
+  const sounds = {
+    success: '/assets/sounds/success.mp3',
+    error: '/assets/sounds/error.mp3',
+  }
+
+  function triggerFeedback (type) {
+    feedbackType.value = type
+    showFeedback.value = true
+
+    const audio = new Audio(sounds[type])
+    audio.volume = 0.4
+    audio.play().catch(e => console.warn('Audio play blocked:', e))
+
+    setTimeout(() => {
+      showFeedback.value = false
+    }, 800)
+  }
 
   // --- LÒGICA MULTIPLAYER (ORDENAR FRASES) ---
   const multiplayerPhrases = [
@@ -202,6 +253,7 @@
       score.value += 100
       message.value = 'Frase completada!'
       messageType.value = 'success'
+      triggerFeedback('success')
 
       setTimeout(() => {
         if (currentPhraseIndex.value < multiplayerPhrases.length - 1) {
@@ -219,6 +271,7 @@
     message.value = 'Ordre incorrecte! Reiniciant frase...'
     messageType.value = 'error'
     timeLeft.value = Math.max(0, timeLeft.value - 3)
+    triggerFeedback('error')
 
     setTimeout(() => {
       usedWordIndices.value.clear()
@@ -275,6 +328,7 @@
       score.value += 60
       message.value = t('syllableQuest.msgCorrect')
       messageType.value = 'success'
+      triggerFeedback('success')
 
       if (currentWordIndex.value >= words.value.length - 1) {
         finishGame()
@@ -288,6 +342,7 @@
       message.value = t('syllableQuest.msgIncorrect')
       messageType.value = 'error'
       userSyllables.value = 0
+      triggerFeedback('error')
     }
   }
 
@@ -389,5 +444,38 @@
 
 .border-amber {
   border: 1px solid rgba(255, 193, 7, 0.35);
+}
+
+/* Animacions de Feedback */
+.feedback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.animate-success {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-error {
+  animation: shake 0.4s ease-in-out forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
 }
 </style>
