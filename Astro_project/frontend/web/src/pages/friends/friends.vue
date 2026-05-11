@@ -18,12 +18,12 @@
         <v-tab class="text-uppercase font-weight-bold px-8" value="requests">
           {{ $t('friends.tabs.requests') }}
           <v-chip
-            v-if="friendRequests && friendRequests.length > 0"
+            v-if="totalRequests > 0"
             class="ml-2 font-weight-black"
             color="error"
             size="x-small"
           >
-            {{ friendRequests.length }}
+            {{ totalRequests }}
           </v-chip>
         </v-tab>
       </v-tabs>
@@ -283,7 +283,48 @@
           <v-progress-circular color="cyan-accent-3" indeterminate size="80" width="8" />
         </div>
 
-        <v-row v-else-if="requestsList.length > 0">
+        <v-row v-if="!loading && groupInvitationsList.length > 0" class="mb-6">
+          <v-col
+            v-for="invitation in groupInvitationsList"
+            :key="invitation.id"
+            cols="12"
+            lg="4"
+            md="6"
+            xl="3"
+          >
+            <v-card class="friend-card request-card detailed-card h-100" variant="flat">
+              <div class="card-header-gradient bg-requests" />
+              <div class="card-body pa-5 pt-4">
+                <div class="mb-6">
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">Invitación grupal</h2>
+                  <div class="text-body-2 text-grey-lighten-1">
+                    {{ invitation.from }} te invita como <strong>{{ invitation.targetRole }}</strong>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <v-btn
+                    class="flex-grow-1 font-weight-bold rounded-lg h-large"
+                    color="success"
+                    variant="elevated"
+                    @click="acceptGroupInvitation(invitation.id)"
+                  >
+                    {{ $t('friends.accept') }}
+                  </v-btn>
+                  <v-btn
+                    class="flex-grow-1 font-weight-bold rounded-lg h-large"
+                    color="error"
+                    variant="tonal"
+                    @click="rejectGroupInvitation(invitation.id)"
+                  >
+                    {{ $t('friends.reject') }}
+                  </v-btn>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <v-row v-if="!loading && requestsList.length > 0">
           <v-col
             v-for="requester in requestsList"
             :key="requester.user"
@@ -354,7 +395,7 @@
           </v-col>
         </v-row>
 
-        <div v-else class="text-center py-16">
+        <div v-if="!loading && requestsList.length === 0 && groupInvitationsList.length === 0" class="text-center py-16">
           <v-icon class="mb-4" color="blue-grey-darken-3" icon="mdi-inbox-outline" size="80" />
           <h3 class="text-h5 text-grey">{{ $t('friends.noReqs') }}</h3>
         </div>
@@ -454,13 +495,15 @@
   import { ACHIEVEMENTS } from '@/constants/achievements'
   import { useAstroStore } from '@/stores/astroStore'
   import { useChatStore } from '@/stores/chatStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const chatStore = useChatStore()
   const multiplayerStore = useMultiplayerStore()
-  const { explorers, friends, friendRequests } = storeToRefs(astroStore)
+  const { explorers, friends, friendRequests, groupInvitations } = storeToRefs(astroStore)
 
   const loading = ref(true)
   const reloading = ref(false)
@@ -582,6 +625,12 @@
     return allUsers.filter(u => reqUsernames.includes(u.user))
   })
 
+  const groupInvitationsList = computed(() => Array.isArray(groupInvitations.value) ? groupInvitations.value : [])
+  const totalRequests = computed(() => {
+    const friendCount = Array.isArray(friendRequests.value) ? friendRequests.value.length : 0
+    return friendCount + groupInvitationsList.value.length
+  })
+
   onMounted(() => {
     fetchFriends()
   })
@@ -621,6 +670,26 @@
       showMessage(t('friends.rejected', { name: friendName }), 'error')
       await astroStore.fetchUserStats()
     }
+  }
+
+  async function acceptGroupInvitation (invitationId) {
+    const result = await groupStore.acceptGroupInvitation(invitationId, astroStore.user)
+    if (!result.success) {
+      showMessage(result.message || 'No se pudo aceptar la invitación de grupo', 'error')
+      return
+    }
+    showMessage('Te has unido al grupo')
+    await astroStore.fetchUserStats()
+  }
+
+  async function rejectGroupInvitation (invitationId) {
+    const result = await groupStore.rejectGroupInvitation(invitationId, astroStore.user)
+    if (!result.success) {
+      showMessage(result.message || 'No se pudo rechazar la invitación de grupo', 'error')
+      return
+    }
+    showMessage('Invitación rechazada', 'error')
+    await astroStore.fetchUserStats()
   }
 
   function startChat (friendObj) {

@@ -153,9 +153,25 @@
     <!-- DIALOGO: AÑADIR MIEMBRO -->
     <v-dialog v-model="showAddDialog" max-width="400">
       <v-card class="glass-popup pa-6">
-        <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: role === 'CENTER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
+        <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: selectedRole === 'TEACHER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
+        <v-select
+          v-if="role === 'CENTER'"
+          v-model="selectedRole"
+          class="mb-4"
+          :items="roleOptions"
+          label="Rol"
+          variant="solo-filled"
+        />
+        <v-select
+          v-model="addMode"
+          class="mb-4"
+          :items="modeOptions"
+          label="Método"
+          variant="solo-filled"
+        />
         <v-text-field v-model="newName" class="mb-4" :label="$t('educational.username')" variant="solo-filled" />
         <v-text-field
+          v-if="addMode === 'create'"
           v-model="newPass"
           class="mb-6"
           :label="$t('educational.password')"
@@ -184,16 +200,28 @@
   const showAddDialog = ref(false)
 
   // Forms
+  const addMode = ref('create')
+  const selectedRole = ref('STUDENT')
   const newName = ref('')
   const newPass = ref('')
+  const roleOptions = [
+    { title: 'Profesor', value: 'TEACHER' },
+    { title: 'Alumno', value: 'STUDENT' },
+  ]
+  const modeOptions = [
+    { title: 'Crear usuario nuevo', value: 'create' },
+    { title: 'Invitar usuario existente', value: 'invite' },
+  ]
 
   onMounted(async () => {
     if (role.value === 'CENTER') {
       currentTab.value = 'teachers'
+      selectedRole.value = 'TEACHER'
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchCenterStats(user.value)
     } else if (role.value === 'TEACHER') {
       currentTab.value = 'students'
+      selectedRole.value = 'STUDENT'
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchClassStats(user.value)
       await groupStore.fetchSupplySets(user.value)
@@ -201,8 +229,22 @@
   })
 
   async function addMember () {
+    if (!newName.value) {
+      alert('Debes indicar un nombre de usuario')
+      return
+    }
+    if (addMode.value === 'create' && !newPass.value) {
+      alert('Debes indicar una contraseña para el usuario nuevo')
+      return
+    }
+
     let result
-    result = await (role.value === 'CENTER' ? groupStore.createTeacher(user.value, { username: newName.value, password: newPass.value }) : groupStore.createStudent(user.value, { username: newName.value, password: newPass.value }))
+    const targetRole = role.value === 'CENTER' ? selectedRole.value : 'STUDENT'
+    if (addMode.value === 'invite') {
+      result = await groupStore.inviteExistingMember(user.value, newName.value, targetRole)
+    } else {
+      result = await groupStore.createMember(user.value, targetRole, { username: newName.value, password: newPass.value })
+    }
 
     if (result.success) {
       showAddDialog.value = false

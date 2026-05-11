@@ -22,7 +22,7 @@ describe('GroupService', () => {
 
     test('createTeacher debe crear un profesor si el usuario es un centro', async () => {
         mockUserRepo.findByUsername.mockImplementation(async (username) => {
-            if (username === 'center1') return { username: 'center1', role: 'CENTER' };
+            if (username === 'center1') return { username: 'center1', role: 'CENTER', plan: 'GRUPAL' };
             return null;
         });
         mockUserRepo.saveDoc.mockResolvedValue({ insertedId: 'teacher1' });
@@ -49,7 +49,7 @@ describe('GroupService', () => {
 
     test('createStudent debe crear un alumno si el usuario es un profesor', async () => {
         mockUserRepo.findByUsername.mockImplementation(async (username) => {
-            if (username === 'teacher1') return { username: 'teacher1', role: 'TEACHER' };
+            if (username === 'teacher1') return { username: 'teacher1', role: 'TEACHER', plan: 'GRUPAL' };
             return null;
         });
         mockUserRepo.saveDoc.mockResolvedValue({ insertedId: 'student1' });

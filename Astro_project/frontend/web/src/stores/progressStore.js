@@ -217,6 +217,14 @@ export const useProgressStore = defineStore('progress', {
         socialStore.setFriends(userData.friends || [])
         socialStore.setFriendRequests(userData.friendRequests || [])
 
+        const sessionStore = useSessionStore()
+        if (userData.plan) sessionStore.setPlan(userData.plan)
+        sessionStore.setRole(userData.role ?? null)
+        sessionStore.setParentId(userData.parentId ?? null)
+        sessionStore.setGroupInvitations(userData.groupInvitations || [])
+        sessionStore.setGroupApprovalRequests(userData.groupApprovalRequests || [])
+        sessionStore.setScheduledPlanDowngrade(userData.scheduledPlanDowngrade || null)
+
         const achievementsStore = useAchievementsStore()
         achievementsStore.setSelectedAchievements(userData.selectedAchievements || [])
         achievementsStore.setUnlockedAchievements(userData.unlockedAchievements || [])

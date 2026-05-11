@@ -30,6 +30,9 @@ export const useSessionStore = defineStore('session', {
     token: storageGetItem(STORAGE_KEYS.token) || null,
     lastActivity: Number(storageGetItem(STORAGE_KEYS.lastActivity)) || Date.now(),
     deletionScheduledAt: storageGetItem('astro_deletion_scheduled') || null,
+    groupInvitations: [],
+    groupApprovalRequests: [],
+    scheduledPlanDowngrade: null,
     error: null,
   }),
 
@@ -111,8 +114,8 @@ export const useSessionStore = defineStore('session', {
       this.setUser(profile.name ?? this.user)
       this.setPlan(profile.plan ?? this.plan)
       this.setRank(profile.rank ?? this.rank)
-      this.setRole(profile.role ?? this.role)
-      this.setParentId(profile.parentId ?? this.parentId)
+      this.setRole(Object.prototype.hasOwnProperty.call(profile, 'role') ? profile.role : this.role)
+      this.setParentId(Object.prototype.hasOwnProperty.call(profile, 'parentId') ? profile.parentId : this.parentId)
       this.setToken(data.token ?? this.token)
 
       if (profile.avatar) {
@@ -130,11 +133,32 @@ export const useSessionStore = defineStore('session', {
       if (profile.deletionScheduledAt !== undefined) {
         this.setDeletionScheduled(profile.deletionScheduledAt)
       }
+      if (profile.groupInvitations !== undefined) {
+        this.setGroupInvitations(profile.groupInvitations)
+      }
+      if (profile.groupApprovalRequests !== undefined) {
+        this.setGroupApprovalRequests(profile.groupApprovalRequests)
+      }
+      if (profile.scheduledPlanDowngrade !== undefined) {
+        this.setScheduledPlanDowngrade(profile.scheduledPlanDowngrade)
+      }
     },
 
     setDeletionScheduled (date) {
       this.deletionScheduledAt = date || null
       persistNullable('astro_deletion_scheduled', this.deletionScheduledAt)
+    },
+
+    setGroupInvitations (invitations = []) {
+      this.groupInvitations = Array.isArray(invitations) ? invitations : []
+    },
+
+    setGroupApprovalRequests (requests = []) {
+      this.groupApprovalRequests = Array.isArray(requests) ? requests : []
+    },
+
+    setScheduledPlanDowngrade (scheduled = null) {
+      this.scheduledPlanDowngrade = scheduled || null
     },
 
     async registerTripulante (userData) {
@@ -184,12 +208,11 @@ export const useSessionStore = defineStore('session', {
       }
     },
 
-    async updatePlan (planType) {
+    async updatePlan (planType, options = {}) {
       this.error = null
       if (!this.user) {
         this.user = storageGetItem(STORAGE_KEYS.user)
       }
-      this.setPlan(planType)
 
       if (!this.user) {
         this.error = 'Usuario no identificado para actualizar el plan.'
@@ -203,11 +226,20 @@ export const useSessionStore = defineStore('session', {
           body: JSON.stringify({
             user: this.user,
             plan: planType,
+            groupType: options.groupType || null,
+            role: options.role || null,
           }),
         })
 
         if (!response.ok) {
           throw new Error(data.message || 'Error al actualizar el plan en el servidor')
+        }
+
+        this.setPlan(data.profile?.plan || planType)
+        this.setRole(data.profile?.role || null)
+        this.setParentId(data.profile?.parentId || null)
+        if (data.profile?.scheduledPlanDowngrade !== undefined) {
+          this.setScheduledPlanDowngrade(data.profile.scheduledPlanDowngrade)
         }
 
         return { success: true }
@@ -302,6 +334,52 @@ export const useSessionStore = defineStore('session', {
       }
     },
 
+    async requestGroupOwnerDowngrade (password, targetPlan = 'INDIVIDUAL_FREE') {
+      if (!this.user) {
+        return { success: false, message: 'Usuario no identificado' }
+      }
+
+      try {
+        const { response, data } = await requestJson('/api/user/plan/group-owner/downgrade-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: this.user, password, targetPlan }),
+        })
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No se pudo programar la baja del plan grupal')
+        }
+
+        this.setScheduledPlanDowngrade(data.scheduledPlanDowngrade)
+        return { success: true, scheduledPlanDowngrade: data.scheduledPlanDowngrade }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
+    async cancelGroupOwnerDowngrade () {
+      if (!this.user) {
+        return { success: false, message: 'Usuario no identificado' }
+      }
+
+      try {
+        const { response, data } = await requestJson('/api/user/plan/group-owner/downgrade-cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: this.user }),
+        })
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No se pudo cancelar la baja grupal')
+        }
+
+        this.setScheduledPlanDowngrade(null)
+        return { success: true }
+      } catch (error) {
+        return { success: false, message: error.message }
+      }
+    },
+
     async scheduleAccountDeletion () {
       if (!this.user) {
         return { success: false, message: 'Usuario no identificado' }
@@ -358,6 +436,9 @@ export const useSessionStore = defineStore('session', {
       this.nameChangesCount = 0
       this.token = null
       this.deletionScheduledAt = null
+      this.groupInvitations = []
+      this.groupApprovalRequests = []
+      this.scheduledPlanDowngrade = null
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
