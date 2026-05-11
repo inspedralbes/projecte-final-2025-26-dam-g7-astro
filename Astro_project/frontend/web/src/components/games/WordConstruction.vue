@@ -105,6 +105,35 @@
       <v-alert v-if="message" class="mt-4" :type="messageType" variant="tonal">
         {{ message }}
       </v-alert>
+
+      <!-- Feedback Visual Overlay -->
+      <v-overlay
+        v-model="showFeedback"
+        contained
+        class="align-center justify-center pointer-events-none"
+        persistent
+        no-click-animation
+        scrim="transparent"
+      >
+        <div class="feedback-container" :class="feedbackType">
+          <v-icon
+            v-if="feedbackType === 'success'"
+            color="success"
+            size="120"
+            class="feedback-icon animate-success"
+          >
+            mdi-check-circle
+          </v-icon>
+          <v-icon
+            v-else
+            color="error"
+            size="120"
+            class="feedback-icon animate-error"
+          >
+            mdi-close-circle
+          </v-icon>
+        </div>
+      </v-overlay>
     </v-card>
 
     <!-- Pantalla de Final de Joc -->
@@ -207,6 +236,28 @@
   const totalSteps = ref(5)
   const finalReward = computed(() => score.value + timeLeft.value)
 
+  // --- REFORÇ VISUAL I SONOR ---
+  const showFeedback = ref(false)
+  const feedbackType = ref('success')
+
+  const sounds = {
+    success: '/assets/sounds/success.mp3',
+    error: '/assets/sounds/error.mp3',
+  }
+
+  function triggerFeedback (type) {
+    feedbackType.value = type
+    showFeedback.value = true
+
+    const audio = new Audio(sounds[type])
+    audio.volume = 0.4
+    audio.play().catch(e => console.warn('Audio play blocked:', e))
+
+    setTimeout(() => {
+      showFeedback.value = false
+    }, 800)
+  }
+
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
   let currentSeed = 12_345
@@ -292,6 +343,7 @@
       score.value += pointsGained
       currentStep.value++
       messageType.value = 'success'
+      triggerFeedback('success')
 
       if (props.isRace) {
         multiplayerStore.rechargeFuel(10) // Recarga 10% por cada bloque
@@ -324,6 +376,7 @@
       score.value = Math.max(0, score.value - 20)
       message.value = t('wordConstruction.msgIncorrect')
       messageType.value = 'error'
+      triggerFeedback('error')
     }
   }
 
@@ -557,5 +610,38 @@
   white-space: nowrap;
   font-weight: bold;
   border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+/* Feedback Animations */
+.animate-success {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-error {
+  animation: shake 0.4s ease-in-out forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
+}
+
+.feedback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 </style>

@@ -310,9 +310,33 @@
       </template>
     </v-card>
 
-    <v-snackbar v-model="showFeedback" :color="feedbackColor" location="top" timeout="2000">
-      {{ feedbackMessage }}
-    </v-snackbar>
+    <v-overlay
+      v-model="showFeedback"
+      contained
+      class="align-center justify-center pointer-events-none"
+      persistent
+      no-click-animation
+      scrim="transparent"
+    >
+      <div class="feedback-container" :class="feedbackColor === 'success' ? 'success' : 'error'">
+        <v-icon
+          v-if="feedbackColor === 'success'"
+          color="success"
+          size="140"
+          class="feedback-icon animate-success"
+        >
+          mdi-check-circle
+        </v-icon>
+        <v-icon
+          v-else-if="feedbackColor === 'error'"
+          color="error"
+          size="140"
+          class="feedback-icon animate-error"
+        >
+          mdi-close-circle
+        </v-icon>
+      </div>
+    </v-overlay>
 
   </v-container>
 </template>
@@ -383,6 +407,18 @@
 
   const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
+
+  // --- REFORÇ VISUAL I SONOR ---
+  const sounds = {
+    success: '/assets/sounds/success.mp3',
+    error: '/assets/sounds/error.mp3',
+  }
+
+  function playFeedbackSound (type) {
+    const audio = new Audio(sounds[type])
+    audio.volume = 0.4
+    audio.play().catch(e => console.warn('Audio play blocked:', e))
+  }
 
   const props = defineProps({
     isMultiplayer: {
@@ -533,6 +569,7 @@
       timeLeft.value = Math.min(timeLeft.value + 20, 999)
       feedbackMessage.value = t('spelledRosco.msgCorrect')
       feedbackColor.value = 'success'
+      playFeedbackSound('success')
       if (props.isRace) {
         multiplayerStore.rechargeFuel(20) // Recarga 20% por palabra (es más difícil)
       }
@@ -544,6 +581,7 @@
       score.value = Math.max(0, score.value - 25)
       feedbackMessage.value = t('spelledRosco.msgIncorrect')
       feedbackColor.value = 'error'
+      playFeedbackSound('error')
     }
     showFeedback.value = true
 
@@ -821,5 +859,38 @@
 @keyframes pop-in {
   0% { scale: 0; opacity: 0; }
   100% { scale: 1; opacity: 1; }
+}
+
+/* Feedback Animations */
+.animate-success {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-error {
+  animation: shake 0.4s ease-in-out forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
+}
+
+.feedback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 </style>

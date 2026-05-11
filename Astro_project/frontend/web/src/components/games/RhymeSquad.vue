@@ -126,6 +126,35 @@
         <transition name="fade-up">
           <div v-if="showTimeBonus" class="time-bonus-feedback text-h2 font-weight-black text-green-accent-3">+1s</div>
         </transition>
+
+        <!-- Feedback Visual Overlay -->
+        <v-overlay
+          v-model="showFeedback"
+          contained
+          class="align-center justify-center pointer-events-none"
+          persistent
+          no-click-animation
+          scrim="transparent"
+        >
+          <div class="feedback-container" :class="feedbackType">
+            <v-icon
+              v-if="feedbackType === 'success'"
+              color="success"
+              size="120"
+              class="feedback-icon animate-success"
+            >
+              mdi-check-circle
+            </v-icon>
+            <v-icon
+              v-else
+              color="error"
+              size="120"
+              class="feedback-icon animate-error"
+            >
+              mdi-close-circle
+            </v-icon>
+          </div>
+        </v-overlay>
       </div>
     </template>
 
@@ -210,6 +239,28 @@
   const incorrectHits = ref(0)
   const isTurbo = ref(false)
   const showTimeBonus = ref(false)
+
+  // --- REFORÇ VISUAL I SONOR ---
+  const showFeedback = ref(false)
+  const feedbackType = ref('success')
+
+  const sounds = {
+    success: '/assets/sounds/success.mp3',
+    error: '/assets/sounds/error.mp3',
+  }
+
+  function triggerFeedback (type) {
+    feedbackType.value = type
+    showFeedback.value = true
+
+    const audio = new Audio(sounds[type])
+    audio.volume = 0.3
+    audio.play().catch(e => console.warn('Audio blocked:', e))
+
+    setTimeout(() => {
+      showFeedback.value = false
+    }, 600)
+  }
 
   const currentTarget = ref(null)
   const activeWords = ref([])
@@ -352,10 +403,12 @@
       if (combo.value > maxCombo.value) maxCombo.value = combo.value
       if (combo.value >= 10) isTurbo.value = true
       if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
+      triggerFeedback('success')
     } else {
       word.status = 'incorrect'
       incorrectHits.value++
       takeDamage()
+      triggerFeedback('error')
     }
 
     if (props.isMultiplayer) {
@@ -679,5 +732,38 @@
 .fade-up-enter-active, .fade-up-leave-active { transition: all 0.5s ease; }
 .fade-up-enter-from { opacity: 0; transform: translate(-50%, 20px); }
 .fade-up-leave-to { opacity: 0; transform: translate(-50%, -50px); }
+
+/* Feedback Animations */
+.animate-success {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-error {
+  animation: shake 0.4s ease-in-out forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
+}
+
+.feedback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 
 </style>
