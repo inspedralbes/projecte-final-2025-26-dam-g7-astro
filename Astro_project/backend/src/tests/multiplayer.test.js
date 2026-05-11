@@ -1,17 +1,16 @@
-const roomManager = require('../ws/RoomManager');
+const { RoomManager } = require('../ws/RoomManager');
 const InMemoryRoomRepository = require('../repositories/InMemoryRoomRepository');
 const InMemoryUserRepository = require('../repositories/InMemoryUserRepository');
 const User = require('../domain/User');
 
 describe('Room Manager (Multiplayer Logic)', () => {
+    let roomManager;
     let roomRepo;
     let userRepo;
     let mockWss;
 
     beforeEach(() => {
-        // Limpiar estado interno del singleton
-        roomManager.rooms.clear();
-        roomManager.sessions.clear();
+        roomManager = new RoomManager();
 
         roomRepo = new InMemoryRoomRepository();
         userRepo = new InMemoryUserRepository();
@@ -21,6 +20,10 @@ describe('Room Manager (Multiplayer Logic)', () => {
         };
 
         roomManager.init(roomRepo, userRepo, mockWss);
+    });
+
+    afterEach(() => {
+        roomManager.stop();
     });
 
     test('createRoom debe crear una sala y persistirla', async () => {

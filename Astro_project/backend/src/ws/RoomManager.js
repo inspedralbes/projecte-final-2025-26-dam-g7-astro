@@ -33,6 +33,14 @@ class RoomManager {
             'SymmetryBreaker': 600000,
             'WordConstruction': 600000
         };
+        this.gcInterval = null;
+    }
+
+    stop() {
+        if (this.gcInterval) {
+            clearInterval(this.gcInterval);
+            this.gcInterval = null;
+        }
     }
 
     init(roomRepository, userRepository, wss) {
@@ -42,7 +50,8 @@ class RoomManager {
         console.log("🛠️ RoomManager inicializado con Repositorios y WSS");
 
         // Garbage Collector: Limpieza de salas inactivas cada 5 minutos
-        setInterval(async () => {
+        if (this.gcInterval) clearInterval(this.gcInterval);
+        this.gcInterval = setInterval(async () => {
             console.log("[RoomManager] Ejecutando Garbage Collector de salas...");
             const now = Date.now();
             const LOBBY_TIMEOUT = 10 * 60 * 1000; // 10 minutos desde creación
@@ -540,7 +549,10 @@ class RoomManager {
 
     assignRoles(roomId, gameName, rotate = false) {
         const room = this.rooms.get(roomId);
-        if (!room) return;
+        if (!room || !room.gameConfig) return;
+
+        if (!room.gameConfig.teams) room.gameConfig.teams = {};
+        if (!room.gameConfig.subRoles) room.gameConfig.subRoles = {};
 
         const playerArray = Array.from(room.players);
         
@@ -766,7 +778,7 @@ class RoomManager {
         });
 
         // Si es la última ronda, saltamos directamente a MATCH_RESULTS
-        if (room.gameConfig.currentRound >= room.gameConfig.maxRounds - 1) {
+        if (room.gameConfig.currentRound >= room.gameConfig.totalRounds - 1) {
             room.status = 'MATCH_RESULTS';
         } else {
             room.status = 'ROUND_RESULTS';
@@ -972,4 +984,6 @@ class RoomManager {
     }
 }
 
-module.exports = new RoomManager();
+const instance = new RoomManager();
+instance.RoomManager = RoomManager;
+module.exports = instance;
