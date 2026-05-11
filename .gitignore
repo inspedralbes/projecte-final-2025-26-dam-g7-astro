@@ -1,0 +1,46 @@
+# --- General ---
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- Environment Files ---
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# --- Build & Output ---
+dist/
+build/
+out/
+coverage/
+.nyc_output/
+
+# --- IDEs & Editors ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sublime-project
+*.sublime-workspace
+.history/
+
+# --- Tools & Cache ---
+.eslintcache
+.stylelintcache
+.vite/
+.turbo/
+.cache/
+.temp/
+.DS_Store?
+._*
+
+# --- Docker ---
+docker-compose.override.yml
