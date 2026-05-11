@@ -116,6 +116,33 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
+    async sellItem (itemId) {
+      this.error = null
+      const user = this.resolveUser()
+      if (!user) return { success: false, message: i18n.global.t('errors.noSession') }
+
+      const parsedItemId = toPositiveInteger(itemId)
+      if (!parsedItemId) return { success: false, message: i18n.global.t('errors.invalidItem') }
+
+      try {
+        const { response, data } = await requestJson('/api/inventory/sell-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, itemId: parsedItemId }),
+        })
+
+        if (!response.ok) {
+          throw new Error(data.message || 'No se pudo vender el objeto.')
+        }
+
+        this.setInventory(data.inventory || [])
+        return { success: true, data }
+      } catch (error) {
+        this.error = error.message
+        return { success: false, message: this.error }
+      }
+    },
+
     clearInventory () {
       this.inventory = []
       this.error = null

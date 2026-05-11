@@ -187,6 +187,16 @@ export const useAstroStore = defineStore('astro', () => {
     return { success: true, data }
   }
 
+  async function sellItem (itemId) {
+    const result = await inventoryStore.sellItem(itemId)
+    if (!result.success) return result
+
+    const data = result.data || {}
+    if (data.newBalance !== undefined) progressStore.setCoins(data.newBalance)
+
+    return { success: true, data }
+  }
+
   async function claimMissionReward (missionId, type = 'daily') {
     return progressStore.claimMissionReward(missionId, type)
   }
@@ -313,7 +323,7 @@ export const useAstroStore = defineStore('astro', () => {
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
     isStreakActiveToday, inventoryUnits,
     registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
-    buyItem, useInventoryItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
+    buyItem, useInventoryItem, sellItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
     addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,
     connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
     updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, changeDisplayName, useStreakFreeze, setCoins, setInventory,

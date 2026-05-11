@@ -68,7 +68,27 @@ function registerInventoryRoutes(app, { inventoryService }) {
             });
         }
     });
-}
+
+    app.post('/api/inventory/sell-item', async (req, res) => {
+        const { user, itemId } = req.body;
+        if (!user) return res.status(400).json({ success: false, message: 'Usuario requerido.' });
+
+        try {
+            const result = await inventoryService.sellItem(user, itemId);
+            res.json({
+                success: true,
+                ...result
+            });
+        } catch (error) {
+            console.error('Error vendiendo item del inventario:', error);
+            res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({ 
+                success: false, 
+                message: error.message || 'Error al vender el objeto.' 
+            });
+        }
+    });
+
+ }
 
 module.exports = {
     registerInventoryRoutes

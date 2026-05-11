@@ -311,6 +311,48 @@ class InventoryService {
 
         return { inventory: this.enrichInventory(serializedInventory) };
     }
+
+    async sellItem(username, itemId) {
+        const parsedItemId = toPositiveInteger(itemId);
+        if (!parsedItemId) throw new Error('Item inválido.');
+
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error('Usuario no encontrado');
+
+        let normalizedInventory = await this.normalizeAndPersistInventory(user);
+        const itemIndex = normalizedInventory.findIndex((item) => item.id === parsedItemId);
+        if (itemIndex === -1) throw new Error('Item no encontrado en inventario');
+
+        const itemTarget = normalizedInventory[itemIndex];
+        const itemMeta = this.getInventoryCatalogItem(parsedItemId);
+        
+        // Calcular precio de venta (50% del original o valor base)
+        const basePrice = itemMeta?.price || 100;
+        const sellPrice = Math.floor(basePrice * 0.5);
+
+        // Quitar una unidad
+        if (itemTarget.quantity > 1) {
+            itemTarget.quantity -= 1;
+        } else {
+            normalizedInventory.splice(itemIndex, 1);
+        }
+
+        const serializedInventory = this.serializeInventory(normalizedInventory);
+        user.inventory = serializedInventory;
+        user.coins = (user.coins || 0) + sellPrice;
+        
+        // Si el item era un congelador, sincronizar también streakFreezes
+        if (parsedItemId === 2) {
+            user.streakFreezes = this.getInventoryQuantity(serializedInventory, 2);
+        }
+
+        await this.userRepo.update(user);
+
+        return { 
+            inventory: this.enrichInventory(serializedInventory),
+            newBalance: user.coins
+        };
+    }
 }
 
 // Singleton o instància per defecte per mantenir compatibilitat

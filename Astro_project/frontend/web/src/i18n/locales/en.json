@@ -70,6 +70,7 @@
             "skin": "Skins",
             "collectible": "Collectibles",
             "trails": "Trails",
+            "pets": "Pets",
             "items": "Items"
         },
         "active": "ACTIVE: {games} games",
@@ -79,7 +80,9 @@
         "equip": "EQUIP",
         "empty": "You don't have any equipment in this category yet",
         "goToShop": "Visit the Shop",
-        "useError": "Could not use the item."
+        "useError": "Could not use the item.",
+        "sell": "SELL",
+        "sellConfirm": "Are you sure you want to sell {item} for {price} coins?"
     },
     "profile": {
         "guest": "Explorer",
