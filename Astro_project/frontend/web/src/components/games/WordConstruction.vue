@@ -300,6 +300,10 @@
 
   function loadNextWord () {
     if (currentStep.value >= totalSteps.value) {
+      if (!props.isMultiplayer) {
+        finishGame()
+        return
+      }
       currentStep.value = 0
     }
 
