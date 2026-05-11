@@ -1,452 +1,638 @@
 <template>
-    <div class="radio-cabinet">
-        <div class="screw screw-tl"></div>
-        <div class="screw screw-tr"></div>
-        <div class="screw screw-bl"></div>
-        <div class="screw screw-br"></div>
+  <div class="radio-cabinet">
+    <div class="screw screw-tl" />
+    <div class="screw screw-tr" />
+    <div class="screw screw-bl" />
+    <div class="screw screw-br" />
 
-        <div class="radio-brand">
-            <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
-            <div class="brand-subtitle">{{ $t('radioSignal.commsReceiver') }}</div>
-        </div>
-
-        <div class="session-hud">
-            <div class="hud-pill">{{ $t('radioSignal.points', { score }) }}</div>
-            <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">{{ $t('radioSignal.time', { time: timeLeft }) }}</div>
-        </div>
-
-        <div class="screen-housing">
-            <div class="screen-bezel">
-                <div class="wave-panels">
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">{{ $t('radioSignal.targetLabel') }}</div>
-                        <canvas ref="targetWaveCanvas" width="260" height="90"></canvas>
-                        <div class="scanline"></div>
-                    </div>
-                    <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
-                        <div class="screen-label">{{ $t('radioSignal.signalLabel') }}</div>
-                        <canvas ref="currentWaveCanvas" width="260" height="90"></canvas>
-                        <div class="scanline"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="indicator-strip">
-            <div class="freq-display">
-                <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
-                <div class="freq-unit">MHz</div>
-            </div>
-            <div class="indicator-lights">
-                <div class="indicator-dot" :class="isTuned ? 'dot-green' : 'dot-off'"></div>
-                <div class="indicator-dot" :class="!isTuned ? 'dot-red' : 'dot-off'"></div>
-            </div>
-            <div class="status-display">
-                <span :class="isTuned ? 'status-sync' : 'status-lost'">
-                    {{ isTuned ? $t('radioSignal.locked') : $t('radioSignal.scanning') }}
-                </span>
-            </div>
-        </div>
-
-        <div class="dial-housing">
-            <div class="dial-markings">
-                <span v-for="n in 11" :key="n" class="dial-mark" 
-                    :style="{ left: ((n-1) * 10) + '%' }">
-                    {{ (n-1) * 10 }}
-                </span>
-            </div>
-            <div class="dial-track">
-                <div class="dial-indicator" :style="{ left: currentFrequency + '%' }"></div>
-            </div>
-            <div class="knob-row">
-                <div
-                    class="knob-container"
-                    @mousedown="startRotating"
-                    @touchstart.prevent="startRotating"
-                >
-                    <div class="knob-body" :style="{ transform: `rotate(${knobRotation}deg)` }">
-                        <div class="knob-line"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="input-housing">
-            <div v-if="isTuned" class="input-active">
-                <div class="input-header">
-                    <button class="replay-btn" @click="speakPhrase(1.0)">
-                        <v-icon size="18">mdi-volume-high</v-icon>
-                    </button>
-                    <span class="input-label">{{ $t('radioSignal.incomingTransmission') }}</span>
-                </div>
-                <div class="input-row">
-                    <input
-                        v-model="userGuess"
-                        class="radio-input"
-                        :placeholder="$t('radioSignal.placeholder')"
-                        @keyup.enter="checkPhrase"
-                        autofocus
-                    />
-                    <button class="send-btn" @click="checkPhrase">
-                        {{ $t('radioSignal.send') }}
-                    </button>
-                </div>
-            </div>
-            <div v-else class="input-placeholder">
-                <v-icon size="18" color="#444">mdi-antenna</v-icon>
-                <span>{{ $t('radioSignal.waiting') }}</span>
-            </div>
-        </div>
-
-        <v-snackbar v-model="showError" color="error" timeout="1500" location="top">
-            ✗ DADES INCORRECTES - TORNA A INTENTAR
-        </v-snackbar>
-
-        <v-snackbar v-model="showSuccess" color="success" timeout="2000" location="top">
-            ✓ SENYAL DESXIFRADA! +150 PTS | +15s
-        </v-snackbar>
+    <div class="radio-brand">
+      <div class="brand-text">ASTRO <span class="brand-model">RX-7</span></div>
+      <div class="brand-subtitle">{{ $t('radioSignal.commsReceiver') }}</div>
     </div>
+
+    <div class="session-hud">
+      <div class="hud-pill">{{ $t('radioSignal.points', { score }) }}</div>
+      <div class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">{{ $t('radioSignal.time', { time: timeLeft }) }}</div>
+    </div>
+
+    <div class="screen-housing">
+      <div class="screen-bezel">
+        <div class="wave-panels">
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <div class="screen-label">{{ $t('radioSignal.targetLabel') }}</div>
+            <canvas ref="targetWaveCanvas" height="90" width="260" />
+            <div class="scanline" />
+          </div>
+          <div class="wave-screen" :class="{ 'screen-synced': isTuned }">
+            <div class="screen-label">{{ $t('radioSignal.signalLabel') }}</div>
+            <canvas ref="currentWaveCanvas" height="90" width="260" />
+            <div class="scanline" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="indicator-strip">
+      <div class="freq-display">
+        <div class="freq-value">{{ currentFrequency.toFixed(1) }}</div>
+        <div class="freq-unit">MHz</div>
+      </div>
+      <div class="indicator-lights">
+        <div class="indicator-dot" :class="isTuned ? 'dot-green' : 'dot-off'" />
+        <div class="indicator-dot" :class="!isTuned ? 'dot-red' : 'dot-off'" />
+      </div>
+      <div class="status-display">
+        <span :class="isTuned ? 'status-sync' : 'status-lost'">
+          {{ isTuned ? $t('radioSignal.locked') : $t('radioSignal.scanning') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="dial-housing">
+      <div class="dial-markings">
+        <span
+          v-for="n in 11"
+          :key="n"
+          class="dial-mark"
+          :style="{ left: ((n-1) * 10) + '%' }"
+        >
+          {{ (n-1) * 10 }}
+        </span>
+      </div>
+      <div class="dial-track">
+        <div class="dial-indicator" :style="{ left: currentFrequency + '%' }" />
+      </div>
+      <div class="knob-row">
+        <div
+          class="knob-container"
+          @mousedown="startRotating"
+          @touchstart.prevent="startRotating"
+        >
+          <div class="knob-body" :style="{ transform: `rotate(${knobRotation}deg)` }">
+            <div class="knob-line" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-housing">
+      <div v-if="isTuned" class="input-active">
+        <div class="input-header">
+          <button class="replay-btn" @click="speakPhrase(1.0)">
+            <v-icon size="18">mdi-volume-high</v-icon>
+          </button>
+          <span class="input-label">{{ $t('radioSignal.incomingTransmission') }}</span>
+        </div>
+        <div class="input-row">
+          <input
+            v-model="userGuess"
+            autofocus
+            class="radio-input"
+            :placeholder="$t('radioSignal.placeholder')"
+            @keyup.enter="checkPhrase"
+          >
+          <button class="send-btn" @click="checkPhrase">
+            {{ $t('radioSignal.send') }}
+          </button>
+        </div>
+      </div>
+      <div v-else class="input-placeholder">
+        <v-icon color="#444" size="18">mdi-antenna</v-icon>
+        <span>{{ $t('radioSignal.waiting') }}</span>
+      </div>
+    </div>
+
+    <!-- INTERFAZ COOPERATIVA: TRANSMISIÓN BIDIRECCIONAL -->
+    <div v-if="isMultiplayer" class="coop-status-bar">
+      <div class="coop-panel">
+        <div class="coop-label">{{ $t('radioSignal.partnerComms') || 'COMUNICACIÓ AMB EL COMPANY' }}</div>
+
+        <!-- Historial de mensajes -->
+        <div ref="chatHistoryRef" class="chat-history mb-2">
+          <div v-for="(msg, i) in multiplayerStore.coopChatMessages" :key="i" class="chat-msg">
+            <span class="chat-user">{{ msg.from === astroStore.user ? t('radioSignal.you') : t('radioSignal.partner') }}:</span>
+            <span class="chat-text">{{ msg.text }}</span>
+          </div>
+          <div v-if="multiplayerStore.partnerText" class="chat-msg typing">
+            <span class="chat-user">{{ $t('radioSignal.partner') }}:</span>
+            <span class="chat-text italic">{{ multiplayerStore.partnerText }}...</span>
+          </div>
+        </div>
+
+        <div class="partner-signal-box mb-2">
+          <span class="signal-label">{{ $t('radioSignal.youHear') || 'SENTS:' }}</span>
+          <span class="signal-text">{{ multiplayerStore.partnerText || '---' }}</span>
+        </div>
+        <input
+          v-model="localTransmitText"
+          class="transmit-input"
+          :placeholder="$t('radioSignal.typeAndEnter') || 'Escriu un missatge i prem Enter...'"
+          @input="sendTransmission"
+          @keyup.enter="sendChatMessage"
+        >
+      </div>
+    </div>
+
+    <v-snackbar v-model="showError" color="error" location="top" timeout="1500">
+      ✖ {{ $t('radioSignal.error') || 'DADES INCORRECTES - TORNA A INTENTAR' }}
+    </v-snackbar>
+
+    <!-- Overlay de Éxito Prominente -->
+    <v-overlay
+      v-model="showSuccess"
+      class="align-center justify-center"
+      contained
+      scrim="#000"
+      opacity="0.7"
+    >
+      <div class="success-flash-container text-center pa-10">
+        <v-icon color="success" size="150" class="mb-6 success-icon-anim">mdi-check-decagram-outline</v-icon>
+        <h2 class="text-h2 font-weight-black text-success glow-text-success mb-2">{{ $t('radioSignal.success') }}</h2>
+        <div class="text-h4 text-white font-weight-bold">{{ $t('radioSignal.successDesc') }}</div>
+      </div>
+    </v-overlay>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
-import { radioSignalData } from '@/data/radioSignalData';
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { radioSignalData } from '@/data/radioSignalData'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-const { t, locale } = useI18n();
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
+  const { t, locale } = useI18n()
+  const multiplayerStore = useMultiplayerStore()
+  const astroStore = useAstroStore()
 
-const props = defineProps({
+  const props = defineProps({
     isMultiplayer: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
+    },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  const emit = defineEmits(['game-over'])
+
+  const subRole = computed(() => multiplayerStore.subRole)
+  const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.[astroStore.user])
+  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const localTransmitText = ref('')
+
+  // Frecuencia objetivo
+  const targetFrequency = ref(Math.random() * 90 + 5)
+  const currentFrequency = ref(Math.random() * 20)
+  const tuningThreshold = 2
+  const userGuess = ref('')
+  const isTuned = ref(false)
+  const showError = ref(false)
+  const showSuccess = ref(false)
+  const score = ref(0)
+  const timeLeft = ref(props.isMultiplayer ? 90 : 60)
+  const gameFinished = ref(false)
+  let roundTimer = null
+
+  const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es'])
+  const shuffledPhrases = ref([])
+  const phraseIndex = ref(0)
+  const phraseToSolve = ref('')
+  const phraseToHear = ref('')
+
+  let speechRepeatTimer = null
+
+  // Initialize phrases
+  onMounted(() => {
+    shuffledPhrases.value = [...phrases.value].sort(() => Math.random() - 0.5).slice(0, 8)
+    phraseToSolve.value = shuffledPhrases.value[0]
+    phraseToHear.value = shuffledPhrases.value[0]
+
+    // SINCRONIZACIÓN DE ESTADO ASIMÉTRICO (Desde el Server)
+    if (props.isMultiplayer) {
+      const room = multiplayerStore.room
+      if (room?.gameConfig?.radioData && myTeam.value) {
+        const teamData = room.gameConfig.radioData[myTeam.value]
+        if (teamData) {
+          targetFrequency.value = teamData.frequency
+          // Asimetría: uno resuelve una parte y el otro la otra
+          if (subRole.value === 'listener') {
+            phraseToSolve.value = teamData.phrase
+            phraseToHear.value = teamData.partnerPhrase || phrases.value[1]
+          } else {
+            phraseToSolve.value = teamData.partnerPhrase || phrases.value[1]
+            phraseToHear.value = teamData.phrase
+          }
+        }
+      }
     }
-});
+  })
 
-const emit = defineEmits(['game-over']);
+  // ---- DIAL ----
+  const knobRotation = ref(0)
+  let isDragging = false
+  let startAngle = 0
+  let currentKnobRotation = 0
 
-// Frecuencia objetivo
-const targetFrequency = ref(Math.random() * 90 + 5);
-const currentFrequency = ref(Math.random() * 20); 
-const tuningThreshold = 2.0;
-const userGuess = ref('');
-const isTuned = ref(false);
-const showError = ref(false);
-const showSuccess = ref(false); // NUEVO: Feedback de éxito
-const score = ref(0);
-const timeLeft = ref(60);
-const gameFinished = ref(false);
-let roundTimer = null;
+  function removeDragListeners () {
+    window.removeEventListener('mousemove', onRotating)
+    window.removeEventListener('mouseup', stopRotating)
+    window.removeEventListener('touchmove', onRotating)
+    window.removeEventListener('touchend', stopRotating)
+  }
 
-const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es']);
-// Phrases shuffled at start
-const shuffledPhrases = computed(() => [...phrases.value].sort(() => Math.random() - 0.5).slice(0, 4)); // 4 frases per partida
-const phraseIndex = ref(0); // Frase atual
-const currentPhrase = ref(shuffledPhrases.value[0]);
-const totalPhrases = computed(() => shuffledPhrases.value.length);
-let speechRepeatTimer = null;
+  onMounted(() => {
+    knobRotation.value = (currentFrequency.value / 100) * 360
+    currentKnobRotation = knobRotation.value
+  })
 
-// ---- DIAL ----
-const knobRotation = ref(0);
-let isDragging = false;
-let startAngle = 0;
-let currentKnobRotation = 0;
+  function startRotating (e) {
+    if (gameFinished.value) return
+    isDragging = true
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
+    const knob = e.currentTarget.getBoundingClientRect()
+    const cx = knob.left + knob.width / 2
+    const cy = knob.top + knob.height / 2
+    startAngle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) - currentKnobRotation
+    window.addEventListener('mousemove', onRotating)
+    window.addEventListener('mouseup', stopRotating)
+    window.addEventListener('touchmove', onRotating, { passive: false })
+    window.addEventListener('touchend', stopRotating)
+    initAudio()
+  }
 
-const removeDragListeners = () => {
-    window.removeEventListener('mousemove', onRotating);
-    window.removeEventListener('mouseup', stopRotating);
-    window.removeEventListener('touchmove', onRotating);
-    window.removeEventListener('touchend', stopRotating);
-};
+  function onRotating (e) {
+    if (!isDragging || gameFinished.value) return
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
+    const knobEl = document.querySelector('.knob-container')
+    if (!knobEl) return
+    const knob = knobEl.getBoundingClientRect()
+    const cx = knob.left + knob.width / 2
+    const cy = knob.top + knob.height / 2
+    const angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI)
+    let rotation = angle - startAngle
+    while (rotation < 0) rotation += 360
+    while (rotation >= 360) rotation -= 360
+    currentKnobRotation = rotation
+    knobRotation.value = rotation
+    currentFrequency.value = (rotation / 360) * 100
+    updateNoise()
+    if (isTuned.value) {
+      isTuned.value = false; stopSpeechLoop()
+    }
+  }
 
-knobRotation.value = (currentFrequency.value / 100) * 360;
-currentKnobRotation = knobRotation.value;
-
-const startRotating = (e) => {
-    if (gameFinished.value) return;
-    isDragging = true;
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const knob = e.currentTarget.getBoundingClientRect();
-    const cx = knob.left + knob.width / 2;
-    const cy = knob.top + knob.height / 2;
-    startAngle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) - currentKnobRotation;
-    window.addEventListener('mousemove', onRotating);
-    window.addEventListener('mouseup', stopRotating);
-    window.addEventListener('touchmove', onRotating, { passive: false });
-    window.addEventListener('touchend', stopRotating);
-    initAudio();
-};
-
-const onRotating = (e) => {
-    if (!isDragging || gameFinished.value) return;
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const knob = document.querySelector('.knob-container').getBoundingClientRect();
-    const cx = knob.left + knob.width / 2;
-    const cy = knob.top + knob.height / 2;
-    const angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI);
-    let rotation = angle - startAngle;
-    while (rotation < 0) rotation += 360;
-    while (rotation >= 360) rotation -= 360;
-    currentKnobRotation = rotation;
-    knobRotation.value = rotation;
-    currentFrequency.value = (rotation / 360) * 100;
-    updateNoise();
-    if (isTuned.value) { isTuned.value = false; stopSpeechLoop(); }
-};
-
-const stopRotating = () => {
-    if (gameFinished.value) return;
-    isDragging = false;
-    removeDragListeners();
-    const distance = Math.abs(currentFrequency.value - targetFrequency.value);
+  function stopRotating () {
+    if (gameFinished.value) return
+    isDragging = false
+    removeDragListeners()
+    const distance = Math.abs(currentFrequency.value - targetFrequency.value)
     if (distance < tuningThreshold) {
-        isTuned.value = true;
-        if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1);
-        startSpeechLoop();
+      isTuned.value = true
+      if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1)
+      startSpeechLoop()
     } else {
-        isTuned.value = false;
-        stopSpeechLoop();
+      isTuned.value = false
+      stopSpeechLoop()
     }
-};
+  }
 
-// ---- AUDIO ----
-let audioCtx = null;
-let noiseNode = null;
-let gainNode = null;
-let filterNode = null;
+  // ---- AUDIO ----
+  let audioCtx = null
+  let noiseNode = null
+  let gainNode = null
+  let filterNode = null
 
-const initAudio = async () => {
-    if (audioCtx) { if (audioCtx.state === 'suspended') await audioCtx.resume(); return; }
+  async function initAudio () {
+    if (audioCtx) {
+      if (audioCtx.state === 'suspended') await audioCtx.resume(); return
+    }
     try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = audioCtx.createBuffer(1, 2 * audioCtx.sampleRate, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-        noiseNode = audioCtx.createBufferSource();
-        noiseNode.buffer = buf; noiseNode.loop = true;
-        filterNode = audioCtx.createBiquadFilter();
-        filterNode.type = 'bandpass'; filterNode.frequency.value = 800; filterNode.Q.value = 1.2;
-        gainNode = audioCtx.createGain(); gainNode.gain.value = 0.15;
-        noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination);
-        noiseNode.start();
-    } catch (e) { console.warn('Audio error'); }
-};
-
-const updateNoise = () => {
-    if (!gainNode || !audioCtx) return;
-    const dist = Math.abs(currentFrequency.value - targetFrequency.value);
-    gainNode.gain.setTargetAtTime(Math.max(0.01, Math.min(dist / 15, 0.2)), audioCtx.currentTime, 0.1);
-};
-
-// ---- ONDAS ----
-const targetWaveCanvas = ref(null);
-const currentWaveCanvas = ref(null);
-let animationFrame = null;
-let time = 0;
-
-const drawWaves = () => {
-    time += 0.04;
-    if (targetWaveCanvas.value && currentWaveCanvas.value) {
-        renderWave(targetWaveCanvas.value, true);
-        renderWave(currentWaveCanvas.value, false);
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const buf = audioCtx.createBuffer(1, 2 * audioCtx.sampleRate, audioCtx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+      noiseNode = audioCtx.createBufferSource()
+      noiseNode.buffer = buf; noiseNode.loop = true
+      filterNode = audioCtx.createBiquadFilter()
+      filterNode.type = 'bandpass'; filterNode.frequency.value = 800; filterNode.Q.value = 1.2
+      gainNode = audioCtx.createGain(); gainNode.gain.value = 0.15
+      noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination)
+      noiseNode.start()
+    } catch {
+      console.warn('Audio error')
     }
-    animationFrame = requestAnimationFrame(drawWaves);
-};
+  }
 
-const renderWave = (canvas, isTarget) => {
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+  function updateNoise () {
+    if (!gainNode || !audioCtx) return
+    const dist = Math.abs(currentFrequency.value - targetFrequency.value)
+    gainNode.gain.setTargetAtTime(Math.max(0.01, Math.min(dist / 15, 0.2)), audioCtx.currentTime, 0.1)
+  }
 
-    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 0.5;
-    for (let i = 0; i < w; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
-    for (let i = 0; i < h; i += 18) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
-    ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+  // ---- ONDAS ----
+  const targetWaveCanvas = ref(null)
+  const currentWaveCanvas = ref(null)
+  let animationFrame = null
+  let time = 0
 
-    const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time;
+  function drawWaves () {
+    time += 0.04
+    if (targetWaveCanvas.value && currentWaveCanvas.value) {
+      renderWave(targetWaveCanvas.value, true)
+      renderWave(currentWaveCanvas.value, false)
+    }
+    animationFrame = requestAnimationFrame(drawWaves)
+  }
+
+  function renderWave (canvas, isTarget) {
+    const ctxWave = canvas.getContext('2d')
+    const w = canvas.width, h = canvas.height
+    ctxWave.clearRect(0, 0, w, h)
+
+    ctxWave.strokeStyle = '#0d1117'; ctxWave.lineWidth = 0.5
+    for (let i = 0; i < w; i += 18) {
+      ctxWave.beginPath(); ctxWave.moveTo(i, 0); ctxWave.lineTo(i, h); ctxWave.stroke()
+    }
+    for (let i = 0; i < h; i += 18) {
+      ctxWave.beginPath(); ctxWave.moveTo(0, i); ctxWave.lineTo(w, i); ctxWave.stroke()
+    }
+    ctxWave.strokeStyle = '#1a2030'; ctxWave.lineWidth = 1
+    ctxWave.beginPath(); ctxWave.moveTo(0, h / 2); ctxWave.lineTo(w, h / 2); ctxWave.stroke()
+
+    const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time
 
     if (isTarget) {
-        ctx.beginPath(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#FF9800'; ctx.setLineDash([]);
-        for (let x = 0; x < w; x++) {
-            const y = h/2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp;
-            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        if (isTuned.value) { ctx.shadowBlur = 15; ctx.shadowColor = '#FF9800'; ctx.stroke(); ctx.shadowBlur = 0; }
+      ctxWave.beginPath(); ctxWave.lineWidth = 2.5; ctxWave.strokeStyle = '#FF9800'; ctxWave.setLineDash([])
+      for (let x = 0; x < w; x++) {
+        const y = h / 2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
+        x === 0 ? ctxWave.moveTo(x, y) : ctxWave.lineTo(x, y)
+      }
+      ctxWave.stroke()
+      if (isTuned.value) {
+        ctxWave.shadowBlur = 15; ctxWave.shadowColor = '#FF9800'; ctxWave.stroke(); ctxWave.shadowBlur = 0
+      }
     } else {
-        const dist = Math.abs(currentFrequency.value - targetFrequency.value);
-        const prox = Math.max(0, 1 - (dist / 50));
-        ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`;
-        for (let x = 0; x < w; x++) {
-            const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp;
-            const c1 = Math.sin(x * 0.23 + time * 1.5) * 18;
-            const c2 = Math.sin(x * 0.07 + time * 0.7) * 12;
-            const c3 = Math.sin(x * 0.35 + time * 2.3) * 8;
-            const noise = (Math.random() - 0.5) * 10 * (1 - prox);
-            const y = h/2 + clean * prox + (c1 + c2*0.5 + c3*0.3 + noise) * (1 - prox);
-            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        if (prox > 0.8) { ctx.shadowBlur = 10 * prox; ctx.shadowColor = '#00E5FF'; ctx.stroke(); ctx.shadowBlur = 0; }
+      const dist = Math.abs(currentFrequency.value - targetFrequency.value)
+      const prox = Math.max(0, 1 - (dist / 50))
+      ctxWave.beginPath(); ctxWave.lineWidth = 2; ctxWave.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`
+      for (let x = 0; x < w; x++) {
+        const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
+        const c1 = Math.sin(x * 0.23 + time * 1.5) * 18
+        const c2 = Math.sin(x * 0.07 + time * 0.7) * 12
+        const c3 = Math.sin(x * 0.35 + time * 2.3) * 8
+        const noise = (Math.random() - 0.5) * 10 * (1 - prox)
+        const y = h / 2 + clean * prox + (c1 + c2 * 0.5 + c3 * 0.3 + noise) * (1 - prox)
+        x === 0 ? ctxWave.moveTo(x, y) : ctxWave.lineTo(x, y)
+      }
+      ctxWave.stroke()
+      if (prox > 0.8) {
+        ctxWave.shadowBlur = 10 * prox; ctxWave.shadowColor = '#00E5FF'; ctxWave.stroke(); ctxWave.shadowBlur = 0
+      }
     }
-};
+  }
 
-// ---- VOZ ----
-const startSpeechLoop = () => {
-    if (!isTuned.value || gameFinished.value) return;
-    speakPhrase(1.0);
-};
+  // ---- VOZ ----
+  function startSpeechLoop () {
+    if (!isTuned.value || gameFinished.value) return
+    speakPhrase(1)
+  }
 
-const stopSpeechLoop = () => {
+  function stopSpeechLoop () {
     if (speechRepeatTimer) {
-        clearTimeout(speechRepeatTimer);
-        speechRepeatTimer = null;
+      clearTimeout(speechRepeatTimer)
+      speechRepeatTimer = null
     }
-    window.speechSynthesis.cancel();
-};
+    window.speechSynthesis.cancel()
+  }
 
-const speakPhrase = (volume = 1.0) => {
-    if (!window.speechSynthesis || gameFinished.value) return;
-    
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(currentPhrase.value);
-    
-    // Configurar veus
-    const voices = window.speechSynthesis.getVoices();
-    const targetLang = locale.value === 'ca' ? 'ca' : 'es';
-    const v = voices.find(v => v.lang.includes(targetLang)) ||
-              voices.find(v => v.lang.includes('es') && v.name.includes('Google')) ||
-              voices.find(v => v.lang.includes('es')) || voices[0];
-    
-    if (v) u.voice = v;
-    u.lang = 'ca-ES';
-    u.rate = 0.8;
-    u.pitch = 0.8;
-    u.volume = volume;
+  function speakPhrase (volume = 1) {
+    if (!window.speechSynthesis || gameFinished.value) return
 
-    // Lògica de repetició robusta: quan acaba, espera 1s i torna a parlar si seguim afinats
-    u.onend = () => {
-        if (isTuned.value && !gameFinished.value) {
-            speechRepeatTimer = setTimeout(() => {
-                if (isTuned.value && !gameFinished.value) speakPhrase(volume);
-            }, 1000);
+    window.speechSynthesis.cancel()
+
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(phraseToHear.value)
+
+      const setupVoice = () => {
+        const voices = window.speechSynthesis.getVoices()
+        const targetLang = locale.value === 'ca' ? 'ca' : 'es'
+        const v = voices.find(v => v.lang.includes(targetLang))
+          || voices.find(v => v.lang.includes('es') && v.name.includes('Google'))
+          || voices.find(v => v.lang.includes('es')) || voices[0]
+        if (v) u.voice = v
+      }
+
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          setupVoice()
+          window.speechSynthesis.speak(u)
         }
-    };
+      } else {
+        setupVoice()
+        window.speechSynthesis.speak(u)
+      }
 
-    window.speechSynthesis.speak(u);
-};
+      u.lang = locale.value === 'ca' ? 'ca-ES' : 'es-ES'
+      u.rate = 0.9
+      u.pitch = 1
+      u.volume = volume
+    }, 50)
+  }
 
-// LÓGICA CORE CORREGIDA
-const checkPhrase = () => {
-    if (gameFinished.value) return;
-    const norm = (s) => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
-    
-    if (norm(userGuess.value) === norm(currentPhrase.value)) {
-        // En lugar de acabar, damos Puntos + Tiempo y cambiamos de frecuencia (Lógica dev)
-        score.value += 150;
-        timeLeft.value += 15;
-        userGuess.value = '';
-        showSuccess.value = true;
-        
-        // Generamos nueva señal objetivo
-        currentPhrase.value = phrases[Math.floor(Math.random() * phrases.length)];
-        targetFrequency.value = Math.random() * 90 + 5;
-        
-        // Reseteamos el estado para que vuelva a buscar
-        isTuned.value = false;
-        stopSpeechLoop();
-        updateNoise();
-    } else { 
-        showError.value = true; 
-        userGuess.value = ''; 
+  // ---- TRANSMISIÓN COOPERATIVA ----
+  function sendTransmission () {
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'PARTNER_TYPING',
+        text: localTransmitText.value,
+      })
     }
-};
+  }
 
-const startTimer = () => {
-    if (roundTimer) {
-        clearInterval(roundTimer);
+  function sendChatMessage () {
+    if (props.isMultiplayer && localTransmitText.value.trim()) {
+      multiplayerStore.sendGameAction({
+        type: 'COOP_CHAT',
+        text: localTransmitText.value.trim(),
+      })
+      localTransmitText.value = ''
+      multiplayerStore.sendGameAction({
+        type: 'PARTNER_TYPING',
+        text: '',
+      })
     }
+  }
 
-    roundTimer = setInterval(() => {
-        if (gameFinished.value) return;
-        timeLeft.value = Math.max(0, timeLeft.value - 1);
+  function checkPhrase () {
+    if (gameFinished.value) return
+    const norm = s => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+
+    if (norm(userGuess.value) === norm(phraseToSolve.value)) {
+      score.value += 150
+      timeLeft.value += 15
+      userGuess.value = ''
+      showSuccess.value = true
+
+      targetFrequency.value = Math.random() * 90 + 5
+
+      if (props.isMultiplayer) {
+        multiplayerStore.sendGameAction({
+          type: 'RADIO_PHRASE_SOLVED',
+          teamId: myTeam.value,
+          pointsGained: 150,
+          newFreq: targetFrequency.value
+        })
+      } else {
+        phraseIndex.value++
+        const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
+        phraseToSolve.value = nextPhrase
+        phraseToHear.value = nextPhrase
+      }
+
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(15) // Recarga 15% por cada frase
+      }
+
+      isTuned.value = false
+      stopSpeechLoop()
+      updateNoise()
+    } else {
+      showError.value = true
+      userGuess.value = ''
+    }
+  }
+
+  function startTimer () {
+    if (roundTimer) clearInterval(roundTimer)
+
+    if (!props.isMultiplayer || isHost.value) {
+      roundTimer = setInterval(() => {
+        if (gameFinished.value) return
+        timeLeft.value = Math.max(0, timeLeft.value - 1)
+
+        if (props.isMultiplayer && isHost.value) {
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+        }
+
         if (timeLeft.value === 0) {
-            finishGame();
+          finishGame()
         }
-    }, 1000);
-};
+      }, 1000)
+    }
+  }
 
-const finishGame = (silent = false) => {
-    if (gameFinished.value) return;
-    
+  function finishGame (silent = false) {
+    if (gameFinished.value) return
+
+    gameFinished.value = true
+    isDragging = false
+    removeDragListeners()
+    stopSpeechLoop()
+    stopAudio()
+
     if (props.isMultiplayer && !silent) {
-        multiplayerStore.submitRoundResult();
-        return;
+      multiplayerStore.submitRoundResult()
+      return
     }
 
-    gameFinished.value = true;
-    isDragging = false;
-    removeDragListeners();
     if (roundTimer) {
-        clearInterval(roundTimer);
-        roundTimer = null;
+      clearInterval(roundTimer)
+      roundTimer = null
     }
-    const reward = score.value + timeLeft.value;
-    stopSpeechLoop();
-    stopAudio();
-    emit('game-over', reward);
-};
+    const reward = score.value + timeLeft.value
+    emit('game-over', reward)
+  }
 
-const stopAudio = () => {
-    stopSpeechLoop();
-    if (noiseNode) try { noiseNode.stop(); } catch(e) {}
-    if (audioCtx) audioCtx.close();
-    noiseNode = null;
-    filterNode = null;
-    gainNode = null;
-    audioCtx = null;
-};
+  function stopAudio () {
+    stopSpeechLoop()
+    if (noiseNode) try {
+      noiseNode.stop()
+    } catch {}
+    if (audioCtx) audioCtx.close()
+    noiseNode = null
+    filterNode = null
+    gainNode = null
+    audioCtx = null
+  }
 
-onMounted(() => {
-    drawWaves();
-    startTimer();
-});
+  onMounted(() => {
+    drawWaves()
+    if (props.isMultiplayer) {
+      // Delay para el briefing (Reducido a 3s)
+      setTimeout(() => {
+        startTimer()
+      }, 3000)
+    } else {
+      startTimer()
+    }
+  })
 
-// Listener para eventos multijugador (Mantenemos de HEAD)
-watch(() => multiplayerStore.lastMessage, (msg) => {
-    if (!msg) return;
+  // Listener para eventos multijugador
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        // Alguien ganó la ronda, cerrar este juego formalmente
-        gameFinished.value = true; 
-        emit('game-over', score.value + timeLeft.value);
+      if (!gameFinished.value) {
+        finishGame(true)
+        emit('game-over', score.value)
+      }
+      return
     }
-});
 
-// Notificar puntuación al servidor en modo multijugador (Mantenemos de HEAD)
-watch(score, (newScore) => {
+    if (msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'RADIO_INIT_ASYNC' && !isHost.value) {
+        targetFrequency.value = msg.action.newFreq
+        phraseToSolve.value = msg.action.guestSolve
+        phraseToHear.value = msg.action.hostSolve
+      }
+
+      if (msg.action?.type === 'RADIO_PHRASE_SOLVED' && msg.action.teamId === myTeam.value) {
+        score.value += msg.action.pointsGained
+        targetFrequency.value = msg.action.newFreq
+        
+        // Rotamos frases para el equipo
+        phraseIndex.value++
+        const p1 = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
+        const p2 = shuffledPhrases.value[phraseIndex.value + 1] || phrases.value[1]
+
+        if (subRole.value === 'listener') {
+          phraseToSolve.value = p1
+          phraseToHear.value = p2
+        } else {
+          phraseToSolve.value = p2
+          phraseToHear.value = p1
+        }
+      }
+
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) finishGame()
+      }
+    }
+  }, { immediate: true })
+
+  watch(score, newScore => {
     if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-            type: 'SCORE_UPDATE',
-            score: newScore
-        });
+      multiplayerStore.sendGameAction({
+        type: 'SCORE_UPDATE',
+        score: newScore,
+      })
     }
-});
+  })
 
-onUnmounted(() => {
-    isDragging = false;
-    removeDragListeners();
-    if (roundTimer) clearInterval(roundTimer);
-    stopSpeechLoop();
-    stopAudio();
-    if (animationFrame) cancelAnimationFrame(animationFrame);
-});
+  onUnmounted(() => {
+    isDragging = false
+    removeDragListeners()
+    if (roundTimer) clearInterval(roundTimer)
+    stopSpeechLoop()
+    stopAudio()
+    if (animationFrame) cancelAnimationFrame(animationFrame)
+  })
 </script>
 
 <style scoped>
@@ -486,7 +672,7 @@ onUnmounted(() => {
 .screw-br { bottom: 8px; right: 8px; }
 
 .radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
-.brand-text { 
+.brand-text {
     font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
     color: #ccc; letter-spacing: 6px; text-shadow: 0 0 8px rgba(200,200,200,0.15);
 }
@@ -652,16 +838,123 @@ canvas { display: block; width: 100%; height: auto; }
     outline: none; transition: border-color 0.3s;
 }
 .radio-input:focus { border-color: #00E5FF; }
-.radio-input::placeholder { color: #334; }
 .send-btn {
-    background: #00E5FF; color: #111; border: none; border-radius: 4px;
-    padding: 8px 16px; font-weight: bold; font-size: 12px; letter-spacing: 1px;
-    cursor: pointer; transition: all 0.2s;
+    background: #00E5FF; color: #080a0e; border: none; border-radius: 4px;
+    padding: 0 16px; font-family: 'Courier New', monospace; font-weight: bold;
+    cursor: pointer; transition: all 0.2s; font-size: 11px;
 }
-.send-btn:hover { background: #33ecff; box-shadow: 0 0 10px rgba(0,229,255,0.3); }
+.send-btn:hover { background: #fff; box-shadow: 0 0 12px #00E5FF; }
+
 .input-placeholder {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 70px; gap: 6px;
-    font-size: 10px; color: #333; letter-spacing: 2px; font-family: 'Courier New', monospace;
+    height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: #444; font-size: 10px; font-family: 'Courier New', monospace; letter-spacing: 2px;
+}
+
+.coop-status-bar {
+    margin-top: 15px;
+    background: rgba(0, 229, 255, 0.05);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.coop-label {
+    font-size: 10px;
+    color: #00E5FF;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.chat-history {
+    height: 80px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+.chat-msg {
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.chat-user {
+    color: #00E5FF;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.chat-text {
+    color: #fff;
+}
+
+.typing .chat-text {
+    color: #aaa;
+}
+
+.partner-signal-box {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px dashed rgba(255, 152, 0, 0.3);
+    border-radius: 4px;
+    padding: 6px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.signal-label {
+    font-size: 9px;
+    color: #FF9800;
+    font-weight: bold;
+}
+
+.signal-text {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.transmit-input {
+    width: 100%;
+    background: #0a0c10;
+    border: 1px solid #2d3139;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #00E5FF;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    outline: none;
+}
+
+.transmit-input:focus {
+    border-color: #00E5FF;
+}
+
+.italic {
+    font-style: italic;
+}
+
+/* ÉXITO FEEDBACK */
+.glow-text-success {
+    text-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 40px rgba(76, 175, 80, 0.4);
+}
+
+.success-icon-anim {
+    animation: success-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes success-pop {
+    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+    70% { transform: scale(1.2) rotate(10deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.success-flash-container {
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, transparent 70%);
 }
 </style>

@@ -1,11 +1,14 @@
 <template>
-  <v-container fluid class="d-flex flex-column align-center justify-center game-container w-100" style="min-height: 800px">
-    
+  <v-container class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" fluid style="min-height: 800px">
+
     <!-- Capçalera -->
-    <v-card width="100%" max-width="800" class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" rounded="xl">
+    <v-card class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" max-width="800" rounded="xl" width="100%">
       <div class="d-flex justify-space-between align-center">
         <div>
-          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">{{ $t('spelledRosco.title') }}</h2>
+          <h2 class="text-h5 font-weight-bold text-cyan-accent-2">
+            🚀 {{ $t('spelledRosco.title') }}
+            <span v-if="props.isMultiplayer && subRole" class="text-caption text-uppercase">({{ subRole }})</span>
+          </h2>
           <div class="text-caption text-grey-lighten-2">
             <span>{{ $t('spelledRosco.score', { score: score }) }}</span>
             <span class="mx-2">|</span>
@@ -13,38 +16,59 @@
           </div>
         </div>
         <div class="d-flex align-center gap-4">
-          <v-chip v-for="(l, i) in roscoLetters" :key="i" :color="getChipColor(l)" size="small" label class="mx-1 font-weight-bold">
+          <v-chip
+            v-for="(l, i) in roscoLetters"
+            :key="i"
+            class="mx-1 font-weight-bold"
+            :color="getChipColor(l)"
+            label
+            size="small"
+          >
             {{ l.char }}
           </v-chip>
-          <v-btn icon="mdi-close" variant="text" color="grey" @click="emitExit"></v-btn>
+          <v-btn color="grey" icon="mdi-close" variant="text" @click="emitExit" />
         </div>
       </div>
     </v-card>
 
     <!-- Joc Principal -->
     <v-row v-if="!gameFinished" class="w-100 d-flex justify-center align-center" no-gutters>
-      
+
       <!-- Estrella -->
-      <v-col cols="12" lg="6" class="d-flex justify-center align-center position-relative star-col mb-8 mb-lg-0">
+      <v-col class="d-flex justify-center align-center position-relative star-col mb-8 mb-lg-0" cols="12" lg="6">
         <div class="star-wrapper">
           <svg class="star-svg" viewBox="0 0 400 400">
             <!-- Polígons d'il·luminació interior (Puntes) -->
-            <polygon v-for="(points, i) in tipPolygons" :key="'tip-'+i"
+            <polygon
+              v-for="(points, i) in tipPolygons"
+              :key="'tip-'+i"
+              class="star-tip-fill"
+              :class="{ 'tip-glowing': isTipGlowing(i) }"
               :points="points"
-              class="star-tip-fill" :class="{ 'tip-glowing': isTipGlowing(i) }"
             />
 
             <!-- Línies del contorn -->
-            <line v-for="(seg, i) in starSegments" :key="'line-'+i"
-              :x1="seg.x1" :y1="seg.y1" :x2="seg.x2" :y2="seg.y2"
-              class="star-line" :class="{ 'line-glowing': isSegmentGlowing(i) }"
+            <line
+              v-for="(seg, i) in starSegments"
+              :key="'line-'+i"
+              class="star-line"
+              :class="{ 'line-glowing': isSegmentGlowing(i) }"
+              :x1="seg.x1"
+              :x2="seg.x2"
+              :y1="seg.y1"
+              :y2="seg.y2"
             />
 
             <g v-if="rocketAnimating" class="rocket-trail-group">
-              <circle :cx="rocketPos.x" :cy="rocketPos.y" r="6" fill="url(#rocketGlow)" />
-              <circle v-for="(p, i) in trailParticles" :key="'trail-'+i"
-                :cx="p.x" :cy="p.y" :r="p.r"
-                :fill="p.color" :opacity="p.opacity"
+              <circle :cx="rocketPos.x" :cy="rocketPos.y" fill="url(#rocketGlow)" r="6" />
+              <circle
+                v-for="(p, i) in trailParticles"
+                :key="'trail-'+i"
+                :cx="p.x"
+                :cy="p.y"
+                :fill="p.color"
+                :opacity="p.opacity"
+                :r="p.r"
               />
             </g>
             <defs>
@@ -60,15 +84,15 @@
             </defs>
           </svg>
 
-          <div 
-            v-for="(letter, index) in roscoLetters" 
+          <div
+            v-for="(letter, index) in roscoLetters"
             :key="index"
             class="star-node elevation-8"
             :class="getBubbleClass(letter, index)"
             :style="getStarNodeStyle(index)"
           >
             <span class="node-letter">{{ letter.char }}</span>
-            <div v-if="index === currentIndex && !gameFinished" class="node-pulse"></div>
+            <div v-if="index === currentIndex && !gameFinished" class="node-pulse" />
           </div>
 
           <div class="star-center">
@@ -78,591 +102,724 @@
       </v-col>
 
       <!-- Panell de Pregunta i Resposta -->
-      <v-col cols="12" lg="6" class="px-lg-8">
-        <v-card class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl" border>
-          <div class="mb-4">
-            <v-chip color="cyan" label class="mb-2 font-weight-bold">{{ $t('spelledRosco.definition') }}</v-chip>
-            <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+      <v-col class="px-lg-8" cols="12" lg="6">
+        <v-card border class="pa-6 bg-grey-darken-4 elevation-5" rounded="xl">
+          <div class="mb-4 text-center">
+            <!-- RENDERIZADO CONDICIONAL DE PISTA -->
+            <template v-if="isTranslator">
+              <v-chip class="mb-2 font-weight-bold" color="amber" label>{{ $t('spelledRosco.translatorClue') }}</v-chip>
+              <div class="hieroglyph-internal-container d-flex justify-center gap-4 pa-4">
+                <div v-for="(emoji, index) in (currentLetter.hieroglyphs || ['❓','❓','❓'])" :key="index" class="hieroglyph-box elevation-10">
+                  <span class="emoji-text">{{ emoji }}</span>
+                </div>
+              </div>
+            </template>
+            <template v-else-if="isSender">
+              <v-chip class="mb-2 font-weight-bold" color="light-blue" label>{{ $t('spelledRosco.senderClue') }}</v-chip>
+              <p class="text-h4 text-cyan-accent-2 font-weight-black mb-4">{{ currentLetter.answer }}</p>
+
+              <v-card class="pa-4 bg-grey-darken-3 rounded-lg elevation-4">
+                <div class="text-caption text-grey-lighten-1 mb-2">{{ $t('spelledRosco.writeHint') }}</div>
+                <v-text-field
+                  v-model="textHint"
+                  bg-color="grey-darken-4"
+                  class="mb-3 hint-text-field"
+                  density="comfortable"
+                  hide-details
+                  :placeholder="$t('spelledRosco.hintPlaceholder')"
+                  prepend-inner-icon="mdi-chat-processing"
+                  rounded="lg"
+                  variant="solo-filled"
+                  @keydown.enter="sendTextHint"
+                />
+                <v-btn
+                  block
+                  class="text-black font-weight-bold"
+                  color="cyan-accent-3"
+                  :disabled="!textHint.trim()"
+                  @click="sendTextHint"
+                >
+                  {{ $t('spelledRosco.sendClue') }}
+                </v-btn>
+              </v-card>
+            </template>
+            <template v-else-if="isGuesser">
+              <v-chip class="mb-2 font-weight-bold" color="cyan" label>{{ $t('spelledRosco.guess') }}</v-chip>
+
+              <!-- Pistas inteligentes -->
+              <div class="d-flex justify-center gap-2 mb-4">
+                <v-chip class="font-weight-black elevation-2" color="amber-darken-3" size="small" variant="flat">
+                  <v-icon icon="mdi-tag" size="14" start />
+                  {{ currentHints.category }}
+                </v-chip>
+                <v-chip class="font-weight-black elevation-2" color="indigo-accent-2" size="small" variant="flat">
+                  <v-icon icon="mdi-shape" size="14" start />
+                  {{ currentHints.type }}
+                </v-chip>
+              </div>
+
+              <!-- EMOJI HISTORY -->
+              <div class="emoji-history-internal pa-4 rounded-xl elevation-5 bg-deep-purple-darken-4 border-cyan">
+                <div class="text-caption text-cyan-accent-2 mb-2 font-weight-bold">{{ $t('spelledRosco.partnerClues') }}</div>
+                <div class="d-flex flex-wrap gap-2 justify-center min-chat-bubble-internal">
+                  <div
+                    v-for="(emoji, index) in multiplayerStore.partnerEmojis"
+                    :key="index"
+                    class="emoji-item-internal animate-pop-in"
+                  >
+                    <span class="text-h3">{{ emoji }}</span>
+                  </div>
+                  <div v-if="!multiplayerStore.partnerEmojis || multiplayerStore.partnerEmojis.length === 0" class="text-body-2 text-grey italic">
+                    {{ $t('spelledRosco.waitingClues') }}
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <v-chip class="mb-2 font-weight-bold" color="cyan" label>{{ $t('spelledRosco.definition') }}</v-chip>
+              <p class="text-h6 text-white">{{ currentLetter.question }}</p>
+            </template>
           </div>
 
-          <v-divider class="mb-6 border-opacity-25"></v-divider>
+          <v-divider class="mb-6 border-opacity-25" />
 
           <div class="text-center mb-4">
-            <p class="text-overline text-grey-lighten-1 mb-2">{{ $t('spelledRosco.writeWord') }}</p>
-            
+            <p class="text-overline text-grey-lighten-1 mb-2">
+              <span v-if="isTranslator">{{ $t('spelledRosco.typingPartner') }}</span>
+              <span v-else-if="isSender">{{ $t('spelledRosco.sendEmojiClue') }}</span>
+              <span v-else>{{ $t('spelledRosco.writeWord') }}</span>
+            </p>
+
             <v-text-field
+              v-if="!isTranslator && !isSender"
               v-model="rawInput"
-              variant="outlined"
-              color="cyan-accent-3"
+              autofocus
               bg-color="#263238"
-              :placeholder="$t('spelledRosco.placeholder')"
               class="mb-4 spelling-input"
+              color="cyan-accent-3"
               density="comfortable"
               hide-details
-              autofocus
+              :placeholder="$t('spelledRosco.placeholder')"
+              variant="outlined"
+              @input="onTyping"
               @keydown.enter="checkAnswer"
-            ></v-text-field>
+            />
 
-            <div class="d-flex justify-center gap-4 mb-4">
-               <v-btn
+            <!-- GHOST TEXT PARA EL TRADUCTOR -->
+            <div v-else-if="isTranslator" class="ghost-text-container mb-4 pa-4 rounded-lg">
+              <span class="text-h4 text-cyan-accent-2 font-weight-black">{{ multiplayerStore.partnerText || '...' }}</span>
+              <div v-if="multiplayerStore.partnerText" class="typing-indicator mt-2">
+                <v-progress-linear color="cyan" height="2" indeterminate />
+              </div>
+            </div>
+
+            <div v-if="!isTranslator && !isSender" class="d-flex justify-center gap-4 mb-4">
+              <v-btn
+                class="px-4"
                 color="orange-accent-3"
                 size="x-large"
                 variant="tonal"
-                class="px-4"
                 @click="pasapalabra"
               >
                 {{ $t('spelledRosco.pasapalabra') }}
               </v-btn>
             </div>
 
-              <v-btn
-                color="success"
-                size="large"
-                block
-                rounded="lg"
-                class="font-weight-bold text-white elevation-4"
-                @click="checkAnswer"
-                :disabled="rawInput.length === 0"
-              >
-                {{ $t('spelledRosco.confirm') }}
-              </v-btn>
-              
-              <v-btn
-                variant="text"
-                color="red-accent-2"
-                class="mt-2"
-                @click="clearInput"
-                size="small"
-              >
-                {{ $t('spelledRosco.clearAll') }}
-              </v-btn>
+            <v-btn
+              v-if="!isTranslator && !isSender"
+              block
+              class="font-weight-bold text-white elevation-4"
+              color="success"
+              :disabled="rawInput.length === 0"
+              rounded="lg"
+              size="large"
+              @click="checkAnswer"
+            >
+              {{ $t('spelledRosco.confirm') }}
+            </v-btn>
+
+            <v-btn
+              v-if="!isTranslator && !isSender"
+              class="mt-2"
+              color="red-accent-2"
+              size="small"
+              variant="text"
+              @click="clearInput"
+            >
+              {{ $t('spelledRosco.clearAll') }}
+            </v-btn>
+
+            <div v-if="isTranslator" class="text-body-2 text-grey-lighten-1">
+              {{ $t('spelledRosco.translatorGuide') }}
+            </div>
+            <div v-if="isSender" class="text-body-2 text-grey-lighten-1">
+              {{ $t('spelledRosco.senderGuide') }}
+            </div>
           </div>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Pantalla Final (només en single player) -->
-    <v-card v-else-if="!isMultiplayer" width="100%" max-width="500" class="pa-8 text-center bg-grey-darken-4 border-cyan" rounded="xl">
-      <v-icon icon="mdi-school" color="cyan-accent-2" size="80" class="mb-4"></v-icon>
-      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') }}</h2>
+    <!-- Pantalla Final -->
+    <v-card
+      v-else-if="gameFinished"
+      class="pa-8 text-center bg-grey-darken-4 border-cyan"
+      max-width="500"
+      rounded="xl"
+      width="100%"
+    >
+      <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-school" size="80" />
+      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') || 'MISSIÓ COMPLETADA' }}</h2>
       <div class="d-flex justify-space-around my-6">
         <div class="text-center">
-            <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
-            <div class="text-caption">{{ $t('spelledRosco.correctHits') }}</div>
+          <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
+          <div class="text-caption">{{ $t('spelledRosco.correctHits') }}</div>
         </div>
         <div class="text-center">
-            <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
-            <div class="text-caption">{{ $t('spelledRosco.incorrectHits') }}</div>
+          <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
+          <div class="text-caption">{{ $t('spelledRosco.incorrectHits') }}</div>
         </div>
       </div>
       <p class="text-h5 text-white mb-2">{{ $t('spelledRosco.finalScore', { score: score }) }}</p>
-      <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
-      <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
       
-      <v-btn @click="emitExit" color="cyan-accent-3" variant="flat" size="large" rounded="pill" class="text-black font-weight-bold">
-        {{ $t('spelledRosco.getReward') }}
-      </v-btn>
+      <template v-if="!isMultiplayer">
+        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
+        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
+        <v-btn
+          class="text-black font-weight-bold"
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('spelledRosco.getReward') }}
+        </v-btn>
+      </template>
+      <template v-else>
+        <v-btn
+          class="text-black font-weight-bold"
+          color="cyan-accent-3"
+          rounded="pill"
+          size="large"
+          variant="flat"
+          @click="emitExit"
+        >
+          {{ $t('spelledRosco.getReward') }}
+        </v-btn>
+      </template>
     </v-card>
 
-    <v-snackbar v-model="showFeedback" :color="feedbackColor" timeout="2000" location="top">
-       {{ feedbackMessage }}
+    <v-snackbar v-model="showFeedback" :color="feedbackColor" location="top" timeout="2000">
+      {{ feedbackMessage }}
     </v-snackbar>
 
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useAstroStore } from '@/stores/astroStore';
-import { roscoData } from '@/data/roscoGamesData';
+  import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { roscoData } from '@/data/roscoGamesData'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { isValidHint } from '@/utils/hintValidator'
+  import { getWordCategory, getWordType } from '@/utils/roscoHints'
 
-const { t, locale } = useI18n();
-const multiplayerStore = useMultiplayerStore();
-const astroStore = useAstroStore();
+  const { t, locale } = useI18n()
+  const multiplayerStore = useMultiplayerStore()
+  const astroStore = useAstroStore()
 
-const props = defineProps({
-  isMultiplayer: {
-    type: Boolean,
-    default: false
-  }
-});
+  const textHint = ref('')
+  const currentHints = reactive({
+    category: '',
+    type: '',
+  })
 
-const emit = defineEmits(['game-over']);
-
-// Computada reactiva per dependre de l'idioma
-const allLettersData = computed(() => {
-    return roscoData[locale.value] || roscoData['es'];
-});
-
-// --- STAR GEOMETRY (Outline Star: 5 tips, 10 points) ---
-const STAR_CENTER = 200;
-const STAR_RADIUS = 150;
-const INNER_RADIUS = 60; 
-
-const starPoints = Array.from({ length: 10 }, (_, i) => {
-  const angle = (i * 36 - 90) * (Math.PI / 180);
-  const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS;
-  return {
-    x: STAR_CENTER + Math.cos(angle) * r,
-    y: STAR_CENTER + Math.sin(angle) * r,
-  };
-});
-
-const letterPositions = [0, 2, 4, 6, 8];
-
-const starSegments = computed(() => {
-  return starPoints.map((point, i) => {
-    const nextIdx = (i + 1) % 10;
-    return {
-      x1: point.x, y1: point.y,
-      x2: starPoints[nextIdx].x, y2: starPoints[nextIdx].y,
-    };
-  });
-});
-
-const tipPolygons = computed(() => {
-  // Cada punta (i=0,2,4,6,8) usa el seu punt, l'anterior i el següent (que són INTERIORS)
-  return letterPositions.map(pos => {
-    const pPrev = starPoints[(pos - 1 + 10) % 10];
-    const pCurr = starPoints[pos];
-    const pNext = starPoints[(pos + 1) % 10];
-    const pCenter = { x: STAR_CENTER, y: STAR_CENTER };
-    // Formem un rombe o triangle des del centre per omplir la punta
-    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`;
-  });
-});
-
-// Estat del joc
-const roscoLetters = ref([]); 
-const currentIndex = ref(0);
-const rawInput = ref('');
-const gameFinished = ref(false);
-const score = ref(0);
-const showFeedback = ref(false);
-const feedbackMessage = ref('');
-const feedbackColor = ref('info');
-const isChecking = ref(false);
-const totalTime = 90;
-const timeLeft = ref(totalTime);
-const isWaitingForOthers = ref(false);
-let timerInterval = null;
-
-// Rocket animation state
-const rocketAnimating = ref(false);
-const rocketPos = reactive({ x: 0, y: 0 });
-const trailParticles = ref([]);
-const visitedSegments = ref(new Set());
-
-// Computed
-const currentLetter = computed(() => {
-    if (roscoLetters.value.length === 0) return { char: '?', question: '' };
-    return roscoLetters.value[currentIndex.value];
-});
-
-const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length);
-const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length);
-const finalReward = computed(() => score.value + timeLeft.value);
-
-// Helper: normalize string (remove accents, uppercase, trim spaces)
-const normalize = (str) => {
-    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-};
-
-// Initialization - pick 5 random
-onMounted(() => {
-    const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5);
-    roscoLetters.value = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }));
-    startTimer();
-});
-
-// Listener para eventos multijugador
-watch(() => multiplayerStore.lastMessage, (msg) => {
-    if (!msg) return;
-
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-        gameFinished.value = true;
-        emitExit();
-    }
-
-    // Rebre sabotatge del rival: restar temps
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15));
-    }
-});
-
-// Notificar puntuación al servidor en modo multijugador
-watch(score, (newScore) => {
-    if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-            type: 'SCORE_UPDATE',
-            score: newScore
-        });
-    }
-});
-
-onUnmounted(() => {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-    }
-});
-
-const clearInput = () => { rawInput.value = ''; };
-
-// Rocket Animation - Following the outline
-const animateRocket = (fromIdx, toIdx) => {
-  return new Promise((resolve) => {
-    // fromIdx i toIdx són índexs de lletres (0..4)
-    // Els convertim a índexs de starPoints (multiplicant per 2)
-    const startPointIdx = letterPositions[fromIdx];
-    const endPointIdx = letterPositions[toIdx];
-    
-    // Determinem el camí més curt pel contorn
-    const path = [];
-    let curr = startPointIdx;
-    while(curr !== endPointIdx) {
-      curr = (curr + 1) % 10;
-      path.push(starPoints[curr]);
-    }
-    
-    rocketAnimating.value = true;
-    trailParticles.value = [];
-    
-    const durationPerStep = 200;
-    const animateStep = (stepIdx) => {
-      if (stepIdx >= path.length) {
-        setTimeout(() => {
-          rocketAnimating.value = false;
-          trailParticles.value = [];
-          resolve();
-        }, 50);
-        return;
+  function throttle (func, limit) {
+    let lastRan
+    let lastFunc
+    return function (...args) {
+      if (lastRan) {
+        clearTimeout(lastFunc)
+        lastFunc = setTimeout(function () {
+          if ((Date.now() - lastRan) >= limit) {
+            func(...args)
+            lastRan = Date.now()
+          }
+        }, limit - (Date.now() - lastRan))
+      } else {
+        func(...args)
+        lastRan = Date.now()
       }
-      
-      const from = stepIdx === 0 ? starPoints[startPointIdx] : path[stepIdx - 1];
-      const to = path[stepIdx];
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / durationPerStep, 1);
-        const eased = progress; // Linear per a camins llargs
-        
-        rocketPos.x = from.x + (to.x - from.x) * eased;
-        rocketPos.y = from.y + (to.y - from.y) * eased;
-        
-        if (progress < 1) {
-          trailParticles.value.push({
-            x: rocketPos.x + (Math.random() - 0.5) * 8,
-            y: rocketPos.y + (Math.random() - 0.5) * 8,
-            r: Math.random() * 3 + 1,
-            color: '#00e5ff',
-            opacity: 1,
-          });
-          if (trailParticles.value.length > 20) trailParticles.value.shift();
-          requestAnimationFrame(animate);
-        } else {
-          animateStep(stepIdx + 1);
+    }
+  }
+
+  const allLettersData = computed(() => {
+    return roscoData[locale.value] || roscoData['es']
+  })
+
+  const STAR_CENTER = 200
+  const STAR_RADIUS = 150
+  const INNER_RADIUS = 60
+
+  const starPoints = Array.from({ length: 10 }, (_, i) => {
+    const angle = (i * 36 - 90) * (Math.PI / 180)
+    const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
+    return { x: STAR_CENTER + Math.cos(angle) * r, y: STAR_CENTER + Math.sin(angle) * r }
+  })
+
+  const letterPositions = [0, 2, 4, 6, 8]
+
+  const starSegments = computed(() => starPoints.map((point, i) => ({
+    x1: point.x, y1: point.y,
+    x2: starPoints[(i + 1) % 10].x, y2: starPoints[(i + 1) % 10].y,
+  })))
+
+  const tipPolygons = computed(() => letterPositions.map(pos => {
+    const pPrev = starPoints[(pos - 1 + 10) % 10], pCurr = starPoints[pos], pNext = starPoints[(pos + 1) % 10], pCenter = { x: STAR_CENTER, y: STAR_CENTER }
+    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
+  }))
+
+  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  let timerInterval = null
+
+  const props = defineProps({
+    isMultiplayer: {
+      type: Boolean,
+      default: false,
+    },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  const emit = defineEmits(['game-over'])
+
+  const subRole = computed(() => multiplayerStore.subRole)
+  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const isTranslator = computed(() => props.isMultiplayer && subRole.value === 'translator')
+  const isSender = computed(() => props.isMultiplayer && subRole.value === 'sender')
+  const isGuesser = computed(() => props.isMultiplayer && subRole.value === 'guesser')
+
+  function sendTextHint () {
+    const hint = textHint.value?.trim()
+    if (!hint) return
+
+    if (!isValidHint(hint, currentLetter.value.answer)) {
+      feedbackMessage.value = t('spelledRosco.msgCheatDetected')
+      feedbackColor.value = 'error'
+      showFeedback.value = true
+      textHint.value = ''
+      return
+    }
+
+    multiplayerStore.sendGameAction({
+      type: 'PARTNER_EMOJI',
+      emoji: hint,
+    })
+    textHint.value = ''
+  }
+
+  const currentLetter = computed(() => roscoLetters.value.length > 0 ? roscoLetters.value[currentIndex.value] : { char: '?', question: '', hieroglyphs: [] })
+  watch(() => currentLetter.value, newLetter => {
+    if (newLetter?.answer) {
+      currentHints.category = getWordCategory(newLetter.answer); currentHints.type = getWordType(newLetter.answer)
+    }
+  }, { immediate: true })
+  const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length), incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length), finalReward = computed(() => score.value + timeLeft.value)
+  function normalize (str) {
+    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036F]/g, '')
+  }
+
+  function initRosco (force = false) {
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData && !force) {
+      const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user], data = multiplayerStore.room?.gameConfig?.roscoData[teamId] || multiplayerStore.room?.gameConfig?.roscoData.default
+      if (data && (roscoLetters.value.length === 0 || force)) {
+        roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
+        currentIndex.value = 0
+        rocketPos.x = starPoints[0].x
+        rocketPos.y = starPoints[0].y
+      }
+    } else if (roscoLetters.value.length === 0 || force) {
+      if (!props.isMultiplayer || isHost.value) {
+        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
+        roscoLetters.value = data
+        currentIndex.value = 0
+        rocketPos.x = starPoints[0].x
+        rocketPos.y = starPoints[0].y
+        if (props.isMultiplayer) {
+          multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+          multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
         }
-      };
-      requestAnimationFrame(animate);
-    };
-    
-    animateStep(0);
-  });
-};
+      } else {
+        multiplayerStore.sendGameAction({ type: 'REQUEST_ROSCO_SYNC' })
+      }
+    }
+  }
 
-const isTipGlowing = (tipIdx) => {
-  return roscoLetters.value[tipIdx]?.status === 'correct';
-};
+  onMounted(() => {
+    initRosco()
+    if (props.isMultiplayer) {
+      setTimeout(() => {
+        startTimer()
+      }, 3000)
+    } else {
+      startTimer()
+    }
+  })
+  watch(() => multiplayerStore.room, () => initRosco(), { deep: true })
+  const emitTyping = throttle(text => {
+    if (props.isMultiplayer && !isTranslator.value && !isSender.value) multiplayerStore.sendGameAction({ type: 'TYPING_SYNC', text })
+  }, 150)
+  function onTyping () {
+    emitTyping(rawInput.value)
+  }
 
-const isSegmentGlowing = (segIdx) => {
-  // Cada lletra i (0..4) està associada als segments (i*2-1) i (i*2)
-  return roscoLetters.value.some((l, i) => {
-    if (l.status !== 'correct') return false;
-    const seg1 = i * 2;
-    const seg0 = (i * 2 - 1 + 10) % 10;
-    return segIdx === seg1 || segIdx === seg0;
-  });
-};
+  watch(() => multiplayerStore.lastMessage, msg => {
+    if (!msg) return
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+      gameFinished.value = true; emitExit()
+    }
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ADVANCE_LETTER' && (isSender.value || isTranslator.value)) {
+      roscoLetters.value[msg.action.index].status = msg.action.status; score.value = msg.action.score
+      if (msg.action.status === 'correct') {
+        timeLeft.value = Math.min(timeLeft.value + 20, 999)
+      }
+      advanceTurn()
+    }
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) {
+      roscoLetters.value = msg.action.data
+      currentIndex.value = 0
+      rocketPos.x = starPoints[0].x
+      rocketPos.y = starPoints[0].y
+    }
+    if (msg.type === 'GAME_ROLES_SWAPPED') {
+      feedbackMessage.value = t('spelledRosco.rolesSwapped'); feedbackColor.value = 'warning'; showFeedback.value = true
+      setTimeout(() => showFeedback.value = false, 2000)
+    }
+    if (msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+        timeLeft.value = msg.action.timeLeft
+        if (timeLeft.value <= 0) finishGame()
+      }
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
+      }
+      if (msg.action?.type === 'INDEX_SYNC' && !isHost.value) {
+        currentIndex.value = msg.action.index
+      }
+    }
+  }, { immediate: true })
 
-const isSegmentVisited = (segIdx) => false; // Ja no usem visitedSegments per a les línies
-
-// Game Logic
-const checkAnswer = async () => {
-    if (rawInput.value.trim() === '' || isChecking.value) return;
-    
-    isChecking.value = true;
-    const userAnswer = normalize(rawInput.value);
-    const correctAnswer = normalize(currentLetter.value.answer);
+  function checkAnswer () {
+    if (isChecking.value || gameFinished.value || isTranslator.value || isSender.value) return
+    isChecking.value = true
+    const userAnswer = normalize(rawInput.value)
+    const correctAnswer = normalize(currentLetter.value.answer)
 
     if (userAnswer === correctAnswer) {
-        roscoLetters.value[currentIndex.value].status = 'correct';
-        score.value += 100;
-        feedbackMessage.value = t('spelledRosco.msgCorrect');
-        feedbackColor.value = 'success';
-        // Sabotatge multijugador: +10s per a tu, -15s per al rival
-        if (props.isMultiplayer) {
-            timeLeft.value = Math.min(timeLeft.value + 10, 999);
-            const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0;
-            multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 30 : 15 });
-        }
+      handleResult('correct')
     } else {
-        roscoLetters.value[currentIndex.value].status = 'incorrect';
-        feedbackMessage.value = t('spelledRosco.msgIncorrect', { answer: currentLetter.value.answer });
-        feedbackColor.value = 'error';
+      handleResult('incorrect')
     }
+  }
 
-    showFeedback.value = true;
-    
-    setTimeout(async () => {
-        showFeedback.value = false;
-        rawInput.value = '';
-        await advanceTurn();
-        isChecking.value = false;
-    }, 1200);
-};
-
-const pasapalabra = () => {
-    if (isChecking.value) return;
-    rawInput.value = '';
-    advanceTurn();
-};
-
-const advanceTurn = async () => {
-    const prevIndex = currentIndex.value;
-    let nextIdx = -1;
-    
-    for (let i = currentIndex.value + 1; i < roscoLetters.value.length; i++) {
-        if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
-    }
-
-    if (nextIdx === -1) {
-        for (let i = 0; i < currentIndex.value; i++) {
-            if (roscoLetters.value[i].status === 'pending') { nextIdx = i; break; }
-        }
-    }
-
-    if (nextIdx !== -1) {
-        visitedSegments.value.add(prevIndex);
-        await animateRocket(prevIndex, nextIdx);
-        currentIndex.value = nextIdx;
+  function handleResult (status) {
+    roscoLetters.value[currentIndex.value].status = status
+    if (status === 'correct') {
+      score.value += 100
+      timeLeft.value = Math.min(timeLeft.value + 20, 999)
+      feedbackMessage.value = t('spelledRosco.msgCorrect')
+      feedbackColor.value = 'success'
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(20) // Recarga 20% por palabra (es más difícil)
+      }
+      if (props.isMultiplayer) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 30 : 15 })
+      }
     } else {
-        finishGame();
+      score.value = Math.max(0, score.value - 25)
+      feedbackMessage.value = t('spelledRosco.msgIncorrect')
+      feedbackColor.value = 'error'
     }
-};
+    showFeedback.value = true
 
-const finishGame = (silent = false) => {
-    if (gameFinished.value) return;
-    
-    if (props.isMultiplayer && !silent) {
-        if (timerInterval) clearInterval(timerInterval);
-        multiplayerStore.submitRoundResult();
-        return;
-    }
-
-    gameFinished.value = true;
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-};
-
-const startTimer = () => {
-    if (timerInterval) {
-        clearInterval(timerInterval);
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
+      multiplayerStore.sendGameAction({ type: 'CLEAR_EMOJIS' })
+      if (isHost.value) multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
     }
 
+    setTimeout(() => {
+      showFeedback.value = false
+      clearInput()
+      isChecking.value = false
+      advanceTurn()
+    }, 1000)
+  }
+
+  function pasapalabra () {
+    if (isChecking.value || gameFinished.value) return
+    advanceTurn()
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: currentIndex.value })
+    }
+  }
+
+  function advanceTurn () {
+    let next = (currentIndex.value + 1) % roscoLetters.value.length
+    let loops = 0
+    while (roscoLetters.value[next].status !== 'pending' && loops < roscoLetters.value.length) {
+      next = (next + 1) % roscoLetters.value.length
+      loops++
+    }
+    if (loops >= roscoLetters.value.length) {
+      if (timeLeft.value > 5) {
+        feedbackMessage.value = t('spelledRosco.msgAllCorrectNext') || '¡COMPLETADO! Generando nuevo rosco...'
+        feedbackColor.value = 'success'
+        showFeedback.value = true
+        setTimeout(() => {
+          if (!gameFinished.value) initRosco(true)
+        }, 3000)
+      } else {
+        finishGame()
+      }
+    } else {
+      animateRocket(currentIndex.value, next).then(() => {
+        currentIndex.value = next
+      })
+    }
+  }
+
+  async function animateRocket (from, to) {
+    rocketAnimating.value = true
+    const start = letterPositions[from], end = letterPositions[to]
+    let curr = start
+    while (curr !== end) {
+      curr = (curr + 1) % 10
+      const p = starPoints[curr]
+      rocketPos.x = p.x; rocketPos.y = p.y
+      await new Promise(r => setTimeout(r, 150))
+    }
+    rocketAnimating.value = false
+  }
+
+  function startTimer () {
     timerInterval = setInterval(() => {
-        if (gameFinished.value) return;
-        timeLeft.value = Math.max(0, timeLeft.value - 1);
-        if (timeLeft.value === 0) {
-            finishGame();
+      if (gameFinished.value) return
+      if (!props.isMultiplayer || isHost.value) {
+        timeLeft.value = Math.max(0, timeLeft.value - 1)
+        if (props.isMultiplayer && isHost.value) {
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         }
-    }, 1000);
-};
+        if (timeLeft.value === 0) finishGame()
+      }
+    }, 1000)
+  }
 
-const emitExit = () => { emit('game-over', finalReward.value); };
+  watch(score, (newScore) => {
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+  })
 
-// Visual Helpers
-const getBubbleClass = (letter, index) => {
-    if (index === currentIndex.value && !gameFinished.value) return 'node-current';
-    if (letter.status === 'correct') return 'node-correct';
-    if (letter.status === 'incorrect') return 'node-incorrect';
-    return 'node-pending';
-};
+  function finishGame () {
+    gameFinished.value = true
+    if (timerInterval) clearInterval(timerInterval)
+    if (props.isMultiplayer) multiplayerStore.submitRoundResult()
+  }
 
-const getStarNodeStyle = (index) => {
-    const pointIdx = letterPositions[index];
-    const point = starPoints[pointIdx];
+  function emitExit () {
+    emit('game-over', finalReward.value)
+  }
+
+  function getChipColor (letter) {
+    if (letter.status === 'correct') return 'success'
+    if (letter.status === 'incorrect') return 'error'
+    return 'grey'
+  }
+
+  function getBubbleClass (letter, index) {
     return {
-        left: `${(point.x / 400) * 100}%`,
-        top: `${(point.y / 400) * 100}%`,
-    };
-};
+      'node-correct': letter.status === 'correct',
+      'node-incorrect': letter.status === 'incorrect',
+      'node-active': index === currentIndex.value && !gameFinished.value,
+    }
+  }
 
-const getChipColor = (letter) => {
-    if (letter.status === 'correct') return 'success';
-    if (letter.status === 'incorrect') return 'error';
-    return 'grey';
-};
+  function getStarNodeStyle (index) {
+    const p = starPoints[letterPositions[index]]
+    return { left: p.x + 'px', top: p.y + 'px' }
+  }
+
+  function isTipGlowing (tipIdx) {
+    const pos = letterPositions[tipIdx]
+    return tipIdx === currentIndex.value || visitedSegments.value.has(pos)
+  }
+
+  function isSegmentGlowing (segIdx) {
+    return visitedSegments.value.has(segIdx)
+  }
+
+  function clearInput () {
+    rawInput.value = ''
+  }
+
+  onUnmounted(() => {
+    if (timerInterval) clearInterval(timerInterval)
+  })
 </script>
 
 <style scoped>
 .game-container {
-    background-color: #0b0f19;
-}
-
-.star-col {
-    min-height: 420px;
+  background: radial-gradient(circle at center, #0d0221 0%, #020617 100%);
+  color: white;
+  min-height: 800px;
 }
 
 .star-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 400px;
-    aspect-ratio: 1 / 1;
+  position: relative;
+  width: 400px;
+  height: 400px;
 }
 
 .star-svg {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .star-line {
-    stroke: rgba(0, 229, 255, 0.4);
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    transition: all 0.5s ease;
+  stroke: rgba(0, 229, 255, 0.2);
+  stroke-width: 2;
 }
 
-.star-line.line-glowing {
-    stroke: #00e5ff;
-    stroke-width: 6;
-    filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.9));
-    opacity: 1;
+.line-glowing {
+  stroke: #00e5ff;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 5px #00e5ff);
 }
 
 .star-tip-fill {
-    fill: #00e5ff;
-    opacity: 0;
-    transition: opacity 0.8s ease;
-    pointer-events: none;
+  fill: rgba(0, 229, 255, 0.05);
+  transition: fill 0.3s;
 }
 
-.star-tip-fill.tip-glowing {
-    opacity: 0.6;
-    filter: blur(2px) drop-shadow(0 0 15px rgba(0, 229, 255, 0.8));
-}
-
-@keyframes line-glow {
-    0% { filter: drop-shadow(0 0 4px rgba(255, 213, 79, 0.4)); }
-    100% { filter: drop-shadow(0 0 10px rgba(255, 213, 79, 0.8)); }
+.tip-glowing {
+  fill: url(#tipGlow);
 }
 
 .star-node {
-    position: absolute;
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border: 3px solid rgba(255, 255, 255, 0.2);
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  transition: all 0.3s;
 }
 
 .node-letter {
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    z-index: 2;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: #94a3b8;
 }
 
-.node-pending {
-    background: linear-gradient(145deg, #1e3a5f, #0d1b30);
-    box-shadow: 0 4px 15px rgba(30, 58, 95, 0.5);
-    border-color: rgba(100, 180, 255, 0.3);
+.node-active {
+  border-color: #00e5ff;
+  box-shadow: 0 0 15px #00e5ff;
+  scale: 1.2;
 }
 
-.node-current {
-    background: linear-gradient(145deg, #00e5ff, #0097a7);
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.6), 0 0 60px rgba(0, 229, 255, 0.2);
-    border-color: #80DEEA;
-    animation: node-float 2s ease-in-out infinite;
-    width: 70px; height: 70px;
-}
-
-.node-current .node-letter { color: #0b0f19; }
+.node-active .node-letter { color: #fff; }
 
 .node-correct {
-    background: linear-gradient(145deg, #43a047, #1b5e20);
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
-    border-color: #69f0ae;
+  background: #059669;
+  border-color: #10b981;
 }
+
+.node-correct .node-letter { color: #fff; }
 
 .node-incorrect {
-    background: linear-gradient(145deg, #e53935, #b71c1c);
-    box-shadow: 0 0 20px rgba(244, 67, 54, 0.6);
-    border-color: #ff8a80;
+  background: #dc2626;
+  border-color: #ef4444;
 }
 
-.node-pulse {
-    position: absolute;
-    top: -8px; left: -8px; right: -8px; bottom: -8px;
-    border-radius: 50%;
-    border: 2px solid #00e5ff;
-    animation: pulse-ring 1.5s ease-out infinite;
-    z-index: 0;
-}
-
-@keyframes pulse-ring {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(1.5); opacity: 0; }
-}
-
-@keyframes node-float {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, calc(-50% - 6px)) scale(1.05); }
-}
+.node-incorrect .node-letter { color: #fff; }
 
 .star-center {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100px; height: 100px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, rgba(5, 5, 20, 1) 90%);
-    border: 3px solid rgba(0, 229, 255, 0.5);
-    border-radius: 50%;
-    box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
-    z-index: 5;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.1) 0%, transparent 70%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .center-letter {
-    color: #00e5ff;
-    text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
-    line-height: 1;
-    font-size: 2rem !important;
+  font-family: 'Orbitron', sans-serif;
+  color: #00e5ff;
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
 }
 
-.rocket-trail-group circle {
-    transition: all 0.05s linear;
+.node-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.4);
+  animation: pulse 1.5s infinite;
 }
 
-.spelling-input :deep(.v-field__input) {
-    color: #00e5ff !important;
-    font-size: 1.3rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 3px;
+@keyframes pulse {
+  0% { scale: 1; opacity: 0.6; }
+  100% { scale: 1.8; opacity: 0; }
+}
+
+.spelling-input :deep(input) {
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.hieroglyph-box {
+  width: 70px;
+  height: 70px;
+  background: #1e1b4b;
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-text { font-size: 2.5rem; }
+
+.ghost-text-container {
+  background: rgba(0, 229, 255, 0.05);
+  border: 1px dashed #00e5ff;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop-in {
+  0% { scale: 0; opacity: 0; }
+  100% { scale: 1; opacity: 1; }
 }
 </style>

@@ -391,7 +391,9 @@
             "torneig": "Tournament"
         },
         "opponent": "Opponent",
-        "level": "Level"
+        "level": "Level",
+        "team": "Team",
+        "randomizeTeams": "Randomize"
     },
     "plans": {
         "selectMode": "SELECT YOUR MISSION MODE",

@@ -1,14 +1,14 @@
 <template>
   <v-menu offset-y transition="slide-y-transition">
-    <template v-slot:activator="{ props }">
+    <template #activator="{ props }">
       <v-btn
         v-bind="props"
-        variant="text"
         class="lang-minimal-btn"
         rounded="lg"
+        variant="text"
       >
         <span class="text-white text-caption font-weight-bold opacity-70 mr-1">{{ currentLangCode }}</span>
-        <v-icon icon="mdi-chevron-down" size="14" color="white" class="opacity-50"></v-icon>
+        <v-icon class="opacity-50" color="white" icon="mdi-chevron-down" size="14" />
       </v-btn>
     </template>
 
@@ -16,9 +16,9 @@
       <v-list-item
         v-for="lang in languageList"
         :key="lang.value"
-        @click="changeLanguage(lang.value)"
-        :class="{ 'active-lang-v3': locale === lang.value }"
         class="rounded-lg mb-1 lang-item-v3"
+        :class="{ 'active-lang-v3': locale === lang.value }"
+        @click="changeLanguage(lang.value)"
       >
         <v-list-item-title class="text-white font-weight-bold text-caption text-center">
           {{ lang.flag }} - {{ $t(lang.labelKey).toUpperCase() }}
@@ -29,25 +29,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+  import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
-const { locale } = useI18n()
+  const { locale } = useI18n()
 
-const languageList = [
-  { labelKey: 'languages.es', value: 'es', flag: 'ES' },
-  { labelKey: 'languages.ca', value: 'ca', flag: 'CA' },
-  { labelKey: 'languages.en', value: 'en', flag: 'EN' }
-]
+  const languageList = [
+    { labelKey: 'languages.es', value: 'es', flag: 'ES' },
+    { labelKey: 'languages.ca', value: 'ca', flag: 'CA' },
+    { labelKey: 'languages.en', value: 'en', flag: 'EN' },
+  ]
 
-const currentLangCode = computed(() => {
-  return locale.value.toUpperCase()
-})
+  const currentLangCode = computed(() => {
+    return locale.value.toUpperCase()
+  })
 
-const changeLanguage = (newLang) => {
-  locale.value = newLang
-  localStorage.setItem('astro_language', newLang)
-}
+  function changeLanguage (newLang) {
+    locale.value = newLang
+    localStorage.setItem('astro_language', newLang)
+  }
 </script>
 
 <style scoped>

@@ -1,332 +1,341 @@
 <template>
-    <div class="scroll-container space-background">
-        <v-container fluid class="pa-4 pa-md-8 content-wrapper">
-            <v-row>
-                <!-- Cabecera -->
-                <v-col cols="12" class="text-center mb-8">
-                    <div class="d-flex align-center justify-center mb-2">
-                        <v-icon color="cyan-accent-3" size="40" class="mr-3 icon-glow">mdi-archive-outline</v-icon>
-                        <h1 class="text-h2 font-weight-bold tracking-wide text-white">{{ $t('inventory.title') }}</h1>
-                    </div>
-                    <p class="text-h6 text-cyan-accent-1 opacity-75">
-                        {{ $t('inventory.subtitle') }}
-                    </p>
-                </v-col>
+  <div class="scroll-container space-background">
+    <v-container class="pa-4 pa-md-8 content-wrapper" fluid>
+      <v-row>
+        <!-- Cabecera -->
+        <v-col class="text-center mb-8" cols="12">
+          <div class="d-flex align-center justify-center mb-2">
+            <v-icon class="mr-3 icon-glow" color="cyan-accent-3" size="40">mdi-archive-outline</v-icon>
+            <h1 class="text-h2 font-weight-bold tracking-wide text-white">{{ $t('inventory.title') }}</h1>
+          </div>
+          <p class="text-h6 text-cyan-accent-1 opacity-75">
+            {{ $t('inventory.subtitle') }}
+          </p>
+        </v-col>
 
-                <!-- Categorías -->
-                <v-col cols="12" md="3">
-                    <v-list class="glass-sidebar pa-2 rounded-xl" bg-color="transparent">
-                        <v-list-item v-for="cat in categories" :key="cat.id" 
-                            :prepend-icon="cat.icon" 
-                            :title="cat.name"
-                            v-model="activeCategory" 
-                            :value="cat.id" 
-                            class="mb-2 rounded-lg category-item"
-                            :class="{ 'active-cat': activeCategory === cat.id }"
-                            @click="activeCategory = cat.id">
-                        </v-list-item>
-                    </v-list>
-                </v-col>
+        <!-- Categorías -->
+        <v-col cols="12" md="3">
+          <v-list bg-color="transparent" class="glass-sidebar pa-2 rounded-xl">
+            <v-list-item
+              v-for="cat in categories"
+              :key="cat.id"
+              v-model="activeCategory"
+              class="mb-2 rounded-lg category-item"
+              :class="{ 'active-cat': activeCategory === cat.id }"
+              :prepend-icon="cat.icon"
+              :title="cat.name"
+              :value="cat.id"
+              @click="activeCategory = cat.id"
+            />
+          </v-list>
+        </v-col>
 
-                <!-- Malla de Items -->
-                <v-col cols="12" md="9">
-                    <v-row v-if="filteredItems.length">
-                        <v-col v-for="item in filteredItems" :key="item.id" cols="12" sm="6" lg="4">
-                            <v-card class="item-card glass-card h-100 pa-4 d-flex flex-column" rounded="xl">
-                                <!-- Badge de cantidad -->
-                                <div class="quantity-badge">
-                                    x{{ item.quantity }}
-                                </div>
+        <!-- Malla de Items -->
+        <v-col cols="12" md="9">
+          <v-row v-if="filteredItems.length > 0">
+            <v-col
+              v-for="item in filteredItems"
+              :key="item.id"
+              cols="12"
+              lg="4"
+              sm="6"
+            >
+              <v-card
+                class="item-card glass-card h-100 pa-4 d-flex flex-column"
+                rounded="xl"
+              >
+                <!-- Badge de cantidad -->
+                <div class="quantity-badge">
+                  x{{ item.quantity }}
+                </div>
 
-                                <div class="d-flex flex-column align-center flex-grow-1">
-                                    <v-avatar size="90" :style="{ backgroundColor: item.color + '20' }"
-                                        class="mb-4 avatar-glow">
-                                        <v-icon size="45" :color="item.color">{{ item.icon }}</v-icon>
-                                    </v-avatar>
-                                    
-                                    <h3 class="text-h6 font-weight-bold text-white mb-1 text-center">
-                                        {{ getItemKey(item) ? $t(getItemKey(item)) : item.name }}
-                                    </h3>
-                                    
-                                    <v-chip size="x-small" color="cyan-accent-3" variant="tonal" class="mb-3 opacity-70">
-                                        {{ $t(`inventory.categories.${item.cat}`) }}
-                                    </v-chip>
+                <div class="d-flex flex-column align-center flex-grow-1">
+                  <v-avatar
+                    class="mb-4 avatar-glow"
+                    size="90"
+                    :style="{ backgroundColor: item.color + '20' }"
+                  >
+                    <v-icon :color="item.color" size="45">{{ item.icon }}</v-icon>
+                  </v-avatar>
 
-                                    <p class="text-caption text-grey-lighten-1 text-center mb-4 description-text">
-                                        {{ getDescKey(item) ? $t(getDescKey(item)) : item.desc }}
-                                    </p>
+                  <h3 class="text-h6 font-weight-bold text-white mb-1 text-center">
+                    {{ getItemKey(item) ? $t(getItemKey(item)) : item.name }}
+                  </h3>
 
-                                    <v-chip
-                                        v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
-                                        size="x-small"
-                                        color="green-accent-3"
-                                        variant="tonal"
-                                        class="mb-4 active-booster-chip"
-                                    >
-                                        <v-icon start size="12">mdi-check-circle-outline</v-icon>
-                                        {{ $t('inventory.active', { games: getBoosterGamesLeft(item) }) }}
-                                    </v-chip>
-                                </div>
+                  <v-chip class="mb-3 opacity-70" color="cyan-accent-3" size="x-small" variant="tonal">
+                    {{ $t(`inventory.categories.${item.cat}`) }}
+                  </v-chip>
 
-                                <v-spacer></v-spacer>
+                  <p class="text-caption text-grey-lighten-1 text-center mb-4 description-text">
+                    {{ getDescKey(item) ? $t(getDescKey(item)) : item.desc }}
+                  </p>
 
-                                <div class="action-buttons mt-4">
-                                    <v-btn
-                                        :color="getItemActionColor(item)"
-                                        :variant="getItemActionVariant(item)"
-                                        rounded="pill"
-                                        class="font-weight-bold flex-grow-1"
-                                        :disabled="isItemActionDisabled(item)"
-                                        @click="handleItemAction(item)"
-                                    >
-                                        {{ getItemActionLabel(item) }}
-                                    </v-btn>
+                  <v-chip
+                    v-if="isUsableBooster(item) && getBoosterGamesLeft(item) > 0"
+                    class="mb-4 active-booster-chip"
+                    color="green-accent-3"
+                    size="x-small"
+                    variant="tonal"
+                  >
+                    <v-icon size="12" start>mdi-check-circle-outline</v-icon>
+                    {{ $t('inventory.active', { games: getBoosterGamesLeft(item) }) }}
+                  </v-chip>
+                </div>
 
-                                    <v-btn
-                                        v-if="canSell(item)"
-                                        icon="mdi-currency-usd"
-                                        variant="tonal"
-                                        color="amber-accent-2"
-                                        size="small"
-                                        class="ml-2 sell-btn"
-                                        @click="confirmSell(item)"
-                                        :title="$t('inventory.sell')"
-                                    ></v-btn>
-                                </div>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                    <v-row v-else justify="center" align="center" style="min-height: 300px;">
-                        <v-col cols="12" class="text-center">
-                            <div class="empty-state">
-                                <v-icon size="80" color="grey-darken-3" class="mb-4">mdi-package-variant</v-icon>
-                                <h3 class="text-h5 text-grey-darken-1">{{ $t('inventory.empty') }}</h3>
-                                <v-btn color="cyan-accent-3" variant="text" class="mt-4" to="/shop">
-                                    <v-icon start>mdi-cart-outline</v-icon>
-                                    {{ $t('inventory.goToShop') }}
-                                </v-btn>
-                            </div>
-                        </v-col>
-                    </v-row>
-                </v-col>
-            </v-row>
-        </v-container>
+                <v-spacer />
 
-        <!-- Diálogo de Venta -->
-        <v-dialog v-model="sellDialog" max-width="400">
-            <v-card class="glass-card rounded-xl pa-4">
-                <v-card-title class="text-h5 font-weight-bold text-white text-center">
-                    {{ $t('inventory.sell') }}
-                </v-card-title>
-                <v-card-text class="text-center text-grey-lighten-1 py-4">
-                    {{ $t('inventory.sellConfirm', { item: selectedItemName, price: selectedItemSellPrice }) }}
-                </v-card-text>
-                <v-card-actions class="justify-center">
-                    <v-btn variant="text" color="grey" @click="sellDialog = false" class="px-6 rounded-pill">
-                        {{ $t('general.cancel') }}
-                    </v-btn>
-                    <v-btn color="amber-accent-3" variant="flat" class="px-6 rounded-pill text-black font-weight-bold" @click="doSell" :loading="selling">
-                        {{ $t('inventory.sell') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-    </div>
+                <div class="action-buttons mt-4">
+                  <v-btn
+                    class="font-weight-bold flex-grow-1"
+                    :color="getItemActionColor(item)"
+                    :disabled="isItemActionDisabled(item)"
+                    rounded="pill"
+                    :variant="getItemActionVariant(item)"
+                    @click="handleItemAction(item)"
+                  >
+                    {{ getItemActionLabel(item) }}
+                  </v-btn>
+
+                  <v-btn
+                    v-if="canSell(item)"
+                    class="ml-2 sell-btn"
+                    color="amber-accent-2"
+                    icon="mdi-currency-usd"
+                    size="small"
+                    :title="$t('inventory.sell')"
+                    variant="tonal"
+                    @click="confirmSell(item)"
+                  />
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else align="center" justify="center" style="min-height: 300px;">
+            <v-col class="text-center" cols="12">
+              <div class="empty-state">
+                <v-icon class="mb-4" color="grey-darken-3" size="80">mdi-package-variant</v-icon>
+                <h3 class="text-h5 text-grey-darken-1">{{ $t('inventory.empty') }}</h3>
+                <v-btn class="mt-4" color="cyan-accent-3" to="/shop" variant="text">
+                  <v-icon start>mdi-cart-outline</v-icon>
+                  {{ $t('inventory.goToShop') }}
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <!-- Diálogo de Venta -->
+    <v-dialog v-model="sellDialog" max-width="400">
+      <v-card class="glass-card rounded-xl pa-4">
+        <v-card-title class="text-h5 font-weight-bold text-white text-center">
+          {{ $t('inventory.sell') }}
+        </v-card-title>
+        <v-card-text class="text-center text-grey-lighten-1 py-4">
+          {{ $t('inventory.sellConfirm', { item: selectedItemName, price: selectedItemSellPrice }) }}
+        </v-card-text>
+        <v-card-actions class="justify-center">
+          <v-btn class="px-6 rounded-pill" color="grey" variant="text" @click="sellDialog = false">
+            {{ $t('general.cancel') }}
+          </v-btn>
+          <v-btn class="px-6 rounded-pill text-black font-weight-bold" color="amber-accent-3" :loading="selling" variant="flat" @click="doSell">
+            {{ $t('inventory.sell') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
-import { useI18n } from 'vue-i18n';
+  import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { API_BASE_URL } from '@/stores/astroShared'
 
-const { t } = useI18n();
-const astroStore = useAstroStore();
-const activeCategory = ref('all');
-const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4, 5]);
+  const { t } = useI18n()
+  const astroStore = useAstroStore()
+  const activeCategory = ref('all')
+  const USABLE_BOOSTER_ITEM_IDS = Object.freeze([3, 4, 5])
 
-const categories = computed(() => [
+  const categories = computed(() => [
     { id: 'all', name: t('inventory.categories.all'), icon: 'mdi-apps' },
     { id: 'skin', name: t('inventory.categories.skin'), icon: 'mdi-palette' },
     { id: 'pets', name: t('inventory.categories.pets'), icon: 'mdi-robot' },
     { id: 'collectible', name: t('inventory.categories.collectible'), icon: 'mdi-trophy' },
     { id: 'trails', name: t('inventory.categories.trails'), icon: 'mdi-creation' },
-    { id: 'items', name: t('inventory.categories.items'), icon: 'mdi-flask-outline' }
-]);
+    { id: 'items', name: t('inventory.categories.items'), icon: 'mdi-flask-outline' },
+  ])
 
-// Estado para la venta
-const sellDialog = ref(false);
-const selectedItem = ref(null);
-const selling = ref(false);
+  // Estado para la venta
+  const sellDialog = ref(false)
+  const selectedItem = ref(null)
+  const selling = ref(false)
 
-const selectedItemName = computed(() => {
-    if (!selectedItem.value) return '';
-    const key = getItemKey(selectedItem.value);
-    return key ? t(key) : selectedItem.value.name;
-});
+  const selectedItemName = computed(() => {
+    if (!selectedItem.value) return ''
+    const key = getItemKey(selectedItem.value)
+    return key ? t(key) : selectedItem.value.name
+  })
 
-const selectedItemSellPrice = computed(() => {
-    if (!selectedItem.value) return 0;
-    const basePrice = selectedItem.value.price || 100;
-    return Math.floor(basePrice * 0.5);
-});
+  const selectedItemSellPrice = computed(() => {
+    if (!selectedItem.value) return 0
+    const basePrice = selectedItem.value.price || 100
+    return Math.floor(basePrice * 0.5)
+  })
 
-// Usamos SIEMPRE el estado global de Pinia
-const inventoryItems = computed(() => astroStore.inventory || []);
+  const inventoryItems = computed(() => astroStore.inventory || [])
 
-const filteredItems = computed(() => {
-    if (activeCategory.value === 'all') return inventoryItems.value;
-    return inventoryItems.value.filter(item => item.cat === activeCategory.value);
-});
+  const filteredItems = computed(() => {
+    if (activeCategory.value === 'all') return inventoryItems.value
+    return inventoryItems.value.filter(item => item.cat === activeCategory.value)
+  })
 
-// Solo un onMounted para traer los datos al cargar la vista
-onMounted(async () => {
+  onMounted(async () => {
     if (astroStore.user) {
-        await astroStore.fetchUserInventory();
+      await astroStore.fetchUserInventory()
     }
-});
+  })
 
-async function toggleEquip(item) {
-    if (!isEquipable(item)) return;
-
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  async function toggleEquip (item) {
+    if (!isEquipable(item)) return
+    const API_BASE = API_BASE_URL
 
     try {
-        const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user: astroStore.user,
-                itemId: Number(item.id)
-            })
-        });
+      const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user: astroStore.user,
+          itemId: Number(item.id),
+        }),
+      })
 
-        const data = await response.json();
-        if (data.success) {
-            astroStore.setInventory(data.inventory || []);
-        }
+      const data = await response.json()
+      if (data.success) {
+        astroStore.setInventory(data.inventory || [])
+      }
     } catch (error) {
-        console.error("Error al equipar item:", error);
+      console.error('Error al equipar item:', error)
     }
-}
+  }
 
-function isEquipable(item) {
-    return item?.cat !== 'items';
-}
+  function isEquipable (item) {
+    return item?.cat !== 'items'
+  }
 
-function isUsableBooster(item) {
-    return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id));
-}
+  function isUsableBooster (item) {
+    return USABLE_BOOSTER_ITEM_IDS.includes(Number(item?.id))
+  }
 
-function getBoosterGamesLeft(item) {
-    const itemId = Number(item?.id);
-    if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0;
-    if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0;
-    if (itemId === 5) return Number(astroStore.activeBoosters?.sabotageGamesLeft) || 0;
-    return 0;
-}
+  function getBoosterGamesLeft (item) {
+    const itemId = Number(item?.id)
+    if (itemId === 3) return Number(astroStore.activeBoosters?.doubleCoinsGamesLeft) || 0
+    if (itemId === 4) return Number(astroStore.activeBoosters?.doubleScoreGamesLeft) || 0
+    if (itemId === 5) return Number(astroStore.activeBoosters?.sabotageGamesLeft) || 0
+    return 0
+  }
 
-function getItemActionLabel(item) {
-    if (isUsableBooster(item)) return t('inventory.use');
-    if (!isEquipable(item)) return t('inventory.unequipable');
-    return item.equipped ? t('inventory.equipped') : t('inventory.equip');
-}
+  function getItemActionLabel (item) {
+    if (isUsableBooster(item)) return t('inventory.use')
+    if (!isEquipable(item)) return t('inventory.unequipable')
+    return item.equipped ? t('inventory.equipped') : t('inventory.equip')
+  }
 
-function getItemActionColor(item) {
-    if (isUsableBooster(item)) return 'amber-accent-3';
-    if (!isEquipable(item)) return 'grey-darken-3';
-    return item.equipped ? 'success' : 'cyan-accent-3';
-}
+  function getItemActionColor (item) {
+    if (isUsableBooster(item)) return 'amber-accent-3'
+    if (!isEquipable(item)) return 'grey-darken-3'
+    return item.equipped ? 'success' : 'cyan-accent-3'
+  }
 
-function getItemActionVariant(item) {
-    if (isUsableBooster(item)) return 'flat';
-    if (!isEquipable(item)) return 'tonal';
-    return item.equipped ? 'tonal' : 'flat';
-}
+  function getItemActionVariant (item) {
+    if (isUsableBooster(item)) return 'flat'
+    if (!isEquipable(item)) return 'tonal'
+    return item.equipped ? 'tonal' : 'flat'
+  }
 
-function isItemActionDisabled(item) {
-    if (isUsableBooster(item)) return Number(item?.quantity) <= 0;
-    return !isEquipable(item);
-}
+  function isItemActionDisabled (item) {
+    if (isUsableBooster(item)) return Number(item?.quantity) <= 0
+    return !isEquipable(item)
+  }
 
-async function handleItemAction(item) {
+  async function handleItemAction (item) {
     if (isUsableBooster(item)) {
-        const result = await astroStore.useInventoryItem(item.id);
-        if (!result.success) {
-            alert(result.message || t('inventory.useError'));
-        }
-        return;
+      const result = await astroStore.useInventoryItem(item.id)
+      if (!result.success) {
+        alert(result.message || t('inventory.useError'))
+      }
+      return
     }
+    await toggleEquip(item)
+  }
 
-    await toggleEquip(item);
-}
+  function canSell (item) {
+    // No permitir vender items equipados
+    return item.quantity > 0 && !item.equipped
+  }
 
-function canSell(item) {
-    // No permitir vender items equipados o el cambio de nombre si solo hay uno (opcional, pero mejor permitir todo)
-    return item.quantity > 0 && !item.equipped;
-}
+  function confirmSell (item) {
+    selectedItem.value = item
+    sellDialog.value = true
+  }
 
-function confirmSell(item) {
-    selectedItem.value = item;
-    sellDialog.value = true;
-}
+  async function doSell () {
+    if (!selectedItem.value) return
 
-async function doSell() {
-    if (!selectedItem.value) return;
-    
-    selling.value = true;
+    selling.value = true
     try {
-        const result = await astroStore.sellItem(selectedItem.value.id);
-        if (result.success) {
-            sellDialog.value = false;
-        } else {
-            alert(result.message || t('general.error'));
-        }
+      const result = await astroStore.sellItem(selectedItem.value.id)
+      if (result.success) {
+        sellDialog.value = false
+      } else {
+        alert(result.message || t('general.error'))
+      }
     } catch (error) {
-        console.error("Error al vender item:", error);
+      console.error('Error al vender item:', error)
     } finally {
-        selling.value = false;
+      selling.value = false
     }
-}
+  }
 
-function getItemKey(item) {
+  function getItemKey (item) {
     const idMap = {
-        1: 'vidas',
-        2: 'racha',
-        3: 'dobleMonedas',
-        4: 'doblePuntos',
-        5: 'sabotageRay',
-        6: 'nameChange',
-        101: 'pin',
-        102: 'cyberpunk',
-        103: 'dron',
-        104: 'neon',
-        105: 'titleUnstoppable',
-        106: 'titleLegend',
-        107: 'titleDestroyer'
-    };
-    const key = idMap[item.id];
-    return key ? `shopItems.${key}.name` : null;
-}
+      1: 'vidas',
+      2: 'racha',
+      3: 'dobleMonedas',
+      4: 'doblePuntos',
+      5: 'sabotageRay',
+      6: 'nameChange',
+      101: 'pin',
+      102: 'cyberpunk',
+      103: 'dron',
+      104: 'neon',
+      105: 'titleUnstoppable',
+      106: 'titleLegend',
+      107: 'titleDestroyer',
+    }
+    const key = idMap[item.id]
+    return key ? `shopItems.${key}.name` : null
+  }
 
-function getDescKey(item) {
+  function getDescKey (item) {
     const idMap = {
-        1: 'vidas',
-        2: 'racha',
-        3: 'dobleMonedas',
-        4: 'doblePuntos',
-        5: 'sabotageRay',
-        6: 'nameChange',
-        101: 'pin',
-        102: 'cyberpunk',
-        103: 'dron',
-        104: 'neon'
-    };
-    
-    if ([105, 106, 107].includes(Number(item.id))) return 'shopItems.titleDesc';
-    
-    const key = idMap[item.id];
-    return key ? `shopItems.${key}.desc` : null;
-}
+      1: 'vidas',
+      2: 'racha',
+      3: 'dobleMonedas',
+      4: 'doblePuntos',
+      5: 'sabotageRay',
+      6: 'nameChange',
+      101: 'pin',
+      102: 'cyberpunk',
+      103: 'dron',
+      104: 'neon',
+    }
+    if ([105, 106, 107].includes(Number(item.id))) return 'shopItems.titleDesc'
+    const key = idMap[item.id]
+    return key ? `shopItems.${key}.desc` : null
+  }
 </script>
 
 <style scoped>

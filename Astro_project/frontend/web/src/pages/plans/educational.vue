@@ -1,50 +1,55 @@
-
 <template>
-  <v-container fluid class="edu-dashboard fill-height pa-8">
+  <v-container class="edu-dashboard fill-height pa-8" fluid>
     <v-row>
       <!-- SIDEBAR DE GESTIÓN -->
       <v-col cols="12" md="3">
         <v-card class="glass-card pa-6 mb-6">
           <div class="d-flex align-center mb-6">
-            <v-icon color="cyan-accent-3" size="32" class="mr-3">mdi-shield-account</v-icon>
+            <v-icon class="mr-3" color="cyan-accent-3" size="32">mdi-shield-account</v-icon>
             <h2 class="text-h5 font-weight-bold text-white">{{ $t('educational.title') }}</h2>
           </div>
-          
+
           <v-list bg-color="transparent" class="text-white">
-            <v-list-item 
-              v-if="role === 'CENTER'" 
-              prepend-icon="mdi-domain" 
+            <v-list-item
+              v-if="role === 'CENTER'"
+              :class="{ 'active-item': currentTab === 'teachers' }"
+              prepend-icon="mdi-domain"
               :title="$t('educational.manageTeachers')"
               @click="currentTab = 'teachers'"
-              :class="{ 'active-item': currentTab === 'teachers' }"
-            ></v-list-item>
-            
-            <v-list-item 
-              v-if="role === 'TEACHER'" 
-              prepend-icon="mdi-school" 
+            />
+
+            <v-list-item
+              v-if="role === 'TEACHER'"
+              :class="{ 'active-item': currentTab === 'students' }"
+              prepend-icon="mdi-school"
               :title="$t('educational.myClass')"
               @click="currentTab = 'students'"
-              :class="{ 'active-item': currentTab === 'students' }"
-            ></v-list-item>
+            />
 
-            <v-list-item 
-              prepend-icon="mdi-chart-areaspline" 
+            <v-list-item
+              :class="{ 'active-item': currentTab === 'stats' }"
+              prepend-icon="mdi-chart-areaspline"
               :title="$t('educational.stats')"
               @click="currentTab = 'stats'"
-              :class="{ 'active-item': currentTab === 'stats' }"
-            ></v-list-item>
+            />
 
-            <v-list-item 
-              prepend-icon="mdi-playlist-edit" 
+            <v-list-item
+              :class="{ 'active-item': currentTab === 'supplies' }"
+              prepend-icon="mdi-playlist-edit"
               :title="$t('educational.supplyEditor')"
               @click="currentTab = 'supplies'"
-              :class="{ 'active-item': currentTab === 'supplies' }"
-            ></v-list-item>
+            />
           </v-list>
 
-          <v-divider class="my-6 border-opacity-10"></v-divider>
+          <v-divider class="my-6 border-opacity-10" />
 
-          <v-btn block color="cyan-accent-4" variant="tonal" to="/profile" prepend-icon="mdi-arrow-left">
+          <v-btn
+            block
+            color="cyan-accent-4"
+            prepend-icon="mdi-arrow-left"
+            to="/profile"
+            variant="tonal"
+          >
             {{ $t('educational.backToProfile') }}
           </v-btn>
         </v-card>
@@ -53,14 +58,14 @@
       <!-- CONTENIDO PRINCIPAL -->
       <v-col cols="12" md="9">
         <v-card class="glass-card pa-8 fill-height">
-          
+
           <!-- TAB: GESTIÓN DE PROFESORES (CENTER ONLY) -->
           <div v-if="currentTab === 'teachers' && role === 'CENTER'">
             <div class="d-flex justify-space-between align-center mb-6">
               <h3 class="text-h4 font-weight-black text-white">{{ $t('educational.teachersTitle') }}</h3>
-              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">{{ $t('educational.addTeacher') }}</v-btn>
+              <v-btn color="green-accent-3" prepend-icon="mdi-plus" @click="showAddDialog = true">{{ $t('educational.addTeacher') }}</v-btn>
             </div>
-            
+
             <v-table class="tech-table">
               <thead>
                 <tr>
@@ -74,7 +79,7 @@
                   <td>{{ teacher.username }}</td>
                   <td><v-chip size="small">{{ teacher.rank }}</v-chip></td>
                   <td>
-                    <v-btn icon="mdi-chart-bar" variant="text" color="cyan" @click="viewTeacherStats(teacher.username)"></v-btn>
+                    <v-btn color="cyan" icon="mdi-chart-bar" variant="text" @click="viewTeacherStats(teacher.username)" />
                   </td>
                 </tr>
               </tbody>
@@ -85,9 +90,9 @@
           <div v-if="currentTab === 'students' && role === 'TEACHER'">
             <div class="d-flex justify-space-between align-center mb-6">
               <h3 class="text-h4 font-weight-black text-white">{{ $t('educational.studentsTitle') }}</h3>
-              <v-btn color="green-accent-3" @click="showAddDialog = true" prepend-icon="mdi-plus">{{ $t('educational.addStudent') }}</v-btn>
+              <v-btn color="green-accent-3" prepend-icon="mdi-plus" @click="showAddDialog = true">{{ $t('educational.addStudent') }}</v-btn>
             </div>
-            
+
             <v-table class="tech-table">
               <thead>
                 <tr>
@@ -101,7 +106,7 @@
                   <td>{{ student.username }}</td>
                   <td>{{ student.level }}</td>
                   <td>
-                    <v-btn icon="mdi-eye" variant="text" color="cyan"></v-btn>
+                    <v-btn color="cyan" icon="mdi-eye" variant="text" />
                   </td>
                 </tr>
               </tbody>
@@ -111,7 +116,7 @@
           <!-- TAB: ESTADÍSTICAS -->
           <div v-if="currentTab === 'stats'">
             <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.telemetryTitle') }}</h3>
-            
+
             <v-row v-if="groupStore.currentStats">
               <v-col cols="4">
                 <v-card class="stat-mini-card">
@@ -132,7 +137,7 @@
                 </v-card>
               </v-col>
             </v-row>
-            
+
             <p v-else class="text-grey">{{ $t('educational.noData') }}</p>
           </div>
 
@@ -149,8 +154,14 @@
     <v-dialog v-model="showAddDialog" max-width="400">
       <v-card class="glass-popup pa-6">
         <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: role === 'CENTER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
-        <v-text-field v-model="newName" :label="$t('educational.username')" variant="solo-filled" class="mb-4"></v-text-field>
-        <v-text-field v-model="newPass" :label="$t('educational.password')" type="password" variant="solo-filled" class="mb-6"></v-text-field>
+        <v-text-field v-model="newName" class="mb-4" :label="$t('educational.username')" variant="solo-filled" />
+        <v-text-field
+          v-model="newPass"
+          class="mb-6"
+          :label="$t('educational.password')"
+          type="password"
+          variant="solo-filled"
+        />
         <v-btn block color="cyan-accent-3" @click="addMember">{{ $t('educational.confirmReg') }}</v-btn>
       </v-card>
     </v-dialog>
@@ -159,58 +170,54 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useAstroStore } from '@/stores/astroStore'
-import { useGroupStore } from '@/stores/groupStore'
-import { storeToRefs } from 'pinia'
-import SupplyEditor from '@/components/educational/SupplyEditor.vue'
+  import { storeToRefs } from 'pinia'
+  import { onMounted, ref, watch } from 'vue'
+  import SupplyEditor from '@/components/educational/SupplyEditor.vue'
+  import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
-const astroStore = useAstroStore()
-const groupStore = useGroupStore()
-const { user, role } = storeToRefs(astroStore)
+  const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
+  const { user, role } = storeToRefs(astroStore)
 
-const currentTab = ref('stats')
-const showAddDialog = ref(false)
+  const currentTab = ref('stats')
+  const showAddDialog = ref(false)
 
-// Forms
-const newName = ref('')
-const newPass = ref('')
+  // Forms
+  const newName = ref('')
+  const newPass = ref('')
 
-onMounted(async () => {
-  if (role.value === 'CENTER') {
-    currentTab.value = 'teachers'
-    await groupStore.fetchMembers(user.value)
-    await groupStore.fetchCenterStats(user.value)
-  } else if (role.value === 'TEACHER') {
-    currentTab.value = 'students'
-    await groupStore.fetchMembers(user.value)
-    await groupStore.fetchClassStats(user.value)
-    await groupStore.fetchSupplySets(user.value)
+  onMounted(async () => {
+    if (role.value === 'CENTER') {
+      currentTab.value = 'teachers'
+      await groupStore.fetchMembers(user.value)
+      await groupStore.fetchCenterStats(user.value)
+    } else if (role.value === 'TEACHER') {
+      currentTab.value = 'students'
+      await groupStore.fetchMembers(user.value)
+      await groupStore.fetchClassStats(user.value)
+      await groupStore.fetchSupplySets(user.value)
+    }
+  })
+
+  async function addMember () {
+    let result
+    result = await (role.value === 'CENTER' ? groupStore.createTeacher(user.value, { username: newName.value, password: newPass.value }) : groupStore.createStudent(user.value, { username: newName.value, password: newPass.value }))
+
+    if (result.success) {
+      showAddDialog.value = false
+      newName.value = ''
+      newPass.value = ''
+      await groupStore.fetchMembers(user.value)
+    } else {
+      alert(result.message)
+    }
   }
-})
 
-const addMember = async () => {
-  let result;
-  if (role.value === 'CENTER') {
-    result = await groupStore.createTeacher(user.value, { username: newName.value, password: newPass.value })
-  } else {
-    result = await groupStore.createStudent(user.value, { username: newName.value, password: newPass.value })
+  async function viewTeacherStats (tUsername) {
+    currentTab.value = 'stats'
+    await groupStore.fetchClassStats(tUsername)
   }
-  
-  if (result.success) {
-    showAddDialog.value = false
-    newName.value = ''
-    newPass.value = ''
-    await groupStore.fetchMembers(user.value)
-  } else {
-    alert(result.message)
-  }
-}
-
-const viewTeacherStats = async (tUsername) => {
-  currentTab.value = 'stats'
-  await groupStore.fetchClassStats(tUsername)
-}
 </script>
 
 <style scoped>

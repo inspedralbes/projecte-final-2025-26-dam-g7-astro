@@ -2,25 +2,20 @@
  * main.js
  */
 
-// Plugins
-import { registerPlugins } from '@/plugins'
-import { createPinia } from 'pinia' // - Importación directa
-
-// Components
-import App from './App.vue'
-
-// Composables
+import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-import i18n from '@/i18n' // <-- Import i18n configuration
+import i18n from '@/i18n'
+import { registerPlugins } from '@/plugins'
+import App from './App.vue'
 
 // Styles
 import 'unfonts.css'
 
 const app = createApp(App)
-const pinia = createPinia() // - Creamos la instancia
+const pinia = createPinia()
 
-app.use(pinia) // - PRIMERO: Energizamos Pinia
-app.use(i18n)  // - Inyectar i18n para tener $t() global
-registerPlugins(app) // SEGUNDO: Cargamos Vuetify y Router
+app.use(pinia)
+app.use(i18n)
+registerPlugins(app)
 
 app.mount('#app')

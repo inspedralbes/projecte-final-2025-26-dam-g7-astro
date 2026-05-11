@@ -34,6 +34,10 @@ class MongoRoomRepository extends RoomRepository {
     async findById(roomId) {
         return await this.collection.findOne({ id: roomId });
     }
+
+    async deleteMany(query) {
+        return await this.collection.deleteMany(query);
+    }
 }
 
 module.exports = MongoRoomRepository;

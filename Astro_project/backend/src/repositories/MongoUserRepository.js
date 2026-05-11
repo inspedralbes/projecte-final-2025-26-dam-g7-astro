@@ -95,7 +95,6 @@ class MongoUserRepository extends UserRepository {
                 user: 1,
                 level: 1,
                 rank: 1,
-                mascot: 1,
                 avatar: 1,
                 streak: 1,
                 selectedAchievements: 1,

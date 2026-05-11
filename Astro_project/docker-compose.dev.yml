@@ -9,10 +9,11 @@ services:
     networks:
       - astro-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' --quiet || exit 1"]
+      interval: 10s
+      timeout: 10s
       retries: 5
+      start_period: 30s
 
   backend:
     build:

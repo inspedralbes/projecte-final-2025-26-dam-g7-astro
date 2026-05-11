@@ -1,224 +1,242 @@
 <template>
-    <div class="scroll-container space-background">
-        <v-container fluid class="pa-4 pa-md-6 content-wrapper">
-            <v-row justify="center">
+  <div class="scroll-container space-background">
+    <v-container class="pa-4 pa-md-6 content-wrapper" fluid>
+      <v-row justify="center">
 
-                <v-col cols="12" class="text-center mt-2 mb-6">
-                    <h1 class="text-h3 font-weight-bold text-uppercase text-cyan-accent-3 glow-text">
-                        {{ $t('store.title') }}
-                    </h1>
-                    <p class="text-subtitle-1 text-grey-lighten-1 mt-2">
-                        {{ $t('store.subtitle') }}
-                    </p>
-                </v-col>
+        <v-col class="text-center mt-2 mb-6" cols="12">
+          <h1 class="text-h3 font-weight-bold text-uppercase text-cyan-accent-3 glow-text">
+            {{ $t('store.title') }}
+          </h1>
+          <p class="text-subtitle-1 text-grey-lighten-1 mt-2">
+            {{ $t('store.subtitle') }}
+          </p>
+        </v-col>
 
-                <v-col cols="12" md="6" class="mb-10 mx-auto">
-                    <div class="px-8 py-6 rounded-xl balance-pill d-flex align-center justify-center text-center w-100 elevation-10" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 229, 255, 0.2);">
-                        <div class="flex-grow-1">
-                            <span class="text-subtitle-1 text-grey-lighten-1 block text-uppercase mb-2">{{ $t('store.balance') }}</span>
-                            <div class="d-flex align-center justify-center">
-                                <span class="text-h2 font-weight-black text-amber-accent-3 mr-3" style="text-shadow: 0 0 25px rgba(255, 193, 7, 0.6);">{{ userCoins }}</span>
-                                <v-icon color="amber-accent-3" size="70">mdi-currency-usd</v-icon>
-                            </div>
-                        </div>
+        <v-col class="mb-10 mx-auto" cols="12" md="6">
+          <div
+            class="px-8 py-6 rounded-xl balance-pill d-flex align-center justify-center text-center w-100 elevation-10"
+            style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 229, 255, 0.2);"
+          >
+            <div class="flex-grow-1">
+              <span class="text-subtitle-1 text-grey-lighten-1 block text-uppercase mb-2">{{ $t('store.balance') }}</span>
+              <div class="d-flex align-center justify-center">
+                <span class="text-h2 font-weight-black text-amber-accent-3 mr-3" style="text-shadow: 0 0 25px rgba(255, 193, 7, 0.6);">{{ userCoins }}</span>
+                <v-icon color="amber-accent-3" size="70">mdi-currency-usd</v-icon>
+              </div>
+            </div>
+          </div>
+        </v-col>
+
+        <v-col cols="12" max-width="1200">
+
+          <div class="d-flex align-center mb-6 px-2">
+            <v-icon class="mr-3" color="cyan-accent-3">mdi-cube-outline</v-icon>
+            <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
+            <v-divider class="ml-4 border-cyan opacity-50" />
+          </div>
+
+          <v-row class="px-2 mb-10">
+            <v-col v-for="item in basicItems" :key="item.id" cols="12" md="6">
+              <v-card
+                class="mx-auto item-card rounded-xl pa-4 d-flex align-center"
+                color="#1e293b"
+                height="100%"
+              >
+                <div class="d-flex align-center flex-grow-1 mr-4" style="min-width: 0;">
+                  <v-avatar
+                    class="mr-3 flex-shrink-0"
+                    :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'"
+                    size="50"
+                  >
+                    <v-icon :color="item.color" size="24">{{ item.icon }}</v-icon>
+                  </v-avatar>
+
+                  <div class="text-truncate">
+                    <div class="text-subtitle-1 font-weight-bold text-white text-truncate">{{
+                      item.name }}</div>
+                    <div
+                      class="text-caption text-grey-lighten-2 text-truncate"
+                      style="line-height: 1.2;"
+                    >
+                      {{ item.desc }}
                     </div>
-                </v-col>
-
-                <v-col cols="12" max-width="1200">
-
-                    <div class="d-flex align-center mb-6 px-2">
-                        <v-icon color="cyan-accent-3" class="mr-3">mdi-cube-outline</v-icon>
-                        <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
-                        <v-divider class="ml-4 border-cyan opacity-50"></v-divider>
+                    <div
+                      v-if="item.limitacio"
+                      class="text-cyan-accent-1 font-weight-bold"
+                      style="font-size: 0.65rem !important;"
+                    >
+                      {{ item.limitacio }}
                     </div>
-
-                    <v-row class="px-2 mb-10">
-                        <v-col v-for="item in basicItems" :key="item.id" cols="12" md="6">
-                            <v-card class="mx-auto item-card rounded-xl pa-4 d-flex align-center" color="#1e293b" height="100%">
-                                <div class="d-flex align-center flex-grow-1 mr-4" style="min-width: 0;">
-                                    <v-avatar size="50" :color="item.bgColor || 'rgba(0, 229, 255, 0.1)'"
-                                        class="mr-3 flex-shrink-0">
-                                        <v-icon size="24" :color="item.color">{{ item.icon }}</v-icon>
-                                    </v-avatar>
-
-                                    <div class="text-truncate">
-                                        <div class="text-subtitle-1 font-weight-bold text-white text-truncate">{{
-                                            item.name }}</div>
-                                        <div class="text-caption text-grey-lighten-2 text-truncate"
-                                            style="line-height: 1.2;">
-                                            {{ item.desc }}
-                                        </div>
-                                        <div v-if="item.limitacio" class="text-cyan-accent-1 font-weight-bold"
-                                            style="font-size: 0.65rem !important;">
-                                            {{ item.limitacio }}
-                                        </div>
-                                        <div class="text-caption text-grey mt-1">
-                                            {{ $t('store.units', { qty: getItemQuantity(item.id) }) }} / 99
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style="width: 130px; flex-shrink: 0;">
-                                    <v-btn block height="44"
-                                        :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
-                                        :variant="hasReachedMax(item.id) ? 'outlined' : 'flat'"
-                                        class="font-weight-bold rounded-lg text-black"
-                                        :disabled="userCoins < item.price || hasReachedMax(item.id)"
-                                        @click="buyProduct(item)">
-                                        <template v-if="hasReachedMax(item.id)">
-                                            {{ $t('store.max') }}
-                                        </template>
-                                        <template v-else>
-                                            {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
-                                        </template>
-                                    </v-btn>
-                                </div>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </v-col>
-
-                <v-col cols="12" max-width="1200" class="pb-16">
-                    <div class="d-flex align-center mb-8 px-2">
-                        <v-icon color="amber-accent-3" class="mr-3">mdi-crown-outline</v-icon>
-                        <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.eliteTitle') }}</h3>
-                        <v-divider class="ml-4 border-amber opacity-50"></v-divider>
+                    <div class="text-caption text-grey mt-1">
+                      {{ $t('store.units', { qty: getItemQuantity(item.id) }) }} / 99
                     </div>
+                  </div>
+                </div>
 
-                    <v-row class="px-2">
-                        <v-col v-for="item in premiumItems" :key="item.id" cols="12" sm="6" md="3">
-                            <v-card class="mx-auto item-card premium-card rounded-xl pt-6 pb-4" color="#1e293b"
-                                elevation="6" height="100%">
-                                <div class="text-center mb-4">
-                                    <v-avatar size="80" :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
-                                        class="elevation-4">
-                                        <v-icon size="40" :color="item.color">{{ item.icon }}</v-icon>
-                                    </v-avatar>
-                                </div>
-                                <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0">
-                                    {{ item.name }}
-                                </v-card-title>
-                                <div class="text-center text-caption text-grey mb-2">
-                                    {{ $t('store.units', { qty: getItemQuantity(item.id) }) }}
-                                </div>
-                                <v-card-actions class="justify-center px-4 pb-2">
-                                    <v-btn block height="40"
-                                        :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
-                                        :variant="isOwned(item.id) ? 'tonal' : (userCoins >= item.price ? 'flat' : 'outlined')"
-                                        class="font-weight-bold rounded-lg text-black"
-                                        :disabled="(userCoins < item.price && !isOwned(item.id)) || isOwned(item.id)"
-                                        @click="buyProduct(item)">
-                                        <template v-if="isOwned(item.id)">
-                                            {{ $t('store.owned') }} <v-icon end>mdi-check</v-icon>
-                                        </template>
-                                        <template v-else>
-                                            {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
-                                        </template>
-                                    </v-btn>
-                                </v-card-actions>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </v-col>
+                <div style="width: 130px; flex-shrink: 0;">
+                  <v-btn
+                    block
+                    class="font-weight-bold rounded-lg text-black"
+                    :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
+                    :disabled="userCoins < item.price || hasReachedMax(item.id)"
+                    height="44"
+                    :variant="hasReachedMax(item.id) ? 'outlined' : 'flat'"
+                    @click="buyProduct(item)"
+                  >
+                    <template v-if="hasReachedMax(item.id)">
+                      {{ $t('store.max') }}
+                    </template>
+                    <template v-else>
+                      {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
+                    </template>
+                  </v-btn>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-col>
 
-            </v-row>
+        <v-col class="pb-16" cols="12" max-width="1200">
+          <div class="d-flex align-center mb-8 px-2">
+            <v-icon class="mr-3" color="amber-accent-3">mdi-crown-outline</v-icon>
+            <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.eliteTitle') }}</h3>
+            <v-divider class="ml-4 border-amber opacity-50" />
+          </div>
 
+          <v-row class="px-2">
+            <v-col
+              v-for="item in premiumItems"
+              :key="item.id"
+              cols="12"
+              md="3"
+              sm="6"
+            >
+              <v-card
+                class="mx-auto item-card premium-card rounded-xl pt-6 pb-4"
+                color="#1e293b"
+                elevation="6"
+                height="100%"
+              >
+                <div class="text-center mb-4">
+                  <v-avatar
+                    class="elevation-4"
+                    :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
+                    size="80"
+                  >
+                    <v-icon :color="item.color" size="40">{{ item.icon }}</v-icon>
+                  </v-avatar>
+                </div>
+                <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0">
+                  {{ item.name }}
+                </v-card-title>
+                <div class="text-center text-caption text-grey mb-2">
+                  {{ $t('store.units', { qty: getItemQuantity(item.id) }) }}
+                </div>
+                <v-card-actions class="justify-center px-4 pb-2">
+                  <v-btn
+                    block
+                    class="font-weight-bold rounded-lg text-black"
+                    :color="isOwned(item.id) ? 'success' : (userCoins >= item.price ? 'amber-accent-3' : 'grey')"
+                    :disabled="(userCoins < item.price && !isOwned(item.id)) || isOwned(item.id)"
+                    height="40"
+                    :variant="isOwned(item.id) ? 'tonal' : (userCoins >= item.price ? 'flat' : 'outlined')"
+                    @click="buyProduct(item)"
+                  >
+                    <template v-if="isOwned(item.id)">
+                      {{ $t('store.owned') }} <v-icon end>mdi-check</v-icon>
+                    </template>
+                    <template v-else>
+                      {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
+                    </template>
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-col>
 
-        </v-container>
-    </div>
+      </v-row>
+
+    </v-container>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useAstroStore } from '@/stores/astroStore';
-import { useI18n } from 'vue-i18n';
+  import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const { t } = useI18n();
-const astroStore = useAstroStore();
-const userCoins = computed(() => astroStore.coins);
-const userGames = computed(() => astroStore.partides);
-const userStreak = computed(() => astroStore.streak);
-const isStreakActiveToday = computed(() => astroStore.isStreakActiveToday);
+  const { t } = useI18n()
+  const astroStore = useAstroStore()
+  const userCoins = computed(() => astroStore.coins)
 
-const updateStats = (data) => {
-    astroStore.setCoins(data.coins);
-};
+  function getItemQuantity (itemId) {
+    const targetId = Number(itemId)
+    const found = astroStore.inventory?.find(item => Number(item.id) === targetId)
+    return Number(found?.quantity) || 0
+  }
 
+  function isOwned (itemId) {
+    return getItemQuantity(itemId) > 0
+  }
 
-const getItemQuantity = (itemId) => {
-    const targetId = Number(itemId);
-    const found = astroStore.inventory?.find((item) => Number(item.id) === targetId);
-    return Number(found?.quantity) || 0;
-};
+  function hasReachedMax (itemId) {
+    return getItemQuantity(itemId) >= 99
+  }
 
-const isOwned = (itemId) => {
-    return getItemQuantity(itemId) > 0;
-};
-
-const hasReachedMax = (itemId) => {
-    return getItemQuantity(itemId) >= 99;
-};
-
-const buyProduct = async (item) => {
-    const quantity = getItemQuantity(item.id);
+  async function buyProduct (item) {
+    const quantity = getItemQuantity(item.id)
     if (item.cat !== 'items' && quantity > 0) {
-        alert(t('shopActions.alreadyOwned', { item: item.name }));
-        return;
+      alert(t('shopActions.alreadyOwned', { item: item.name }))
+      return
     }
 
     if (item.cat === 'items' && quantity >= 99) {
-        alert(t('shopActions.maxReached', { item: item.name }));
-        return;
+      alert(t('shopActions.maxReached', { item: item.name }))
+      return
     }
 
-    if (!confirm(t('shopActions.confirmBuy', { item: item.name, price: item.price }))) return;
+    if (!confirm(t('shopActions.confirmBuy', { item: item.name, price: item.price }))) return
 
     try {
-        const result = await astroStore.buyItem(item);
-        if (result.success) {
-            console.log(t('shopActions.buySuccess'));
-        } else {
-            alert(result.message);
-        }
+      const result = await astroStore.buyItem(item)
+      if (result.success) {
+        console.log(t('shopActions.buySuccess'))
+      } else {
+        alert(result.message)
+      }
     } catch (error) {
-        console.error("Error en la tienda:", error);
+      console.error('Error en la tienda:', error)
     }
-};
+  }
 
-const basicItems = computed(() => [
+  const basicItems = computed(() => [
     { id: 1, name: t('shopItems.vidas.name'), cat: 'items', price: 200, icon: 'mdi-heart-multiple', color: 'red-accent-2', desc: t('shopItems.vidas.desc'), bgColor: 'rgba(255, 82, 82, 0.1)' },
     { id: 2, name: t('shopItems.racha.name'), cat: 'items', price: 500, icon: 'mdi-snowflake', color: 'cyan-accent-2', desc: t('shopItems.racha.desc'), bgColor: 'rgba(24, 255, 255, 0.1)' },
     { id: 3, name: t('shopItems.dobleMonedas.name'), cat: 'items', price: 300, icon: 'mdi-piggy-bank', color: 'yellow-accent-3', desc: t('shopItems.dobleMonedas.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 213, 79, 0.1)' },
     { id: 4, name: t('shopItems.doblePuntos.name'), cat: 'items', price: 300, icon: 'mdi-star-shooting', color: 'orange-accent-3', desc: t('shopItems.doblePuntos.desc'), limitacio: t('shopItems.limit3'), bgColor: 'rgba(255, 152, 0, 0.1)' },
     { id: 5, name: t('shopItems.sabotageRay.name'), cat: 'items', price: 500, icon: 'mdi-lightning-bolt', color: 'deep-purple-accent-2', desc: t('shopItems.sabotageRay.desc'), limitacio: t('shopItems.sabotageRay.limit'), bgColor: 'rgba(124, 77, 255, 0.1)' },
-    { id: 6, name: t('shopItems.nameChange.name'), cat: 'items', price: 10000, icon: 'mdi-account-edit', color: 'green-accent-2', desc: t('shopItems.nameChange.desc'), bgColor: 'rgba(0, 255, 136, 0.1)' }
-]);
+    { id: 6, name: t('shopItems.nameChange.name'), cat: 'items', price: 10_000, icon: 'mdi-account-edit', color: 'green-accent-2', desc: t('shopItems.nameChange.desc'), bgColor: 'rgba(0, 255, 136, 0.1)' },
+  ])
 
-const premiumItems = computed(() => [
+  const premiumItems = computed(() => [
     { id: 101, name: t('shopItems.pin.name'), cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: t('shopItems.pin.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
     { id: 102, name: t('shopItems.cyberpunk.name'), cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: t('shopItems.cyberpunk.desc'), bgColor: 'rgba(224, 64, 251, 0.15)' },
     { id: 103, name: t('shopItems.dron.name'), cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: t('shopItems.dron.desc'), bgColor: 'rgba(0, 230, 118, 0.15)' },
     { id: 104, name: t('shopItems.neon.name'), cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: t('shopItems.neon.desc'), bgColor: 'rgba(255, 64, 129, 0.15)' },
     { id: 105, name: t('shopItems.titleUnstoppable.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: t('shopItems.titleUnstoppable.desc'), bgColor: 'rgba(255, 82, 82, 0.15)' },
     { id: 106, name: t('shopItems.titleLegend.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: t('shopItems.titleLegend.desc'), bgColor: 'rgba(0, 229, 255, 0.15)' },
-    { id: 107, name: t('shopItems.titleDestroyer.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: t('shopItems.titleDestroyer.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' }
-]);
+    { id: 107, name: t('shopItems.titleDestroyer.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'amber-accent-3', desc: t('shopItems.titleDestroyer.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
+  ])
 
-onMounted(async () => {
+  onMounted(async () => {
     if (astroStore.user) {
-        await Promise.all([astroStore.fetchUserBalance(), astroStore.fetchUserInventory()]);
+      await Promise.all([astroStore.fetchUserBalance(), astroStore.fetchUserInventory()])
     }
-});
-
-
+  })
 </script>
 
 <style scoped>
-
-.animate-bounce-slow { animation: bounce 3s infinite ease-in-out; }
-
-.shadow-glow { box-shadow: 0 0 20px rgba(0, 230, 118, 0.4) !important; }
-
 .scroll-container {
     height: 100vh;
     width: 100%;
@@ -258,22 +276,5 @@ onMounted(async () => {
 
 .border-amber {
     border-color: #ffc107 !important;
-}
-
-.bg-slate-900 {
-    background-color: #0f172a !important;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.animate-bounce {
-    animation: bounce 2s infinite ease-in-out;
-}
-
-.drop-shadow {
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
 }
 </style>

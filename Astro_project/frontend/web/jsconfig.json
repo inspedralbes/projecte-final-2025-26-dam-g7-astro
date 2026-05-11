@@ -25,6 +25,13 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/pages/training/multiplayer.vue"
+    "src/pages/training/multiplayer.vue",
+    "src/components/games/EmojiHistory.vue",
+    "src/components/games/EmojiPicker.vue",
+    "src/components/games/HieroglyphDisplay.vue",
+    "src/components/games/scratch_radio.vue",
+    "src/components/games/scratch_radio_utf8.vue",
+    "src/components/games/scratch_symmetry.vue",
+    "src/components/games/scratch_symmetry_utf8.vue"
   ]
 }

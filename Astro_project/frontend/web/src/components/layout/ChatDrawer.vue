@@ -7,17 +7,17 @@
 
     <!-- Panel del Chat -->
     <Transition name="chat-drawer">
-      <div v-if="chatStore.isOpen" class="chat-drawer" role="dialog" :aria-label="$t('chat.title')">
+      <div v-if="chatStore.isOpen" :aria-label="$t('chat.title')" class="chat-drawer" role="dialog">
 
         <!-- ── HEADER ──────────────────────────────────────── -->
         <div class="chat-header">
           <div class="chat-header-left">
             <div class="friend-avatar-wrap">
-              <v-avatar size="40" color="#0a192f" class="friend-avatar">
+              <v-avatar class="friend-avatar" color="#0a192f" size="40">
                 <v-img
                   v-if="activeFriend?.avatar"
-                  :src="getAvatarUrl(activeFriend.avatar)"
                   cover
+                  :src="getAvatarUrl(activeFriend.avatar)"
                 />
                 <span v-else class="avatar-initial">
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
@@ -31,16 +31,16 @@
             </div>
           </div>
 
-          <button class="close-btn" @click="chatStore.closeChat()" :title="$t('chat.close')">
+          <button class="close-btn" :title="$t('chat.close')" @click="chatStore.closeChat()">
             <v-icon icon="mdi-close" size="20" />
           </button>
         </div>
 
         <!-- ── MENSAJES ───────────────────────────────────── -->
-        <div class="chat-messages" ref="messagesContainer">
+        <div ref="messagesContainer" class="chat-messages">
           <!-- Estado vacío -->
           <div v-if="chatStore.activeMessages.length === 0" class="chat-empty">
-            <v-icon icon="mdi-satellite-variant" size="48" color="rgba(0,229,255,0.3)" />
+            <v-icon color="rgba(0,229,255,0.3)" icon="mdi-satellite-variant" size="48" />
             <p class="chat-empty-text">{{ $t('chat.emptyTitle') }}<br>{{ $t('chat.emptySubtitle') }}</p>
           </div>
 
@@ -55,14 +55,14 @@
               <!-- Avatar del amigo (solo en mensajes del amigo) -->
               <v-avatar
                 v-if="msg.from !== myUser"
-                size="28"
-                color="#0a192f"
                 class="msg-avatar"
+                color="#0a192f"
+                size="28"
               >
                 <v-img
                   v-if="activeFriend?.avatar"
-                  :src="getAvatarUrl(activeFriend.avatar)"
                   cover
+                  :src="getAvatarUrl(activeFriend.avatar)"
                 />
                 <span v-else class="msg-avatar-initial">
                   {{ activeFriend?.user?.charAt(0).toUpperCase() }}
@@ -73,8 +73,8 @@
                 <!-- Mensaje de Desafío Especial -->
                 <div v-if="msg.msgType === 'challenge'" class="challenge-msg-card">
                   <div class="challenge-msg-header">
-                    <v-icon icon="mdi-sword-cross" color="cyan-accent-2" size="18" class="mr-2"></v-icon>
-                    <span>DUELO ESPACIAL</span>
+                    <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-sword-cross" size="18" />
+                    <span>{{ $t('chat.duelTitle') }}</span>
                   </div>
                   <div class="challenge-msg-body">
                     {{ msg.content }}
@@ -82,33 +82,33 @@
                   <div v-if="msg.from !== myUser" class="challenge-msg-actions">
                     <template v-if="isLastChallenge(index) && msg.status === 'pending'">
                       <button class="chat-challenge-btn chat-challenge-btn--accept" @click="respondToChallenge(msg.from, true)">
-                        <v-icon icon="mdi-check" size="14" class="mr-1"></v-icon>
-                        ACEPTAR
+                        <v-icon class="mr-1" icon="mdi-check" size="14" />
+                        {{ $t('chat.accept') }}
                       </button>
                       <button class="chat-challenge-btn chat-challenge-btn--decline" @click="respondToChallenge(msg.from, false)">
-                        <v-icon icon="mdi-close" size="14" class="mr-1"></v-icon>
-                        RECHAZAR
+                        <v-icon class="mr-1" icon="mdi-close" size="14" />
+                        {{ $t('chat.decline') }}
                       </button>
                     </template>
                     <div v-else-if="msg.status === 'accepted'" class="challenge-msg-result challenge-msg-result--accepted">
-                      <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                      DUELO ACEPTADO
+                      <v-icon class="mr-1" icon="mdi-check-circle" size="14" />
+                      {{ $t('chat.duelAccepted') }}
                     </div>
                     <div v-else-if="msg.status === 'rejected'" class="challenge-msg-result challenge-msg-result--rejected">
-                      <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
-                      DUELO RECHAZADO
+                      <v-icon class="mr-1" icon="mdi-close-circle" size="14" />
+                      {{ $t('chat.duelRejected') }}
                     </div>
                     <div v-else class="challenge-msg-expired">
-                      <v-icon icon="mdi-history" size="14" class="mr-1"></v-icon>
-                      DESAFÍO CADUCADO
+                      <v-icon class="mr-1" icon="mdi-history" size="14" />
+                      {{ $t('chat.duelExpired') }}
                     </div>
                   </div>
                   <div v-else class="challenge-msg-status">
-                    <span v-if="msg.status === 'accepted'" class="status-accepted">Duelo aceptado</span>
-                    <span v-else-if="msg.status === 'rejected'" class="status-rejected">Duelo rechazado</span>
-                    <span v-else-if="msg.status === 'expired'" class="expired-text">Expirado</span>
+                    <span v-if="msg.status === 'accepted'" class="status-accepted">{{ $t('chat.duelAccepted') }}</span>
+                    <span v-else-if="msg.status === 'rejected'" class="status-rejected">{{ $t('chat.duelRejected') }}</span>
+                    <span v-else-if="msg.status === 'expired'" class="expired-text">{{ $t('chat.duelExpired') }}</span>
                     <span v-else-if="isLastChallenge(index)">Invitación enviada...</span>
-                    <span v-else class="expired-text">Expirado</span>
+                    <span v-else class="expired-text">{{ $t('chat.duelExpired') }}</span>
                   </div>
                 </div>
 
@@ -142,16 +142,15 @@
               class="chat-input"
               :placeholder="$t('chat.placeholder')"
               rows="1"
-              maxlength="500"
-              @keydown.enter.exact.prevent="sendMessage"
               @input="autoResize"
+              @keydown.enter.exact.prevent="sendMessage"
             />
             <button
               class="send-btn"
               :class="{ 'send-btn--active': inputText.trim() }"
               :disabled="!inputText.trim()"
-              @click="sendMessage"
               :title="$t('chat.send')"
+              @click="sendMessage"
             >
               <v-icon icon="mdi-send" size="18" />
             </button>
@@ -165,114 +164,111 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
-import { useChatStore } from '@/stores/chatStore';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useMultiplayerStore } from '@/stores/multiplayerStore';
-import { useI18n } from 'vue-i18n';
+  import { computed, nextTick, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useChatStore } from '@/stores/chatStore'
+  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { useSessionStore } from '@/stores/sessionStore'
 
-const { t, locale } = useI18n();
-const chatStore = useChatStore();
-const sessionStore = useSessionStore();
-const multiplayerStore = useMultiplayerStore();
+  const { t, locale } = useI18n()
+  const chatStore = useChatStore()
+  const sessionStore = useSessionStore()
+  const multiplayerStore = useMultiplayerStore()
 
-const myUser = computed(() => sessionStore.user);
-const activeFriend = computed(() => chatStore.activeFriend);
+  const myUser = computed(() => sessionStore.user)
+  const activeFriend = computed(() => chatStore.activeFriend)
 
-const inputText = ref('');
-const messagesContainer = ref(null);
-const inputRef = ref(null);
-const isTyping = ref(false); // reservado para fase 2
+  const inputText = ref('')
+  const messagesContainer = ref(null)
+  const inputRef = ref(null)
+  const isTyping = ref(false)
 
-const respondToChallenge = (from, accepted) => {
-  multiplayerStore.respondToChallenge(from, accepted);
-};
-
-const isLastChallenge = (index) => {
-  const messages = chatStore.activeMessages;
-  for (let i = messages.length - 1; i > index; i--) {
-    if (messages[i].msgType === 'challenge') return false;
+  function respondToChallenge (from, accepted) {
+    multiplayerStore.respondToChallenge(from, accepted)
   }
-  return true;
-};
 
-/* ── Helpers ─────────────────────────────────────────────── */
-
-const getAvatarUrl = (avatarStr) => {
-  if (!avatarStr) return '';
-  return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`;
-};
-
-const formatTime = (isoString) => {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  const localeStr = locale.value === 'en' ? 'en-US' : (locale.value === 'ca' ? 'ca-ES' : 'es-ES');
-  return date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
-};
-
-const autoResize = () => {
-  const el = inputRef.value;
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-};
-
-/* ── Enviar mensaje ───────────────────────────────────────── */
-
-const sendMessage = () => {
-  const text = inputText.value.trim();
-  if (!text) return;
-  chatStore.sendMessage(text);
-  inputText.value = '';
-  nextTick(() => {
-    if (inputRef.value) {
-      inputRef.value.style.height = 'auto';
-      inputRef.value.focus();
+  function isLastChallenge (index) {
+    const messages = chatStore.activeMessages
+    for (let i = messages.length - 1; i > index; i--) {
+      if (messages[i].msgType === 'challenge') return false
     }
-  });
-};
-
-/* ── Auto-scroll al último mensaje ───────────────────────── */
-
-const scrollToBottom = (smooth = true) => {
-  nextTick(() => {
-    const el = messagesContainer.value;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
-  });
-};
-
-// Scroll cuando llegan mensajes nuevos
-watch(
-  () => chatStore.activeMessages.length,
-  (newLen, oldLen) => {
-    if (newLen !== oldLen) scrollToBottom(newLen > oldLen);
+    return true
   }
-);
 
-// Scroll inmediato al abrir el chat (historial cargado)
-watch(
-  () => chatStore.isOpen,
-  (open) => {
-    if (open) {
-      scrollToBottom(false);
-      nextTick(() => inputRef.value?.focus());
-    }
+  /* ── Helpers ─────────────────────────────────────────────── */
+
+  function getAvatarUrl (avatarStr) {
+    if (!avatarStr) return ''
+    return avatarStr.startsWith('/') ? avatarStr : `/${avatarStr}`
   }
-);
 
-// Scroll al recibir historial
-watch(
-  () => chatStore.activeMessages,
-  () => scrollToBottom(false),
-  { deep: false }
-);
+  function formatTime (isoString) {
+    if (!isoString) return ''
+    const date = new Date(isoString)
+    const localeStr = locale.value === 'en' ? 'en-US' : (locale.value === 'ca' ? 'ca-ES' : 'es-ES')
+    return date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })
+  }
+
+  function autoResize () {
+    const el = inputRef.value
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }
+
+  /* ── Enviar mensaje ───────────────────────────────────────── */
+
+  function sendMessage () {
+    const text = inputText.value.trim()
+    if (!text) return
+    chatStore.sendMessage(text)
+    inputText.value = ''
+    nextTick(() => {
+      if (inputRef.value) {
+        inputRef.value.style.height = 'auto'
+        inputRef.value.focus()
+      }
+    })
+  }
+
+  /* ── Auto-scroll al último mensaje ───────────────────────── */
+
+  function scrollToBottom (smooth = true) {
+    nextTick(() => {
+      const el = messagesContainer.value
+      if (!el) return
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' })
+    })
+  }
+
+  // Scroll cuando llegan mensajes nuevos
+  watch(
+    () => chatStore.activeMessages.length,
+    (newLen, oldLen) => {
+      if (newLen !== oldLen) scrollToBottom(newLen > oldLen)
+    },
+  )
+
+  // Scroll inmediato al abrir el chat
+  watch(
+    () => chatStore.isOpen,
+    open => {
+      if (open) {
+        scrollToBottom(false)
+        nextTick(() => inputRef.value?.focus())
+      }
+    },
+  )
+
+  // Scroll al recibir historial
+  watch(
+    () => chatStore.activeMessages,
+    () => scrollToBottom(false),
+    { deep: false },
+  )
 </script>
 
 <style scoped>
-/* ══════════════════════════════════════════════
-   OVERLAY
-══════════════════════════════════════════════ */
 .chat-overlay {
   position: fixed;
   inset: 0;
@@ -282,9 +278,6 @@ watch(
   pointer-events: auto;
 }
 
-/* ══════════════════════════════════════════════
-   DRAWER PANEL
-══════════════════════════════════════════════ */
 .chat-drawer {
   position: fixed;
   right: 0;
@@ -301,9 +294,6 @@ watch(
   backdrop-filter: blur(20px);
 }
 
-/* ══════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════ */
 .chat-header {
   display: flex;
   align-items: center;
@@ -389,9 +379,6 @@ watch(
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ══════════════════════════════════════════════
-   MENSAJES
-══════════════════════════════════════════════ */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -409,7 +396,6 @@ watch(
   border-radius: 10px;
 }
 
-/* Estado vacío */
 .chat-empty {
   flex: 1;
   display: flex;
@@ -430,7 +416,6 @@ watch(
   letter-spacing: 1px;
 }
 
-/* Filas de mensaje */
 .msg-row {
   display: flex;
   align-items: flex-end;
@@ -463,7 +448,6 @@ watch(
   align-items: flex-end;
 }
 
-/* Burbujas */
 .msg-bubble {
   padding: 10px 14px;
   border-radius: 18px;
@@ -494,7 +478,6 @@ watch(
   padding: 0 4px;
 }
 
-/* Challenge Message Card */
 .challenge-msg-card {
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid rgba(0, 229, 255, 0.2);
@@ -622,7 +605,6 @@ watch(
   text-decoration: line-through;
 }
 
-/* Typing indicator */
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -649,9 +631,6 @@ watch(
   30%           { transform: translateY(-6px); opacity: 1; }
 }
 
-/* ══════════════════════════════════════════════
-   INPUT
-══════════════════════════════════════════════ */
 .chat-input-area {
   padding: 12px 16px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -716,48 +695,18 @@ watch(
   box-shadow: 0 4px 15px rgba(0, 172, 193, 0.4);
 }
 
-.send-btn--active:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 172, 193, 0.5);
-}
-
-.send-btn:disabled {
-  cursor: not-allowed;
-}
-
 .input-hint {
-  margin-top: 6px;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.2);
+  margin-top: 6px;
   text-align: center;
   letter-spacing: 0.5px;
 }
 
-/* ══════════════════════════════════════════════
-   TRANSITIONS
-══════════════════════════════════════════════ */
-.chat-overlay-enter-active,
-.chat-overlay-leave-active {
-  transition: opacity 0.25s ease;
-}
-.chat-overlay-enter-from,
-.chat-overlay-leave-to {
-  opacity: 0;
-}
+/* Transiciones */
+.chat-drawer-enter-active, .chat-drawer-leave-active { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.chat-drawer-enter-from, .chat-drawer-leave-to { transform: translateX(100%); }
 
-.chat-drawer-enter-active,
-.chat-drawer-leave-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.chat-drawer-enter-from,
-.chat-drawer-leave-to {
-  transform: translateX(100%);
-}
-
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .chat-drawer {
-    width: 100vw;
-  }
-}
+.chat-overlay-enter-active, .chat-overlay-leave-active { transition: opacity 0.4s; }
+.chat-overlay-enter-from, .chat-overlay-leave-to { opacity: 0; }
 </style>

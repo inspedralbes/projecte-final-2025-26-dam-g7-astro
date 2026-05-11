@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { storageGetItem, STORAGE_KEYS } from '@/stores/astroShared'
+import login from '@/pages/auth/login.vue'
 
 import register from '@/pages/auth/register.vue'
-import login from '@/pages/auth/login.vue'
 import Plans from '@/pages/plans/plans.vue'
+import { STORAGE_KEYS, storageGetItem } from '@/stores/astroShared'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,77 +28,79 @@ const router = createRouter({
       path: '/singleplayer',
       name: 'SinglePlayer',
       component: () => import('@/pages/training/singleplayer.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
 
     {
       path: '/profile',
       name: 'Profile',
       component: () => import('@/pages/profile/profile.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/shop',
       name: 'Shop',
       component: () => import('@/pages/shop/shop.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/plans',
       name: 'Plans',
       component: Plans,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/educational',
       name: 'Educational',
       component: () => import('@/pages/plans/educational.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/inventory',
       name: 'Inventory',
       component: () => import('@/pages/inventory/inventory.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/achievements',
       name: 'Achievements',
       component: () => import('@/pages/achievements/achievements.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/friends',
       name: 'Friends',
       component: () => import('@/pages/friends/friends.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/multiplayer',
       name: 'Multiplayer',
       component: () => import('@/pages/friends/MultiplayerLobby.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
   ],
 })
 
 // GUARD DE NAVEGACIÓN
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  // IMPORTANTE: Usamos 'astro_token' para coincidir con tu Store
-  // Comprobamos en sessionStorage (por defecto) y localStorage por si acaso
-  const isAuthenticated = !!(storageGetItem(STORAGE_KEYS.token) || localStorage.getItem('astro_token'));
+  // Comprobamos token y usuario para asegurar una sesión válida
+  const token = storageGetItem(STORAGE_KEYS.token) || localStorage.getItem('astro_token')
+  const username = storageGetItem(STORAGE_KEYS.user) || localStorage.getItem('astro_user')
+
+  const isAuthenticated = !!(token && username)
 
   if (requiresAuth && !isAuthenticated) {
     // Si la ruta es privada y no hay token, al login
-    next('/login');
+    next('/login')
   } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
     // Si ya está logueado y va a login/register, al simulador
-    next('/singleplayer');
+    next('/singleplayer')
   } else {
-    next();
+    next()
   }
-});
+})
 
-export default router;
+export default router

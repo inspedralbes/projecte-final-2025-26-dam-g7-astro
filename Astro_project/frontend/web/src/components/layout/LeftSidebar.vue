@@ -1,88 +1,127 @@
 <template>
-    <v-navigation-drawer app permanent width="280" class="sidebar left-sidebar" elevation="0" mobile-breakpoint="md">
-        <div class="menu-header d-flex flex-column justify-center align-center py-8">
-            <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
-            <v-img src="/logo/logo astro final.png" width="50" height="50" class="my-2 logo-sidebar-img" contain></v-img>
-            <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
-        </div>
+  <v-navigation-drawer
+    app
+    class="sidebar left-sidebar"
+    elevation="0"
+    mobile-breakpoint="md"
+    permanent
+    width="280"
+  >
+    <div class="menu-header d-flex flex-column justify-center align-center py-8">
+      <h1 class="text-h3 font-weight-bold text-white tracking-tighter mb-1">ASTRO</h1>
+      <v-img
+        class="my-2 logo-sidebar-img"
+        contain
+        height="50"
+        src="/logo/logo astro final.png"
+        width="50"
+      />
+      <span class="text-caption text-primary font-weight-black letter-spacing-2">SYSTEM OS v2.0</span>
+    </div>
 
-        <v-list class="pa-2 bg-transparent" nav>
-            <v-list-item v-for="(item, index) in menuItems" :key="index" :to="item.to" link
-                class="menu-item mb-2 rounded-lg px-4" active-class="active-menu-item" min-height="56">
-                <template v-slot:prepend>
-                    <v-icon :icon="item.icon" size="22" class="mr-4 item-icon"></v-icon>
-                </template>
-                <v-list-item-title class="text-subtitle-1 font-weight-bold">
-                    {{ $t(item.titleKey) }}
-                </v-list-item-title>
-            </v-list-item>
-        </v-list>
-
-        <template v-slot:append>
-            <div class="pa-4">
-                <div class="d-flex justify-center mb-6">
-                    <LanguageSelector />
-                </div>
-                <v-btn block variant="text" color="grey-lighten-1" @click="showLogoutDialog = true" prepend-icon="mdi-logout" class="logout-btn">
-                    {{ $t('profile.logoutBtn') }}
-                </v-btn>
-            </div>
+    <v-list class="pa-2 bg-transparent" nav>
+      <v-list-item
+        v-for="(item, index) in menuItems"
+        :key="index"
+        active-class="active-menu-item"
+        class="menu-item mb-2 rounded-lg px-4"
+        link
+        min-height="56"
+        :to="item.to"
+      >
+        <template #prepend>
+          <v-icon class="mr-4 item-icon" :icon="item.icon" size="22" />
         </template>
+        <v-list-item-title class="text-subtitle-1 font-weight-bold">
+          {{ $t(item.titleKey) }}
+        </v-list-item-title>
+      </v-list-item>
+    </v-list>
 
-        <!-- Logout Confirmation Dialog -->
-        <v-dialog v-model="showLogoutDialog" max-width="400">
-            <v-card class="glass-panel pa-6 text-center shadow-xl">
-                <v-icon icon="mdi-alert-circle-outline" color="error" size="64" class="mb-4 pulse-error"></v-icon>
-                <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
-                <p class="text-body-2 text-grey-lighten-1 mb-8">
-                    {{ $t('profile.logoutConfirm') }}
-                </p>
-                <div class="d-flex justify-center mt-4">
-                    <v-btn variant="outlined" color="grey-lighten-1" @click="showLogoutDialog = false" class="rounded-lg flex-grow-1 mr-2" height="48">
-                        {{ $t('general.cancel').toUpperCase() }}
-                    </v-btn>
-                    <v-btn variant="flat" color="error" @click="handleLogout" class="rounded-lg flex-grow-1 ml-2" height="48">
-                        {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
-                    </v-btn>
-                </div>
-            </v-card>
-        </v-dialog>
-    </v-navigation-drawer>
+    <template #append>
+      <div class="pa-4">
+        <div class="d-flex justify-center mb-6">
+          <LanguageSelector />
+        </div>
+        <v-btn
+          block
+          class="logout-btn"
+          color="grey-lighten-1"
+          prepend-icon="mdi-logout"
+          variant="text"
+          @click="showLogoutDialog = true"
+        >
+          {{ $t('profile.logoutBtn') }}
+        </v-btn>
+      </div>
+    </template>
+
+    <!-- Logout Confirmation Dialog -->
+    <v-dialog v-model="showLogoutDialog" max-width="400">
+      <v-card class="glass-panel pa-6 text-center shadow-xl">
+        <v-icon class="mb-4 pulse-error" color="error" icon="mdi-alert-circle-outline" size="64" />
+        <h2 class="text-h5 font-weight-bold text-white mb-2 tracking-tighter">{{ $t('profile.logoutBtn').toUpperCase() }}?</h2>
+        <p class="text-body-2 text-grey-lighten-1 mb-8">
+          {{ $t('profile.logoutConfirm') }}
+        </p>
+        <div class="d-flex justify-center mt-4">
+          <v-btn
+            class="rounded-lg flex-grow-1 mr-2"
+            color="grey-lighten-1"
+            height="48"
+            variant="outlined"
+            @click="showLogoutDialog = false"
+          >
+            {{ $t('general.cancel').toUpperCase() }}
+          </v-btn>
+          <v-btn
+            class="rounded-lg flex-grow-1 ml-2"
+            color="error"
+            height="48"
+            variant="flat"
+            @click="handleLogout"
+          >
+            {{ $t('profile.logoutBtn').split(' ')[0].toUpperCase() }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+  </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAstroStore } from '@/stores/astroStore'
-import LanguageSelector from '@/components/layout/LanguageSelector.vue'
+  import { computed, ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import LanguageSelector from '@/components/layout/LanguageSelector.vue'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const router = useRouter()
-const store = useAstroStore()
+  const router = useRouter()
+  const store = useAstroStore()
 
-const showLogoutDialog = ref(false)
+  const showLogoutDialog = ref(false)
 
-const handleLogout = () => {
+  function handleLogout () {
     showLogoutDialog.value = false
     store.logout()
     router.push('/')
-}
+  }
 
-const menuItems = computed(() => {
+  const menuItems = computed(() => {
     const items = [
-        { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
-        { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
-        { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
-        { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
-        { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
-        { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
+      { titleKey: 'sidebar.training', icon: 'mdi-account', to: '/singleplayer' },
+      { titleKey: 'sidebar.multiplayer', icon: 'mdi-sword-cross', to: '/multiplayer' },
+      { titleKey: 'sidebar.shop', icon: 'mdi-store', to: '/shop' },
+      { titleKey: 'sidebar.achievements', icon: 'mdi-trophy-variant', to: '/achievements' },
+      { titleKey: 'sidebar.friends', icon: 'mdi-account-group', to: '/friends' },
+      { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
     ]
 
     if (store.role === 'TEACHER' || store.role === 'CENTER') {
-        items.push({ titleKey: 'sidebar.educational', icon: 'mdi-school', to: '/educational' })
+      items.push({ titleKey: 'sidebar.educational', icon: 'mdi-school', to: '/educational' })
     }
 
     return items
-})
+  })
 </script>
 
 <style scoped>
@@ -126,6 +165,8 @@ const menuItems = computed(() => {
     background: linear-gradient(90deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%) !important;
     color: #00f2ff !important;
     border-left: 3px solid #00f2ff !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
 }
 
 .active-menu-item .item-icon {

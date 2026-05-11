@@ -1,18 +1,32 @@
 <template>
-  <v-container fluid class="pa-0 main-container">
+  <v-container class="pa-0 main-container" fluid>
     <!-- Navbar (Simplified & Professional) -->
-    <v-app-bar flat color="transparent" height="100" class="px-8">
+    <v-app-bar class="px-8" color="transparent" flat height="100">
       <v-app-bar-title class="pl-0">
-        <v-img src="/logo/logo astro final.png" height="40" width="150" class="logo-header" position="left" contain @click="router.push('/')"></v-img>
+        <v-img
+          class="logo-header"
+          contain
+          height="40"
+          position="left"
+          src="/logo/logo astro final.png"
+          width="150"
+          @click="router.push('/')"
+        />
       </v-app-bar-title>
-      <v-spacer></v-spacer>
+      <v-spacer />
 
       <div class="d-flex align-center">
         <LanguageSelector class="mr-4" />
-        <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
+        <v-btn class="text-white mx-2 font-weight-bold" to="/login" variant="text">
           {{ $t('home.login') }}
         </v-btn>
-        <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-8 rounded-pill font-weight-black" height="48">
+        <v-btn
+          class="mx-2 px-8 rounded-pill font-weight-black"
+          color="primary"
+          height="48"
+          to="/register"
+          variant="flat"
+        >
           {{ $t('home.register') }}
         </v-btn>
       </div>
@@ -21,56 +35,61 @@
     <!-- Hero Section -->
     <section class="hero-section d-flex align-center justify-center text-center">
       <!-- Background Elements for Depth -->
-      <div class="background-glow"></div>
-      
+      <div class="background-glow" />
+
       <div class="content-wrapper px-4">
         <div class="system-status mb-6">
-            <span class="pulse-dot"></span>
-            {{ $t('home.systemOnline') }}
+          <span class="pulse-dot" />
+          {{ $t('home.systemOnline') }}
         </div>
-        
+
         <h1 class="hero-title mb-4">
           {{ $t('home.title', { name: 'ASTRO' }) }}
         </h1>
-        
+
         <p class="hero-subtitle mb-10 mx-auto">{{ $t('home.subtitle') }}</p>
 
         <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
-            <v-btn size="x-large" color="primary" variant="flat" class="action-button rounded-lg custom-btn-hero"
-              :to="isLoggedIn ? '/singleplayer' : '/register'">
-              <span class="text-center">{{ isLoggedIn ? $t('home.continue') : $t('home.start') }}</span>
-              <v-icon icon="mdi-chevron-right" class="btn-icon-right"></v-icon>
-            </v-btn>
+          <v-btn
+            class="action-button rounded-lg custom-btn-hero"
+            color="primary"
+            size="x-large"
+            :to="isLoggedIn ? '/singleplayer' : '/register'"
+            variant="flat"
+          >
+            <span class="text-center">{{ isLoggedIn ? $t('home.continue') : $t('home.start') }}</span>
+            <v-icon class="btn-icon-right" icon="mdi-chevron-right" />
+          </v-btn>
 
-            <v-btn size="x-large" variant="outlined" color="white" class="action-button rounded-lg custom-btn-hero">
-                {{ $t('home.learnMore') }}
-            </v-btn>
+          <v-btn class="action-button rounded-lg custom-btn-hero" color="white" size="x-large" variant="outlined">
+            {{ $t('home.learnMore') }}
+          </v-btn>
         </div>
       </div>
     </section>
 
     <!-- Visual Footer Decoration -->
     <div class="footer-decoration">
-        <div class="line"></div>
-        <div class="status-codes d-flex justify-space-between px-10">
-            <span>TX_READY: 0x44FF2</span>
-            <span>OS_ASTRO_KERNEL: LOADED</span>
-            <span>NEURAL_LINK: ACTIVE</span>
-        </div>
+      <div class="line" />
+      <div class="status-codes d-flex justify-space-between px-10">
+        <span>TX_READY: 0x44FF2</span>
+        <span>OS_ASTRO_KERNEL: LOADED</span>
+        <span>NEURAL_LINK: ACTIVE</span>
+      </div>
     </div>
   </v-container>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
-import LanguageSelector from '@/components/layout/LanguageSelector.vue';
+  import { computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import LanguageSelector from '@/components/layout/LanguageSelector.vue'
 
-const router = useRouter();
+  const router = useRouter()
 
-const isLoggedIn = computed(() => {
-  return !!localStorage.getItem('user-session');
-});
+  const isLoggedIn = computed(() => {
+    return !!localStorage.getItem('user-session')
+  })
 </script>
 
 <style scoped>
@@ -134,14 +153,6 @@ const isLoggedIn = computed(() => {
   color: white;
 }
 
-.primary-gradient-text {
-  background: linear-gradient(to right, #00f2ff, #7000ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.3));
-}
-
 .hero-subtitle {
   font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.6);
@@ -182,10 +193,6 @@ const isLoggedIn = computed(() => {
     font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.2);
     letter-spacing: 2px;
-}
-
-.tracking-tighter {
-    letter-spacing: -2px;
 }
 
 .logo-header {

@@ -1,490 +1,510 @@
 <template>
-    <v-container fluid class="fill-height plans-container d-flex align-center justify-center pa-0">
-        
-        <!-- SECTION 1: SELECT PLAN -->
-        <v-container v-if="step === 'select-plan'" class="text-center py-10 fill-height d-flex flex-column justify-center">
-            <div class="header-section mb-10">
-                <h1 class="text-h2 font-weight-bold text-white mb-2 tracking-wide text-glow">
-                    ASTRO <span class="text-primary">PROJECT</span>
-                </h1>
-                <p class="text-h6 text-grey-lighten-1 font-weight-light">
-                    {{ $t('plans.selectMode') }}
-                </p>
+  <v-container class="fill-height plans-container d-flex align-center justify-center pa-0" fluid>
+
+    <!-- SECTION 1: SELECT PLAN -->
+    <v-container v-if="step === 'select-plan'" class="text-center py-10 fill-height d-flex flex-column justify-center">
+      <div class="header-section mb-10">
+        <h1 class="text-h2 font-weight-bold text-white mb-2 tracking-wide text-glow">
+          ASTRO <span class="text-primary">PROJECT</span>
+        </h1>
+        <p class="text-h6 text-grey-lighten-1 font-weight-light">
+          {{ $t('plans.selectMode') }}
+        </p>
+      </div>
+
+      <v-row align="stretch" class="plans-row" justify="center">
+        <v-col
+          v-for="plan in plans"
+          :key="plan.id"
+          class="d-flex justify-center position-relative"
+          cols="12"
+          lg="4"
+          md="5"
+        >
+
+          <!-- DEFAULT / RECOMMENDED BADGE -->
+          <div v-if="plan.recommended" class="recommended-badge text-caption font-weight-bold">
+            {{ $t('plans.standard') }}
+          </div>
+
+          <v-card
+            class="plan-card d-flex flex-column align-center justify-space-between w-100 pa-8 ma-2"
+            :class="[plan.id === 'INDIVIDUAL' ? 'plan-individual' : 'plan-grupal', { 'recommended-card': plan.recommended }]"
+            elevation="10"
+            rounded="xl"
+          >
+            <div class="icon-wrapper mb-6 mt-4">
+              <v-icon class="plan-icon" :color="plan.color" size="80">
+                {{ plan.icon }}
+              </v-icon>
+              <div class="icon-glow" :style="`background: ${plan.glowColor}`" />
             </div>
 
-            <v-row justify="center" align="stretch" class="plans-row">
-                <v-col cols="12" md="5" lg="4" v-for="plan in plans" :key="plan.id" class="d-flex justify-center position-relative">
-                    
-                    <!-- DEFAULT / RECOMMENDED BADGE -->
-                    <div v-if="plan.recommended" class="recommended-badge text-caption font-weight-bold">
-                        {{ $t('plans.standard') }}
-                    </div>
+            <h2 class="text-h4 font-weight-bold mb-4 text-uppercase tracking-wider text-white">
+              {{ $t('plans.' + plan.id.toLowerCase()) }}
+            </h2>
 
-                    <v-card
-                        class="plan-card d-flex flex-column align-center justify-space-between w-100 pa-8 ma-2"
-                        :class="[plan.id === 'INDIVIDUAL' ? 'plan-individual' : 'plan-grupal', { 'recommended-card': plan.recommended }]"
-                        elevation="10"
-                        rounded="xl"
-                    >
-                        <div class="icon-wrapper mb-6 mt-4">
-                            <v-icon size="80" :color="plan.color" class="plan-icon">
-                                {{ plan.icon }}
-                            </v-icon>
-                            <div class="icon-glow" :style="`background: ${plan.glowColor}`"></div>
-                        </div>
+            <v-divider class="mb-6 w-50" :color="plan.color" thickness="2" />
 
-                        <h2 class="text-h4 font-weight-bold mb-4 text-uppercase tracking-wider text-white">
-                            {{ $t('plans.' + plan.id.toLowerCase()) }}
-                        </h2>
+            <p class="text-body-1 text-grey-lighten-2 mb-8 plan-desc">
+              {{ plan.desc }}
+            </p>
 
-                        <v-divider class="mb-6 w-50" :color="plan.color" thickness="2"></v-divider>
+            <v-btn
+              class="plan-btn mt-auto font-weight-bold"
+              :color="plan.color"
+              height="48"
+              min-width="200"
+              rounded="lg"
+              :variant="plan.recommended ? 'flat' : 'outlined'"
+              @click="selectPlan(plan.id)"
+            >
+              {{ (plan.id === 'INDIVIDUAL' && astroStore.plan?.startsWith('INDIVIDUAL')) || (plan.id === 'GRUPAL' && astroStore.plan === 'GRUPAL') ? $t('plans.manage') : $t('plans.select') }}
+            </v-btn>
+          </v-card>
+        </v-col>
+      </v-row>
 
-                        <p class="text-body-1 text-grey-lighten-2 mb-8 plan-desc">
-                            {{ plan.desc }}
-                        </p>
-
-                        <v-btn
-                            :color="plan.color"
-                            :variant="plan.recommended ? 'flat' : 'outlined'"
-                            class="plan-btn mt-auto font-weight-bold"
-                            rounded="lg"
-                            height="48"
-                            min-width="200"
-                            @click="selectPlan(plan.id)"
-                        >
-                            {{ (plan.id === 'INDIVIDUAL' && astroStore.plan?.startsWith('INDIVIDUAL')) || (plan.id === 'GRUPAL' && astroStore.plan === 'GRUPAL') ? $t('plans.manage') : $t('plans.select') }}
-                        </v-btn>
-                    </v-card>
-                </v-col>
-            </v-row>
-
-            <div class="mt-8">
-                <v-btn
-                    variant="text"
-                    color="grey-lighten-1"
-                    prepend-icon="mdi-arrow-left"
-                    @click="router.push('/profile')"
-                    class="hover-bright text-caption"
-                >
-                    {{ $t('plans.backToProfile') }}
-                </v-btn>
-            </div>
-        </v-container>
-
-        <!-- SECTION 2: INDIVIDUAL OPTIONS (Free vs Premium) -->
-        <v-container v-else-if="step === 'individual-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
-            <div class="header-section mb-10">
-                <v-icon size="60" color="cyan-accent-3" class="mb-4 text-glow">mdi-account-star</v-icon>
-                <h2 class="text-h3 font-weight-bold text-white mb-2 tracking-wide text-glow">
-                    {{ $t('plans.individualTitle') }}
-                </h2>
-                <p class="text-h6 text-grey-lighten-1 font-weight-light">
-                    {{ $t('plans.individualSubtitle') }}
-                </p>
-            </div>
-
-            <v-row justify="center" align="stretch" class="plans-row">
-                <!-- Option: Free -->
-                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
-                    <v-card
-                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-individual"
-                        @click="setIndividualPlan('INDIVIDUAL_FREE')"
-                        elevation="10"
-                        rounded="xl"
-                        :disabled="astroStore.plan === 'INDIVIDUAL_FREE'"
-                        :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_FREE' }"
-                    >
-                        <div class="icon-wrapper mb-6">
-                            <v-icon size="70" color="cyan-accent-3" class="plan-icon">mdi-robot-outline</v-icon>
-                            <div class="icon-glow" style="background: #00e5ff"></div>
-                        </div>
-                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-                            {{ $t('plans.freeTitle') || 'FREE' }}
-                        </h2>
-                        <v-divider class="my-4 w-25" color="cyan-accent-3"></v-divider>
-                        <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.freeDesc')"></p>
-                        <v-btn color="cyan-accent-3" variant="outlined" class="mt-6" rounded="lg" height="48" min-width="180">
-                            {{ astroStore.plan === 'INDIVIDUAL_FREE' ? $t('plans.currentPlan') : $t('plans.select') }}
-                        </v-btn>
-                    </v-card>
-                </v-col>
-
-                <!-- Option: Premium -->
-                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
-                    <v-card
-                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal premium-card"
-                        @click="setIndividualPlan('INDIVIDUAL_PREMIUM')"
-                        elevation="10"
-                        rounded="xl"
-                        :disabled="astroStore.plan === 'INDIVIDUAL_PREMIUM'"
-                        :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_PREMIUM' }"
-                    >
-                        <div class="icon-wrapper mb-6">
-                            <v-icon size="70" color="orange-accent-3" class="plan-icon">mdi-crown</v-icon>
-                            <div class="icon-glow" style="background: #ffab40"></div>
-                        </div>
-                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-                            {{ $t('plans.premiumTitle') || 'PREMIUM' }}
-                        </h2>
-                        <v-divider class="my-4 w-25" color="orange-accent-3"></v-divider>
-                        <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.premiumDesc')"></p>
-                        <v-btn color="orange-accent-3" :variant="astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'tonal' : 'flat'" class="mt-6 font-weight-bold" rounded="lg" height="48" min-width="180">
-                            {{ astroStore.plan === 'INDIVIDUAL_PREMIUM' ? $t('plans.currentPlan') : $t('plans.unlock') }}
-                        </v-btn>
-                    </v-card>
-                </v-col>
-            </v-row>
-
-            <div class="mt-8">
-                <v-btn
-                    variant="text"
-                    color="grey-lighten-1"
-                    prepend-icon="mdi-arrow-left"
-                    @click="step = 'select-plan'"
-                    class="hover-bright"
-                >
-                    {{ $t('plans.backToSelection') }}
-                </v-btn>
-            </div>
-        </v-container>
-
-        <!-- SECTION 3: GROUP OPTIONS (Create vs Join) -->
-        <v-container v-else-if="step === 'group-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
-            <div class="header-section mb-10">
-                <v-icon size="60" color="purple-accent-2" class="mb-4 text-glow">mdi-account-group</v-icon>
-                <h2 class="text-h3 font-weight-bold text-white mb-2 tracking-wide text-glow">
-                    {{ $t('plans.squadProtocol') }}
-                </h2>
-                <p class="text-h6 text-grey-lighten-1 font-weight-light">
-                    {{ $t('plans.squadStatus') }}
-                </p>
-            </div>
-
-            <v-row justify="center" align="stretch" class="plans-row">
-                <!-- Option: Create Group -->
-                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
-                    <v-card
-                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal"
-                        @click="step = 'create-group'"
-                        elevation="10"
-                        rounded="xl"
-                    >
-                        <div class="icon-wrapper mb-6">
-                            <v-icon size="70" color="green-accent-3" class="plan-icon">mdi-flag-plus</v-icon>
-                            <div class="icon-glow" style="background: #00e676"></div>
-                        </div>
-                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-                            {{ $t('plans.foundSquadTitle') }}
-                        </h2>
-                        <p class="text-body-1 text-grey-lighten-2 mt-4">
-                            {{ $t('plans.foundSquadDesc') }}
-                        </p>
-                    </v-card>
-                </v-col>
-
-                <!-- Option: Join Group -->
-                <v-col cols="12" md="5" lg="4" class="d-flex justify-center">
-                    <v-card
-                        class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal"
-                        @click="step = 'login'"
-                        elevation="10"
-                        rounded="xl"
-                    >
-                        <div class="icon-wrapper mb-6">
-                            <v-icon size="70" color="purple-accent-2" class="plan-icon">mdi-account-arrow-right</v-icon>
-                            <div class="icon-glow" style="background: #e040fb"></div>
-                        </div>
-                        <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-                            {{ $t('plans.joinSquadTitle') }}
-                        </h2>
-                        <p class="text-body-1 text-grey-lighten-2 mt-4">
-                            {{ $t('plans.joinSquadDesc') }}
-                        </p>
-                    </v-card>
-                </v-col>
-            </v-row>
-
-            <div class="mt-8">
-                <v-btn
-                    variant="text"
-                    color="grey-lighten-1"
-                    prepend-icon="mdi-arrow-left"
-                    @click="step = 'select-plan'"
-                    class="hover-bright"
-                >
-                    {{ $t('plans.backToSelection') }}
-                </v-btn>
-            </div>
-        </v-container>
-
-        <!-- SECTION 3A: JOIN GROUP (Login) -->
-        <v-container v-else-if="step === 'login'" class="d-flex align-center justify-center fill-height" max-width="600">
-            <v-card class="holo-panel pa-10 text-center w-100" rounded="xl" border>
-                <div class="header-section mb-6">
-                    <div class="d-flex align-center justify-center mb-4">
-                        <v-icon size="40" color="purple-accent-2" class="mr-3 glass-icon">mdi-radar</v-icon>
-                        <div class="text-overline text-purple-accent-1 tracking-widest">{{ $t('plans.linkSystem') }}</div>
-                    </div>
-                    <h2 class="text-h4 font-weight-black text-white mb-1 tracking-wide">{{ $t('plans.teamAccess') }}</h2>
-                    <v-divider class="my-4 border-purple-glow"></v-divider>
-                </div>
-
-                <v-row dense>
-                    <v-col cols="12" class="text-left mb-1">
-                        <label class="text-caption text-purple-lighten-4 font-weight-bold ml-1">{{ $t('plans.missionId') }}</label>
-                    </v-col>
-                    <v-col cols="12" class="mb-4">
-                        <v-text-field
-                            :placeholder="$t('plans.squadNameId')"
-                            variant="solo-filled"
-                            bg-color="rgba(20, 10, 40, 0.6)"
-                            color="purple-accent-2"
-                            prepend-inner-icon="mdi-account-group"
-                            v-model="user"
-                            @keyup.enter="login"
-                            class="tech-input"
-                            hide-details
-                        ></v-text-field>
-                    </v-col>
-
-                    <v-col cols="12" class="text-left mb-1">
-                        <label class="text-caption text-purple-lighten-4 font-weight-bold ml-1">{{ $t('plans.encryptionKey') }}</label>
-                    </v-col>
-                    <v-col cols="12" class="mb-6">
-                        <v-text-field
-                            :placeholder="$t('plans.accessCode')"
-                            type="password"
-                            variant="solo-filled"
-                            bg-color="rgba(20, 10, 40, 0.6)"
-                            color="purple-accent-2"
-                            prepend-inner-icon="mdi-lock-outline"
-                            v-model="password"
-                            @keyup.enter="login"
-                            class="tech-input"
-                            hide-details
-                        ></v-text-field>
-                    </v-col>
-                </v-row>
-
-                <v-btn
-                    height="54"
-                    min-width="280"
-                    color="purple-accent-2"
-                    @click="login"
-                    :disabled="!user || !password"
-                    class="mb-6 font-weight-bold glow-btn-secondary text-h6 mx-auto"
-                    rounded="lg"
-                >
-                    <v-icon start class="mr-2">mdi-connection</v-icon>
-                    {{ $t('plans.establishConnection') }}
-                </v-btn>
-
-                <v-btn
-                    variant="text"
-                    color="grey-lighten-2"
-                    prepend-icon="mdi-arrow-left"
-                    @click="step = 'group-options'"
-                    class="hover-bright text-caption"
-                >
-                    {{ $t('plans.abortAndReturn') }}
-                </v-btn>
-            </v-card>
-        </v-container>
-
-        <!-- SECTION 3B: CREATE GROUP (New Form) -->
-        <v-container v-else-if="step === 'create-group'" class="d-flex align-center justify-center fill-height" max-width="600">
-            <v-card class="holo-panel pa-10 text-center w-100" rounded="xl" border>
-                <div class="header-section mb-6">
-                    <div class="d-flex align-center justify-center mb-4">
-                        <v-icon size="40" color="green-accent-3" class="mr-3 glass-icon">mdi-domain-plus</v-icon>
-                        <div class="text-overline text-green-accent-1 tracking-widest">{{ $t('plans.unitRegistration') }}</div>
-                    </div>
-                    <h2 class="text-h4 font-weight-black text-white mb-1 tracking-wide">{{ $t('plans.newSquad') }}</h2>
-                    <v-divider class="my-4 border-green-glow"></v-divider>
-                </div>
-
-                <v-row dense>
-                    <v-col cols="12" class="text-left mb-1">
-                        <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.unitDesignation') }}</label>
-                    </v-col>
-                    <v-col cols="12" class="mb-4">
-                        <v-text-field
-                            :placeholder="$t('plans.squadName')"
-                            variant="solo-filled"
-                            bg-color="rgba(10, 30, 20, 0.6)"
-                            color="green-accent-3"
-                            prepend-inner-icon="mdi-format-title"
-                            v-model="newGroupName"
-                            class="tech-input-green"
-                            hide-details
-                        ></v-text-field>
-                    </v-col>
-
-                    <v-col cols="12" class="text-left mb-1">
-                        <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.securityProtocols') }}</label>
-                    </v-col>
-                    <v-col cols="12" sm="6" class="mb-1">
-                        <v-text-field
-                            :placeholder="$t('plans.password')"
-                            type="password"
-                            variant="solo-filled"
-                            bg-color="rgba(10, 30, 20, 0.6)"
-                            color="green-accent-3"
-                            prepend-inner-icon="mdi-key-plus"
-                            v-model="newGroupPassword"
-                            class="tech-input-green"
-                            hide-details
-                        ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6" class="mb-6">
-                        <v-text-field
-                            :placeholder="$t('plans.repeatCode')"
-                            type="password"
-                            variant="solo-filled"
-                            bg-color="rgba(10, 30, 20, 0.6)"
-                            color="green-accent-3"
-                            prepend-inner-icon="mdi-key-check"
-                            v-model="newGroupPasswordConfirm"
-                            class="tech-input-green"
-                            :error-messages="newGroupPassword !== newGroupPasswordConfirm ? $t('plans.pwdMismatch') : ''"
-                            hide-details
-                        ></v-text-field>
-                    </v-col>
-                </v-row>
-
-                <v-btn
-                    height="54"
-                    min-width="280"
-                    color="green-accent-3"
-                    @click="createGroup"
-                    :disabled="!newGroupName || !newGroupPassword || newGroupPassword !== newGroupPasswordConfirm"
-                    class="mb-6 font-weight-bold glow-btn-success text-h6 text-black mx-auto"
-                    rounded="lg"
-                >
-                    <v-icon start class="mr-2">mdi-check-decagram</v-icon>
-                    {{ $t('plans.confirmFoundation') }}
-                </v-btn>
-
-                <v-btn
-                    variant="text"
-                    color="grey-lighten-2"
-                    prepend-icon="mdi-arrow-left"
-                    @click="step = 'group-options'"
-                    class="hover-bright text-caption"
-                >
-                    {{ $t('plans.cancelProtocol') }}
-                </v-btn>
-            </v-card>
-        </v-container>
-
+      <div class="mt-8">
+        <v-btn
+          class="hover-bright text-caption"
+          color="grey-lighten-1"
+          prepend-icon="mdi-arrow-left"
+          variant="text"
+          @click="router.push('/profile')"
+        >
+          {{ $t('plans.backToProfile') }}
+        </v-btn>
+      </div>
     </v-container>
+
+    <!-- SECTION 2: INDIVIDUAL OPTIONS (Free vs Premium) -->
+    <v-container v-else-if="step === 'individual-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
+      <div class="header-section mb-10">
+        <v-icon class="mb-4 text-glow" color="cyan-accent-3" size="60">mdi-account-star</v-icon>
+        <h2 class="text-h3 font-weight-bold text-white mb-2 tracking-wide text-glow">
+          {{ $t('plans.individualTitle') }}
+        </h2>
+        <p class="text-h6 text-grey-lighten-1 font-weight-light">
+          {{ $t('plans.individualSubtitle') }}
+        </p>
+      </div>
+
+      <v-row align="stretch" class="plans-row" justify="center">
+        <!-- Option: Free -->
+        <v-col class="d-flex justify-center" cols="12" lg="4" md="5">
+          <v-card
+            class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-individual"
+            :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_FREE' }"
+            :disabled="astroStore.plan === 'INDIVIDUAL_FREE'"
+            elevation="10"
+            rounded="xl"
+            @click="setIndividualPlan('INDIVIDUAL_FREE')"
+          >
+            <div class="icon-wrapper mb-6">
+              <v-icon class="plan-icon" color="cyan-accent-3" size="70">mdi-robot-outline</v-icon>
+              <div class="icon-glow" style="background: #00e5ff" />
+            </div>
+            <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+              {{ $t('plans.freeTitle') || 'FREE' }}
+            </h2>
+            <v-divider class="my-4 w-25" color="cyan-accent-3" />
+            <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.freeDesc')" />
+            <v-btn
+              class="mt-6"
+              color="cyan-accent-3"
+              height="48"
+              min-width="180"
+              rounded="lg"
+              variant="outlined"
+            >
+              {{ astroStore.plan === 'INDIVIDUAL_FREE' ? $t('plans.currentPlan') : $t('plans.select') }}
+            </v-btn>
+          </v-card>
+        </v-col>
+
+        <!-- Option: Premium -->
+        <v-col class="d-flex justify-center" cols="12" lg="4" md="5">
+          <v-card
+            class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal premium-card"
+            :class="{ 'recommended-card': astroStore.plan === 'INDIVIDUAL_PREMIUM' }"
+            :disabled="astroStore.plan === 'INDIVIDUAL_PREMIUM'"
+            elevation="10"
+            rounded="xl"
+            @click="setIndividualPlan('INDIVIDUAL_PREMIUM')"
+          >
+            <div class="icon-wrapper mb-6">
+              <v-icon class="plan-icon" color="orange-accent-3" size="70">mdi-crown</v-icon>
+              <div class="icon-glow" style="background: #ffab40" />
+            </div>
+            <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+              {{ $t('plans.premiumTitle') || 'PREMIUM' }}
+            </h2>
+            <v-divider class="my-4 w-25" color="orange-accent-3" />
+            <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.premiumDesc')" />
+            <v-btn
+              class="mt-6 font-weight-bold"
+              color="orange-accent-3"
+              height="48"
+              min-width="180"
+              rounded="lg"
+              :variant="astroStore.plan === 'INDIVIDUAL_PREMIUM' ? 'tonal' : 'flat'"
+            >
+              {{ astroStore.plan === 'INDIVIDUAL_PREMIUM' ? $t('plans.currentPlan') : $t('plans.unlock') }}
+            </v-btn>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <div class="mt-8">
+        <v-btn
+          class="hover-bright"
+          color="grey-lighten-1"
+          prepend-icon="mdi-arrow-left"
+          variant="text"
+          @click="step = 'select-plan'"
+        >
+          {{ $t('plans.backToSelection') }}
+        </v-btn>
+      </div>
+    </v-container>
+
+    <!-- SECTION 3: GROUP OPTIONS (Create vs Join) -->
+    <v-container v-else-if="step === 'group-options'" class="text-center py-10 fill-height d-flex flex-column justify-center">
+      <div class="header-section mb-10">
+        <v-icon class="mb-4 text-glow" color="purple-accent-2" size="60">mdi-account-group</v-icon>
+        <h2 class="text-h3 font-weight-bold text-white mb-2 tracking-wide text-glow">
+          {{ $t('plans.squadProtocol') }}
+        </h2>
+        <p class="text-h6 text-grey-lighten-1 font-weight-light">
+          {{ $t('plans.squadStatus') }}
+        </p>
+      </div>
+
+      <v-row align="stretch" class="plans-row" justify="center">
+        <!-- Option: Create Group -->
+        <v-col class="d-flex justify-center" cols="12" lg="4" md="5">
+          <v-card
+            class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal"
+            elevation="10"
+            rounded="xl"
+            @click="step = 'create-group'"
+          >
+            <div class="icon-wrapper mb-6">
+              <v-icon class="plan-icon" color="green-accent-3" size="70">mdi-flag-plus</v-icon>
+              <div class="icon-glow" style="background: #00e676" />
+            </div>
+            <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+              {{ $t('plans.foundSquadTitle') }}
+            </h2>
+            <p class="text-body-1 text-grey-lighten-2 mt-4">
+              {{ $t('plans.foundSquadDesc') }}
+            </p>
+          </v-card>
+        </v-col>
+
+        <!-- Option: Join Group -->
+        <v-col class="d-flex justify-center" cols="12" lg="4" md="5">
+          <v-card
+            class="plan-card d-flex flex-column align-center justify-center w-100 pa-8 ma-2 plan-grupal"
+            elevation="10"
+            rounded="xl"
+            @click="step = 'login'"
+          >
+            <div class="icon-wrapper mb-6">
+              <v-icon class="plan-icon" color="purple-accent-2" size="70">mdi-account-arrow-right</v-icon>
+              <div class="icon-glow" style="background: #e040fb" />
+            </div>
+            <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
+              {{ $t('plans.joinSquadTitle') }}
+            </h2>
+            <p class="text-body-1 text-grey-lighten-2 mt-4">
+              {{ $t('plans.joinSquadDesc') }}
+            </p>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <div class="mt-8">
+        <v-btn
+          class="hover-bright"
+          color="grey-lighten-1"
+          prepend-icon="mdi-arrow-left"
+          variant="text"
+          @click="step = 'select-plan'"
+        >
+          {{ $t('plans.backToSelection') }}
+        </v-btn>
+      </div>
+    </v-container>
+
+    <!-- SECTION 3A: JOIN GROUP (Login) -->
+    <v-container v-else-if="step === 'login'" class="d-flex align-center justify-center fill-height" max-width="600">
+      <v-card border class="holo-panel pa-10 text-center w-100" rounded="xl">
+        <div class="header-section mb-6">
+          <div class="d-flex align-center justify-center mb-4">
+            <v-icon class="mr-3 glass-icon" color="purple-accent-2" size="40">mdi-radar</v-icon>
+            <div class="text-overline text-purple-accent-1 tracking-widest">{{ $t('plans.linkSystem') }}</div>
+          </div>
+          <h2 class="text-h4 font-weight-black text-white mb-1 tracking-wide">{{ $t('plans.teamAccess') }}</h2>
+          <v-divider class="my-4 border-purple-glow" />
+        </div>
+
+        <v-row dense>
+          <v-col class="text-left mb-1" cols="12">
+            <label class="text-caption text-purple-lighten-4 font-weight-bold ml-1">{{ $t('plans.missionId') }}</label>
+          </v-col>
+          <v-col class="mb-4" cols="12">
+            <v-text-field
+              v-model="user"
+              bg-color="rgba(20, 10, 40, 0.6)"
+              class="tech-input"
+              color="purple-accent-2"
+              hide-details
+              :placeholder="$t('plans.squadNameId')"
+              prepend-inner-icon="mdi-account-group"
+              variant="solo-filled"
+              @keyup.enter="login"
+            />
+          </v-col>
+
+          <v-col class="text-left mb-1" cols="12">
+            <label class="text-caption text-purple-lighten-4 font-weight-bold ml-1">{{ $t('plans.encryptionKey') }}</label>
+          </v-col>
+          <v-col class="mb-6" cols="12">
+            <v-text-field
+              v-model="password"
+              bg-color="rgba(20, 10, 40, 0.6)"
+              class="tech-input"
+              color="purple-accent-2"
+              hide-details
+              :placeholder="$t('plans.accessCode')"
+              prepend-inner-icon="mdi-lock-outline"
+              type="password"
+              variant="solo-filled"
+              @keyup.enter="login"
+            />
+          </v-col>
+        </v-row>
+
+        <v-btn
+          class="mb-6 font-weight-bold glow-btn-secondary text-h6 mx-auto"
+          color="purple-accent-2"
+          :disabled="!user || !password"
+          height="54"
+          min-width="280"
+          rounded="lg"
+          @click="login"
+        >
+          <v-icon class="mr-2" start>mdi-connection</v-icon>
+          {{ $t('plans.establishConnection') }}
+        </v-btn>
+
+        <v-btn
+          class="hover-bright text-caption"
+          color="grey-lighten-2"
+          prepend-icon="mdi-arrow-left"
+          variant="text"
+          @click="step = 'group-options'"
+        >
+          {{ $t('plans.abortAndReturn') }}
+        </v-btn>
+      </v-card>
+    </v-container>
+
+    <!-- SECTION 3B: CREATE GROUP (New Form) -->
+    <v-container v-else-if="step === 'create-group'" class="d-flex align-center justify-center fill-height" max-width="600">
+      <v-card border class="holo-panel pa-10 text-center w-100" rounded="xl">
+        <div class="header-section mb-6">
+          <div class="d-flex align-center justify-center mb-4">
+            <v-icon class="mr-3 glass-icon" color="green-accent-3" size="40">mdi-domain-plus</v-icon>
+            <div class="text-overline text-green-accent-1 tracking-widest">{{ $t('plans.unitRegistration') }}</div>
+          </div>
+          <h2 class="text-h4 font-weight-black text-white mb-1 tracking-wide">{{ $t('plans.newSquad') }}</h2>
+          <v-divider class="my-4 border-green-glow" />
+        </div>
+
+        <v-row dense>
+          <v-col class="text-left mb-1" cols="12">
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.unitDesignation') }}</label>
+          </v-col>
+          <v-col class="mb-4" cols="12">
+            <v-text-field
+              v-model="newGroupName"
+              bg-color="rgba(10, 30, 20, 0.6)"
+              class="tech-input-green"
+              color="green-accent-3"
+              hide-details
+              :placeholder="$t('plans.squadName')"
+              prepend-inner-icon="mdi-format-title"
+              variant="solo-filled"
+            />
+          </v-col>
+
+          <v-col class="text-left mb-1" cols="12">
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.securityProtocols') }}</label>
+          </v-col>
+          <v-col class="mb-1" cols="12" sm="6">
+            <v-text-field
+              v-model="newGroupPassword"
+              bg-color="rgba(10, 30, 20, 0.6)"
+              class="tech-input-green"
+              color="green-accent-3"
+              hide-details
+              :placeholder="$t('plans.password')"
+              prepend-inner-icon="mdi-key-plus"
+              type="password"
+              variant="solo-filled"
+            />
+          </v-col>
+          <v-col class="mb-6" cols="12" sm="6">
+            <v-text-field
+              v-model="newGroupPasswordConfirm"
+              bg-color="rgba(10, 30, 20, 0.6)"
+              class="tech-input-green"
+              color="green-accent-3"
+              :error-messages="newGroupPassword !== newGroupPasswordConfirm ? $t('plans.pwdMismatch') : ''"
+              hide-details
+              :placeholder="$t('plans.repeatCode')"
+              prepend-inner-icon="mdi-key-check"
+              type="password"
+              variant="solo-filled"
+            />
+          </v-col>
+        </v-row>
+
+        <v-btn
+          class="mb-6 font-weight-bold glow-btn-success text-h6 text-black mx-auto"
+          color="green-accent-3"
+          :disabled="!newGroupName || !newGroupPassword || newGroupPassword !== newGroupPasswordConfirm"
+          height="54"
+          min-width="280"
+          rounded="lg"
+          @click="createGroup"
+        >
+          <v-icon class="mr-2" start>mdi-check-decagram</v-icon>
+          {{ $t('plans.confirmFoundation') }}
+        </v-btn>
+
+        <v-btn
+          class="hover-bright text-caption"
+          color="grey-lighten-2"
+          prepend-icon="mdi-arrow-left"
+          variant="text"
+          @click="step = 'group-options'"
+        >
+          {{ $t('plans.cancelProtocol') }}
+        </v-btn>
+      </v-card>
+    </v-container>
+
+  </v-container>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAstroStore } from '@/stores/astroStore'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+  import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useRouter } from 'vue-router'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const { t } = useI18n()
-const astroStore = useAstroStore()
-const router = useRouter()
+  const { t } = useI18n()
+  const astroStore = useAstroStore()
+  const router = useRouter()
 
-const step = ref('select-plan')
-const selectedPlan = ref('')
+  const step = ref('select-plan')
+  const selectedPlan = ref('')
 
-// Login Data
-const user = ref('')
-const password = ref('')
+  // Login Data
+  const user = ref('')
+  const password = ref('')
 
-// Registration Data (Group)
-const newGroupName = ref('')
-const newGroupPassword = ref('')
-const newGroupPasswordConfirm = ref('')
+  // Registration Data (Group)
+  const newGroupName = ref('')
+  const newGroupPassword = ref('')
+  const newGroupPasswordConfirm = ref('')
 
-const plans = computed(() => [
-    { 
-        id: 'INDIVIDUAL', 
-        icon: 'mdi-rocket-launch', 
-        color: 'cyan-accent-3', 
-        glowColor: 'cyan',
-        desc: t('plans.individualDesc') || 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
-        recommended: true
+  const plans = computed(() => [
+    {
+      id: 'INDIVIDUAL',
+      icon: 'mdi-rocket-launch',
+      color: 'cyan-accent-3',
+      glowColor: 'cyan',
+      desc: t('plans.individualDesc') || 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
+      recommended: true,
     },
-    { 
-        id: 'GRUPAL', 
-        icon: 'mdi-account-group-outline', 
-        color: 'purple-accent-2', 
-        glowColor: 'purple',
-        desc: t('plans.grupalDesc') || 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
-        recommended: false
-    }
-])
+    {
+      id: 'GRUPAL',
+      icon: 'mdi-account-group-outline',
+      color: 'purple-accent-2',
+      glowColor: 'purple',
+      desc: t('plans.grupalDesc') || 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
+      recommended: false,
+    },
+  ])
 
-const selectPlan = (planId) => {
+  function selectPlan (planId) {
     selectedPlan.value = planId
-    
+
     if (planId === 'INDIVIDUAL') {
-        step.value = 'individual-options'
-        return
+      step.value = 'individual-options'
+      return
     }
-    
+
     // Si es grupal, vamos al paso intermedio de opciones
     if (planId === 'GRUPAL') {
-        step.value = 'group-options'
+      step.value = 'group-options'
     }
-}
+  }
 
-const setIndividualPlan = async (planType) => {
+  async function setIndividualPlan (planType) {
     const result = await astroStore.updatePlan(planType)
-    
-    if (result.success) {
-        router.push('/profile')
-    } else {
-        console.error("No se pudo sincronizar el plan:", result.message)
-        // Opcional: router.push('/profile') si quieres que navegue igual aunque falle el server
-        router.push('/profile')
-    }
-}
 
-const login = async () => {
+    if (result.success) {
+      router.push('/profile')
+    } else {
+      console.error('No se pudo sincronizar el plan:', result.message)
+      router.push('/profile')
+    }
+  }
+
+  async function login () {
     if (!user.value || !password.value) return
 
     const result = await astroStore.loginTripulante({
-        user: user.value,
-        password: password.value
+      user: user.value,
+      password: password.value,
     })
 
     if (result.success) {
-        router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
+      router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
     } else {
-        alert(result.message)
+      alert(result.message)
     }
-}
+  }
 
-const createGroup = async () => {
+  async function createGroup () {
     if (!newGroupName.value || !newGroupPassword.value) return
-    
+
     // Al fundar escuadra desde aquí, el usuario actual se convierte en el "CENTRO"
     const result = await astroStore.registerTripulante({
-        username: newGroupName.value,
-        password: newGroupPassword.value,
-        plan: 'GRUPAL',
-        role: 'CENTER',
-        rank: 'Centro de Mando'
+      username: newGroupName.value,
+      password: newGroupPassword.value,
+      plan: 'GRUPAL',
+      role: 'CENTER',
+      rank: 'Centro de Mando',
     })
-    
+
     if (result.success) {
-        // Hacemos login automático con el nuevo centro
-        await astroStore.loginTripulante({
-            user: newGroupName.value,
-            password: newGroupPassword.value
-        })
-        router.push('/profile')
+      // Hacemos login automático con el nuevo centro
+      await astroStore.loginTripulante({
+        user: newGroupName.value,
+        password: newGroupPassword.value,
+      })
+      router.push('/profile')
     } else {
-        alert(result.message)
+      alert(result.message)
     }
-}
+  }
 </script>
 
 <style scoped>
@@ -500,7 +520,7 @@ const createGroup = async () => {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-image: 
+    background-image:
         radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
         radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
         radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
@@ -542,7 +562,6 @@ const createGroup = async () => {
     background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
     pointer-events: none;
 }
-
 
 /* RECOMMENDED / INDIVIDUAL */
 .recommended-badge {
@@ -589,14 +608,12 @@ const createGroup = async () => {
     opacity: 0.2;
 }
 
-
 /* BUTTON STYLES */
 .plan-btn {
     border-width: 2px;
     text-transform: none;
     letter-spacing: 1px;
 }
-
 
 /* HOLO PANEL STYLES (NEW FORMS) */
 .holo-panel {
@@ -658,7 +675,6 @@ const createGroup = async () => {
     border: 1px solid rgba(255,255,255,0.1);
 }
 
-
 .hover-bright {
     transition: color 0.3s;
 }
@@ -687,7 +703,6 @@ const createGroup = async () => {
 /* 3. Stop Button color change */
 .plan-btn:hover {
     background-color: transparent !important; /* If outlined, transparent. If flat, original color. */
-    /* This is tricky because flat needs color. */
 }
 
 /* Better approach for buttons: */
@@ -697,10 +712,6 @@ const createGroup = async () => {
 }
 
 .plan-btn.v-btn--variant-flat:hover {
-    /* For flat buttons (recommended), we want to keep the original background color */
-    /* Vuetify handles this via class, but hover adds overlay. 
-       Disabling overlay (above) handles the visual change mostly. 
-       But we ensure no transform/shadow change. */
     box-shadow: none !important;
     transform: none !important;
 }

@@ -1,29 +1,29 @@
 <template>
-  <v-container fluid class="fill-height register-container d-flex align-center justify-center">
-    <div class="stars-overlay"></div>
-    
+  <v-container class="fill-height register-container d-flex align-center justify-center" fluid>
+    <div class="stars-overlay" />
+
     <v-card
+      class="pa-8 register-card glass-panel"
       elevation="24"
       max-width="580"
       width="100%"
-      class="pa-8 register-card glass-panel"
     >
       <div class="d-flex justify-start mb-4">
         <v-btn
-          variant="text"
-          density="compact"
-          color="cyan-lighten-3"
           class="back-btn-tech"
+          color="cyan-lighten-3"
+          density="compact"
+          variant="text"
           @click="router.push('/')"
         >
-          <v-icon start size="small">mdi-chevron-left</v-icon>
+          <v-icon size="small" start>mdi-chevron-left</v-icon>
           <span class="text-caption font-weight-bold">{{ $t('auth.abortCmd') }}</span>
         </v-btn>
       </div>
 
       <div class="text-center mb-8 header-section">
         <div class="hologram-effect mb-4">
-          <v-icon color="cyan-accent-3" size="64" class="pulse-icon">mdi-shield-account-outline</v-icon>
+          <v-icon class="pulse-icon" color="cyan-accent-3" size="64">mdi-shield-account-outline</v-icon>
         </div>
         <h1 class="text-h3 font-weight-black text-white tracking-widest neon-text mb-2">
           {{ $t('auth.enlistment') }}
@@ -39,67 +39,67 @@
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.identification') }}</div>
             <v-text-field
               v-model="formData.username"
-              :placeholder="$t('auth.usernameID')"
-              variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
-              prepend-inner-icon="mdi-account-box-outline"
-              color="cyan-accent-3"
               class="future-input"
-              :rules="[v => !!v || $t('auth.idReq')]"
+              color="cyan-accent-3"
               hide-details="auto"
-            ></v-text-field>
+              :placeholder="$t('auth.usernameID')"
+              prepend-inner-icon="mdi-account-box-outline"
+              :rules="[v => !!v || $t('auth.idReq')]"
+              variant="solo-filled"
+            />
           </v-col>
 
-          <v-col cols="12" sm="6" class="mt-4">
+          <v-col class="mt-4" cols="12" sm="6">
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.credentials') }}</div>
             <v-text-field
               v-model="formData.password"
+              bg-color="rgba(0, 20, 40, 0.6)"
+              class="future-input"
+              color="cyan-accent-3"
+              hide-details="auto"
               :placeholder="$t('auth.password')"
+              prepend-inner-icon="mdi-lock-outline"
+              :rules="[v => !!v || $t('auth.codeReq')]"
               type="password"
               variant="solo-filled"
-              bg-color="rgba(0, 20, 40, 0.6)"
-              prepend-inner-icon="mdi-lock-outline"
-              color="cyan-accent-3"
-              class="future-input"
-              :rules="[v => !!v || $t('auth.codeReq')]"
-              hide-details="auto"
-            ></v-text-field>
+            />
           </v-col>
 
-          <v-col cols="12" sm="6" class="mt-4">
+          <v-col class="mt-4" cols="12" sm="6">
             <div class="text-caption text-cyan-lighten-4 mb-1 ml-1 font-weight-bold">{{ $t('auth.verif') }}</div>
             <v-text-field
               v-model="formData.confirmPassword"
-              :placeholder="$t('auth.confirmPwd')"
-              type="password"
-              variant="solo-filled"
               bg-color="rgba(0, 20, 40, 0.6)"
-              prepend-inner-icon="mdi-lock-check-outline"
-              color="cyan-accent-3"
               class="future-input"
+              color="cyan-accent-3"
               :error-messages="passwordMatchError"
               hide-details="auto"
-            ></v-text-field>
+              :placeholder="$t('auth.confirmPwd')"
+              prepend-inner-icon="mdi-lock-check-outline"
+              type="password"
+              variant="solo-filled"
+            />
           </v-col>
         </v-row>
 
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
-          <v-icon color="red-accent-2" class="mr-3">mdi-alert-octagon</v-icon>
+          <v-icon class="mr-3" color="red-accent-2">mdi-alert-octagon</v-icon>
           <span class="text-red-lighten-1 font-weight-bold uppercase">{{ errorMessage }}</span>
         </div>
 
         <v-btn
           block
-          height="64"
-          color="cyan-accent-3"
-          type="submit"
           class="register-btn font-weight-black mt-8 text-h6"
-          :loading="loading"
+          color="cyan-accent-3"
           :disabled="!!passwordMatchError"
+          height="64"
+          :loading="loading"
+          type="submit"
         >
-          <v-icon start class="mr-2">mdi-rocket-launch</v-icon>
+          <v-icon class="mr-2" start>mdi-rocket-launch</v-icon>
           {{ $t('auth.initSignUp') }}
-          <div class="btn-glow"></div>
+          <div class="btn-glow" />
         </v-btn>
       </v-form>
 
@@ -116,58 +116,58 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAstroStore } from '@/stores/astroStore';
-import { useI18n } from 'vue-i18n';
+  import { computed, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import { useRouter } from 'vue-router'
+  import { useAstroStore } from '@/stores/astroStore'
 
-const { t } = useI18n();
-const router = useRouter();
-const astroStore = useAstroStore();
+  const { t } = useI18n()
+  const router = useRouter()
+  const astroStore = useAstroStore()
 
-const loading = ref(false);
-const errorMessage = ref('');
+  const loading = ref(false)
+  const errorMessage = ref('')
 
-const formData = ref({
-  username: '',
-  password: '',
-  confirmPassword: ''
-});
+  const formData = ref({
+    username: '',
+    password: '',
+    confirmPassword: '',
+  })
 
-const passwordMatchError = computed(() => {
-  if (!formData.value.confirmPassword) return '';
-  return formData.value.password !== formData.value.confirmPassword 
-    ? t('auth.codesDontMatch') 
-    : '';
-});
+  const passwordMatchError = computed(() => {
+    if (!formData.value.confirmPassword) return ''
+    return formData.value.password === formData.value.confirmPassword
+      ? ''
+      : t('auth.codesDontMatch')
+  })
 
-const handleRegister = async () => {
-    if (passwordMatchError.value) return;
+  async function handleRegister () {
+    if (passwordMatchError.value) return
     if (!formData.value.username || !formData.value.password) {
-        errorMessage.value = t('auth.allReqs');
-        return;
+      errorMessage.value = t('auth.allReqs')
+      return
     }
-    
-    loading.value = true;
-    errorMessage.value = '';
+
+    loading.value = true
+    errorMessage.value = ''
 
     try {
-        const result = await astroStore.registerTripulante({
-            username: formData.value.username,
-            password: formData.value.password,
-        });
-        
-        if (result.success) {
-            router.push('/login'); 
-        } else {
-            errorMessage.value = result.message || t('auth.signUpErr');
-        }
-    } catch (err) {
-        errorMessage.value = t('auth.serverConnErr');
+      const result = await astroStore.registerTripulante({
+        username: formData.value.username,
+        password: formData.value.password,
+      })
+
+      if (result.success) {
+        router.push('/login')
+      } else {
+        errorMessage.value = result.message || t('auth.signUpErr')
+      }
+    } catch {
+      errorMessage.value = t('auth.serverConnErr')
     } finally {
-        loading.value = false;
+      loading.value = false
     }
-};
+  }
 </script>
 
 <style scoped>
@@ -183,7 +183,7 @@ const handleRegister = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     radial-gradient(white 1px, transparent 1px),
     radial-gradient(rgba(255, 255, 255, 0.5) 2px, transparent 2px);
   background-size: 50px 50px, 150px 150px;
