@@ -17,6 +17,7 @@
 
 <script setup>
   import { computed, ref } from 'vue'
+  import { API_BASE_URL } from '@/stores/astroShared'
 
   function getSegmentStyle (index) {
     const degreePerItem = 360 / items.length
@@ -62,9 +63,8 @@
     isSpinning.value = true
     emit('spin-start')
 
-    // 1. Definimos la URL base usando la variable de entorno de Vite/Astro
-    // Si la variable no existe, usará localhost por defecto para que no se rompa nada
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    // 1. Usamos la variable global centralizada
+    const API_BASE = API_BASE_URL
 
     try {
       // 2. Usamos la variable API_BASE en lugar del texto fijo

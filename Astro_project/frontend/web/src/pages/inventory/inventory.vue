@@ -99,6 +99,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
+  import { API_BASE_URL } from '@/stores/astroShared'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
@@ -129,7 +130,7 @@
 
   async function toggleEquip (item) {
     if (!isEquipable(item)) return
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const API_BASE = API_BASE_URL
 
     try {
       const response = await fetch(`${API_BASE}/api/inventory/toggle-equip`, {
