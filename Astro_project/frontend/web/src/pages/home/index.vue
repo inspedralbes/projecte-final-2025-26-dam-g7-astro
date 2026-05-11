@@ -1,11 +1,10 @@
 <template>
   <v-container fluid class="pa-0 main-container">
     <!-- Navbar (Simplified & Professional) -->
-    <v-app-bar flat color="transparent" class="px-8 mt-4">
-      <v-app-bar-title>
-        <h2 class="text-h4 font-weight-black text-white tracking-tighter">ASTRO</h2>
+    <v-app-bar flat color="transparent" height="100" class="px-8">
+      <v-app-bar-title class="pl-0">
+        <v-img src="/logo/logo astro final.png" height="40" width="150" class="logo-header" position="left" contain @click="router.push('/')"></v-img>
       </v-app-bar-title>
-      
       <v-spacer></v-spacer>
 
       <div class="d-flex align-center">
@@ -13,7 +12,7 @@
         <v-btn variant="text" to="/login" class="text-white mx-2 font-weight-bold">
           {{ $t('home.login') }}
         </v-btn>
-        <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-6 rounded-pill font-weight-black">
+        <v-btn variant="flat" to="/register" color="primary" class="mx-2 px-8 rounded-pill font-weight-black" height="48">
           {{ $t('home.register') }}
         </v-btn>
       </div>
@@ -34,16 +33,16 @@
           {{ $t('home.title', { name: 'ASTRO' }) }}
         </h1>
         
-        <p class="hero-subtitle mb-10 mx-auto" v-html="$t('home.subtitle')"></p>
+        <p class="hero-subtitle mb-10 mx-auto">{{ $t('home.subtitle') }}</p>
 
         <div class="d-flex flex-column flex-sm-row justify-center align-center mt-10" style="gap: 20px;">
-            <v-btn size="x-large" color="primary" variant="flat" class="action-button px-12 py-6 rounded-lg"
+            <v-btn size="x-large" color="primary" variant="flat" class="action-button rounded-lg custom-btn-hero"
               :to="isLoggedIn ? '/singleplayer' : '/register'">
-              {{ isLoggedIn ? $t('home.continue') : $t('home.start') }}
-              <v-icon end icon="mdi-chevron-right" class="ms-2"></v-icon>
+              <span class="text-center">{{ isLoggedIn ? $t('home.continue') : $t('home.start') }}</span>
+              <v-icon icon="mdi-chevron-right" class="btn-icon-right"></v-icon>
             </v-btn>
 
-            <v-btn size="x-large" variant="outlined" color="white" class="action-button px-12 py-6 rounded-lg">
+            <v-btn size="x-large" variant="outlined" color="white" class="action-button rounded-lg custom-btn-hero">
                 {{ $t('home.learnMore') }}
             </v-btn>
         </div>
@@ -64,7 +63,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import LanguageSelector from '@/components/layout/LanguageSelector.vue';
+
+const router = useRouter();
 
 const isLoggedIn = computed(() => {
   return !!localStorage.getItem('user-session');
@@ -148,6 +150,7 @@ const isLoggedIn = computed(() => {
   font-family: 'Inter', sans-serif;
   text-transform: none;
   letter-spacing: 0;
+  white-space: pre-line;
 }
 
 .action-button {
@@ -183,5 +186,30 @@ const isLoggedIn = computed(() => {
 
 .tracking-tighter {
     letter-spacing: -2px;
+}
+
+.logo-header {
+    filter: brightness(0) invert(1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logo-header:hover {
+    opacity: 0.8;
+}
+
+.custom-btn-hero {
+    min-width: 280px !important;
+    height: 64px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+}
+
+.btn-icon-right {
+    position: absolute !important;
+    right: 24px !important;
 }
 </style>
