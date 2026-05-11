@@ -70,6 +70,7 @@
             "skin": "Aparences",
             "collectible": "Col·leccionables",
             "trails": "Rastres",
+            "pets": "Mascotes",
             "items": "Objectes"
         },
         "active": "ACTIU: {games} partides",
@@ -79,7 +80,9 @@
         "equip": "EQUIPAR",
         "empty": "Encara no tens equip en aquesta categoria",
         "goToShop": "Visitar la Botiga",
-        "useError": "No s'ha pogut utilitzar l'objecte."
+        "useError": "No s'ha pogut utilitzar l'objecte.",
+        "sell": "VENDRE",
+        "sellConfirm": "Estàs segur que vols vendre {item} per {price} monedes?"
     },
     "profile": {
         "guest": "Explorador",
