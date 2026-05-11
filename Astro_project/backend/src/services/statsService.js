@@ -105,7 +105,8 @@ class StatsService {
             friendRequests: user.friendRequests || [],
             groupInvitations: user.groupInvitations || [],
             groupApprovalRequests: user.groupApprovalRequests || [],
-            scheduledPlanDowngrade: user.scheduledPlanDowngrade || null
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
+            pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null
         };
     }
 

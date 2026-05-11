@@ -52,6 +52,7 @@ class UserService {
             child.role = null;
             child.parentId = null;
             child.scheduledPlanDowngrade = null;
+            child.pendingGroupLeaveRequest = null;
             await this.userRepo.update(child);
         });
 
@@ -61,6 +62,7 @@ class UserService {
         owner.role = null;
         owner.parentId = null;
         owner.scheduledPlanDowngrade = null;
+        owner.pendingGroupLeaveRequest = null;
         await this.userRepo.update(owner);
     }
 
@@ -105,6 +107,7 @@ class UserService {
             refreshedUser.role = role;
             refreshedUser.parentId = null;
             refreshedUser.scheduledPlanDowngrade = null;
+            refreshedUser.pendingGroupLeaveRequest = null;
         } else if (this._isValidIndividualPlan(plan)) {
             if (refreshedUser.plan === 'GRUPAL' && this._isGroupOwner(refreshedUser)) {
                 throw new Error("Como responsable de grupo debes usar la baja programada con contraseña");
@@ -116,6 +119,7 @@ class UserService {
             refreshedUser.role = null;
             refreshedUser.parentId = null;
             refreshedUser.scheduledPlanDowngrade = null;
+            refreshedUser.pendingGroupLeaveRequest = null;
         } else {
             throw new Error("Plan no válido");
         }

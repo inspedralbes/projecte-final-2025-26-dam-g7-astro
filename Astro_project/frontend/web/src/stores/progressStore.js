@@ -224,6 +224,7 @@ export const useProgressStore = defineStore('progress', {
         sessionStore.setGroupInvitations(userData.groupInvitations || [])
         sessionStore.setGroupApprovalRequests(userData.groupApprovalRequests || [])
         sessionStore.setScheduledPlanDowngrade(userData.scheduledPlanDowngrade || null)
+        sessionStore.setPendingGroupLeaveRequest(userData.pendingGroupLeaveRequest || null)
 
         const achievementsStore = useAchievementsStore()
         achievementsStore.setSelectedAchievements(userData.selectedAchievements || [])

@@ -350,6 +350,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             sessionStore.setPlan(data.profile.plan || sessionStore.plan)
             sessionStore.setRole(data.profile.role || null)
             sessionStore.setParentId(data.profile.parentId || null)
+            if (Object.prototype.hasOwnProperty.call(data.profile, 'pendingGroupLeaveRequest')) {
+              sessionStore.setPendingGroupLeaveRequest(data.profile.pendingGroupLeaveRequest)
+            } else if (!data.profile.parentId) {
+              sessionStore.setPendingGroupLeaveRequest(null)
+            }
           }
           if (Array.isArray(data.groupInvitations)) {
             sessionStore.setGroupInvitations(data.groupInvitations)
