@@ -618,7 +618,7 @@
     if (!msg) return
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       if (isPlaying.value) {
-        isPlaying.value = false; isFiring.value = false; cancelAnimationFrame(animationFrame); emit('game-over', score.value)
+        isPlaying.value = false; isFiring.value = false; cancelAnimationFrame(animationFrame); showGameOverOverlay.value = true
       }
       return
     }

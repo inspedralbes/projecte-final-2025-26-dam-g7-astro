@@ -240,6 +240,7 @@
   import RadioSignal from '@/components/games/RadioSignal.vue'
   import RhymeSquad from '@/components/games/RhymeSquad.vue'
   import SpelledRosco from '@/components/games/SpelledRosco.vue'
+  import SyllableQuest from '@/components/games/SyllableQuest.vue'
   import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import { useAstroStore } from '@/stores/astroStore'
@@ -268,9 +269,10 @@
     { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
     { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
     { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1000, previewGif: '/previews/radio-signal-2.gif' },
-    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1250, previewGif: '/previews/symmetry-breaker.gif' },
-    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1500, previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'syllable-quest', nameKey: 'singleplayerLevels.silabas', component: SyllableQuest, minScore: 900, previewGif: '/previews/syllable-quest.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1100, previewGif: '/previews/radio-signal-2.gif' },
+    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1350, previewGif: '/previews/symmetry-breaker.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1600, previewGif: '/previews/radar-scan-2.gif' },
   ]
 
   function getLevelState (index) {
