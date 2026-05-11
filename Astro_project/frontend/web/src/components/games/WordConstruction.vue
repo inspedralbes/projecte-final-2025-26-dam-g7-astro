@@ -210,11 +210,26 @@
 
   const emit = defineEmits(['game-over'])
 
+  function normalizeWordObj (entry = {}) {
+    return {
+      ...entry,
+      word: String(entry.word || '').toUpperCase(),
+    }
+  }
+
+  function normalizeLetters (letters = []) {
+    return (Array.isArray(letters) ? letters : []).map(tile => ({
+      ...tile,
+      letter: String(tile.letter || '').toUpperCase(),
+    }))
+  }
+
   const wordsList = computed(() => {
     if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT' && groupStore.activeSupplySet?.content?.length > 0) {
-      return groupStore.activeSupplySet.content
+      return groupStore.activeSupplySet.content.map(normalizeWordObj)
     }
-    return wordConstructionData[locale.value] || wordConstructionData['es']
+    const fallback = wordConstructionData[locale.value] || wordConstructionData['es']
+    return fallback.map(normalizeWordObj)
   })
 
   const level = ref(1)
@@ -278,7 +293,7 @@
   }
 
   function toLetterTiles (word) {
-    return word.split('').map(letter => ({
+    return String(word || '').toUpperCase().split('').map(letter => ({
       id: letterId.value++,
       letter,
     }))
@@ -486,15 +501,15 @@
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BOARD_SYNC') {
-      currentWordObj.value = msg.action.wordObj
-      scrambledLetters.value = msg.action.letters
+      currentWordObj.value = normalizeWordObj(msg.action.wordObj)
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
       message.value = ''
       isRoundLocked.value = false
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user) {
       isUpdatingFromSync = true
-      scrambledLetters.value = msg.action.letters
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
