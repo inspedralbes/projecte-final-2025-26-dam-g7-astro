@@ -8,7 +8,7 @@
     @mousemove="handlePointerMove"
     @mouseup.left="stopFiring"
   >
-    <div class="hud pa-4 w-100 position-absolute" style="top: 0; z-index: 12;">
+    <div class="hud pa-2 w-100 position-absolute" style="top: 0; z-index: 12;">
       <div class="d-flex justify-center align-center">
         <div class="hud-pill d-flex align-center ga-6">
           <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('symmetryBreaker.points', { score }) }}</div>
@@ -744,6 +744,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-top: 80px;
   overflow: hidden;
   user-select: none;
 }

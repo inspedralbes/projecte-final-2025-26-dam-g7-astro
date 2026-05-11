@@ -1,6 +1,6 @@
 <template>
   <div ref="gameArea" class="game-container" @mousemove="updateFlashlight">
-    <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
+    <div class="hud d-flex justify-center align-center pa-2 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
         <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('radarScan.points', { score }) }}</div>
         <div class="text-h5 font-weight-bold text-cyan-accent-3">{{ $t('radarScan.time') }} <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
@@ -541,6 +541,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-top: 80px;
   overflow: hidden;
   user-select: none;
 }
