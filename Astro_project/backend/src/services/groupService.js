@@ -37,7 +37,8 @@ class GroupService {
             avatar: isTeacher ? 'Astronauta_taronja.jpg' : 'Astronauta_blanc.jpg',
             groupInvitations: [],
             groupApprovalRequests: [],
-            scheduledPlanDowngrade: null
+            scheduledPlanDowngrade: null,
+            pendingGroupLeaveRequest: null
         };
     }
 
@@ -149,6 +150,7 @@ class GroupService {
         user.role = invitation.targetRole;
         user.parentId = invitation.parentId;
         user.scheduledPlanDowngrade = null;
+        user.pendingGroupLeaveRequest = null;
         user.groupInvitations = user.groupInvitations.filter((inv) => inv.id !== invitationId);
 
         await this.userRepo.update(user);
@@ -219,8 +221,18 @@ class GroupService {
             createdAt: new Date().toISOString()
         };
 
+        requester.pendingGroupLeaveRequest = {
+            requestId: request.id,
+            approver: approver.username,
+            status: 'PENDING',
+            createdAt: request.createdAt
+        };
+
         approver.groupApprovalRequests.push(request);
-        await this.userRepo.update(approver);
+        await Promise.all([
+            this.userRepo.update(approver),
+            this.userRepo.update(requester)
+        ]);
         return request;
     }
 
@@ -274,6 +286,7 @@ class GroupService {
         requester.role = null;
         requester.parentId = null;
         requester.scheduledPlanDowngrade = null;
+        requester.pendingGroupLeaveRequest = null;
 
         approver.groupApprovalRequests = approver.groupApprovalRequests.filter((req) => req.id !== requestId);
 
@@ -286,7 +299,8 @@ class GroupService {
             requester: requester.username,
             plan: requester.plan,
             role: requester.role,
-            parentId: requester.parentId
+            parentId: requester.parentId,
+            pendingGroupLeaveRequest: requester.pendingGroupLeaveRequest
         };
     }
 
@@ -297,14 +311,35 @@ class GroupService {
         }
 
         approver.groupApprovalRequests = Array.isArray(approver.groupApprovalRequests) ? approver.groupApprovalRequests : [];
+        const request = approver.groupApprovalRequests.find((req) => req.id === requestId);
         const before = approver.groupApprovalRequests.length;
         approver.groupApprovalRequests = approver.groupApprovalRequests.filter((req) => req.id !== requestId);
         if (before === approver.groupApprovalRequests.length) {
             throw new Error("Solicitud no encontrada");
         }
 
+        let requesterProfile = null;
+        if (request?.requester) {
+            const requester = await this.userRepo.findByUsername(request.requester);
+            if (requester?.pendingGroupLeaveRequest?.requestId === requestId) {
+                requester.pendingGroupLeaveRequest = {
+                    ...requester.pendingGroupLeaveRequest,
+                    status: 'REJECTED',
+                    resolvedAt: new Date().toISOString()
+                };
+                await this.userRepo.update(requester);
+                requesterProfile = {
+                    requester: requester.username,
+                    plan: requester.plan,
+                    role: requester.role,
+                    parentId: requester.parentId,
+                    pendingGroupLeaveRequest: requester.pendingGroupLeaveRequest
+                };
+            }
+        }
+
         await this.userRepo.update(approver);
-        return true;
+        return requesterProfile;
     }
 
     async getMembers(parentUsername) {

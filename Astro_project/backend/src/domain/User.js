@@ -44,6 +44,7 @@ class User {
         this.groupInvitations = Array.isArray(data.groupInvitations) ? data.groupInvitations : [];
         this.groupApprovalRequests = Array.isArray(data.groupApprovalRequests) ? data.groupApprovalRequests : [];
         this.scheduledPlanDowngrade = data.scheduledPlanDowngrade || null;
+        this.pendingGroupLeaveRequest = data.pendingGroupLeaveRequest || null;
     }
 
     getXPNeeded() {

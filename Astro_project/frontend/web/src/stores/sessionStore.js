@@ -33,6 +33,7 @@ export const useSessionStore = defineStore('session', {
     groupInvitations: [],
     groupApprovalRequests: [],
     scheduledPlanDowngrade: null,
+    pendingGroupLeaveRequest: null,
     error: null,
   }),
 
@@ -142,6 +143,9 @@ export const useSessionStore = defineStore('session', {
       if (profile.scheduledPlanDowngrade !== undefined) {
         this.setScheduledPlanDowngrade(profile.scheduledPlanDowngrade)
       }
+      if (profile.pendingGroupLeaveRequest !== undefined) {
+        this.setPendingGroupLeaveRequest(profile.pendingGroupLeaveRequest)
+      }
     },
 
     setDeletionScheduled (date) {
@@ -159,6 +163,10 @@ export const useSessionStore = defineStore('session', {
 
     setScheduledPlanDowngrade (scheduled = null) {
       this.scheduledPlanDowngrade = scheduled || null
+    },
+
+    setPendingGroupLeaveRequest (pending = null) {
+      this.pendingGroupLeaveRequest = pending || null
     },
 
     async registerTripulante (userData) {
@@ -439,6 +447,7 @@ export const useSessionStore = defineStore('session', {
       this.groupInvitations = []
       this.groupApprovalRequests = []
       this.scheduledPlanDowngrade = null
+      this.pendingGroupLeaveRequest = null
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
