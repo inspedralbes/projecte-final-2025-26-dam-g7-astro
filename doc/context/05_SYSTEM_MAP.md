@@ -26,6 +26,7 @@ graph TD
 ### 📂 /Astro_project
 - `docker-compose.yml`: Configuració per a l'orquestració de contenidors.
 - `/backend`: Lògica de servidor, models de dades i rutes.
+    - `/src/tests`: Suite de proves unitàries i d'integració.
 - `/frontend/web`: Aplicació Vue 3 per a navegadors.
 - `/frontend/mobile`: Aplicació React Native per a dispositius mòbils.
 
