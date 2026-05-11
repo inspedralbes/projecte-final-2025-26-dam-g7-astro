@@ -1,2 +1,8 @@
+# Backend-specific ignore rules
 node_modules/
 .env
+
+# Logs and database dumps
+/logs
+*.sqlite
+/db-backups
