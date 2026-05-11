@@ -33,3 +33,11 @@ Mantenir una nomenclatura consistent és vital per a la llegibilitat del codi.
 ## 5. Desenvolupament amb IA
 - L'agent d'IA ha de respectar escrupolosament el fitxer `RULES.md` de la carpeta `Astro_project`.
 - Abans de realitzar canvis en rutes d'API o models de dades, s'ha de validar l'impacte en tota la cadena (DB -> Backend -> Frontend).
+
+## 6. Estratègia de Testing de Backend
+- **Aïllament:** Cada test ha de crear la seva pròpia instància del servei o gestor (`RoomManager`) per evitar interferències.
+- **Repositoris en Memòria:** Utilitzar `InMemoryRoomRepository` i `InMemoryUserRepository` per a tests d'integració ràpids i sense dependències de base de dades externa.
+- **Gestió de Timers:** Utilitzar `jest.useFakeTimers()` i avançar-los amb `jest.advanceTimersByTime()` per provar lògiques de timeout sense esperar temps real.
+- **Neteja:** Tots els tests han de tindre un `afterEach` que cridi mètodes de parada (`stop()`) per netejar intervals de `setInterval` i evitar que Jest es quedi penjat.
+
+Aquesta guia assegura que la suite de tests sigui ràpida, determinista i fàcil de mantenir.

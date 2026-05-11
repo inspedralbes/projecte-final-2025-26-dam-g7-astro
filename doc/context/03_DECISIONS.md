@@ -24,4 +24,6 @@ Aquest document recull el "perquè" de les eleccions tècniques i canvis estruct
 
 ## 6. Selecció d'Estètica Glassmorphism
 - **Decisió:** Utilitzar capes translúcides i desenfocaments (backdrop-filter).
-- **Racional:** Crear una sensació de profunditat espacial i modernitat que diferenciï Astro d'altres aplicacions educatives més planes i convencionals.
+## 7. Refactorització de RoomManager per a Testabilitat (Maig 2026)
+- **Decisió:** Permetre la instanciació de la classe `RoomManager` en lloc de dependre exclusivament d'un singleton global, i afegir mètodes de control de cicle de vida com `stop()`.
+- **Racional:** La dependència de singletons dificultava el testatge paral·lel i causava "leaks" de memòria i interferències entre tests degut als intervals actius (Garbage Collector). Aquesta modularització permet proves unitàries aïllades i deterministes.
