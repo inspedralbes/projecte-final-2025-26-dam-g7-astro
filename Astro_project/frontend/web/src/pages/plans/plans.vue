@@ -379,9 +379,11 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const router = useRouter()
 
   const step = ref('select-plan')
@@ -437,6 +439,23 @@
     if (result.success) {
       router.push('/profile')
     } else {
+      const message = String(result.message || '')
+      const needsApproval = message.toLowerCase().includes('solicitar aprobación')
+      const isSubordinateGroupMember = astroStore.plan === 'GRUPAL'
+        && !!astroStore.parentId
+        && (astroStore.role === 'STUDENT' || astroStore.role === 'TEACHER')
+
+      if (needsApproval && isSubordinateGroupMember) {
+        const leaveRequest = await groupStore.requestLeaveToIndividual(astroStore.user)
+        if (leaveRequest.success) {
+          alert('Solicitud enviada al responsable del grupo. Revisa Amigos/Solicitudes para el estado.')
+          router.push('/friends')
+          return
+        }
+        alert(leaveRequest.message || 'No se pudo enviar la solicitud de salida del grupo')
+        return
+      }
+
       alert(result.message || 'No se pudo cambiar el plan')
     }
   }
