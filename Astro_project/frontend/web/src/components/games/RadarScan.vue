@@ -407,7 +407,7 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      emit('game-over', score.value)
+      showGameOverOverlay.value = true
       return
     }
 

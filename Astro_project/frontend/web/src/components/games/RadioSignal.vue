@@ -151,6 +151,30 @@
         <div class="text-h4 text-white font-weight-bold">{{ $t('radioSignal.successDesc') }}</div>
       </div>
     </v-overlay>
+
+    <!-- Overlay de Resultados Finales -->
+    <v-overlay
+      v-model="showGameOverOverlay"
+      class="align-center justify-center"
+      persistent
+      z-index="120"
+    >
+      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
+        <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="80" />
+        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radioSignal.title') }}</h2>
+        <p class="text-h5 text-cyan-accent-3 mb-2">{{ $t('radioSignal.points', { score }) }}</p>
+        <p class="text-body-1 text-grey-lighten-1 mb-8">{{ $t('radioSignal.successDesc') }}</p>
+        <v-btn
+          class="font-weight-black text-black px-8"
+          color="cyan-accent-3"
+          rounded="xl"
+          size="x-large"
+          @click="emitExit"
+        >
+          {{ $t('radioSignal.send') }}
+        </v-btn>
+      </v-card>
+    </v-overlay>
   </div>
 </template>
 
@@ -191,6 +215,7 @@
   const isTuned = ref(false)
   const showError = ref(false)
   const showSuccess = ref(false)
+  const showGameOverOverlay = ref(false)
   const score = ref(0)
   const timeLeft = ref(props.isMultiplayer ? 90 : 60)
   const gameFinished = ref(false)
@@ -535,15 +560,24 @@
     stopSpeechLoop()
     stopAudio()
 
+    if (roundTimer) {
+      clearInterval(roundTimer)
+      roundTimer = null
+    }
+
     if (props.isMultiplayer && !silent) {
       multiplayerStore.submitRoundResult()
       return
     }
 
-    if (roundTimer) {
-      clearInterval(roundTimer)
-      roundTimer = null
+    if (silent) {
+      emitExit()
+    } else {
+      showGameOverOverlay.value = true
     }
+  }
+
+  function emitExit () {
     const reward = score.value + timeLeft.value
     emit('game-over', reward)
   }
@@ -579,7 +613,6 @@
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       if (!gameFinished.value) {
         finishGame(true)
-        emit('game-over', score.value)
       }
       return
     }

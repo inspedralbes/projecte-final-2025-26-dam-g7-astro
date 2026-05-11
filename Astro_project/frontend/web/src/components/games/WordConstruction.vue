@@ -419,7 +419,6 @@
     if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value && isPlaying.value) {
       gameFinished.value = true
       if (timerInterval) clearInterval(timerInterval)
-      emitExit()
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {

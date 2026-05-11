@@ -460,7 +460,6 @@
     if (msg.type === 'ROUND_ENDED_BY_WINNER' && !isGameOver.value && isPlaying.value) {
       isPlaying.value = false
       isGameOver.value = true
-      emitExit()
     }
 
     if (msg.type === 'GAME_ACTION') {

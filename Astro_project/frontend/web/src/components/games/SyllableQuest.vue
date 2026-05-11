@@ -206,7 +206,8 @@
       setTimeout(() => {
         if (currentPhraseIndex.value < multiplayerPhrases.length - 1) {
           currentPhraseIndex.value++
-          if (isHost.value) syncPhrase()
+          // Si es multijugador, el host sincroniza. Si es singleplayer, sincronizamos siempre.
+          if (!props.isMultiplayer || isHost.value) syncPhrase()
         } else {
           finishGame()
         }
@@ -232,11 +233,13 @@
     usedWordIndices.value.clear()
     correctWordsInOrder.value = []
 
-    multiplayerStore.sendGameAction({
-      type: 'PHRASE_SYNC',
-      shuffled: shuffled,
-      phraseIndex: currentPhraseIndex.value,
-    })
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({
+        type: 'PHRASE_SYNC',
+        shuffled: shuffled,
+        phraseIndex: currentPhraseIndex.value,
+      })
+    }
   }
 
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
@@ -275,7 +278,6 @@
 
       if (currentWordIndex.value >= words.value.length - 1) {
         finishGame()
-        if (props.isMultiplayer) emitExit()
         return
       }
 
@@ -317,7 +319,7 @@
 
   onMounted(() => {
     startTimer()
-    if (props.isMultiplayer && isHost.value) {
+    if (!props.isMultiplayer || isHost.value) {
       syncPhrase()
     }
   })
@@ -327,8 +329,7 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      gameFinished.value = true
-      emitExit()
+      finishGame(true)
     }
 
     if (msg.type === 'GAME_ACTION') {
