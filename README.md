@@ -37,7 +37,7 @@ Astro utilitza una arquitectura de micro-serveis contenidoritzats per garantir e
 
 ## 📂 Estructura del Repositori
 - **[`/Astro_project`](./Astro_project)**: Codi font de l'ecosistema (Web, Mobile i Backend).
-- **[`/doc`](./doc)**: Documentació tècnica, guies de context i especificacions OpenSpec.
+- **[`/doc`](./doc)**: Punt d'entrada a la **Documentació Tècnica**, presentacions comercials, tècniques i manual d'usuari.
 - **[`/doc/context`](./doc/context)**: Cervell del projecte amb guies d'arquitectura i convencions.
 
 ## 🔗 Recursos i Enllaços
