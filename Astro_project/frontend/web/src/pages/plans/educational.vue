@@ -115,7 +115,9 @@
 
           <!-- TAB: ESTADÍSTICAS -->
           <div v-if="currentTab === 'stats'">
-            <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.telemetryTitle') }}</h3>
+            <h3 class="text-h4 font-weight-black text-white mb-6">
+              {{ isPremium ? $t('educational.telemetryTitleIndividual') : $t('educational.telemetryTitle') }}
+            </h3>
 
             <v-row v-if="groupStore.currentStats">
               <v-col cols="4">
@@ -126,14 +128,18 @@
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.avgLevel') }}</div>
-                  <div class="text-h4 text-amber-accent-2">{{ groupStore.currentStats.avgLevel.toFixed(1) }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.level') : $t('educational.avgLevel') }}</div>
+                  <div class="text-h4 text-amber-accent-2">
+                    {{ isPremium ? groupStore.currentStats.level : Number(groupStore.currentStats.avgLevel || 0).toFixed(1) }}
+                  </div>
                 </v-card>
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.totalMembers') }}</div>
-                  <div class="text-h4 text-purple-accent-1">{{ groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.totalPoints') : $t('educational.totalMembers') }}</div>
+                  <div class="text-h4 text-purple-accent-1">
+                    {{ isPremium ? groupStore.currentStats.totalPoints : (groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers) }}
+                  </div>
                 </v-card>
               </v-col>
             </v-row>
@@ -196,7 +202,8 @@
   const { t } = useI18n()
   const astroStore = useAstroStore()
   const groupStore = useGroupStore()
-  const { user, role } = storeToRefs(astroStore)
+  const { user, role, plan } = storeToRefs(astroStore)
+  const isPremium = computed(() => plan.value === 'INDIVIDUAL_PREMIUM')
 
   const currentTab = ref('stats')
   const showAddDialog = ref(false)
@@ -227,10 +234,16 @@
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchClassStats(user.value)
       await groupStore.fetchSupplySets(user.value)
+    } else if (isPremium.value) {
+      currentTab.value = 'stats'
+      await groupStore.fetchIndividualStats(user.value)
+      await groupStore.fetchSupplySets(user.value)
     }
   })
 
   async function addMember () {
+    if (role.value !== 'CENTER' && role.value !== 'TEACHER') return
+
     if (!newName.value) {
       alert(t('educational.errors.usernameRequired'))
       return

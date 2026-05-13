@@ -230,6 +230,9 @@
   }
 
   const wordsList = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'WordConstruction' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content.map(normalizeWordObj)
+    }
     if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT' && groupStore.activeSupplySet?.content?.length > 0) {
       return groupStore.activeSupplySet.content.map(normalizeWordObj)
     }
