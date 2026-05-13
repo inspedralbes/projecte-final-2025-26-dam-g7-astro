@@ -333,15 +333,23 @@
   const gameStartTime = ref(null)
 
   const levelSequence = [
+    // FASE 1: La Tierra (4)
     { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
-    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
-    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
-    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
-    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { id: 'syllable-quest', nameKey: 'singleplayerLevels.silabas', component: SyllableQuest, minScore: 900, previewGif: '/previews/syllable-quest.gif' },
-    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1100, previewGif: '/previews/radio-signal-2.gif' },
-    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1350, previewGif: '/previews/symmetry-breaker.gif' },
-    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1600, previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 60, previewGif: '/previews/radar-scan.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 150, previewGif: '/previews/radio-signal.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 300, previewGif: '/previews/spelled-rosco.gif' },
+
+    // FASE 2: Espacio Cercano (4)
+    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 300, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { id: 'syllable-quest', nameKey: 'singleplayerLevels.silabas', component: SyllableQuest, minScore: 400, previewGif: '/previews/syllable-quest.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 750, previewGif: '/previews/radio-signal-2.gif' },
+    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1000, previewGif: '/previews/symmetry-breaker.gif' },
+
+    // FASE 3: Espacio Profundo (4)
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 400, phaseTitleKey: 'singleplayerLevels.fase3Title', phaseSubtitleKey: 'singleplayerLevels.fase3Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-auto-fix', previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.senalperdida', component: SpelledRosco, minScore: 1200, previewGif: '/previews/spelled-rosco.gif' },
+    { id: 'word-construction', nameKey: 'singleplayerLevels.horizontes', component: WordConstruction, minScore: 1500, previewGif: '/previews/word-construction.gif' },
+    { id: 'syllable-quest', nameKey: 'singleplayerLevels.destino', component: SyllableQuest, minScore: 1000, previewGif: '/previews/syllable-quest.gif' },
   ]
 
   function getLevelState (index) {

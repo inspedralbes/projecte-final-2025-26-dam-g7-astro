@@ -595,7 +595,12 @@
         "fase1Title": "Entrenament",
         "fase1Subtitle": "Fase 1: La Terra",
         "fase2Title": "El Viatge Comença",
-        "fase2Subtitle": "Fase 2: Espai Proper"
+        "fase2Subtitle": "Fase 2: Espai Cercà",
+        "fase3Title": "Cap al Desconegut",
+        "fase3Subtitle": "Fase 3: Espai Profund",
+        "senalperdida": "Senyal Perduda",
+        "horizontes": "Nous Horitzons",
+        "destino": "Destí Final"
     },
     "shopActions": {
         "confirmMulti": "Vols comprar un pack de 10 tirades per 900 monedes?",
