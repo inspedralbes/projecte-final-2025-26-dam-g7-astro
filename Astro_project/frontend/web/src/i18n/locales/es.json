@@ -951,6 +951,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PARA CLASE",
             "deleteConfirm": "¿Eliminar este ejercicio?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EJERCICIO: {game}",
             "newTitle": "NUEVO EJERCICIO: {game}",
             "saveChanges": "GUARDAR CAMBIOS",

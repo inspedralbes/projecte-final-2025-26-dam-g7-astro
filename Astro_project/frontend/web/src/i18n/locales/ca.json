@@ -835,6 +835,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PER CLASE",
             "deleteConfirm": "Eliminar aquest exercici?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EXERCICI: {game}",
             "newTitle": "NOU EXERCICI: {game}",
             "saveChanges": "GUARDAR CANVIS",
