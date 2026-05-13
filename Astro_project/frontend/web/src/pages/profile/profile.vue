@@ -904,8 +904,15 @@
   })
 
   const translatedPlan = computed(() => {
-    const p = plan.value || 'individual_free'
-    return t(`plans.${p.toLowerCase()}`).toUpperCase()
+    const planValue = String(plan.value || 'INDIVIDUAL_FREE').toUpperCase()
+
+    if (planValue === 'GRUPAL') {
+      return t('plans.grupal').toUpperCase()
+    }
+    if (planValue === 'INDIVIDUAL_PREMIUM') {
+      return t('plans.premium').toUpperCase()
+    }
+    return t('plans.individual').toUpperCase()
   })
 
   const avatarOptions = computed(() => [
