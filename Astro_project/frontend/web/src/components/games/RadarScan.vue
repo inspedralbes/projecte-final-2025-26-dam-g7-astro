@@ -152,6 +152,10 @@
       type: Number,
       default: 60,
     },
+    isDuel: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   // --- VARIABLES D'ESTAT ---
@@ -425,10 +429,14 @@
           }
 
           if (timeLeft.value <= 0) {
-            if (props.isMultiplayer && isHost.value) {
-              multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+            if (!props.isRace || props.isDuel) {
+              if (props.isMultiplayer && isHost.value) {
+                multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+              }
+              endGame()
+            } else {
+              timeLeft.value = 60
             }
-            endGame()
           }
         }
       }

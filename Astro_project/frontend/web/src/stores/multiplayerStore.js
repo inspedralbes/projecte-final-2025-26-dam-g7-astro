@@ -667,12 +667,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.raceFuel = 100
       this.fuelInterval = setInterval(() => {
         if (this.raceFuel > 0) {
-          // Consumo base reducido: 0.02% cada 100ms (0.2% por segundo)
-          let decrement = 0.02
+          // Consumo equilibrado: 0.04% cada 100ms (0.4% por segundo)
+          let decrement = 0.04
           
-          // Si es un juego de pensar/escuchar, bajar consumo a la mitad (0.1% por segundo)
-          if (this.activeGameName === 'RadioSignal' || this.activeGameName === 'SpelledRosco') {
-            decrement = 0.01 
+          // Si es un juego de pensar/escuchar, bajar consumo a la mitad (0.2% por segundo)
+          if (this.activeGameName === 'RadioSignal' || this.activeGameName === 'SpelledRosco' || this.activeGameName === 'RhymeSquad') {
+            decrement = 0.02 
           }
 
           this.raceFuel = Math.max(0, this.raceFuel - decrement) 

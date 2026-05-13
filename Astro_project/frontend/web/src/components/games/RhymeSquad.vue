@@ -422,7 +422,7 @@
       if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
       triggerFeedback('success')
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(2) // 2% de gasolina por acierto en carrera
+        multiplayerStore.rechargeFuel(15) // +15% de gasolina por rima acertada en carrera
       }
     } else {
       word.status = 'incorrect'

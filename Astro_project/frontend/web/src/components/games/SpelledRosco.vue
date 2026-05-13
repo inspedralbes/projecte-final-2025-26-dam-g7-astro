@@ -7,7 +7,7 @@
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">
             🚀 {{ $t('spelledRosco.title') }}
-            <span v-if="props.isMultiplayer && subRole" class="text-caption text-uppercase">({{ subRole }})</span>
+            <span v-if="isMultiplayer && subRole" class="text-caption text-uppercase">({{ subRole }})</span>
           </h2>
           <div class="text-caption text-grey-lighten-2">
             <span>{{ $t('spelledRosco.score', { score: score }) }}</span>
@@ -353,6 +353,27 @@
   import { isValidHint } from '@/utils/hintValidator'
   import { getWordCategory, getWordType } from '@/utils/roscoHints'
 
+  const props = defineProps({
+    isMultiplayer: {
+      type: Boolean,
+      default: false,
+    },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
+    duration: {
+      type: Number,
+      default: 60,
+    },
+    isDuel: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  const emit = defineEmits(['game-over'])
+
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
@@ -409,7 +430,22 @@
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
   }))
 
-  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), timeLeft = ref(props.duration), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  // --- VARIABLES D'ESTAT ---
+  const roscoLetters = ref([])
+  const currentIndex = ref(0)
+  const rawInput = ref('')
+  const gameFinished = ref(false)
+  const score = ref(0)
+  const showFeedback = ref(false)
+  const feedbackMessage = ref('')
+  const feedbackColor = ref('info')
+  const isChecking = ref(false)
+  const timeLeft = ref(60) // Inicialización neutra
+  const rocketAnimating = ref(false)
+  const rocketPos = reactive({ x: 0, y: 0 })
+  const trailParticles = ref([])
+  const visitedSegments = ref(new Set())
+  
   let timerInterval = null
 
   // --- REFORÇ VISUAL I SONOR ---
@@ -423,27 +459,6 @@
     audio.volume = 0.4
     audio.play().catch(e => console.warn('Audio play blocked:', e))
   }
-
-  const props = defineProps({
-    isMultiplayer: {
-      type: Boolean,
-      default: false,
-    },
-    isRace: {
-      type: Boolean,
-      default: false,
-    },
-    duration: {
-      type: Number,
-      default: 60,
-    },
-    isDuel: {
-      type: Boolean,
-      default: false,
-    },
-  })
-
-  const emit = defineEmits(['game-over'])
 
   const subRole = computed(() => multiplayerStore.subRole)
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
@@ -508,8 +523,9 @@
   }
 
   onMounted(() => {
+    timeLeft.value = props.duration || 60
     initRosco()
-    if (props.isMultiplayer || props.isRace) {
+    if (isMultiplayer || isRace) {
       // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {
         if (!gameFinished.value) startTimer()

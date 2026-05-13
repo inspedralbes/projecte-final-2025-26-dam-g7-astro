@@ -94,7 +94,10 @@
         </div>
 
         <!-- BOTÓN DE ABORTAR: Extremo superior derecho -->
-        <div class="abort-corner-container">
+        <div 
+          v-if="!activeGameComponent || multiplayerStore.room?.gameConfig?.mode !== 'RACE' || canAbortMission" 
+          class="abort-corner-container"
+        >
           <v-btn
             class="abort-btn-hud-corner"
             color="error"
@@ -109,11 +112,9 @@
         </div>
 
 
-        <!-- BOTÓN ROJO DE ABORTAR (Solo en juegos modo carrera) -->
-        <!-- Movido aquí para que esté por encima de TODO -->
         <transition name="scale">
           <div 
-            v-if="activeGameComponent && multiplayerStore.room?.gameConfig?.mode === 'RACE'" 
+            v-if="activeGameComponent && multiplayerStore.room?.gameConfig?.mode === 'RACE' && canAbortMission" 
             class="abort-mission-btn-container"
             @click.stop="handleAbortMission"
           >
@@ -123,6 +124,22 @@
               <div class="btn-label">ABORTAR</div>
               <div class="key-hint">SPACE</div>
             </div>
+          </div>
+          
+          <!-- Indicador de cuenta atrás discreto para abortar -->
+          <div 
+            v-else-if="activeGameComponent && multiplayerStore.room?.gameConfig?.mode === 'RACE' && !canAbortMission && !isDuel"
+            class="abort-cooldown-indicator"
+          >
+            <v-progress-circular
+              :model-value="(45 - abortTimerSeconds) / 45 * 100"
+              color="red-accent-2"
+              size="40"
+              width="3"
+            >
+              <span class="text-caption font-weight-black">{{ abortTimerSeconds }}</span>
+            </v-progress-circular>
+            <div class="ml-2 text-overline text-red-accent-2">BLOQUEIG D'ABORTAMENT</div>
           </div>
         </transition>
 
@@ -228,12 +245,20 @@
           </v-overlay>
 
           <!-- ALERTA DE MISTERIO (?) -->
-          <transition name="slide-y">
+          <transition name="scale">
             <div v-if="activeMysteryAlert" class="mystery-alert-overlay">
-              <div class="mystery-alert-card pa-6 rounded-xl border-purple shadow-purple">
-                <v-icon color="purple-accent-1" size="48" class="mb-2">mdi-help-circle-outline</v-icon>
-                <div class="text-h5 font-weight-black text-white mb-1">MISSIÓ D'EXPLORACIÓ</div>
-                <div class="text-body-1 text-purple-accent-1 font-weight-bold">{{ activeMysteryAlert }}</div>
+              <div class="mystery-alert-card pa-8 rounded-xl border-purple shadow-purple text-center">
+                <v-icon 
+                  :color="anomalyIcon.color" 
+                  size="84" 
+                  class="mb-4 animate-bounce"
+                  :icon="anomalyIcon.icon"
+                />
+                <div class="text-h4 font-weight-black text-white mb-2 tracking-tighter">ALERTA METEOROLÒGICA</div>
+                <div class="text-h6 text-purple-accent-1 font-weight-bold uppercase mb-4">{{ anomalyIcon.name }}</div>
+                <div class="text-body-1 text-white bg-purple-darken-4 pa-4 rounded-lg border-purple-lighten-2">
+                  {{ activeMysteryAlert }}
+                </div>
               </div>
             </div>
           </transition>
@@ -1177,9 +1202,36 @@
   const canAbortMission = ref(false)
   const abortTimerSeconds = ref(45)
   let abortInterval = null
+
+  const anomalyIcon = computed(() => {
+    const a = multiplayerStore.currentGlobalAnomaly
+    if (a === 'meteorits') return { icon: 'mdi-weather-pouring', color: 'orange-accent-3', name: 'PLUJA DE METEORITS' }
+    if (a === 'raig-tempesta') return { icon: 'mdi-lightning-bolt', color: 'yellow-accent-2', name: 'TORMENTA ELÈCTRICA' }
+    if (a === 'nebulosa') return { icon: 'mdi-blur', color: 'deep-purple-lighten-3', name: 'NEBULOSA DENSA' }
+    return { icon: 'mdi-alert-decagram', color: 'purple-accent-1', name: 'FENOMEN DESCONEGUT' }
+  })
+
+  // Vigilante para mostrar la alerta a TODOS los jugadores cuando se activa una anomalía
+  watch(() => multiplayerStore.currentGlobalAnomaly, (newAnomaly) => {
+    if (newAnomaly) {
+      const anomalyNames = {
+        'meteorits': 'PLUJA DE METEORITS (Dificultat ++)',
+        'nebulosa': 'NEBULOSA DENSA (Visibilitat reduïda)',
+        'raig-tempesta': 'TORMENTA DE RAIGS (Descàrregues elèctriques)'
+      }
+      const eventName = anomalyNames[newAnomaly] || newAnomaly.toUpperCase()
+      activeMysteryAlert.value = `S'ha detectat un fenomen a l'espai! Efectes actius per a la pròxima missió: ${eventName}`
+      
+      // La alerta desaparece tras 6 segundos
+      setTimeout(() => {
+        activeMysteryAlert.value = null
+      }, 6000)
+    }
+  })
   const finalScores = ref({})
   const matchWinnerName = ref(null)
   const selectedModality = ref(localStorage.getItem('astro_mp_modality') || '1vs1')
+  const subRole = computed(() => multiplayerStore.subRole)
 
   const globalTimeLeft = computed(() => multiplayerStore.timeLeft)
 
@@ -1292,6 +1344,7 @@
       multiplayerStore.activeGameName = event.game
       currentDuelNodeId.value = event.nodeId
       currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
+      isDuel.value = true
       
       startBriefing(event.game)
     }
@@ -1432,6 +1485,20 @@
     if (newError) {
       showMessage(newError, 'error')
       multiplayerStore.error = null
+    }
+  })
+
+  // Sincronización de DUELOS (para que el rival también sepa que es un duelo)
+  watch(() => multiplayerStore.lastDuelEvent, (newDuel) => {
+    if (newDuel && (newDuel.attacker === astroStore.user || newDuel.rival === astroStore.user)) {
+      console.log("🔥 DUELO DETECTADO Y SINCRONIZADO EN LOBBY:", newDuel)
+      isDuel.value = true
+      currentDuelNodeId.value = newDuel.nodeId
+      
+      // Si soy el rival, debo prepararme para entrar al juego cuando el host lo lance
+      if (newDuel.rival === astroStore.user) {
+        startBriefing(newDuel.game, null)
+      }
     }
   })
 
@@ -1728,11 +1795,18 @@
     }
   }
 
-  function onGameFinished (score) {
+  async function onGameFinished (scoreValue) {
     if (abortInterval) clearInterval(abortInterval)
+    
+    // Registrar la partida para ganar Astrocions y XP
+    if (astroStore.registerCompletedGame) {
+      console.log('💰 REGISTRANDO PARTIDA PARA ASTROCIONS:', multiplayerStore.activeGameName, 'Puntos:', scoreValue)
+      await astroStore.registerCompletedGame(multiplayerStore.activeGameName || 'MultiplayerGame', scoreValue)
+    }
+
     if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
       if (isDuel.value) {
-        handleDuelEnd(score)
+        handleDuelEnd(scoreValue)
         return
       }
       
@@ -1783,7 +1857,7 @@
     }, 4000)
   }
 
-  function onPlanetSelected ({ id, node }) {
+  async function onPlanetSelected ({ id, node }) {
     // Guardia: si no hay combustible, somos espectadores, no podemos movernos
     if (multiplayerStore.raceFuel <= 0) return
 
@@ -1856,6 +1930,15 @@
     
     // Si es la meta final, enviar resultado para terminar la partida y mostrar estadísticas
     if (node.isGoal) {
+      // Bonus por llegar a la meta
+      const finalBonus = 500
+      
+      // Registrar bonus final como una "partida" para que sume Astrocions (+100 aprox por el bonus)
+      if (astroStore.registerCompletedGame) {
+        console.log('🏆 META ALCANZADA: Registrando bonus de 500 puntos...')
+        await astroStore.registerCompletedGame('RaceGoal', finalBonus)
+      }
+      
       setTimeout(() => {
         multiplayerStore.submitRoundResult()
       }, 2000)
@@ -1950,7 +2033,9 @@
   }
 
   function handleAbortMission () {
+    if (!canAbortMission.value) return
     console.log('--- EJECUTANDO ABORTAR MISIÓN ---')
+    canAbortMission.value = false
     const currentNodeId = multiplayerStore.playersProgress[astroStore.user] || 'START'
     multiplayerStore.updateRaceProgress(currentNodeId, true)
     returnToMap()
@@ -1960,10 +2045,11 @@
     if (e.code === 'Space') {
       console.log('--- TECLA ESPACIO PULSADA ---', { 
         hasGame: !!activeGameComponent.value,
+        canAbort: canAbortMission.value,
         mode: multiplayerStore.room?.gameConfig?.mode 
       })
     }
-    if (e.code === 'Space' && activeGameComponent.value && multiplayerStore.room?.gameConfig?.mode === 'RACE') {
+    if (e.code === 'Space' && activeGameComponent.value && multiplayerStore.room?.gameConfig?.mode === 'RACE' && canAbortMission.value) {
       e.preventDefault()
       e.stopPropagation()
       handleAbortMission()
@@ -1977,6 +2063,24 @@
     }
   })
 
+  function startAbortTimer () {
+    canAbortMission.value = false
+    abortTimerSeconds.value = 45
+    if (abortInterval) clearInterval(abortInterval)
+    
+    console.log('⏱️ INICIANDO CUENTA ATRÁS DE ABORTO: 45s')
+    
+    abortInterval = setInterval(() => {
+      if (abortTimerSeconds.value > 0) {
+        abortTimerSeconds.value--
+      } else {
+        console.log('🚀 BOTÓN DE ABORTO DISPONIBLE')
+        canAbortMission.value = true
+        clearInterval(abortInterval)
+      }
+    }, 1000)
+  }
+
   function startBriefing (gameName, anomaly = null) {
     if (!gameName || !gameComponents[gameName]) return
     
@@ -1987,6 +2091,9 @@
     if (isRaceMode && !isDuel.value) {
       showBriefing.value = false
       isTransitioning.value = true
+      
+      // Iniciamos el temporizador de abortar de 45s
+      startAbortTimer()
       
       // Esperar a que la animación de "viajando al planeta" termine antes de poner el juego
       setTimeout(() => {
@@ -2005,6 +2112,13 @@
     // Mientras mostramos el briefing, preparamos la transición
     isTransitioning.value = true
     
+    // En duelos no se puede abortar, pero en misiones cooperativas normales sí (tras 45s)
+    if (!isDuel.value) {
+      startAbortTimer()
+    } else {
+      canAbortMission.value = false
+    }
+
     briefingTimer = setInterval(() => {
       briefingCountdown.value--
       if (briefingCountdown.value <= 0) {
@@ -2585,21 +2699,36 @@
   border-bottom: 1px solid rgba(255, 82, 82, 0.3);
 }
 
+.abort-cooldown-indicator {
+  position: absolute;
+  top: 120px;
+  right: 40px;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 40px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  z-index: 500;
+  pointer-events: none;
+}
+
 .mystery-alert-overlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 8888888 !important; /* Por debajo del briefing pero por encima del mapa */
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
+  z-index: 10000;
+  width: 90%;
+  max-width: 550px;
 }
 
 .mystery-alert-card {
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(10px);
+  background: rgba(15, 0, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid #b388ff;
+  box-shadow: 0 0 50px rgba(179, 136, 255, 0.5);
   text-align: center;
   max-width: 500px;
   animation: mystery-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);

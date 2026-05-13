@@ -437,6 +437,10 @@
       } else {
         multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
       }
+      
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(10)
+      }
       return
     }
 
