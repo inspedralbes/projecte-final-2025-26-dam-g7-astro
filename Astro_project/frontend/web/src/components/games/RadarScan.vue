@@ -545,7 +545,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 80px;
+  padding-top: 60px;
   overflow: hidden;
   user-select: none;
 }
@@ -558,8 +558,9 @@
 
 .board {
   max-width: 90%;
-  max-height: 90%;
+  max-height: 85%;
   z-index: 2;
+  margin-top: -40px;
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
