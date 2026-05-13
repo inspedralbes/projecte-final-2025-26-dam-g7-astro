@@ -484,7 +484,7 @@
       }
     } else if (roscoLetters.value.length === 0 || force) {
       if (!props.isMultiplayer || isHost.value) {
-        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
+        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 25).map(l => ({ ...l, status: 'pending' }))
         roscoLetters.value = data
         currentIndex.value = 0
         rocketPos.x = starPoints[0].x
@@ -619,16 +619,7 @@
       loops++
     }
     if (loops >= roscoLetters.value.length) {
-      if (timeLeft.value > 5) {
-        feedbackMessage.value = t('spelledRosco.msgAllCorrectNext') || '¡COMPLETADO! Generando nuevo rosco...'
-        feedbackColor.value = 'success'
-        showFeedback.value = true
-        setTimeout(() => {
-          if (!gameFinished.value) initRosco(true)
-        }, 3000)
-      } else {
-        finishGame()
-      }
+      finishGame()
     } else {
       animateRocket(currentIndex.value, next).then(() => {
         currentIndex.value = next
