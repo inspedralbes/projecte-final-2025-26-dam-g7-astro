@@ -507,6 +507,9 @@
 .glow-bar {
     filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.4));
 }
+.glow-bar :deep(.v-progress-linear__determinate) {
+    transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
 
 .streak-container {
     position: relative;

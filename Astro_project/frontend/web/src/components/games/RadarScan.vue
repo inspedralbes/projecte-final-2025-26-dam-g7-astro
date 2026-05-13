@@ -1,5 +1,5 @@
 <template>
-  <div ref="gameArea" class="game-container" @mousemove="updateFlashlight">
+  <div ref="gameArea" class="game-container" :class="{ 'game-paused': props.isPaused }" @mousemove="updateFlashlight">
     <div class="hud d-flex justify-center align-center pa-2 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
         <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('radarScan.points', { score }) }}</div>
@@ -145,6 +145,10 @@
       default: false,
     },
     isRace: {
+      type: Boolean,
+      default: false,
+    },
+    isPaused: {
       type: Boolean,
       default: false,
     },
@@ -409,7 +413,7 @@
 
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
-      if (!isTransitioning.value && timeLeft.value > 0) {
+      if (!isTransitioning.value && timeLeft.value > 0 && !props.isPaused) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
         if (delta >= 1) {
@@ -544,6 +548,12 @@
   padding-top: 80px;
   overflow: hidden;
   user-select: none;
+}
+
+.game-paused {
+  pointer-events: none;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 
 .board {

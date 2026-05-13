@@ -1,5 +1,5 @@
 <template>
-  <v-container class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" fluid style="min-height: 800px">
+  <v-container class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" :class="{ 'game-paused': props.isPaused }" fluid style="min-height: 800px">
 
     <!-- Capçalera -->
     <v-card class="mb-4 pa-4 bg-deep-purple-darken-4 elevation-10" max-width="800" rounded="xl" width="100%">
@@ -429,6 +429,10 @@
       type: Boolean,
       default: false,
     },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -633,6 +637,7 @@
   }
 
   async function animateRocket (from, to) {
+    if (props.isPaused) return
     rocketAnimating.value = true
     const start = letterPositions[from], end = letterPositions[to]
     let curr = start
@@ -647,7 +652,7 @@
 
   function startTimer () {
     timerInterval = setInterval(() => {
-      if (gameFinished.value) return
+      if (gameFinished.value || props.isPaused) return
       if (!props.isMultiplayer || isHost.value) {
         timeLeft.value = Math.max(0, timeLeft.value - 1)
         if (props.isMultiplayer && isHost.value) {
@@ -713,9 +718,14 @@
 
 <style scoped>
 .game-container {
-  background: radial-gradient(circle at center, #0d0221 0%, #020617 100%);
   color: white;
   min-height: 800px;
+}
+
+.game-paused {
+  pointer-events: none;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 
 .star-wrapper {

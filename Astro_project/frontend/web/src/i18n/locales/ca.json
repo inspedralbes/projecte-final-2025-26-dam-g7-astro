@@ -44,7 +44,13 @@
         "retry": "TORNAR A INTENTAR",
         "goal": "Meta: {score} pts",
         "start_game": "COMENÇAR {game}",
-        "start_simple": "COMENÇAR"
+        "start_simple": "COMENÇAR",
+        "exit_confirm": {
+            "title": "AVORTAR MISSIÓ?",
+            "desc": "Si abandones ara, perdràs tot el progrés d'aquesta sessió i els teus punts d'entrenament no es guardaran.",
+            "cancel": "MANTENIR-SE EN ÒRBITA",
+            "confirm": "AVORTAR I SORTIR"
+        }
     },
     "store": {
         "title": "Basar Espacial",
@@ -552,7 +558,11 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtenir Recompensa",
         "msgCorrect": "Correcte!",
-        "msgIncorrect": "Incorrecte, torna a provar."
+        "msgIncorrect": "Incorrecte, torna a provar.",
+        "orderPhrase": "Ordena la frase!",
+        "clickOrder": "Fes clic a les paraules en l'ordre correcte...",
+        "phraseCompleted": "Frase completada!",
+        "incorrectOrder": "Ordre incorrecte! Reiniciant frase..."
     },
     "wordConstruction": {
         "level": "Nivell {level}",

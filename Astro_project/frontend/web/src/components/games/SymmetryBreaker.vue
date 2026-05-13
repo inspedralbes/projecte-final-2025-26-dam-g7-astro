@@ -2,7 +2,7 @@
   <div
     ref="gameArea"
     class="game-container"
-    :class="{ 'hide-cursor': isPlaying }"
+    :class="{ 'hide-cursor': isPlaying, 'game-paused': props.isPaused }"
     @mousedown.left.prevent="beginFiring"
     @mouseleave="stopFiring"
     @mousemove="handlePointerMove"
@@ -136,6 +136,10 @@
       default: false,
     },
     isRace: {
+      type: Boolean,
+      default: false,
+    },
+    isPaused: {
       type: Boolean,
       default: false,
     },
@@ -553,6 +557,10 @@
   }
 
   function gameLoop (ts) {
+    if (props.isPaused) {
+      animationFrame = requestAnimationFrame(gameLoop)
+      return
+    }
     if (!isPlaying.value) return
     const dt = Math.min(0.1, (ts - lastFrameTs) / 1000)
     lastFrameTs = ts; update(dt); draw()
@@ -747,6 +755,12 @@
   padding-top: 80px;
   overflow: hidden;
   user-select: none;
+}
+
+.game-paused {
+  pointer-events: none !important;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 
 canvas {

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="text-center d-flex justify-center align-center fill-height" fluid>
+  <v-container class="text-center d-flex justify-center align-center fill-height" :class="{ 'game-paused': props.isPaused }" fluid>
     <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10" max-width="560" rounded="xl" width="100%">
       <div class="hud-row mb-6">
         <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
@@ -48,7 +48,7 @@
 
         <!-- REDISSENY MULTIPLAYER: ORDENAR FRASES -->
         <div v-else>
-          <div class="text-h5 mb-4 text-amber-accent-2 font-weight-bold">Ordena la frase!</div>
+          <div class="text-h5 mb-4 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.orderPhrase') }}</div>
 
           <div class="phrase-display mb-8 pa-4 bg-slate-800 rounded-lg min-height-100 d-flex flex-wrap justify-center ga-2 border-dashed">
             <v-chip
@@ -60,9 +60,7 @@
             >
               {{ word }}
             </v-chip>
-            <div v-if="correctWordsInOrder.length === 0" class="text-grey-darken-1 align-self-center">
-              Fes clic a les paraules en l'ordre correcte...
-            </div>
+              {{ $t('syllableQuest.clickOrder') }}
           </div>
 
           <div class="d-flex flex-wrap justify-center ga-3 mb-6">
@@ -153,6 +151,10 @@
       type: Boolean,
       default: false,
     },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
@@ -216,7 +218,7 @@
   }
 
   function handleWordClick (index) {
-    if (gameFinished.value) return
+    if (gameFinished.value || props.isPaused) return
     const clickedWord = shuffledWords.value[index]
     const nextCorrectWord = originalWords.value[correctWordsInOrder.value.length]
 
@@ -251,7 +253,7 @@
 
     if (correctWordsInOrder.value.length === originalWords.value.length) {
       score.value += 100
-      message.value = 'Frase completada!'
+      message.value = t('syllableQuest.phraseCompleted')
       messageType.value = 'success'
       triggerFeedback('success')
 
@@ -268,7 +270,7 @@
   }
 
   function processIncorrectClick () {
-    message.value = 'Ordre incorrecte! Reiniciant frase...'
+    message.value = t('syllableQuest.incorrectOrder')
     messageType.value = 'error'
     timeLeft.value = Math.max(0, timeLeft.value - 3)
     triggerFeedback('error')
@@ -298,7 +300,7 @@
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
   function addSyllable () {
-    if (gameFinished.value) return
+    if (gameFinished.value || props.isPaused) return
     if (userSyllables.value < 8) userSyllables.value++
   }
 
@@ -320,7 +322,7 @@
   }
 
   function checkSyllables () {
-    if (gameFinished.value) return
+    if (gameFinished.value || props.isPaused) return
 
     const currentGoal = currentWord.value.syllables
 
@@ -352,7 +354,7 @@
     }
 
     timerInterval = setInterval(() => {
-      if (gameFinished.value) return
+      if (gameFinished.value || props.isPaused) return
 
       if (!props.isMultiplayer || isHost.value) {
         timeLeft.value = Math.max(0, timeLeft.value - 1)
@@ -430,6 +432,12 @@
 <style scoped>
 .game-shell {
   border: 1px solid rgba(255, 193, 7, 0.45);
+}
+
+.game-paused {
+  pointer-events: none !important;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 
 .hud-row {

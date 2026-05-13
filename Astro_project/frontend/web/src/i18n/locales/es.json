@@ -44,7 +44,13 @@
         "retry": "INTENTAR DE NUEVO",
         "goal": "Meta: {score} pts",
         "start_game": "EMPEZAR {game}",
-        "start_simple": "EMPEZAR"
+        "start_simple": "EMPEZAR",
+        "exit_confirm": {
+            "title": "¿ABORTAR MISIÓN?",
+            "desc": "Si abandonas ahora, perderás todo el progreso de esta sesión y tus puntos de entrenamiento no se guardarán.",
+            "cancel": "MANTENERSE EN ÓRBITA",
+            "confirm": "ABORTAR Y SALIR"
+        }
     },
     "store": {
         "title": "Bazar Espacial",
@@ -552,7 +558,11 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtener Recompensa",
         "msgCorrect": "¡Correcto!",
-        "msgIncorrect": "Incorrecto, vuelve a intentar."
+        "msgIncorrect": "Incorrecto, vuelve a intentar.",
+        "orderPhrase": "¡Ordena la frase!",
+        "clickOrder": "Haz clic en las palabras en el orden correcto...",
+        "phraseCompleted": "¡Frase completada!",
+        "incorrectOrder": "¡Orden incorrecto! Reiniciando frase..."
     },
     "wordConstruction": {
         "level": "Nivel {level}",
