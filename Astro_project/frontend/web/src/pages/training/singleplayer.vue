@@ -127,6 +127,46 @@
                       <v-icon icon="mdi-play" start />
                       {{ $t('singleplayer.start_simple') }}
                     </v-btn>
+
+                    <div v-if="level.supplyGameId && canSelectCustomExerciseSource" class="exercise-source mt-2">
+                      <div class="exercise-source-label">{{ $t('singleplayer.exerciseSourceLabel') }}</div>
+                      <v-tooltip
+                        location="bottom"
+                        :disabled="!getExerciseSelectorTooltip(level.supplyGameId)"
+                      >
+                        <template #activator="{ props: tooltipProps }">
+                          <div v-bind="tooltipProps">
+                            <v-menu :disabled="isExerciseSelectorLocked(level.supplyGameId)">
+                              <template #activator="{ props: menuProps }">
+                                <v-btn
+                                  block
+                                  class="exercise-source-btn"
+                                  color="blue-grey-darken-3"
+                                  density="comfortable"
+                                  rounded="lg"
+                                  size="small"
+                                  variant="tonal"
+                                  v-bind="menuProps"
+                                >
+                                  {{ getSelectedExerciseSourceLabel(level.supplyGameId) }}
+                                </v-btn>
+                              </template>
+                              <v-list density="compact" min-width="220">
+                                <v-list-item
+                                  v-for="option in getExerciseSourceOptions(level.supplyGameId)"
+                                  :key="option.key"
+                                  @click="selectExerciseSource(level.supplyGameId, option.key)"
+                                >
+                                  <v-list-item-title>{{ option.label }}</v-list-item-title>
+                                  <v-list-item-subtitle v-if="option.subtitle">{{ option.subtitle }}</v-list-item-subtitle>
+                                </v-list-item>
+                              </v-list>
+                            </v-menu>
+                          </div>
+                        </template>
+                        <span>{{ getExerciseSelectorTooltip(level.supplyGameId) }}</span>
+                      </v-tooltip>
+                    </div>
                   </div>
                   <div class="preview-arrow" />
                 </div>
@@ -269,7 +309,7 @@
 </template>
 
 <script setup>
-  import { onBeforeUnmount, ref, shallowRef } from 'vue'
+  import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
   import { onBeforeRouteLeave } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import RadarScan from '@/components/games/RadarScan.vue'
@@ -280,9 +320,11 @@
   import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const activeGameComponent = shallowRef(null)
   const showExitConfirm = ref(false)
   const pendingRoute = ref(null)
@@ -305,6 +347,7 @@
   function confirmExit () {
     showExitConfirm.value = false
     activeGameComponent.value = null
+    groupStore.setTrainingActiveSupplySet(null)
     if (pendingRoute.value) {
       // Si veníamos de un intento de navegación, completarlo
       const route = pendingRoute.value
@@ -331,10 +374,14 @@
   })
 
   const gameStartTime = ref(null)
+  const exerciseSourceState = ref({})
+  const isPremium = computed(() => astroStore.plan === 'INDIVIDUAL_PREMIUM')
+  const isGroupManager = computed(() => astroStore.plan === 'GRUPAL' && (astroStore.role === 'CENTER' || astroStore.role === 'TEACHER'))
+  const canSelectCustomExerciseSource = computed(() => isPremium.value || isGroupManager.value)
 
   const levelSequence = [
     // FASE 1: La Tierra (4)
-    { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { id: 'word-construction', supplyGameId: 'WordConstruction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
     { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 60, previewGif: '/previews/radar-scan.gif' },
     { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 150, previewGif: '/previews/radio-signal.gif' },
     { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 300, previewGif: '/previews/spelled-rosco.gif' },
@@ -348,7 +395,7 @@
     // FASE 3: Espacio Profundo (4)
     { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 400, phaseTitleKey: 'singleplayerLevels.fase3Title', phaseSubtitleKey: 'singleplayerLevels.fase3Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-auto-fix', previewGif: '/previews/radar-scan-2.gif' },
     { id: 'spelled-rosco', nameKey: 'singleplayerLevels.senalperdida', component: SpelledRosco, minScore: 1200, previewGif: '/previews/spelled-rosco.gif' },
-    { id: 'word-construction', nameKey: 'singleplayerLevels.horizontes', component: WordConstruction, minScore: 1500, previewGif: '/previews/word-construction.gif' },
+    { id: 'word-construction', supplyGameId: 'WordConstruction', nameKey: 'singleplayerLevels.horizontes', component: WordConstruction, minScore: 1500, previewGif: '/previews/word-construction.gif' },
     { id: 'syllable-quest', nameKey: 'singleplayerLevels.destino', component: SyllableQuest, minScore: 1000, previewGif: '/previews/syllable-quest.gif' },
   ]
 
@@ -364,10 +411,137 @@
     const state = getLevelState(index)
     if (state !== 'locked') {
       activePreviewIndex.value = activePreviewIndex.value === index ? null : index
+      if (activePreviewIndex.value !== null) {
+        void prepareExerciseSelector(index)
+      }
     }
   }
 
-  function startGame (index) {
+  function buildDefaultExerciseOption () {
+    return {
+      key: 'default',
+      label: t('singleplayer.exerciseSourceDefault'),
+      subtitle: '',
+      set: null,
+    }
+  }
+
+  function buildSetOption (set) {
+    return {
+      key: set._id,
+      label: set.ownerId,
+      subtitle: set.name,
+      set,
+    }
+  }
+
+  async function loadExerciseSourceState (gameId) {
+    if (!gameId || exerciseSourceState.value[gameId]) return
+
+    exerciseSourceState.value[gameId] = {
+      loading: true,
+      options: [buildDefaultExerciseOption()],
+      selectedKey: 'default',
+      locked: true,
+      tooltip: '',
+    }
+
+    let sets = []
+    if (canSelectCustomExerciseSource.value) {
+      if (isPremium.value) {
+        await groupStore.fetchSupplySets(astroStore.user)
+      } else if (astroStore.role === 'CENTER') {
+        await groupStore.fetchCenterSupplies(astroStore.user)
+      } else if (astroStore.role === 'TEACHER' && astroStore.parentId) {
+        await groupStore.fetchCenterSupplies(astroStore.parentId)
+      } else {
+        await groupStore.fetchSupplySets(astroStore.user)
+      }
+
+      sets = (groupStore.supplySets || [])
+        .filter(s => s.gameId === gameId && s.active)
+        .sort((a, b) => String(a.ownerId || '').localeCompare(String(b.ownerId || '')))
+    }
+
+    const ownActiveSet = sets.find(s => s.ownerId === astroStore.user) || null
+    const options = [buildDefaultExerciseOption()]
+
+    if (isPremium.value) {
+      if (ownActiveSet) {
+        options.push(buildSetOption(ownActiveSet))
+      }
+      exerciseSourceState.value[gameId] = {
+        loading: false,
+        options,
+        selectedKey: ownActiveSet ? ownActiveSet._id : 'default',
+        locked: !ownActiveSet,
+        tooltip: ownActiveSet ? '' : t('singleplayer.exerciseSourceNoCustomPremium'),
+      }
+      return
+    }
+
+    for (const set of sets) {
+      options.push(buildSetOption(set))
+    }
+
+    exerciseSourceState.value[gameId] = {
+      loading: false,
+      options,
+      selectedKey: ownActiveSet ? ownActiveSet._id : 'default',
+      locked: false,
+      tooltip: '',
+    }
+  }
+
+  async function prepareExerciseSelector (index) {
+    const level = levelSequence[index]
+    if (!level?.supplyGameId || !canSelectCustomExerciseSource.value) return
+    await loadExerciseSourceState(level.supplyGameId)
+  }
+
+  function getExerciseSourceOptions (gameId) {
+    return exerciseSourceState.value[gameId]?.options || [buildDefaultExerciseOption()]
+  }
+
+  function getSelectedExerciseSourceLabel (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state) return t('singleplayer.exerciseSourceLoading')
+    const selected = state.options.find(option => option.key === state.selectedKey)
+    return selected?.label || t('singleplayer.exerciseSourceDefault')
+  }
+
+  function selectExerciseSource (gameId, key) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state || state.locked) return
+    state.selectedKey = key
+  }
+
+  function isExerciseSelectorLocked (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state) return true
+    return state.loading || state.locked || state.options.length <= 1
+  }
+
+  function getExerciseSelectorTooltip (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    return state?.tooltip || ''
+  }
+
+  async function applyTrainingSourceForLevel (index) {
+    const level = levelSequence[index]
+    if (!level?.supplyGameId || !canSelectCustomExerciseSource.value) {
+      groupStore.setTrainingActiveSupplySet(null)
+      return
+    }
+
+    await loadExerciseSourceState(level.supplyGameId)
+    const state = exerciseSourceState.value[level.supplyGameId]
+    const selected = state?.options?.find(option => option.key === state.selectedKey)
+    groupStore.setTrainingActiveSupplySet(selected?.set || null)
+  }
+
+  async function startGame (index) {
+    await applyTrainingSourceForLevel(index)
     activePreviewIndex.value = null
     currentPlayingIndex.value = index
     activeGameComponent.value = levelSequence[index].component
@@ -416,6 +590,10 @@
       }
     }
   }
+
+  onBeforeUnmount(() => {
+    groupStore.setTrainingActiveSupplySet(null)
+  })
 </script>
 
 <style scoped>
@@ -785,6 +963,25 @@ svg {
 .play-btn-preview {
     letter-spacing: 1px;
     height: 38px !important;
+}
+
+.exercise-source {
+    margin-top: 8px;
+}
+
+.exercise-source-label {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    color: rgba(148, 163, 184, 0.95);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.exercise-source-btn {
+    justify-content: flex-start !important;
+    text-transform: none;
+    font-size: 0.75rem;
+    height: 30px !important;
 }
 
 .preview-arrow {
