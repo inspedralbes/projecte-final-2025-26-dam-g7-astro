@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "success": "¡Éxito!",
+    "buy": "Comprar",
+    "acquired": "ADQUIRIDO"
+  },
+  "home": {
+    "welcome": "BIENVENIDO, COMANDANTE",
+    "guest": "TRIPULANTE",
+    "level": "NIVEL",
+    "streak": "RACHA",
+    "days": "DÍAS",
+    "inventory": "INVENTARIO",
+    "achievements": "LOGROS",
+    "logout": "CERRAR SISTEMA"
+  },
+  "shop": {
+    "title": "ASTRO SHOP",
+    "balance": "SALDO DISPONIBLE",
+    "categories": {
+      "all": "TODO",
+      "items": "SUMINISTROS",
+      "cosmetics": "COSMÉTICOS"
+    },
+    "insufficient_funds": "Saldo Insuficiente",
+    "insufficient_funds_msg": "Necesitas {amount} monedas más.",
+    "already_owned": "Ya lo tienes",
+    "already_owned_msg": "Este artículo no se puede comprar más de una vez.",
+    "confirm_purchase": "Confirmar Compra",
+    "confirm_purchase_msg": "¿Deseas comprar {name} por {price} monedas?",
+    "purchase_success": "Has adquirido {name}"
+  },
+  "inventory": {
+    "title": "MI INVENTARIO"
+  },
+  "achievements": {
+    "title": "MIS LOGROS"
+  },
+  "social": {
+    "title": "NEXO SOCIAL",
+    "search_placeholder": "Buscar exploradores...",
+    "tabs": {
+      "friends": "AMIGOS",
+      "requests": "SOLICITUDES"
+    },
+    "empty_friends": "Sin Contactos",
+    "empty_friends_sub": "Busca a otros exploradores por su nombre de usuario para entrenar juntos.",
+    "empty_requests": "Sin Solicitudes",
+    "empty_requests_sub": "No tienes peticiones de amistad pendientes en este momento.",
+    "req_wants_friend": "Quiere ser tu amigo",
+    "err_self_request": "No puedes enviarte una solicitud a ti mismo.",
+    "req_sent_title": "Solicitud Enviada",
+    "req_sent_msg": "Se ha enviado una solicitud a {name}"
+  },
+  "training": {
+    "title": "MÓDULO DE ENTRENAMENT"
+  }
+}

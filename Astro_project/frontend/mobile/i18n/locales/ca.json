@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Carregant...",
+    "error": "Error",
+    "cancel": "Cancel·lar",
+    "confirm": "Confirmar",
+    "success": "Èxit!",
+    "buy": "Comprar",
+    "acquired": "ADQUIRIT"
+  },
+  "home": {
+    "welcome": "BENVINGUT, COMANDANT",
+    "guest": "TRIPULANT",
+    "level": "NIVELL",
+    "streak": "RATXA",
+    "days": "DIES",
+    "inventory": "INVENTARI",
+    "achievements": "LÈRITS",
+    "logout": "TANCAR SISTEMA"
+  },
+  "shop": {
+    "title": "ASTRO SHOP",
+    "balance": "SALDO DISPONIBLE",
+    "categories": {
+      "all": "TOT",
+      "items": "SUBMINISTRAMENTS",
+      "cosmetics": "COSMÈTICS"
+    },
+    "insufficient_funds": "Saldo Insuficient",
+    "insufficient_funds_msg": "Necessites {amount} monedes més.",
+    "already_owned": "Ja ho tens",
+    "already_owned_msg": "Aquest article no es pot comprar més d'una vegada.",
+    "confirm_purchase": "Confirmar Compra",
+    "confirm_purchase_msg": "Vols comprar {name} per {price} monedes?",
+    "purchase_success": "Has adquirit {name}"
+  },
+  "inventory": {
+    "title": "EL MEU INVENTARI"
+  },
+  "achievements": {
+    "title": "ELS MEUS LÈRITS"
+  },
+  "social": {
+    "title": "CENTRE SOCIAL",
+    "search_placeholder": "Cercar exploradors...",
+    "tabs": {
+      "friends": "AMICS",
+      "requests": "SOL·LICITUDS"
+    },
+    "empty_friends": "Sense Contactes",
+    "empty_friends_sub": "Cerca altres exploradors pel seu nom d'usuari per entrenar junts.",
+    "empty_requests": "Sense Sol·licituds",
+    "empty_requests_sub": "No tens peticions d'amistat pendents en aquest moment.",
+    "req_wants_friend": "Vol ser el teu amic",
+    "err_self_request": "No pots enviar-te una sol·licitud a tu mateix.",
+    "req_sent_title": "Sol·licitud Envida",
+    "req_sent_msg": "S'ha enviat una sol·licitud a {name}"
+  },
+  "training": {
+    "title": "MÒDUL D'ENTRENAMENT"
+  }
+}

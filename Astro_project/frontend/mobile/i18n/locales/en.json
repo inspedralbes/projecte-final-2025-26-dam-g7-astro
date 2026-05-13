@@ -1,0 +1,62 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "success": "Success!",
+    "buy": "Buy",
+    "acquired": "ACQUIRED"
+  },
+  "home": {
+    "welcome": "WELCOME, COMMANDER",
+    "guest": "CREWMEMBER",
+    "level": "LEVEL",
+    "streak": "STREAK",
+    "days": "DAYS",
+    "inventory": "INVENTORY",
+    "achievements": "ACHIEVEMENTS",
+    "logout": "EXIT SYSTEM"
+  },
+  "shop": {
+    "title": "ASTRO SHOP",
+    "balance": "AVAILABLE BALANCE",
+    "categories": {
+      "all": "ALL",
+      "items": "SUPPLIES",
+      "cosmetics": "COSMETICS"
+    },
+    "insufficient_funds": "Insufficient Funds",
+    "insufficient_funds_msg": "You need {amount} more coins.",
+    "already_owned": "Already Owned",
+    "already_owned_msg": "This item cannot be purchased more than once.",
+    "confirm_purchase": "Confirm Purchase",
+    "confirm_purchase_msg": "Do you want to buy {name} for {price} coins?",
+    "purchase_success": "You have acquired {name}"
+  },
+  "inventory": {
+    "title": "MY INVENTORY"
+  },
+  "achievements": {
+    "title": "MY ACHIEVEMENTS"
+  },
+  "social": {
+    "title": "SOCIAL HUB",
+    "search_placeholder": "Search explorers...",
+    "tabs": {
+      "friends": "FRIENDS",
+      "requests": "REQUESTS"
+    },
+    "empty_friends": "No Contacts",
+    "empty_friends_sub": "Search for other explorers by their username to train together.",
+    "empty_requests": "No Requests",
+    "empty_requests_sub": "You don't have any pending friend requests at the moment.",
+    "req_wants_friend": "Wants to be your friend",
+    "err_self_request": "You cannot send a request to yourself.",
+    "req_sent_title": "Request Sent",
+    "req_sent_msg": "A request has been sent to {name}"
+  },
+  "training": {
+    "title": "TRAINING MODULE"
+  }
+}
