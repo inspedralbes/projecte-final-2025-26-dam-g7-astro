@@ -844,7 +844,7 @@
   const newPassword = ref('')
   const confirmNewPassword = ref('')
   const currentPage = ref(1)
-  const pageSize = 6
+  const pageSize = 5
   const currentSlotIndex = ref(null)
 
   const {
@@ -1367,6 +1367,9 @@
     padding: 10px 16px; border-radius: 10px; transition: all 0.3s;
 }
 .top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.01); }
+.top-games-list-popup, .recent-list-popup {
+    min-height: 380px;
+}
 
 .recent-item-popup {
     display: flex; align-items: center; gap: 12px;
@@ -1399,6 +1402,11 @@
     padding: 40px; text-align: center; background: rgba(255,255,255,0.01);
     border: 2px dashed rgba(255,255,255,0.05); border-radius: 20px;
     color: rgba(255,255,255,0.2);
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .glass-popup {
