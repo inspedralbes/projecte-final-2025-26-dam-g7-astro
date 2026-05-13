@@ -111,8 +111,22 @@
           <v-btn icon="mdi-close" @click="showDialog = false" />
           <v-toolbar-title>{{ editingId ? $t('educational.supplyEditorPage.editTitle', { game: selectedGame?.name }) : $t('educational.supplyEditorPage.newTitle', { game: selectedGame?.name }) }}</v-toolbar-title>
           <v-spacer />
+          <v-btn class="mr-2" color="cyan-lighten-4" prepend-icon="mdi-download" variant="outlined" @click="exportExercise">
+            {{ $t('educational.supplyEditorPage.exportJSON') }}
+          </v-btn>
+          <v-btn class="mr-4" color="cyan-lighten-4" prepend-icon="mdi-upload" variant="outlined" @click="triggerImport">
+            {{ $t('educational.supplyEditorPage.importJSON') }}
+          </v-btn>
           <v-btn color="orange-accent-3" :disabled="!isExerciseValid" variant="flat" @click="saveExercise">{{ $t('educational.supplyEditorPage.saveChanges') }}</v-btn>
         </v-toolbar>
+
+        <input
+          ref="importFile"
+          accept=".json"
+          style="display: none"
+          type="file"
+          @change="handleImport"
+        />
 
         <v-container class="pa-8 bg-editor fill-height align-start" fluid>
           <v-row class="fill-height">
@@ -283,10 +297,49 @@
   const wordBank = ref([])
   const exerciseContent = ref([])
   const editingId = ref(null)
+  const importFile = ref(null)
 
   // Filtres de cerca
   const wordBankSearch = ref('')
   const exerciseSearch = ref('')
+
+  function exportExercise () {
+    const data = {
+      name: exerciseName.value,
+      content: exerciseContent.value,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${exerciseName.value || 'exercici'}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function triggerImport () {
+    importFile.value.click()
+  }
+
+  function handleImport (event) {
+    const file = event.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result)
+        if (data.name) exerciseName.value = data.name
+        if (Array.isArray(data.content)) {
+          exerciseContent.value = data.content
+          wordBank.value = [...data.content]
+        }
+      } catch (err) {
+        console.error('Error al llegir el fitxer JSON:', err)
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
 
   const filteredWordBank = computed(() => {
     if (!wordBankSearch.value.trim()) return wordBank.value

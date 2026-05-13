@@ -21,6 +21,13 @@ Aquí es troben les especificacions detallades de les funcionalitats.
 - **Specs**: Requisits detallats, escenaris d'usuari i criteris d'acceptació.
 - **Tasks**: Llistat de tasques tècniques derivades de les specs.
 
+### 3. Documentació de Lliurament (Presentacions i Manuals)
+Aquesta secció conté els documents per a les presentacions i avaluació del projecte:
+- 📄 **[Presentació Resum](./resum_2425_Astro.md)**: Resum ràpid de l'aplicació.
+- 💼 **[Presentació Comercial](./comercial_2425_Astro.md)**: Objectius, costos i competència.
+- ⚙️ **[Presentació Tècnica](./tecnica_2425_Astro.md)**: Evolució tècnica, problemes i solucions.
+- 📖 **[Manual d'Usuari](./ManualUsuari_Astro.md)**: Guia per als usuaris finals.
+
 ## 🛠️ Desenvolupament Local
 
 Per començar a treballar en el projecte, consulta el fitxer de configuració de Docker al directori arrel i la guia d'arquitectura a la carpeta de context.
