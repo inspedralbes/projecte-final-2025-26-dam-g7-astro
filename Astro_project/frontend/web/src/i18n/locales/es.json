@@ -3,7 +3,8 @@
         "loading": "Cargando...",
         "error": "Ha ocurrido un error.",
         "save": "Guardar",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "all": "Todos"
     },
     "sidebar": {
         "home": "Inicio",
@@ -116,6 +117,8 @@
         "recentIncursions": "INCURSIONES RECIENTES",
         "page": "PÁGINA {current} DE {total}",
         "noRecent": "No hay registros de expediciones recientes.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Logro",
         "removeAchievement": "Quitar Logro",
         "astronautSuit": "TRAJE DE ASTRONAUTA",

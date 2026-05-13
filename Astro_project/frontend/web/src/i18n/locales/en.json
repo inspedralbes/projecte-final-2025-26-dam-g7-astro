@@ -3,7 +3,8 @@
         "loading": "Loading...",
         "error": "An error has occurred.",
         "save": "Save",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "all": "All"
     },
     "sidebar": {
         "home": "Home",
@@ -117,6 +118,8 @@
         "recentIncursions": "RECENT INCURSIONS",
         "page": "PAGE {current} OF {total}",
         "noRecent": "No recent expedition records found.",
+        "singleplayer": "Solo",
+        "multiplayer": "Multiplayer",
         "selectAchievement": "Select Achievement",
         "removeAchievement": "Remove Achievement",
         "astronautSuit": "Astronaut Suit",

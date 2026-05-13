@@ -8,6 +8,7 @@ class RoomManager {
         this.rooms = new Map();
         this.roomRepo = null;
         this.userRepo = null;
+        this.gameService = null;
         this.wss = null;
         this.availableGames = [
             'RadarScan',
@@ -43,11 +44,12 @@ class RoomManager {
         }
     }
 
-    init(roomRepository, userRepository, wss) {
+    init(roomRepository, userRepository, wss, gameService) {
         this.roomRepo = roomRepository;
         this.userRepo = userRepository;
         this.wss = wss;
-        console.log("🛠️ RoomManager inicializado con Repositorios y WSS");
+        this.gameService = gameService;
+        console.log("🛠️ RoomManager inicializado con Repositorios, WSS y GameService");
 
         // Garbage Collector: Limpieza de salas inactivas cada 5 minutos
         if (this.gcInterval) clearInterval(this.gcInterval);
@@ -809,6 +811,9 @@ class RoomManager {
                     room: finalRoomUpdate
                 });
 
+                // Registrar partides al historial per a cada jugador
+                this.registerMultiplayerResults(currentRoom);
+
                 // Auto-cleanup GAME_OVER rooms after 10 mins
                 setTimeout(async () => {
                     if (this.rooms.has(roomId) && this.rooms.get(roomId).status === 'GAME_OVER') {
@@ -980,6 +985,28 @@ class RoomManager {
                 type: 'PLAYER_RETURNED',
                 user
             });
+        }
+    }
+
+    async registerMultiplayerResults(room) {
+        if (!this.gameService) return;
+        const players = Array.from(room.players);
+        const scores = room.gameConfig.scores || {};
+        const game = "Multijugador";
+        
+        for (const username of players) {
+            try {
+                const score = scores[username] || 0;
+                await this.gameService.completeGame(username, { 
+                    game, 
+                    score, 
+                    completedMapNode: null, 
+                    timeSeconds: 0 
+                });
+                console.log(`📝 [RoomManager] Partida multijugador registrada para ${username} (${score} pts)`);
+            } catch (err) {
+                console.error(`❌ [RoomManager] Error registrando partida multijugador para ${username}:`, err);
+            }
         }
     }
 }

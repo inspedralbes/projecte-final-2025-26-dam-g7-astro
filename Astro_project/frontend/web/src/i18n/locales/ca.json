@@ -3,7 +3,8 @@
         "loading": "Carregant...",
         "error": "Hi ha hagut un error.",
         "save": "Desar",
-        "cancel": "Cancel·lar"
+        "cancel": "Cancel·lar",
+        "all": "Tots"
     },
     "sidebar": {
         "home": "Inici",
@@ -116,6 +117,8 @@
         "recentIncursions": "INCURSIONS RECENTS",
         "page": "PÀGINA {current} DE {total}",
         "noRecent": "No hi ha registres d'expedicions recents.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Assoliment",
         "removeAchievement": "Treure Assoliment",
         "astronautSuit": "TRAJO D'ASTRONAUTA",

@@ -272,7 +272,7 @@ export const useProgressStore = defineStore('progress', {
       }
     },
 
-    async registerCompletedGame (game, score = 0, completedMapNode = null) {
+    async registerCompletedGame (game, score = 0, completedMapNode = null, timeSeconds = 0) {
       this.error = null
       const user = this.resolveUser()
 
@@ -291,7 +291,8 @@ export const useProgressStore = defineStore('progress', {
             user,
             game,
             score,
-            completedMapNode, // ENVIANDO AL SERVIDOR
+            completedMapNode,
+            timeSeconds,
           }),
         })
 
@@ -324,6 +325,11 @@ export const useProgressStore = defineStore('progress', {
         }
         if (data.totalPoints !== undefined) {
           this.totalPoints = data.totalPoints
+        }
+
+        // Aplicar perfil completo si viene en la respuesta (ahora el backend lo envía)
+        if (data.user) {
+          this.applyProfile(data)
         }
 
         const now = new Date().toISOString()

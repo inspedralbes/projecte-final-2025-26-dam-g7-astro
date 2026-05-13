@@ -152,8 +152,8 @@ export const useAstroStore = defineStore('astro', () => {
     return progressStore.fetchUserBalance()
   }
 
-  async function registerCompletedGame (game, score = 0, completedMapNode = null) {
-    const result = await progressStore.registerCompletedGame(game, score, completedMapNode)
+  async function registerCompletedGame (game, score = 0, completedMapNode = null, timeSeconds = 0) {
+    const result = await progressStore.registerCompletedGame(game, score, completedMapNode, timeSeconds)
     if (result.success && result.data?.newRank) {
       sessionStore.setRank(result.data.newRank)
     }
