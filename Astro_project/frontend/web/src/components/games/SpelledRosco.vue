@@ -410,7 +410,7 @@
     return points.map((point, i) => ({
       x1: point.x, y1: point.y,
       x2: points[(i + 1) % points.length].x, y2: points[(i + 1) % points.length].y,
-  })
+    }))
   })
 
   const tipPolygons = computed(() => {
