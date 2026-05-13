@@ -19,10 +19,10 @@
         variant="tonal"
       >
         <template v-if="pendingLeaveRequest.status === 'REJECTED'">
-          Tu última solicitud para salir del grupo fue rechazada por <strong>{{ pendingLeaveRequest.approver }}</strong>.
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
         </template>
         <template v-else>
-          Tienes una solicitud pendiente para salir del grupo. Debes esperar la respuesta de <strong>{{ pendingLeaveRequest.approver }}</strong>.
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
         </template>
       </v-alert>
 
@@ -111,10 +111,10 @@
         variant="tonal"
       >
         <template v-if="pendingLeaveRequest.status === 'REJECTED'">
-          Tu solicitud de salida fue rechazada por <strong>{{ pendingLeaveRequest.approver }}</strong>.
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
         </template>
         <template v-else>
-          Solicitud pendiente enviada a <strong>{{ pendingLeaveRequest.approver }}</strong>. Te avisarán cuando la resuelvan.
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
         </template>
       </v-alert>
 
@@ -134,7 +134,7 @@
               <div class="icon-glow" style="background: #00e5ff" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.freeTitle') || 'FREE' }}
+              {{ $t('plans.freeTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="cyan-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.freeDesc')" />
@@ -166,7 +166,7 @@
               <div class="icon-glow" style="background: #ffab40" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.premiumTitle') || 'PREMIUM' }}
+              {{ $t('plans.premiumTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="orange-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.premiumDesc')" />
@@ -354,7 +354,7 @@
 
         <v-row dense>
           <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">Tipo de grupo</label>
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.groupTypeLabel') }}</label>
           </v-col>
           <v-col class="mb-4" cols="12">
             <v-select
@@ -370,7 +370,7 @@
           </v-col>
 
           <v-col class="mb-6 text-caption text-green-lighten-4 text-left" cols="12">
-            Este cambio actualiza tu cuenta actual a plan grupal y mantiene tu progreso.
+            {{ $t('plans.groupTypeInfo') }}
           </v-col>
         </v-row>
 
@@ -402,13 +402,12 @@
     <v-dialog v-model="showLeaveRequestDialog" max-width="520">
       <v-card class="holo-panel pa-6 text-center">
         <v-icon class="mb-3" color="warning" icon="mdi-timer-sand" size="56" />
-        <h3 class="text-h5 font-weight-bold text-white mb-3">Solicitud enviada</h3>
+        <h3 class="text-h5 font-weight-bold text-white mb-3">{{ $t('plans.leaveRequest.dialogTitle') }}</h3>
         <p class="text-body-1 text-grey-lighten-2 mb-6">
-          Has solicitado salir del grupo a <strong>{{ leaveRequestApprover || 'tu responsable' }}</strong>.
-          Debes esperar su respuesta.
+          {{ $t('plans.leaveRequest.dialogDesc', { approver: leaveRequestApprover || $t('plans.leaveRequest.defaultApprover') }) }}
         </p>
         <v-btn color="cyan-accent-3" class="text-black font-weight-bold" @click="acceptLeaveRequestDialog">
-          Aceptar
+          {{ $t('plans.leaveRequest.dialogConfirm') }}
         </v-btn>
       </v-card>
     </v-dialog>
@@ -439,10 +438,10 @@
 
   // Registration Data (Group)
   const groupType = ref('CENTER')
-  const groupTypeOptions = [
-    { title: 'Centro (gestiona profes y alumnos)', value: 'CENTER' },
-    { title: 'Profesor (gestiona alumnos)', value: 'TEACHER' },
-  ]
+  const groupTypeOptions = computed(() => [
+    { title: t('plans.groupTypes.center'), value: 'CENTER' },
+    { title: t('plans.groupTypes.teacher'), value: 'TEACHER' },
+  ])
 
   const plans = computed(() => [
     {
@@ -450,7 +449,7 @@
       icon: 'mdi-rocket-launch',
       color: 'cyan-accent-3',
       glowColor: 'cyan',
-      desc: t('plans.individualDesc') || 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
+      desc: t('plans.individualDesc'),
       recommended: true,
     },
     {
@@ -458,7 +457,7 @@
       icon: 'mdi-account-group-outline',
       color: 'purple-accent-2',
       glowColor: 'purple',
-      desc: t('plans.grupalDesc') || 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
+      desc: t('plans.grupalDesc'),
       recommended: false,
     },
   ])
@@ -503,11 +502,11 @@
           showLeaveRequestDialog.value = true
           return
         }
-        alert(leaveRequest.message || 'No se pudo enviar la solicitud de salida del grupo')
+        alert(leaveRequest.message || t('plans.leaveRequest.requestError'))
         return
       }
 
-      alert(result.message || 'No se pudo cambiar el plan')
+      alert(result.message || t('plans.changeError'))
     }
   }
 
@@ -527,7 +526,7 @@
     if (result.success) {
       router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
     } else {
-      alert(result.message)
+      alert(t('plans.loginError'))
     }
   }
 
@@ -537,7 +536,7 @@
     if (result.success) {
       router.push('/profile')
     } else {
-      alert(result.message)
+      alert(t('plans.createGroupError'))
     }
   }
 </script>

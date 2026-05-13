@@ -159,14 +159,14 @@
           v-model="selectedRole"
           class="mb-4"
           :items="roleOptions"
-          label="Rol"
+          :label="$t('educational.roleLabel')"
           variant="solo-filled"
         />
         <v-select
           v-model="addMode"
           class="mb-4"
           :items="modeOptions"
-          label="Método"
+          :label="$t('educational.modeLabel')"
           variant="solo-filled"
         />
         <v-text-field v-model="newName" class="mb-4" :label="$t('educational.username')" variant="solo-filled" />
@@ -187,11 +187,13 @@
 
 <script setup>
   import { storeToRefs } from 'pinia'
-  import { onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import SupplyEditor from '@/components/educational/SupplyEditor.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useGroupStore } from '@/stores/groupStore'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const groupStore = useGroupStore()
   const { user, role } = storeToRefs(astroStore)
@@ -204,14 +206,14 @@
   const selectedRole = ref('STUDENT')
   const newName = ref('')
   const newPass = ref('')
-  const roleOptions = [
-    { title: 'Profesor', value: 'TEACHER' },
-    { title: 'Alumno', value: 'STUDENT' },
-  ]
-  const modeOptions = [
-    { title: 'Crear usuario nuevo', value: 'create' },
-    { title: 'Invitar usuario existente', value: 'invite' },
-  ]
+  const roleOptions = computed(() => [
+    { title: t('educational.roles.teacher'), value: 'TEACHER' },
+    { title: t('educational.roles.student'), value: 'STUDENT' },
+  ])
+  const modeOptions = computed(() => [
+    { title: t('educational.addModes.create'), value: 'create' },
+    { title: t('educational.addModes.invite'), value: 'invite' },
+  ])
 
   onMounted(async () => {
     if (role.value === 'CENTER') {
@@ -230,11 +232,11 @@
 
   async function addMember () {
     if (!newName.value) {
-      alert('Debes indicar un nombre de usuario')
+      alert(t('educational.errors.usernameRequired'))
       return
     }
     if (addMode.value === 'create' && !newPass.value) {
-      alert('Debes indicar una contraseña para el usuario nuevo')
+      alert(t('educational.errors.passwordRequired'))
       return
     }
 
@@ -252,7 +254,7 @@
       newPass.value = ''
       await groupStore.fetchMembers(user.value)
     } else {
-      alert(result.message)
+      alert(result.message || t('educational.errors.addMemberFailed'))
     }
   }
 
