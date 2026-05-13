@@ -589,6 +589,11 @@
         "fase1Subtitle": "Phase 1: Earth",
         "fase2Title": "The Journey Begins",
         "fase2Subtitle": "Phase 2: Near Space",
+        "fase3Title": "Into the Unknown",
+        "fase3Subtitle": "Phase 3: Deep Space",
+        "senalperdida": "Lost Signal",
+        "horizontes": "New Horizons",
+        "destino": "Final Destination",
         "silabas": "Syllable Quest"
     },
     "shopActions": {

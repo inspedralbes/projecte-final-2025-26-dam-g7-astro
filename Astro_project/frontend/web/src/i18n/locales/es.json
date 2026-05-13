@@ -595,7 +595,12 @@
         "fase1Title": "Entrenamiento",
         "fase1Subtitle": "Fase 1: La Tierra",
         "fase2Title": "El Viaje Comienza",
-        "fase2Subtitle": "Fase 2: Espacio Cercano"
+        "fase2Subtitle": "Fase 2: Espacio Cercano",
+        "fase3Title": "Hacia lo Desconocido",
+        "fase3Subtitle": "Fase 3: Espacio Profundo",
+        "senalperdida": "Señal Perdida",
+        "horizontes": "Nuevos Horizontes",
+        "destino": "Destino Final"
     },
     "shopActions": {
         "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 monedas?",

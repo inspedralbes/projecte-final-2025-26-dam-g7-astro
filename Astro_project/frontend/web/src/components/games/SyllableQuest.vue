@@ -328,6 +328,7 @@
 
     if (userSyllables.value === currentGoal) {
       score.value += 60
+      timeLeft.value = Math.min(99, timeLeft.value + 5)
       message.value = t('syllableQuest.msgCorrect')
       messageType.value = 'success'
       triggerFeedback('success')
