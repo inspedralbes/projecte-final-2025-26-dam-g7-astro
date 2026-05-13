@@ -1,7 +1,7 @@
 # 00_OBJECTIVE: Astro - Cognitive Training System
 
 ## 1. Visió General del Projecte
-**Astro** és una plataforma avançada d'entrenament cognitiu multiplataforma (Web i Mòbil) dissenyada per millorar les capacitats mentals dels usuaris mitjançant minijocs gamificats. El projecte s'emmarca com a Projecte Final del cicle de Desenvolupament d'Aplicacions Multiplataforma (DAM) per al curs 2025-26.
+**Astro** és una plataforma avançada d'entrenament cognitiu (Web Responsiva) dissenyada per millorar les capacitats mentals dels usuaris mitjançant minijocs gamificats. El projecte s'emmarca com a Projecte Final del cicle de Desenvolupament d'Aplicacions Multiplataforma (DAM) per al curs 2025-26.
 
 L'essència d'Astro és transformar exercicis cognitius tradicionals en una experiència espacial immersiva on cada "missió" realitzada contribueix al creixement i progressió de l'usuari dins d'una jerarquia galàctica.
 
@@ -12,8 +12,8 @@ Oferir un catàleg de minijocs que impactin positivament en àrees clau com la m
 ### 2.2. Gamificació d'Alt Impacte
 Implementar un ecosistema de recompenses (XP, monedes, raches) que fomenti la retenció de l'usuari i la creació d'hàbits saludables d'entrenament diari.
 
-### 2.3. Experiència Multiplataforma Unificada
-Garantir que el progrés de l'usuari sigui consistent i accessible des de qualsevol dispositiu, utilitzant tecnologies web modernes i aplicacions híbrides.
+### 2.3. Experiència Web Unificada
+Garantir que el progrés de l'usuari sigui consistent i accessible des de qualsevol dispositiu, utilitzant tecnologies web modernes i disseny responsiu.
 
 ### 2.4. Interacció Social i Competitivitat
 Desenvolupar funcionalitats en temps real que permetin als usuaris comparar el seu rendiment, desafiar-se entre ells i formar part d'una comunitat activa.
