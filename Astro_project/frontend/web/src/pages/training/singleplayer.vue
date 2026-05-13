@@ -263,6 +263,8 @@
     rankChanged: false,
   })
 
+  const gameStartTime = ref(null)
+
   const levelSequence = [
     { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
     { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
@@ -294,6 +296,7 @@
     activePreviewIndex.value = null
     currentPlayingIndex.value = index
     activeGameComponent.value = levelSequence[index].component
+    gameStartTime.value = Date.now()
   }
 
   async function handleGameOver (finalScore) {
@@ -318,7 +321,8 @@
 
         const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null
 
-        const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete)
+        const timeSeconds = gameStartTime.value ? Math.floor((Date.now() - gameStartTime.value) / 1000) : 0
+        const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete, timeSeconds)
 
         if (!result.success) throw new Error(result.message)
 

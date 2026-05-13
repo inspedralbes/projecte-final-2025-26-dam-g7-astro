@@ -64,7 +64,7 @@ describe('Astro Store', () => {
 
     await astroStore.registerCompletedGame('RadarScan', 100)
 
-    expect(spy).toHaveBeenCalledWith('RadarScan', 100, null)
+    expect(spy).toHaveBeenCalledWith('RadarScan', 100, null, 0)
   })
 
   it('debe limpiar todas las tiendas al hacer logout', () => {
