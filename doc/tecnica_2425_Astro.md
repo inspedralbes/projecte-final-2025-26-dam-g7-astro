@@ -44,6 +44,7 @@ color: #e0e0e0
 Sistema basat en Micro-serveis contenidoritzats.
 - **Frontend Web:** Desenvolupat amb Vue 3 (Composition API), gestionant l'estat global amb Pinia i la interfície amb Vuetify 3 (estètica Glassmorphism).
 - **Backend / API:** API REST construïda amb Node.js i Express. 
-- **Temps Real:** Comunicació bidireccional establerta amb Socket.io per al Social Hub.
-- **Base de Dades:** MongoDB (NoSQL) escollida per la flexibilitat d'emmagatzemar estructures complexes com el progrés de minijocs i inventaris d'usuaris. ODM: Mongoose.
-- **Desplegament:** Orquestració local i en entorns de producció mitjançant **Docker** i `docker-compose`, assegurant que qualsevol membre de l'equip pugui aixecar l'entorn amb una sola comanda.
+- **Temps Real:** Comunicació bidireccional establerta amb **WebSockets (ws)** per al Social Hub i Multijugador.
+- **Base de Dades:** MongoDB (NoSQL) escollida per la flexibilitat d'emmagatzemar estructures complexes. Driver natiu.
+- **Qualitat:** Cobertura de tests amb **Jest** (Backend) i **Vitest** (Frontend).
+- **Desplegament:** Orquestració mitjançant **Docker** i automatització amb **GitHub Actions**.

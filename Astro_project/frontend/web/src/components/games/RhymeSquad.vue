@@ -159,7 +159,7 @@
     </template>
 
     <v-card
-      v-else-if="isGameOver && !isMultiplayer"
+      v-else-if="isGameOver"
       class="pa-10 text-center bg-grey-darken-4 border-cyan"
       max-width="600"
       rounded="xl"
