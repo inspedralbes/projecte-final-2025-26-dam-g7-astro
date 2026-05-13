@@ -3,6 +3,7 @@ import { API_BASE_URL, requestJson } from './astroShared'
 import { useChatStore } from './chatStore'
 import { useSessionStore } from './sessionStore'
 import { useSocialStore } from './socialStore'
+import { useAstroStore } from './astroStore'
 
 function buildWsUrl () {
   let wsUrl = API_BASE_URL.replace(/^http/i, 'ws')
@@ -284,6 +285,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
           this.lastMessage = data
           this.stopFuelTimer()
+
+          // Actualizar estadísticas tras partida multijugador
+          const astroStore = useAstroStore()
+          astroStore.fetchUserStats()
+
           break
         }
         case 'PLAYER_RETURNED': {

@@ -147,11 +147,46 @@
           color="white"
           icon="mdi-close"
           variant="tonal"
-          @click="activeGameComponent = null"
+          @click="requestExit"
         />
-        <component :is="activeGameComponent" @game-over="handleGameOver" />
+        <component :is="activeGameComponent" :is-paused="showExitConfirm" @game-over="handleGameOver" />
       </div>
     </transition>
+
+    <!-- Diálogo de Confirmación de Salida -->
+    <v-dialog v-model="showExitConfirm" max-width="400" persistent z-index="300">
+      <v-card class="text-center pa-6 rounded-xl elevation-24 exit-dialog-card">
+        <div class="exit-icon-wrapper mb-4">
+          <v-icon color="red-accent-3" icon="mdi-alert-octagon" size="64" />
+        </div>
+        <h2 class="text-h5 font-weight-black text-white mb-2">{{ $t('singleplayer.exit_confirm.title') }}</h2>
+        <p class="text-body-2 text-blue-grey-lighten-2 mb-6">
+          {{ $t('singleplayer.exit_confirm.desc') }}
+        </p>
+        <div class="d-flex ga-3">
+          <v-btn
+            class="font-weight-bold flex-grow-1"
+            color="grey-darken-4"
+            height="48"
+            rounded="lg"
+            variant="flat"
+            @click="showExitConfirm = false"
+          >
+            {{ $t('singleplayer.exit_confirm.cancel') }}
+          </v-btn>
+          <v-btn
+            class="font-weight-bold flex-grow-1"
+            color="red-accent-3"
+            height="48"
+            rounded="lg"
+            variant="flat"
+            @click="confirmExit"
+          >
+            {{ $t('singleplayer.exit_confirm.confirm') }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
       <v-card
@@ -234,7 +269,8 @@
 </template>
 
 <script setup>
-  import { ref, shallowRef } from 'vue'
+  import { onBeforeUnmount, ref, shallowRef } from 'vue'
+  import { onBeforeRouteLeave } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import RadarScan from '@/components/games/RadarScan.vue'
   import RadioSignal from '@/components/games/RadioSignal.vue'
@@ -248,6 +284,37 @@
   const { t } = useI18n()
   const astroStore = useAstroStore()
   const activeGameComponent = shallowRef(null)
+  const showExitConfirm = ref(false)
+  const pendingRoute = ref(null)
+
+  // Guard de navegación para evitar salida accidental
+  onBeforeRouteLeave((to, from, next) => {
+    if (activeGameComponent.value && !showExitConfirm.value) {
+      pendingRoute.value = to
+      showExitConfirm.value = true
+      next(false)
+    } else {
+      next()
+    }
+  })
+
+  function requestExit () {
+    showExitConfirm.value = true
+  }
+
+  function confirmExit () {
+    showExitConfirm.value = false
+    activeGameComponent.value = null
+    if (pendingRoute.value) {
+      // Si veníamos de un intento de navegación, completarlo
+      const route = pendingRoute.value
+      pendingRoute.value = null
+      // Usar timeout para evitar conflictos con el cierre del diálogo
+      setTimeout(() => {
+        window.location.hash = route.fullPath // O usar router.push si es accesible
+      }, 100)
+    }
+  }
   const currentPlayingIndex = ref(null)
   const activePreviewIndex = ref(null)
 
@@ -755,5 +822,31 @@ svg {
         transform: none !important;
     }
     .preview-arrow { display: none; }
+}
+
+.exit-dialog-card {
+  background: #0a0c10 !important;
+  border: 2px solid rgba(255, 82, 82, 0.4) !important;
+  box-shadow: 0 0 30px rgba(255, 82, 82, 0.15) !important;
+}
+
+.exit-icon-wrapper {
+  background: rgba(255, 82, 82, 0.1);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 82, 82, 0.2);
+}
+
+.fade-zoom-enter-active, .fade-zoom-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-zoom-enter-from, .fade-zoom-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

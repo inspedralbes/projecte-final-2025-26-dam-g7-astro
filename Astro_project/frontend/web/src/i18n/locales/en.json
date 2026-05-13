@@ -535,10 +535,10 @@
         "finalScore": "Final Score: {score}",
         "maxCombo": "Max Combo: x{combo}",
         "getReward": "Get Reward",
-        "catcherDesc": "¡Atrapa només les paraules que RIMIN amb la pista!",
-        "roleCatcher": "RECOL·LECTOR",
-        "roleSniper": "DESTRUCTOR",
-        "sniperDesc": "¡Destrueix les paraules que NO rimen per protegir l'equip!"
+        "catcherDesc": "Catch only the words that RHYME with the hint!",
+        "roleCatcher": "COLLECTOR",
+        "roleSniper": "STRIKER",
+        "sniperDesc": "Destroy the words that DO NOT rhyme to protect the team!"
     },
     "syllableQuest": {
         "points": "Points: {score}",
@@ -552,7 +552,11 @@
         "reward": "Reward: {reward}",
         "getReward": "Get Reward",
         "msgCorrect": "Correct!",
-        "msgIncorrect": "Incorrect, try again."
+        "msgIncorrect": "Incorrect, try again.",
+        "orderPhrase": "Order the phrase!",
+        "clickOrder": "Click the words in the correct order...",
+        "phraseCompleted": "Phrase completed!",
+        "incorrectOrder": "Incorrect order! Restarting phrase..."
     },
     "wordConstruction": {
         "level": "Level {level}",
@@ -585,7 +589,7 @@
         "fase1Subtitle": "Phase 1: Earth",
         "fase2Title": "The Journey Begins",
         "fase2Subtitle": "Phase 2: Near Space",
-        "silabas": "Missió de Síl·labes"
+        "silabas": "Syllable Quest"
     },
     "shopActions": {
         "confirmMulti": "Do you want to buy a 10-spin pack for 900 coins?",
@@ -675,14 +679,14 @@
         "targetLabel": "TARGET",
         "signalLabel": "SIGNAL",
         "incomingTransmission": "INCOMING TRANSMISSION",
-        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR",
-        "partner": "COMPANY",
-        "partnerComms": "COMUNICACIÓ AMB EL COMPANY",
-        "success": "¡SENYAL DESXIFRADA!",
+        "error": "✗ INCORRECT DATA - RETRY",
+        "partner": "PARTNER",
+        "partnerComms": "COMMUNICATION WITH PARTNER",
+        "success": "¡SIGNAL DECODED!",
         "successDesc": "+150 PTS | +15s",
-        "typeAndEnter": "Escriu un missatge i prem Enter...",
-        "you": "TU",
-        "youHear": "SINTONITZES:"
+        "typeAndEnter": "Type a message and press Enter...",
+        "you": "YOU",
+        "youHear": "TUNING:"
     },
     "errors": {
         "noSession": "There is no active session.",
@@ -835,23 +839,23 @@
         "Recarga Solar": "Symmetry Breaker",
         "Reparación": "Radar Scanner",
         "Reparación Express": "Radar Scanner",
-        "Minijoc": "Minijoc",
-        "Reparacion": "Reparació Exprés",
-        "base": "Cridant a la Base",
-        "desacoplamiento": "Desacoblament Orbital",
-        "despegue": "Enlairament!",
-        "gravedad": "Trencant la Gravetat",
-        "preparativos": "Construcció de Paraules",
-        "radarscan": "Escaneig de Radar",
-        "radiosignal": "Senyal de Ràdio",
-        "recarga": "Recàrrega Solar",
-        "reparacion": "Reparació Exprés",
-        "rhymesquad": "Esquadró de Rimes",
-        "ruta": "Ruta Estel·lar",
-        "spelledrosco": "Rosco Estelar",
-        "syllablequest": "Aventura Sil·làbica",
-        "symmetrybreaker": "Simetria Estel·lar",
-        "wordconstruction": "Construcció de Paraules"
+        "Minijoc": "Minigame",
+        "Reparacion": "Express Repair",
+        "base": "Calling Base",
+        "desacoplamiento": "Orbital Decoupling",
+        "despegue": "Liftoff!",
+        "gravedad": "Breaking Gravity",
+        "preparativos": "Word Construction",
+        "radarscan": "Radar Scan",
+        "radiosignal": "Radio Signal",
+        "recarga": "Solar Recharge",
+        "reparacion": "Express Repair",
+        "rhymesquad": "Rhyme Squad",
+        "ruta": "Stellar Route",
+        "spelledrosco": "Stellar Rosco",
+        "syllablequest": "Syllable Quest",
+        "symmetrybreaker": "Symmetry Breaker",
+        "wordconstruction": "Word Construction"
     },
     "multiplayerResult": {
         "victory": "VICTORY!",
@@ -872,10 +876,10 @@
         "missionHistory": "MISSION HISTORY",
         "backToLobby": "BACK TO LOBBY",
         "waitingTeam": "Waiting for the team to return...",
-        "defeatQuote": "La derrota és només un pas més cap al coneixement.",
-        "team": "EQUIP",
-        "tieQuote": "Un equilibri perfecte de forces.",
-        "winQuote": "¡Has dominat la galàxia amb honor!"
+        "defeatQuote": "Defeat is just another step towards knowledge.",
+        "team": "TEAM",
+        "tieQuote": "A perfect balance of forces.",
+        "winQuote": "You have dominated the galaxy with honor!"
     },
     "shop": {
         "spinError": "Error while spinning",

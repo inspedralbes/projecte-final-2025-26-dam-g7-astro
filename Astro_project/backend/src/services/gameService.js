@@ -29,6 +29,8 @@ class GameService {
         const user = await this.userRepo.findByUsername(username);
         if (!user) throw new Error('Usuari no trobat');
 
+        const previousLevel = user.level;
+
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
 
@@ -95,7 +97,11 @@ class GameService {
             xpEarned,
             coinsEarned,
             boostedScore,
-            leveledUp: user.level > (fullStats.level || user.level) // Per si volem avisar
+            leveledUp: user.level > previousLevel,
+            newLevel: user.level,
+            newBalance: user.coins,
+            newXp: user.xp,
+            newRank: user.rank
         };
     }
 }

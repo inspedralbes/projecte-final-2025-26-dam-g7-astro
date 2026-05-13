@@ -244,12 +244,12 @@
               <h4 class="text-overline text-amber-accent-3 font-weight-black mb-6 d-flex align-center">
                 <v-icon class="mr-2" size="20">mdi-star</v-icon> {{ $t('profile.personalRecords') }}
               </h4>
-              <div v-if="topGames.length > 0" class="top-games-list-popup ga-4 d-flex flex-column">
+               <div v-if="topGames.length > 0" class="top-games-list-popup ga-3 d-flex flex-column">
                 <div v-for="(match, idx) in topGames" :key="`top-${idx}`" class="top-game-card-popup">
                   <div class="rank-num">{{ idx + 1 }}</div>
-                  <div class="game-info flex-grow-1">
-                    <span class="game-name">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
-                    <span class="game-date text-caption text-grey ml-3">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                   <div class="game-info flex-grow-1">
+                    <div class="game-name font-weight-bold">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</div>
+                    <div class="game-date text-caption text-grey">{{ new Date(match.createdAt).toLocaleDateString() }}</div>
                   </div>
                   <div class="game-score-small-popup font-weight-black text-amber-accent-3">{{ match.score }}</div>
                 </div>
@@ -1365,16 +1365,30 @@
     display: flex; align-items: center; gap: 12px;
     background: rgba(255, 193, 7, 0.03); border: 1px solid rgba(255, 193, 7, 0.1);
     padding: 10px 16px; border-radius: 10px; transition: all 0.3s;
+    min-height: 64px;
 }
 .top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.01); }
 .top-games-list-popup, .recent-list-popup {
-    min-height: 380px;
+    height: 380px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 242, 255, 0.1) transparent;
+}
+
+.top-games-list-popup::-webkit-scrollbar, .recent-list-popup::-webkit-scrollbar {
+    width: 4px;
+}
+
+.top-games-list-popup::-webkit-scrollbar-thumb, .recent-list-popup::-webkit-scrollbar-thumb {
+    background: rgba(0, 242, 255, 0.1);
+    border-radius: 4px;
 }
 
 .recent-item-popup {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px; background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;
+    min-height: 64px;
 }
 .recent-item-popup:hover { background: rgba(255,255,255,0.05); border-color: rgba(0, 242, 255, 0.2); }
 
@@ -1439,5 +1453,8 @@
     100% { filter: drop-shadow(0 0 0px rgba(255, 82, 82, 0)); }
 }
 .tracking-tighter { letter-spacing: -1px; }
+.xp-bar :deep(.v-progress-linear__determinate) {
+    transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
 
 </style>
