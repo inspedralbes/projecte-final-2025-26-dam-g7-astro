@@ -206,6 +206,14 @@
       type: Boolean,
       default: false,
     },
+    duration: {
+      type: Number,
+      default: 90,
+    },
+    isDuel: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -227,8 +235,7 @@
   const letterId = ref(0)
   const isRoundLocked = ref(false)
   let isUpdatingFromSync = false
-  const totalTime = 90
-  const timeLeft = ref(totalTime)
+  const timeLeft = ref(props.duration)
   const isPlaying = ref(false)
   let timerInterval = null
 
@@ -350,7 +357,7 @@
       triggerFeedback('success')
 
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(10) // Recarga 10% por cada bloque
+        multiplayerStore.rechargeFuel(20) // +20% por cada palabra construida
       }
 
       if (props.isMultiplayer) {
@@ -426,10 +433,14 @@
           }
 
           if (timeLeft.value <= 0) {
-            if (props.isMultiplayer && isHost.value) {
-              multiplayerStore.sendGameAction({ type: 'WC_TIME_UP' })
+            if (props.isRace && !props.isDuel) {
+              timeLeft.value = 60 // No te echa en planeta normal
+            } else {
+              if (props.isMultiplayer && isHost.value) {
+                multiplayerStore.sendGameAction({ type: 'WC_TIME_UP' })
+              }
+              finishGame()
             }
-            finishGame()
           }
         }
       }
@@ -459,13 +470,13 @@
       if (multiplayerStore.room?.gameConfig?.seed) {
         currentSeed = Math.floor(multiplayerStore.room.gameConfig.seed * 10_000)
       }
-      loadNextWord()
-      // El temporizador sí espera al briefing (10s)
+    }
+    loadNextWord()
+    if (props.isMultiplayer || props.isRace) {
       setTimeout(() => {
-        startTimer()
-      }, 10000)
+        if (!gameFinished.value) startTimer()
+      }, 3000)
     } else {
-      loadNextWord()
       startTimer()
     }
   })

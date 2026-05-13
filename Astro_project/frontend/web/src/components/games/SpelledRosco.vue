@@ -310,6 +310,9 @@
       </template>
     </v-card>
 
+    <v-overlay v-if="!isMultiplayer && !isRace" v-model="showStartOverlay" class="align-center justify-center" persistent>
+    </v-overlay>
+
     <v-overlay
       v-model="showFeedback"
       contained
@@ -359,6 +362,7 @@
     category: '',
     type: '',
   })
+  const showStartOverlay = ref(false)
 
   function throttle (func, limit) {
     let lastRan
@@ -405,7 +409,7 @@
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
   }))
 
-  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), timeLeft = ref(props.duration), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
 
   // --- REFORÇ VISUAL I SONOR ---
@@ -426,6 +430,14 @@
       default: false,
     },
     isRace: {
+      type: Boolean,
+      default: false,
+    },
+    duration: {
+      type: Number,
+      default: 60,
+    },
+    isDuel: {
       type: Boolean,
       default: false,
     },
@@ -497,9 +509,10 @@
 
   onMounted(() => {
     initRosco()
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer || props.isRace) {
+      // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {
-        startTimer()
+        if (!gameFinished.value) startTimer()
       }, 3000)
     } else {
       startTimer()
@@ -538,7 +551,13 @@
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
-        if (timeLeft.value <= 0) finishGame()
+        if (timeLeft.value <= 0) {
+          if (props.isRace && !props.isDuel) {
+            timeLeft.value = 60 // No te echa en planeta normal
+          } else {
+            finishGame()
+          }
+        }
       }
       if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
@@ -571,7 +590,7 @@
       feedbackColor.value = 'success'
       playFeedbackSound('success')
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(40) // 40% de gasolina por palabra (más difícil)
+        multiplayerStore.rechargeFuel(25) // +25% por cada letra acertada
       }
       if (props.isMultiplayer) {
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0

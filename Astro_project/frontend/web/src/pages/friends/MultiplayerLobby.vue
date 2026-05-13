@@ -17,7 +17,7 @@
           :sequence="[]"
         />
         
-        <GlobalAnomalyManager v-if="multiplayerStore.room?.status === 'PLAYING'" :forced-anomaly="currentAnomaly" />
+        <GlobalAnomalyManager v-if="multiplayerStore.room?.status === 'PLAYING' && activeGameComponent" :forced-anomaly="currentAnomaly" />
 
         <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
         <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
@@ -135,17 +135,23 @@
             >
               <RaceMap @select-planet="onPlanetSelected" @map-ready="onMapReady" />
 
-              <!-- Overlay de Sin Combustible: modo espectador -->
+              <!-- Pop-up de Missió Abortada (Temporal) -->
               <v-fade-transition>
-                <div v-if="multiplayerStore.raceFuel <= 0 && !showMatchResult" class="spectator-overlay">
+                <div v-if="showSpectatorAlert" class="spectator-overlay">
                   <div class="spectator-content text-center pa-10">
                     <v-icon color="red-accent-2" size="80" class="mb-4">mdi-gas-station-off</v-icon>
-                    <h2 class="text-h3 font-weight-black text-white mb-2">MISSIO ABORTADA</h2>
+                    <h2 class="text-h3 font-weight-black text-white mb-2">MISSIÓ ABORTADA</h2>
                     <p class="text-h6 text-red-accent-1 font-weight-bold tracking-widest">T'HAS QUEDAT SENSE COMBUSTIBLE</p>
                     <div class="mt-6 text-body-1 text-grey-lighten-1">Ara ets un espectador. Segueix la cursa dels teus rivals!</div>
                   </div>
                 </div>
               </v-fade-transition>
+
+              <!-- Etiqueta de Modo Espectador (Persistente pero discreta) -->
+              <div v-if="multiplayerStore.raceFuel <= 0 && !showMatchResult && !showSpectatorAlert" class="spectator-tag pa-4 d-flex align-center gap-3">
+                <v-icon color="red-accent-2" size="24">mdi-eye-outline</v-icon>
+                <div class="text-overline font-weight-black text-white line-height-1">MODO ESPECTADOR</div>
+              </div>
             </div>
           </transition>
 
@@ -178,6 +184,49 @@
             </div>
           </transition>
 
+          <!-- OVERLAY DE RESULTADOS DE DUELO -->
+          <v-overlay
+            v-model="showDuelResultOverlay"
+            class="align-center justify-center"
+            persistent
+            scrim="black"
+            style="z-index: 20000;"
+          >
+            <v-card
+              class="pa-10 text-center duel-result-card"
+              :class="duelResult?.winner === astroStore.user ? 'winner-border' : 'loser-border'"
+              max-width="600"
+              rounded="xl"
+            >
+              <v-icon
+                :color="duelResult?.winner === astroStore.user ? 'yellow-accent-4' : 'red-accent-4'"
+                :icon="duelResult?.winner === astroStore.user ? 'mdi-trophy' : 'mdi-skull-crossbones'"
+                size="120"
+                class="mb-6"
+              />
+              
+              <h1 class="text-h2 font-weight-black mb-4" :class="duelResult?.winner === astroStore.user ? 'text-yellow-accent-4' : 'text-red-accent-4'">
+                {{ duelResult?.winner === astroStore.user ? 'VICTÒRIA!' : 'DERROTA...' }}
+              </h1>
+              
+              <div class="d-flex justify-space-around align-center my-8">
+                <div class="score-box">
+                  <div class="text-overline">TU</div>
+                  <div class="text-h3 font-weight-bold">{{ duelResult?.myScore }}</div>
+                </div>
+                <div class="text-h4 font-weight-black">VS</div>
+                <div class="score-box">
+                  <div class="text-overline text-uppercase">{{ Object.keys(multiplayerStore.playersProgress).find(u => u !== astroStore.user) }}</div>
+                  <div class="text-h3 font-weight-bold">{{ duelResult?.partnerScore }}</div>
+                </div>
+              </div>
+
+              <p class="text-h5 text-grey-lighten-1">
+                {{ duelResult?.winner === astroStore.user ? 'Has guanyat el duel! Segueix avançant.' : 'Has perdut el duel... Estàs immobilitzat!' }}
+              </p>
+            </v-card>
+          </v-overlay>
+
           <!-- ALERTA DE MISTERIO (?) -->
           <transition name="slide-y">
             <div v-if="activeMysteryAlert" class="mystery-alert-overlay">
@@ -195,6 +244,9 @@
             :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
             :is-multiplayer="multiplayerStore.room?.gameConfig?.mode === 'RACE' ? false : true"
             :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
+            :is-duel="isDuel"
+            :duration="isDuel ? 60 : (multiplayerStore.room?.gameConfig?.duration || 60)"
+            :anomaly="currentAnomaly"
             @game-over="onGameFinished"
           />
 
@@ -222,7 +274,55 @@
                 <div class="briefing-timer mb-6">{{ briefingCountdown }}s</div>
                 
                 <div class="role-explanation pa-6 rounded-xl bg-slate-800 border-cyan mb-8">
-                  <template v-if="multiplayerStore.room?.gameConfig?.currentGame === 'RhymeSquad'">
+                  <template v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'">
+                    <div class="text-amber-accent-4">
+                      <v-icon icon="mdi-sword-cross" size="64" class="mb-4 shadow-amber animate-pulse" />
+                      <h3 class="text-h2 font-weight-black italic glow-text-red">{{ isDuel ? '¡BATALLA 1VS1!' : 'MISSIÓ EXPLORATÒRIA' }}</h3>
+                      <p class="text-h5 text-white mt-4 font-weight-bold">{{ isDuel ? 'NOMÉS UN POT GUANYAR AQUÍ.' : 'DEMOSTRA EL TEU TALENT EN AQUEST PLANETA.' }}</p>
+                      <div class="competitive-briefing-box pa-6 mt-6 rounded-xl" :class="isDuel ? 'bg-red-darken-4 border-red' : 'bg-slate-800 border-cyan'">
+                        <p class="text-h6 text-white">
+                          <template v-if="isDuel">
+                            <span v-if="multiplayerStore.room?.gameConfig?.currentGame === 'SpelledRosco'">
+                              <v-icon start>mdi-alphabetical</v-icon> EL PRIMER EN COMPLETAR EL ROSCO O AMB MÉS ENCERTS GUANYA EL DUEL!
+                            </span>
+                            <span v-else-if="multiplayerStore.room?.gameConfig?.currentGame === 'RadioSignal'">
+                              <v-icon start>mdi-radio-tower</v-icon> EL PRIMER EN SINTONITZAR TRES FRASES CORRECTES DESTROSSARÀ AL RIVAL!
+                            </span>
+                            <span v-else-if="multiplayerStore.room?.gameConfig?.currentGame === 'RhymeSquad'">
+                              <v-icon start>mdi-target</v-icon> SIGUES EL REPTIL MÉS RÀPID ATRAPANT RIMES. QUI EN TINGUI MÉS GUANYA!
+                            </span>
+                            <span v-else-if="multiplayerStore.room?.gameConfig?.currentGame === 'WordConstruction'">
+                              <v-icon start>mdi-crane</v-icon> CONSTRUEIX LA PARAULA ABANS QUE EL TEU RIVAL PER GUANYAR EL COMBAT!
+                            </span>
+                            <span v-else-if="multiplayerStore.room?.gameConfig?.currentGame === 'SymmetryBreaker'">
+                              <v-icon start>mdi-axis-z-rotate-clockwise</v-icon> MANTÉ LA SIMETRIA PERFECTA DURANT 30 SEGONS PER IMPOSAR-TE!
+                            </span>
+                            <span v-else>
+                              <v-icon start>mdi-lightning-bolt</v-icon> DEMOSTRA QUE ETS EL MILLOR. EL QUE TINGUI MÉS PUNTS AL FINAL DEL TEMPS GUANYA!
+                            </span>
+                          </template>
+                          <template v-else>
+                            <v-icon start color="cyan-accent-2">mdi-rocket-launch</v-icon> COMPLETA LA MISSIÓ PER RECARREGAR COMBUSTIBLE I SEGUIR AVANÇANT!
+                          </template>
+                        </p>
+                      </div>
+                      <p v-if="isDuel" class="text-h5 text-red-accent-2 mt-6 font-weight-black tracking-widest">SI PERDS, QUEDARÀS PARALITZAT 15 SEGONS!</p>
+
+                      <!-- Aviso de Anomalía Meteorológica -->
+                      <div v-if="currentAnomaly" class="mt-4 pa-4 rounded-lg bg-orange-darken-4 border-orange d-flex align-center justify-center">
+                        <v-icon color="orange-accent-2" size="24" class="mr-3">mdi-weather-lightning-rainy</v-icon>
+                        <div class="text-subtitle-1 font-weight-black text-white">
+                          AVÍS METEOROLÒGIC: 
+                          <span class="text-uppercase ml-2">{{ 
+                            currentAnomaly === 'meteorits' ? 'PLUJA DE METEORITS' : 
+                            (currentAnomaly === 'raig-tempesta' ? 'TORMENTA DE RAIGS' : 
+                            (currentAnomaly === 'nebulosa' ? 'NEBULOSA DENSA' : currentAnomaly.toUpperCase())) 
+                          }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else-if="multiplayerStore.room?.gameConfig?.currentGame === 'RhymeSquad'">
                     <div v-if="multiplayerStore.subRole === 'catcher'" class="text-green-accent-3">
                       <v-icon icon="mdi-basket-fill" size="48" class="mb-2" />
                       <h3 class="text-h4 font-weight-bold">RECOLECTOR</h3>
@@ -869,6 +969,20 @@
         <p class="text-center text-grey-lighten-1 mb-6">Tria el teu rival per al combat</p>
 
         <template v-if="otherPlayers.length > 0">
+          <!-- Botón Aleatorio -->
+          <v-btn
+            block
+            class="mb-6 font-weight-black py-4"
+            color="amber-accent-4"
+            rounded="xl"
+            size="large"
+            variant="flat"
+            @click="selectRandomRival"
+          >
+            <v-icon class="mr-2">mdi-shuffle-variant</v-icon>
+            RIVAL ALEATORI (SOLS LLIURES)
+          </v-btn>
+
           <v-row>
             <v-col 
               v-for="player in otherPlayers" 
@@ -880,6 +994,7 @@
                 :class="{ 'rival-busy': playerState(player) !== 'MAP' }"
                 @click="playerState(player) === 'MAP' ? selectRival(player) : null"
               >
+                <div v-if="playerState(player) !== 'MAP'" class="busy-badge">EN MISSIÓ</div>
                 <v-avatar size="80" class="mb-3 border-cyan elevation-6">
                   <v-img :src="getAvatar(player)" />
                 </v-avatar>
@@ -972,7 +1087,7 @@
   const numGoldMines    = ref(Number(localStorage.getItem('astro_mp_goldMines'))    || 1)
   const numBattles      = ref(Number(localStorage.getItem('astro_mp_battles'))      || 2)
   const numFuelStations = ref(Number(localStorage.getItem('astro_mp_fuelStations')) || 1)
-  const numMysteryNodes = ref(Number(localStorage.getItem('astro_mp_mysteryNodes')) || 3)
+  const numMysteryNodes = ref(Number(localStorage.getItem('astro_mp_mysteryNodes')) || 1) // Bajado de 3 a 1 por defecto
 
 
 
@@ -1016,14 +1131,23 @@
       nodeId: currentDuelNodeId.value
     })
 
-    // 2. El ATACANTE entra al juego
+    // 2. El ATACANTE entra al juego con Briefing
     multiplayerStore.activeGameName = randomGame
-    isTransitioning.value = true
-    setTimeout(() => {
-      activeGameComponent.value = gameComponents[randomGame]
-      isTransitioning.value = false
-    }, 1800)
+    currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
+    
+    startBriefing(randomGame)
   }
+
+  function selectRandomRival () {
+    const available = otherPlayers.value.filter(p => playerState(p) === 'MAP')
+    if (available.length > 0) {
+      const randomPlayer = available[Math.floor(Math.random() * available.length)]
+      selectRival(randomPlayer)
+    } else {
+      showMessage(t('multiplayerLobby.noRivalsAvailableShort') || 'No hi ha ningú lliure!', 'error')
+    }
+  }
+
   const activeMysteryAlert = ref(null)
   const fullMapNodes = ref({})
 
@@ -1045,7 +1169,14 @@
   const roundWinner = ref(null)
   const isRoundTie = ref(false)
   const showRoundResults = ref(false)
+  const showSpectatorAlert = ref(false)
   const showMatchResult = ref(false)
+  const isDuel = ref(false)
+  const duelResult = ref(null) // { winner: string, loser: string, myScore: number, partnerScore: number }
+  const showDuelResultOverlay = ref(false)
+  const canAbortMission = ref(false)
+  const abortTimerSeconds = ref(45)
+  let abortInterval = null
   const finalScores = ref({})
   const matchWinnerName = ref(null)
   const selectedModality = ref(localStorage.getItem('astro_mp_modality') || '1vs1')
@@ -1056,6 +1187,15 @@
     if (newVal <= 0 && multiplayerStore.room?.status === 'PLAYING' && isHost.value) {
       console.log('TIEMPO AGOTADO: El host fuerza el fin de la ronda')
       multiplayerStore.submitRoundResult()
+    }
+  })
+
+  watch(() => multiplayerStore.raceFuel, (newFuel) => {
+    if (newFuel <= 0 && multiplayerStore.room?.gameConfig?.mode === 'RACE') {
+      showSpectatorAlert.value = true
+      setTimeout(() => {
+        showSpectatorAlert.value = false
+      }, 6000)
     }
   })
 
@@ -1114,6 +1254,25 @@
     
     // Solo saltar al juego si el estado es PLAYING o MATCH_STARTING y NO es modo Carrera
     if (!isRaceMode && (status === 'PLAYING' || status === 'MATCH_STARTING') && newGame && gameComponents[newGame] && !activeGameComponent.value) {
+      // Reset de seguridad para abortar
+      canAbortMission.value = false
+      if (abortInterval) clearInterval(abortInterval)
+      
+      if (!isDuel.value) {
+        abortTimerSeconds.value = 45
+        abortInterval = setInterval(() => {
+          if (abortTimerSeconds.value > 0) {
+            abortTimerSeconds.value--
+          } else {
+            canAbortMission.value = true
+            if (abortInterval) clearInterval(abortInterval)
+          }
+        }, 1000)
+      } else {
+        // En duelos no se puede abortar
+        canAbortMission.value = false
+      }
+      
       console.log('--- CAMBIO DE JUEGO DETECTADO ---', newGame)
       activeGameComponent.value = gameComponents[newGame]
     }
@@ -1132,12 +1291,9 @@
       
       multiplayerStore.activeGameName = event.game
       currentDuelNodeId.value = event.nodeId
+      currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
       
-      isTransitioning.value = true
-      setTimeout(() => {
-        activeGameComponent.value = gameComponents[event.game]
-        isTransitioning.value = false
-      }, 1800)
+      startBriefing(event.game)
     }
   })
 
@@ -1221,6 +1377,14 @@
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       roundWinner.value = msg.winner
       isRoundTie.value = msg.tie || false
+      showRoundResults.value = true
+      
+      // En modo carrera, ocultar automáticamente después de 4 segundos
+      if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
+        setTimeout(() => {
+          showRoundResults.value = false
+        }, 4000)
+      }
     }
 
     if (msg.type === 'MATCH_FINISHED') {
@@ -1565,24 +1729,58 @@
   }
 
   function onGameFinished (score) {
+    if (abortInterval) clearInterval(abortInterval)
     if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
-      // Recargar combustible
-      multiplayerStore.rechargeFuel(25)
+      if (isDuel.value) {
+        handleDuelEnd(score)
+        return
+      }
       
-      // Marcar planeta actual como completado
+      // Misión normal en planeta
       const completedPlanetId = multiplayerStore.raceProgress
       multiplayerStore.updateRaceProgress(completedPlanetId, true)
-      currentAnomaly.value = null
-      
-      // Pequeño delay visual para la transición de vuelta al mapa
       isTransitioning.value = true
       setTimeout(() => {
-        activeGameComponent.value = null // Volver al mapa
+        activeGameComponent.value = null
         isTransitioning.value = false
       }, 1500)
     } else {
       multiplayerStore.submitRoundResult()
     }
+  }
+
+  function handleDuelEnd (myFinalScore) {
+    // Obtenemos la puntuación del rival desde el store (se actualiza por SCORE_UPDATE)
+    const partnerName = Object.keys(multiplayerStore.playersProgress).find(u => u !== astroStore.user)
+    const partnerScore = multiplayerStore.roundScores[partnerName] || 0
+    
+    const amIWinner = myFinalScore > partnerScore
+    
+    duelResult.value = {
+      winner: amIWinner ? astroStore.user : partnerName,
+      loser: amIWinner ? partnerName : astroStore.user,
+      myScore: myFinalScore,
+      partnerScore: partnerScore
+    }
+    
+    showDuelResultOverlay.value = true
+    
+    // Después de 4 segundos de gloria/vergüenza, volvemos al mapa
+    setTimeout(() => {
+      showDuelResultOverlay.value = false
+      
+      if (!amIWinner) {
+        // Si he perdido, me aplico el stun a mí mismo
+        multiplayerStore.applyStun(30)
+      }
+      
+      // Marcar nodo como completado y volver
+      const completedPlanetId = multiplayerStore.raceProgress
+      multiplayerStore.updateRaceProgress(completedPlanetId, true)
+      
+      activeGameComponent.value = null
+      isDuel.value = false
+    }, 4000)
   }
 
   function onPlanetSelected ({ id, node }) {
@@ -1594,14 +1792,19 @@
       const anomalyNames = {
         'meteorits': 'PLUJA DE METEORITS',
         'nebulosa': 'NEBULOSA DENSA',
-        'raton-mirall': 'CONTROL INVERTIT',
         'raig-tempesta': 'TORMENTA DE RAIGS'
       }
       const eventName = anomalyNames[node.anomaly] || node.anomaly?.toUpperCase() || 'FENOMEN DESCONEGUT'
       activeMysteryAlert.value = `¡AVÍS METEOROLÒGIC! En la pròxima ronda hi haurá: ${eventName}`
       
+      // Notificar a TODOS los jugadores de la anomalía
+      multiplayerStore.sendGameAction({
+        type: 'GLOBAL_ANOMALY',
+        anomaly: node.anomaly
+      })
+
       // Actualizar posición pero NO entrar en juego
-      multiplayerStore.updateRaceProgress(id, true) // Se marca como completado automáticamente por ser solo info
+      multiplayerStore.updateRaceProgress(id, true)
       
       setTimeout(() => {
         activeMysteryAlert.value = null
@@ -1622,16 +1825,14 @@
         
         multiplayerStore.activeGameName = randomGame
         currentDuelNodeId.value = id
+        isDuel.value = true
         
-        isTransitioning.value = true
-        setTimeout(() => {
-          activeGameComponent.value = gameComponents[randomGame]
-          isTransitioning.value = false
-        }, 1800)
+        startBriefing(randomGame)
       } else {
         console.log("ARENA DUEL: Rivales encontrados, abriendo selector. Rivales:", otherPlayers.value.length)
         // Si hay rivales, mostrar el selector
         showDuelSelector.value = true
+        isDuel.value = true
         currentDuelNodeId.value = id
       }
       return 
@@ -1641,18 +1842,13 @@
     if (node.game && gameComponents[node.game]) {
       // Informar al store del juego activo para ajustar consumos
       multiplayerStore.activeGameName = node.game
+      isDuel.value = false
       
       // Actualizar posición antes de entrar al juego
       multiplayerStore.updateRaceProgress(id, false)
       
-      currentAnomaly.value = node.anomaly || null
-
-      isTransitioning.value = true
-      setTimeout(() => {
-        activeGameComponent.value = gameComponents[node.game]
-        isTransitioning.value = false
-      }, 1800)
-      return
+      // En misiones normales SÍ permitimos anomalías
+      startBriefing(node.game, node.anomaly || null)
     } 
     
     // Caso 3: Otros nodos (Fuel, Coins, etc)
@@ -1781,18 +1977,42 @@
     }
   })
 
-  function startBriefing () {
+  function startBriefing (gameName, anomaly = null) {
+    if (!gameName || !gameComponents[gameName]) return
+    
+    currentAnomaly.value = anomaly
+
+    // MODO CARRERA: Si NO es un duelo, saltamos el briefing UI para no ser redundantes
+    const isRaceMode = multiplayerStore.room?.gameConfig?.mode === 'RACE'
+    if (isRaceMode && !isDuel.value) {
+      showBriefing.value = false
+      isTransitioning.value = true
+      
+      // Esperar a que la animación de "viajando al planeta" termine antes de poner el juego
+      setTimeout(() => {
+        activeGameComponent.value = gameComponents[gameName]
+        isTransitioning.value = false
+      }, 1500)
+      return
+    }
+    
+    // Si es un duelo o modo normal (COOP/VS), mostramos el briefing detallado
     showBriefing.value = true
-    briefingCountdown.value = 1.5
+    briefingCountdown.value = 10
     
     if (briefingTimer) clearInterval(briefingTimer)
+    
+    // Mientras mostramos el briefing, preparamos la transición
+    isTransitioning.value = true
     
     briefingTimer = setInterval(() => {
       briefingCountdown.value--
       if (briefingCountdown.value <= 0) {
         clearInterval(briefingTimer)
         showBriefing.value = false
-        // El juego ya está montado, simplemente el overlay se va y empieza la acción
+        isTransitioning.value = false
+        // Al terminar el briefing, montamos el juego
+        activeGameComponent.value = gameComponents[gameName]
       }
     }, 1000)
   }
@@ -2008,6 +2228,30 @@
   box-shadow: 0 0 15px rgba(255, 82, 82, 0.4);
 }
 
+.duel-result-card {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-width: 4px !important;
+  border-style: solid !important;
+  backdrop-filter: blur(20px);
+}
+
+.winner-border {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+}
+
+.loser-border {
+  border-color: #ff5252 !important;
+  box-shadow: 0 0 50px rgba(255, 82, 82, 0.3);
+}
+
+.score-box {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 20px;
+  min-width: 150px;
+}
+
 .abort-corner-container {
   position: absolute;
   top: 20px;
@@ -2189,9 +2433,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(2, 6, 23, 0.85);
-  backdrop-filter: blur(20px);
-  z-index: 1000;
+  background: rgba(2, 6, 23, 0.95); /* Más opaco */
+  backdrop-filter: blur(25px); /* Más desenfoque */
+  z-index: 9999999 !important; /* PRIORIDAD MÁXIMA */
 }
 
 .briefing-card {
@@ -2285,24 +2529,42 @@
 .spectator-overlay {
   position: absolute;
   inset: 0;
-  z-index: 9999999 !important; /* PRIORIDAD GALÁCTICA */
+  z-index: 9999999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.98); /* Fondo casi totalmente negro */
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  background: rgba(2, 6, 23, 0.7); /* Mucho más translúcido */
+  backdrop-filter: blur(10px);
   pointer-events: auto; 
 }
 
 .spectator-content {
-  border: 4px solid #ff5252;
+  border: 2px solid rgba(255, 82, 82, 0.4);
   border-radius: 32px;
-  background: rgba(15, 10, 25, 1); /* Sólido, sin transparencia */
-  box-shadow: 0 0 100px rgba(255, 82, 82, 0.6);
-  max-width: 650px;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 50px rgba(255, 82, 82, 0.3);
+  max-width: 500px;
   width: 90%;
   animation: spectator-appear 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.spectator-tag {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 82, 82, 0.2);
+  border: 1px solid rgba(255, 82, 82, 0.4);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  animation: slide-down-tag 0.5s ease-out;
+}
+
+@keyframes slide-down-tag {
+  from { transform: translate(-50%, -100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }
 
 /* Estilos para el modo observador y alertas */
@@ -2328,7 +2590,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 600;
+  z-index: 8888888 !important; /* Por debajo del briefing pero por encima del mapa */
   width: 100%;
   display: flex;
   justify-content: center;
@@ -2448,12 +2710,42 @@
 .scale-leave-active { animation: scale-pop 0.3s reverse ease-in forwards; }
 /* ==== SELECTOR DE DUEL ==== */
 .duel-selector-card {
-  background: rgba(15, 10, 25, 0.98) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
   border: 3px solid #ff5252 !important;
-  border-radius: 24px;
-  box-shadow: 0 0 100px rgba(255, 82, 82, 0.6) !important;
-  backdrop-filter: blur(30px);
-  z-index: 999999 !important;
+  border-radius: 32px !important;
+  box-shadow: 0 0 50px rgba(255, 82, 82, 0.3) !important;
+}
+
+.rival-card-v2 {
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.rival-card-v2:hover:not(.rival-busy) {
+  background: rgba(0, 229, 255, 0.1);
+  transform: translateY(-5px);
+  border-color: #00e5ff !important;
+}
+
+.rival-busy {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+  cursor: not-allowed !important;
+}
+
+.busy-badge {
+  position: absolute;
+  top: 10px;
+  right: -30px;
+  background: #ff5252;
+  color: white;
+  padding: 4px 40px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px rgba(255, 82, 82, 0.5);
 }
 
 .rival-card {

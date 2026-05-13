@@ -606,7 +606,8 @@
         "typeAndEnter": "Escriu un missatge i prem Enter...",
         "you": "TU",
         "success": "¡SENYAL DESXIFRADA!",
-        "successDesc": "+150 PTS | +15s"
+        "successDesc": "+150 PTS | +15s",
+        "errorCount": "Tens {count} lletres incorrectes!"
     },
     "errors": {
         "noSession": "No hi ha una sessió activa.",

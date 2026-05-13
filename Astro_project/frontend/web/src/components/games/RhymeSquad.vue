@@ -216,6 +216,18 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
+    isDuel: {
+      type: Boolean,
+      default: false,
+    },
+    duration: {
+      type: Number,
+      default: 60,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -232,7 +244,7 @@
   const isGameOver = ref(false)
   const score = ref(0)
   const lives = ref(props.isMultiplayer ? 10 : 3)
-  const timeLeft = ref(60)
+  const timeLeft = ref(props.duration)
   const combo = ref(0)
   const maxCombo = ref(0)
   const correctHits = ref(0)
@@ -320,8 +332,9 @@
           }
 
           if (timeLeft.value <= 0) {
-            if (props.isRace) {
-              timeLeft.value = 60 // Reset en carrera
+            // En modo carrera (planeta normal) el tiempo no te echa
+            if (props.isRace && !props.isDuel) {
+              timeLeft.value = 60 // Reset para que siga jugando
             } else {
               timeLeft.value = 0
               if (props.isMultiplayer && isHost.value) {
@@ -409,7 +422,7 @@
       if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
       triggerFeedback('success')
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(5) // 5% de gasolina por acierto en carrera
+        multiplayerStore.rechargeFuel(2) // 2% de gasolina por acierto en carrera
       }
     } else {
       word.status = 'incorrect'
@@ -471,8 +484,9 @@
     isTurbo.value = false
 
     if (lives.value <= 0) {
-      if (props.isRace) {
-        lives.value = 10 // Reset vidas en carrera
+      // En modo carrera (planeta normal) las vidas no te echan
+      if (props.isRace && !props.isDuel) {
+        lives.value = 10 // Reset vidas
       } else {
         endGame()
       }

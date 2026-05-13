@@ -148,6 +148,10 @@
       type: Boolean,
       default: false,
     },
+    duration: {
+      type: Number,
+      default: 60,
+    },
   })
 
   // --- VARIABLES D'ESTAT ---
@@ -156,7 +160,7 @@
   const isTransitioning = ref(false)
   const correctClicked = ref(false)
   const score = ref(0)
-  const timeLeft = ref(60)
+  const timeLeft = ref(props.duration)
   const startTime = ref(0)
   const totalDuration = ref(60)
   let timerInterval = null
@@ -446,7 +450,7 @@
   }
 
   onMounted(() => {
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer || props.isRace) {
       // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {
         startGame()
@@ -559,7 +563,7 @@
 }
 
 .letter-cell {
-  color: #334155;
+  color: #64748b;
   transition: color 0.2s;
 }
 

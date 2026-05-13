@@ -95,6 +95,12 @@
             {{ $t('radioSignal.send') }}
           </button>
         </div>
+        <transition name="fade">
+          <div v-if="errorTip" class="error-tip-msg mt-2">
+            <v-icon color="red-accent-2" size="16" class="mr-1">mdi-alert-circle</v-icon>
+            {{ errorTip }}
+          </div>
+        </transition>
       </div>
       <div v-else class="input-placeholder">
         <v-icon color="#444" size="18">mdi-antenna</v-icon>
@@ -210,6 +216,14 @@
       type: Boolean,
       default: false,
     },
+    isDuel: {
+      type: Boolean,
+      default: false,
+    },
+    duration: {
+      type: Number,
+      default: 90,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -229,8 +243,9 @@
   const showSuccess = ref(false)
   const showGameOverOverlay = ref(false)
   const score = ref(0)
-  const timeLeft = ref(props.isMultiplayer ? 90 : 60)
+  const timeLeft = ref(props.duration)
   const gameFinished = ref(false)
+  const errorTip = ref('')
   let roundTimer = null
 
   // --- REFORÇ VISUAL I SONOR ---
@@ -549,7 +564,7 @@
       }
 
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(30) // Recarga 30% por cada frase en carrera
+        multiplayerStore.rechargeFuel(25) // +25% por cada frase sintonizada
       }
 
       isTuned.value = false
@@ -557,7 +572,19 @@
       updateNoise()
     } else {
       triggerFeedback('error')
-      userGuess.value = ''
+      // Lógica de "cuántas letras te has equivocado"
+      const target = norm(phraseToSolve.value)
+      const guess = norm(userGuess.value)
+      
+      let diff = 0
+      const maxLen = Math.max(target.length, guess.length)
+      for (let i = 0; i < maxLen; i++) {
+        if (target[i] !== guess[i]) diff++
+      }
+      
+      errorTip.value = t('radioSignal.errorCount', { count: diff }) || `Tens ${diff} lletres incorrectes!`
+      setTimeout(() => { errorTip.value = '' }, 3000)
+      // NO borramos userGuess para que pueda corregirlo
     }
   }
 
@@ -574,8 +601,8 @@
         }
 
         if (timeLeft.value === 0) {
-          if (props.isRace) {
-            timeLeft.value = 60 // Reset para loop infinito en carrera
+          if (props.isRace && !props.isDuel) {
+            timeLeft.value = 60 // No te echa en planeta normal
           } else {
             finishGame()
           }
@@ -629,7 +656,7 @@
 
   onMounted(() => {
     drawWaves()
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer || props.isRace) {
       // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {
         startTimer()
@@ -677,7 +704,13 @@
 
       if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
         timeLeft.value = msg.action.timeLeft
-        if (timeLeft.value <= 0) finishGame()
+        if (timeLeft.value <= 0) {
+          if (props.isRace && !props.isDuel) {
+            timeLeft.value = 60 // No te echa en planeta normal
+          } else {
+            finishGame()
+          }
+        }
       }
     }
   }, { immediate: true })
@@ -1036,6 +1069,17 @@ canvas { display: block; width: 100%; height: auto; }
 
 .italic {
     font-style: italic;
+}
+
+.error-tip-msg {
+    color: #ff5252;
+    font-size: 13px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ÉXITO FEEDBACK */

@@ -42,7 +42,7 @@
 
     <div v-if="roundHintVisible" :key="roundHintToken" class="round-target-hint">{{ roundHintText }}</div>
 
-    <v-overlay v-if="!isMultiplayer" v-model="showStartOverlay" class="align-center justify-center" persistent>
+    <v-overlay v-if="!isMultiplayer && !isRace" v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
         <h2 class="text-h4 font-weight-bold text-white mb-4">{{ $t('symmetryBreaker.title') }}</h2>
         <p class="text-body-1 text-grey-lighten-1 mb-6">
@@ -136,6 +136,10 @@
       default: false,
     },
     isRace: {
+      type: Boolean,
+      default: false,
+    },
+    isDuel: {
       type: Boolean,
       default: false,
     },
@@ -321,7 +325,7 @@
     if (hasPenaltyShotRaw && isShieldActive.value) {
       isShieldActive.value = false
       shieldImmunityLeft.value = 2
-      showShieldFeedback.value = true
+      showShieldFeedback = true
     }
 
     if (shieldImmunityLeft.value > 0) {
@@ -329,7 +333,7 @@
     }
 
     const hasPenaltyShot = hasPenaltyShotRaw && shieldImmunityLeft.value <= 0
-    const timePenalty = hasPenaltyShot ? 2 : 1
+    const timePenalty = (hasPenaltyShot && (!props.isRace || props.isDuel)) ? 2 : 1
     isPenaltyActive.value = timePenalty > 1
 
     const timeMultiplier = isSlowTimeActive.value ? 0.8 : 1
@@ -346,16 +350,19 @@
     }
 
     if (timeLeft.value <= 0) {
-      if (props.isMultiplayer && isHost.value) {
-        multiplayerStore.sendGameAction({ type: 'SYMMETRY_TIME_UP' })
+      if (!props.isRace || props.isDuel) {
+        if (props.isMultiplayer && isHost.value) {
+          multiplayerStore.sendGameAction({ type: 'SYMMETRY_TIME_UP' })
+        }
+        endGame(); return
+      } else {
+        timeLeft.value = 30
       }
-      endGame(); return
     }
 
     for (const t of targets.value) {
       t.x += t.vx * dt; t.y += t.vy * dt
 
-      // Solo el host calcula rebotes de forma autoritativa
       if (!props.isMultiplayer || isHost.value) {
         if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
           t.vx *= -1; t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX)
@@ -439,7 +446,7 @@
     round.value++
     
     if (props.isRace) {
-      multiplayerStore.rechargeFuel(15) // Recarga 15% por cada bloqueo exitoso
+      multiplayerStore.rechargeFuel(10)
     }
     
     generateTargets()
@@ -520,19 +527,17 @@
           const rx = (cursor.x / 1000) * gameCanvas.value.width
           const ry = (cursor.y / 1000) * gameCanvas.value.height
 
-          // Laser del compañero (si está disparando)
           if (cursor.isFiring) {
             ctx.beginPath()
             ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height)
             ctx.lineTo(rx, ry)
             ctx.strokeStyle = 'rgba(255, 235, 59, 0.4)'
             ctx.lineWidth = 2
-            ctx.setLineDash([5, 5]) // Línea discontinua para el compañero
+            ctx.setLineDash([5, 5])
             ctx.stroke()
             ctx.setLineDash([])
           }
 
-          // Cursor neón del compañero
           ctx.beginPath()
           ctx.arc(rx, ry, 18, 0, Math.PI * 2)
           ctx.strokeStyle = '#ffeb3b'
@@ -542,7 +547,6 @@
           ctx.stroke()
           ctx.shadowBlur = 0
 
-          // Etiqueta de nombre
           ctx.fillStyle = '#ffeb3b'
           ctx.font = 'bold 14px Roboto Mono'
           ctx.textAlign = 'center'
@@ -653,8 +657,7 @@
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
 
-    if (props.isMultiplayer) {
-      // Delay para el briefing (Reducido a 3s)
+    if (props.isMultiplayer || props.isRace) {
       setTimeout(() => {
         startGame()
       }, 3000)

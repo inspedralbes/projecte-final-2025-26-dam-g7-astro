@@ -635,7 +635,8 @@
         "typeAndEnter": "Escribe un mensaje y pulsa Enter...",
         "you": "TÚ",
         "success": "¡SEÑAL DESXIFRADA!",
-        "successDesc": "+150 PTS | +15s"
+        "successDesc": "+150 PTS | +15s",
+        "errorCount": "¡Te has equivocado en {count} letras!"
     },
     "errors": {
         "noSession": "No hay una sesión activa.",

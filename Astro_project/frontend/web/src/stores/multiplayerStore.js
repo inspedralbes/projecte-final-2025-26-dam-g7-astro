@@ -47,6 +47,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     playerStates: {}, // { username: 'MAP' | 'IN_GAME' }
     isRaceImmortal: false, // Evita Game Over por vidas/tiempo
     lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
+    currentGlobalAnomaly: null, // Anomalía que afecta a todos
   }),
 
   getters: {
@@ -322,6 +323,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
               timestamp: Date.now()
             }
             console.log("🔥 DUELO DETECTADO EN STORE:", this.lastDuelEvent)
+          }
+
+          if (data.action?.type === 'GLOBAL_ANOMALY') {
+            this.currentGlobalAnomaly = data.action.anomaly
+            console.log("🌪️ ANOMALÍA GLOBAL RECIBIDA:", data.action.anomaly)
           }
 
           this.lastMessage = data
@@ -661,12 +667,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.raceFuel = 100
       this.fuelInterval = setInterval(() => {
         if (this.raceFuel > 0) {
-          // Consumo base: 0.05% cada 100ms
-          let decrement = 0.05
+          // Consumo base reducido: 0.02% cada 100ms (0.2% por segundo)
+          let decrement = 0.02
           
-          // Si es un juego de pensar/escuchar, bajar consumo a la mitad
+          // Si es un juego de pensar/escuchar, bajar consumo a la mitad (0.1% por segundo)
           if (this.activeGameName === 'RadioSignal' || this.activeGameName === 'SpelledRosco') {
-            decrement = 0.02 // Menos de la mitad
+            decrement = 0.01 
           }
 
           this.raceFuel = Math.max(0, this.raceFuel - decrement) 
@@ -689,7 +695,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.raceFuel = Math.max(0, this.raceFuel - amount)
     },
 
-    applyStun (seconds = 30) {
+    applyStun (seconds = 15) {
       if (this.stunInterval) clearInterval(this.stunInterval)
       this.isStunned = true
       this.stunTimeRemaining = seconds

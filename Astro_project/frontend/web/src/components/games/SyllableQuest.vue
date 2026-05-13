@@ -157,6 +157,10 @@
       type: Boolean,
       default: false,
     },
+    duration: {
+      type: Number,
+      default: 60,
+    },
   })
 
   // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
@@ -166,7 +170,7 @@
   const currentWord = computed(() => words.value[currentWordIndex.value])
   const userSyllables = ref(0)
   const score = ref(0)
-  const timeLeft = ref(60)
+  const timeLeft = ref(props.duration)
   const gameFinished = ref(false)
   const message = ref('')
   const messageType = ref('info')

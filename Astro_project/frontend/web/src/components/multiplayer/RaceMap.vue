@@ -281,13 +281,14 @@
       let numNodes
       if (phase < 0.4) {
         // Fase inicial: al menos playersCount nodos para que cada jugador tenga camino propio
-        numNodes = Math.max(playersCount, Math.ceil(playersCount * 0.8)) + Math.floor(random(c) * 2)
+        // Fase inicial: garantizamos suficientes nodos para objetivos + planetas jugables
+        numNodes = Math.max(playersCount + 3, Math.ceil(playersCount * 1.5)) + Math.floor(random(c) * 2)
       } else if (phase < 0.7) {
         // Fase media: reducción gradual suave de playersCount → playersCount/3
         const fadeFactor = 1 - ((phase - 0.4) / 0.3) // 1.0 → 0.0
         const maxN = Math.max(2, Math.ceil(playersCount * 0.6))
         const minN = Math.max(2, Math.ceil(playersCount * 0.25))
-        numNodes = Math.round(minN + fadeFactor * (maxN - minN)) + Math.floor(random(c) * 2)
+        numNodes = Math.round(minN + fadeFactor * (maxN - minN)) + 1 + Math.floor(random(c) * 2)
       } else {
         // Fase final: 1–3 nodos, embudo hacia la meta
         numNodes = 1 + Math.floor(random(c) * 2)
@@ -315,7 +316,8 @@
           type: 'planet',
           neighbors: [],
           game: (() => {
-            const gameIdx = Math.floor(random(c * 100 + i) * shuffledGames.length)
+            // Rotar la lista para asegurar variedad y evitar repeticiones en la misma columna
+            const gameIdx = (c * 10 + i) % shuffledGames.length
             return shuffledGames[gameIdx]
           })(),
           anomaly: random(c + i + 55) > 0.8 ? anomalyPool[Math.floor(random(c + i) * anomalyPool.length)] : null,
@@ -493,11 +495,9 @@
       const completed = multiplayerStore.playersCompletedPlanets[uname] || []
       const current = multiplayerStore.playersProgress[uname] || 'START'
       
-      const history = [...completed]
+      const history = ['START', ...completed]
       if (current !== 'START' && !history.includes(current)) {
         history.push(current)
-      } else if (current === 'START' && history.length === 0) {
-        history.push('START')
       }
       
       combined[uname] = { history }
