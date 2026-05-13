@@ -780,7 +780,10 @@
         "Recarga": "Solar Recharge",
         "recarga": "Solar Recharge",
         "Reparacion": "Express Repair",
-        "reparacion": "Express Repair"
+        "reparacion": "Express Repair",
+        "MathQuest": "Math Quest",
+        "math-quest": "Math Quest",
+        "mathquest": "Math Quest"
     },
     "plans": {
         "individual": "Individual",
@@ -896,6 +899,10 @@
                 "RhymeSquad": {
                     "name": "Rhyme Squad",
                     "desc": "Find rhymes."
+                },
+                "MathQuest": {
+                    "name": "Math Quest",
+                    "desc": "Quick mental calculations."
                 }
             }
         }

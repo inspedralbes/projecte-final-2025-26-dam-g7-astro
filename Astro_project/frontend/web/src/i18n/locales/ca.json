@@ -651,6 +651,9 @@
         "RadioSignal": "Senyal de Ràdio",
         "radio-signal": "Senyal de Ràdio",
         "radiosignal": "Senyal de Ràdio",
+        "MathQuest": "Repte Matemàtic",
+        "math-quest": "Repte Matemàtic",
+        "mathquest": "Repte Matemàtic",
         "Preparativos": "Construcció de Paraules",
         "preparativos": "Construcció de Paraules",
         "Despegue": "Enlairament!",
@@ -760,6 +763,10 @@
                 "RhymeSquad": {
                     "name": "Squad de Rimes",
                     "desc": "Trobar rimes."
+                },
+                "MathQuest": {
+                    "name": "Repte Matemàtic",
+                    "desc": "Càlculs mentals ràpids."
                 }
             }
         }

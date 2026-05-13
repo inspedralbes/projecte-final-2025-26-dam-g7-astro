@@ -1,53 +1,52 @@
 <template>
-  <div class="anomaly-manager">
-    <!-- EFEKTE: NEBULOSA -->
+  <div class="anomaly-manager" :class="{ 'stunned-cursor': clickDisabled }">
+    <!-- NEBULOSA -->
     <transition name="fade">
       <div v-if="activeAnomaly === 'nebulosa'" class="anomaly-nebulosa" />
     </transition>
 
-    <!-- EFEKTE: PLUJA DE METEORITS -->
+    <!-- METEORITOS EN PICADO -->
     <div v-if="activeAnomaly === 'meteorits'" class="anomaly-meteorits">
       <div 
         v-for="m in meteors" 
         :key="m.id" 
         class="meteor"
-        :style="{ 
-          left: m.x + 'px', 
-          top: m.y + 'px', 
-          width: m.size + 'px', 
-          height: m.size + 'px',
-          transform: `rotate(${m.rotation}deg)` 
-        }"
-        @mouseenter="onMeteorHit"
+        :style="{ left: m.x + 'px', top: m.y + 'px', width: m.size + 'px', transform: 'rotate(20deg)' }"
       >
         <img src="/sci_fi_meteorite_fire_1778453762296.png" class="meteor-img" />
         <div class="meteor-trail" />
       </div>
     </div>
 
-    <!-- BLOQUEO DE CLIC (Sanción por meteorito) -->
-    <transition name="fade">
-      <div v-if="clickDisabled" class="click-blocker d-flex flex-column align-center justify-center">
-        <v-icon color="error" icon="mdi-cursor-default-click-off" size="64" />
-        <div class="text-h6 font-weight-black text-error mt-4">¡SISTEMAS BLOQUEADOS!</div>
+    <!-- RATÓN ESPEJO -->
+    <div v-if="activeAnomaly === 'raton-mirall'" class="mirror-mouse-overlay">
+      <div class="mirror-cursor" :style="mirrorCursorStyle">
+        <v-icon color="cyan-accent-3" size="32">mdi-cursor-default</v-icon>
+        <div class="mirror-glow" />
       </div>
-    </transition>
-
-    <!-- EFEKTE: RAIG ALIENÍGENA -->
-    <div v-if="activeAnomaly === 'raig-alienigena'" class="anomaly-raig">
-      <div class="alien-cursor-eye" :style="cursorStyle" />
+      <div class="mirror-hint">{{ $t('anomalies.mirrorHint') || '¡CONTROL INVERTIT!' }}</div>
     </div>
 
-    <!-- EFEKTE: TORMENTA DE RAYOS -->
+    <!-- TORMENTA DE RAYOS -->
     <div v-if="activeAnomaly === 'raig-tempesta'" class="anomaly-tempesta">
       <div 
         v-for="s in lightningStrikes" 
         :key="s.id" 
-        class="lightning-strike"
-        :class="s.state"
-        :style="{ left: s.x + 'px', top: s.y + 'px' }"
-      />
+        class="lightning-container"
+        :style="{ left: s.x + 'px' }"
+      >
+        <div v-if="s.state === 'warning'" class="lightning-warning" />
+        <div v-if="s.state === 'active'" class="lightning-bolt" />
+      </div>
     </div>
+
+    <!-- BLOQUEO VISUAL (STUN) -->
+    <transition name="fade">
+      <div v-if="clickDisabled" class="stun-overlay d-flex flex-column align-center justify-center">
+        <div class="stun-glitch-text">SISTEMES BLOQUEJATS</div>
+        <v-icon color="cyan-accent-1" size="80" class="stun-icon">mdi-lightning-bolt</v-icon>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -55,299 +54,230 @@
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
   const props = defineProps({
-    forcedAnomaly: {
-      type: String,
-      default: null,
-    },
+    forcedAnomaly: { type: String, default: null }
   })
 
-  const activeAnomaly = ref(null) // 'nebulosa', 'meteorits', 'raig-alienigena', 'raig-tempesta'
+  const activeAnomaly = ref(null)
   const clickDisabled = ref(false)
   const meteors = ref([])
   const lightningStrikes = ref([])
   const mouseX = ref(0)
   const mouseY = ref(0)
 
-  let anomalyInterval = null
+  // Variables de control de intervalos (definidas pronto para evitar ReferenceError)
   let meteorInterval = null
   let lightningInterval = null
 
-  const cursorStyle = computed(() => ({
-    left: mouseX.value + 'px',
-    top: mouseY.value + 'px',
+  // Estilo del ratón espejo (inversión central)
+  const mirrorCursorStyle = computed(() => ({
+    left: (window.innerWidth - mouseX.value) + 'px',
+    top: (window.innerHeight - mouseY.value) + 'px'
   }))
 
   watch(() => props.forcedAnomaly, (newVal) => {
-    if (newVal) {
-      triggerAnomaly(newVal)
-    } else {
-      activeAnomaly.value = null
-      stopMeteorRain()
-      stopLightningStorm()
-    }
+    stopAll()
+    if (newVal) triggerAnomaly(newVal)
   }, { immediate: true })
-
-  function startRandomAnomalies () {
-    if (props.forcedAnomaly) return // Si está forzado, no aleatorio
-
-    anomalyInterval = setInterval(() => {
-      if (activeAnomaly.value) return // No solapar
-      
-      const rand = Math.random()
-      if (rand < 0.25) triggerAnomaly('nebulosa')
-      else if (rand < 0.5) triggerAnomaly('meteorits')
-      else if (rand < 0.75) triggerAnomaly('raig-alienigena')
-      else triggerAnomaly('raig-tempesta')
-    }, 15000) // Intentar cada 15s
-  }
 
   function triggerAnomaly (type) {
     activeAnomaly.value = type
-    console.log(`🚀 ANOMALÍA ACTIVADA: ${type}`)
-    
     if (type === 'meteorits') startMeteorRain()
     if (type === 'raig-tempesta') startLightningStorm()
-    if (type === 'raig-alienigena') document.body.style.cursor = 'none'
-
-    // Si no es forzado, se quita a los 8s
-    if (!props.forcedAnomaly) {
-      setTimeout(() => {
-        activeAnomaly.value = null
-        if (type === 'meteorits') stopMeteorRain()
-        if (type === 'raig-tempesta') stopLightningStorm()
-        if (type === 'raig-alienigena') document.body.style.cursor = 'auto'
-      }, 8000)
-    }
+    if (type === 'raton-mirall') document.body.style.cursor = 'none'
   }
 
-  function startLightningStorm () {
+  function stopAll() {
+    activeAnomaly.value = null
+    meteors.value = []
+    lightningStrikes.value = []
+    document.body.style.cursor = 'auto'
+    clearInterval(meteorInterval)
+    clearInterval(lightningInterval)
+  }
+
+  // Lógica de Rayos
+  function startLightningStorm() {
     lightningInterval = setInterval(() => {
-      const id = Date.now() + Math.random()
-      const strike = {
-        id,
-        x: mouseX.value,
-        y: mouseY.value,
-        state: 'warning',
-      }
+      const strike = { id: Date.now(), x: Math.random() * window.innerWidth, state: 'warning' }
       lightningStrikes.value.push(strike)
 
-      // El rayo cae después de 1 segundo de advertencia
       setTimeout(() => {
-        const s = lightningStrikes.value.find(st => st.id === id)
-        if (!s) return
-        s.state = 'active'
-        
-        // Comprobar colisión con el ratón
-        const dist = Math.hypot(mouseX.value - s.x, mouseY.value - s.y)
-        if (dist < 60) {
-          onMeteorHit() // Usamos la misma lógica de stun
+        strike.state = 'active'
+        // Comprobar si el ratón está cerca de la línea del rayo (eje X)
+        if (Math.abs(mouseX.value - strike.x) < 40) {
+          applyStun()
         }
-
-        // Desaparece después de 200ms
         setTimeout(() => {
-          lightningStrikes.value = lightningStrikes.value.filter(st => st.id !== id)
-        }, 200)
-      }, 1000)
-    }, 2000)
-  }
-
-  function stopLightningStorm () {
-    clearInterval(lightningInterval)
-    lightningStrikes.value = []
-  }
-
-  function startMeteorRain () {
-    meteorInterval = setInterval(() => {
-      const id = Date.now() + Math.random()
-      const newMeteor = {
-        id,
-        x: Math.random() * window.innerWidth,
-        y: -100,
-        size: 30 + Math.random() * 40,
-        speed: 5 + Math.random() * 10,
-        rotation: Math.random() * 360,
-      }
-      meteors.value.push(newMeteor)
-
-      // Animación de caída
-      const fall = () => {
-        const m = meteors.value.find(mt => mt.id === id)
-        if (!m) return
-        m.y += m.speed
-        m.rotation += 2
-        if (m.y < window.innerHeight) requestAnimationFrame(fall)
-        else meteors.value = meteors.value.filter(mt => mt.id !== id)
-      }
-      requestAnimationFrame(fall)
+          lightningStrikes.value = lightningStrikes.value.filter(s => s.id !== strike.id)
+        }, 300)
+      }, 1200)
     }, 1500)
   }
 
-  function stopMeteorRain () {
-    clearInterval(meteorInterval)
-    meteors.value = []
+  // Lógica de Meteoritos
+  function startMeteorRain() {
+    meteorInterval = setInterval(() => {
+      const m = { id: Date.now(), x: Math.random() * (window.innerWidth + 200), y: -100, speed: 12, size: 40 + Math.random() * 40 }
+      meteors.value.push(m)
+      const animate = () => {
+        if (!meteors.value.includes(m)) return
+        m.y += m.speed
+        m.x -= m.speed * 0.3 // Caída en diagonal
+        if (m.y < window.innerHeight) requestAnimationFrame(animate)
+        else meteors.value = meteors.value.filter(item => item.id !== m.id)
+      }
+      animate()
+    }, 800)
   }
 
-  function onMeteorHit () {
+  function applyStun() {
     if (clickDisabled.value) return
     clickDisabled.value = true
-    console.warn('💥 ¡Impacto de meteorito! Clic deshabilitado.')
-    setTimeout(() => {
-      clickDisabled.value = false
-    }, 2000)
+    setTimeout(() => clickDisabled.value = false, 2500)
   }
 
-  const updateMouse = (e) => {
+  const handleMirrorClick = (e) => {
+    if (activeAnomaly.value === 'raton-mirall') {
+      // Evitamos que el click real active nada
+      e.preventDefault()
+      e.stopImmediatePropagation()
+
+      // Calculamos la posición del espejo
+      const mirrorX = window.innerWidth - e.clientX
+      const mirrorY = window.innerHeight - e.clientY
+
+      // Buscamos el elemento bajo el espejo
+      const target = document.elementFromPoint(mirrorX, mirrorY)
+      if (target) {
+        // Disparamos el click en el target remoto
+        target.click()
+        // Eventos extra para componentes complejos
+        const opts = { bubbles: true, cancelable: true, view: window, clientX: mirrorX, clientY: mirrorY }
+        target.dispatchEvent(new MouseEvent('mousedown', opts))
+        target.dispatchEvent(new MouseEvent('mouseup', opts))
+      }
+    }
+  }
+
+  const handleMouseMove = (e) => {
     mouseX.value = e.clientX
     mouseY.value = e.clientY
   }
 
   onMounted(() => {
-    startRandomAnomalies()
-    window.addEventListener('mousemove', updateMouse)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousedown', handleMirrorClick, true)
+    window.addEventListener('click', handleMirrorClick, true)
   })
 
   onUnmounted(() => {
-    clearInterval(anomalyInterval)
-    clearInterval(meteorInterval)
-    window.removeEventListener('mousemove', updateMouse)
+    stopAll()
+    window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mousedown', handleMirrorClick, true)
+    window.removeEventListener('click', handleMirrorClick, true)
     document.body.style.cursor = 'auto'
   })
 </script>
 
 <style scoped>
 .anomaly-manager {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  inset: 0;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 9999;
 }
 
-.anomaly-nebulosa {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
-  backdrop-filter: blur(4px) brightness(0.7);
-  pointer-events: none;
+/* Efecto Stun (Parpadeo) */
+.stunned-cursor {
+  cursor: wait !important;
+  animation: flash-red 0.2s infinite;
 }
 
-.anomaly-meteorits {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+@keyframes flash-red {
+  0% { background: rgba(0, 229, 255, 0.1); }
+  50% { background: rgba(255, 255, 255, 0.2); }
+  100% { background: rgba(0, 229, 255, 0.1); }
 }
 
+/* Meteoritos */
 .meteor {
   position: absolute;
-  pointer-events: auto;
-  cursor: pointer;
+  filter: drop-shadow(0 0 20px #ff4500);
 }
-
-.meteor-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 15px #ff4500);
-  position: relative;
-}
-
+.meteor-img { width: 100%; height: auto; }
 .meteor-trail {
   position: absolute;
-  top: -40px;
+  top: -50px;
   left: 50%;
-  width: 10px;
-  height: 60px;
+  width: 4px;
+  height: 80px;
   background: linear-gradient(to bottom, transparent, #ff4500);
   transform: translateX(-50%);
-  filter: blur(4px);
 }
 
-.click-blocker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(255, 0, 0, 0.2);
-  backdrop-filter: grayscale(1) blur(2px);
-  pointer-events: auto;
-  z-index: 2000;
-}
-
-.anomaly-raig {
+/* Rayos */
+.lightning-container {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  bottom: 0;
+  width: 80px;
+  transform: translateX(-50%);
 }
-
-.alien-cursor-eye {
-  position: fixed;
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle, #00ff00 20%, #004400 60%, transparent 100%);
-  border-radius: 50%;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  z-index: 3000;
-  border: 4px solid #00ff00;
-  box-shadow: 0 0 30px #00ff00;
-  animation: eye-scan 2s infinite alternate;
-}
-
-@keyframes eye-scan {
-  from { transform: translate(-50%, -50%) scale(1); }
-  to { transform: translate(-50%, -50%) scale(1.5); }
-}
-
-.anomaly-tempesta {
+.lightning-warning {
   position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.lightning-strike {
-  position: fixed;
-  width: 100px;
-  height: 100px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 2500;
-}
-
-.lightning-strike.warning {
-  border: 2px dashed rgba(0, 229, 255, 0.5);
+  bottom: 50px;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  border: 3px dashed #00e5ff;
   border-radius: 50%;
-  animation: pulse-warning 0.5s infinite;
+  transform: translateX(-50%);
+  animation: pulse-warn 0.4s infinite;
+}
+.lightning-bolt {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #fff, #00e5ff, #fff, transparent);
+  box-shadow: 0 0 50px #00e5ff;
+  animation: bolt-strike 0.3s ease-out;
 }
 
-.lightning-strike.active {
-  background: linear-gradient(to top, #fff, #00e5ff);
-  box-shadow: 0 0 40px #00e5ff, 0 0 100px #fff;
-  width: 20px;
-  height: 100vh;
-  transform: translate(-50%, -100%);
-  top: 100vh; /* Viene desde arriba */
+/* Ratón Espejo */
+.mirror-cursor {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+}
+.mirror-glow {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.5) 0%, transparent 70%);
+  animation: rotate-glow 2s infinite linear;
 }
 
-@keyframes pulse-warning {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
-  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; }
+@keyframes bolt-strike {
+  0% { opacity: 0; transform: scaleX(0.1); }
+  50% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(0.1); }
 }
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 1s;
+@keyframes pulse-warn {
+  from { transform: translateX(-50%) scale(0.8); opacity: 0.2; }
+  to { transform: translateX(-50%) scale(1.2); opacity: 1; }
 }
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+
+.stun-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10001;
+}
+
+.stun-glitch-text {
+  color: #00e5ff;
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 2px 2px #ff00de, -2px -2px #00ff00;
 }
 </style>

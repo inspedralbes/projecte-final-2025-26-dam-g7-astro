@@ -320,11 +320,15 @@
           }
 
           if (timeLeft.value <= 0) {
-            timeLeft.value = 0
-            if (props.isMultiplayer && isHost.value) {
-              multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
+            if (props.isRace) {
+              timeLeft.value = 60 // Reset en carrera
+            } else {
+              timeLeft.value = 0
+              if (props.isMultiplayer && isHost.value) {
+                multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
+              }
+              endGame()
             }
-            endGame()
           }
         }
       }
@@ -404,6 +408,9 @@
       if (combo.value >= 10) isTurbo.value = true
       if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
       triggerFeedback('success')
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(5) // 5% de gasolina por acierto en carrera
+      }
     } else {
       word.status = 'incorrect'
       incorrectHits.value++
@@ -464,7 +471,11 @@
     isTurbo.value = false
 
     if (lives.value <= 0) {
-      endGame()
+      if (props.isRace) {
+        lives.value = 10 // Reset vidas en carrera
+      } else {
+        endGame()
+      }
     }
   }
 
@@ -555,7 +566,7 @@
   }, { immediate: true })
 
   watch(score, newScore => {
-    if (props.isMultiplayer && isHost.value) {
+    if ((props.isMultiplayer && isHost.value) || props.isRace) {
       multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
     }
   })

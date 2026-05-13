@@ -32,6 +32,7 @@
     "src/components/games/scratch_radio.vue",
     "src/components/games/scratch_radio_utf8.vue",
     "src/components/games/scratch_symmetry.vue",
-    "src/components/games/scratch_symmetry_utf8.vue"
+    "src/components/games/scratch_symmetry_utf8.vue",
+    "src/components/games/MultiplayerScoreSystem.vue"
   ]
 }

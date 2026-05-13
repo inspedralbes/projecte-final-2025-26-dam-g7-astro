@@ -1,27 +1,16 @@
 <template>
   <div class="race-progress-container">
     <div class="race-track">
-      <!-- Hitos (Juegos) -->
-      <div 
-        v-for="(game, index) in sequence" 
-        :key="index" 
-        class="game-milestone"
-        :style="{ left: (index / (sequence.length - 1)) * 100 + '%' }"
-      >
-        <div class="milestone-dot" :class="{ 'completed': index <= localProgress }" />
-        <div class="milestone-label">{{ game.substring(0, 4) }}</div>
-      </div>
-
       <!-- Barra de conexión -->
       <div class="track-line" />
-      <div class="track-line-fill" :style="{ width: (localProgress / (sequence.length - 1)) * 100 + '%' }" />
+      <div class="track-line-fill" :style="{ width: localProgress + '%' }" />
 
       <!-- Avatar Local -->
       <div 
         class="player-icon local-player" 
-        :style="{ left: (localProgress / (sequence.length - 1)) * 100 + '%' }"
+        :style="{ left: localProgress + '%' }"
       >
-        <v-avatar size="32" class="avatar-glow-local">
+        <v-avatar size="36" class="avatar-glow-local">
           <v-img :src="localAvatar" />
         </v-avatar>
         <div class="player-label">{{ localName }}</div>
@@ -30,7 +19,7 @@
       <!-- Avatar Partner -->
       <div 
         class="player-icon partner-player" 
-        :style="{ left: (partnerProgress / (sequence.length - 1)) * 100 + '%' }"
+        :style="{ left: partnerProgress + '%' }"
       >
         <v-avatar size="32" class="avatar-glow-partner">
           <v-img :src="partnerAvatar" />
@@ -43,10 +32,6 @@
 
 <script setup>
   const props = defineProps({
-    sequence: {
-      type: Array,
-      required: true,
-    },
     localProgress: {
       type: Number,
       default: 0,
@@ -66,9 +51,8 @@
 .race-progress-container {
   width: 100%;
   padding: 40px 60px 20px;
-  background: rgba(15, 23, 42, 0.4);
+  background: transparent;
   border-radius: 20px;
-  backdrop-filter: blur(5px);
 }
 
 .race-track {

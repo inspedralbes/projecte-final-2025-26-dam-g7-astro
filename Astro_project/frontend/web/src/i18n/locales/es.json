@@ -767,6 +767,8 @@
         "SymmetryBreaker": "Rompedor de Simetrías",
         "syllable-quest": "Misión de Sílabas",
         "SyllableQuest": "Misión de Sílabas",
+        "MathQuest": "Reto Matemático",
+        "math-quest": "Reto Matemático",
         "multiplayer": "Multijugador",
         "Multiplayer": "Multijugador",
         "Minijuego": "Minijuego",
@@ -887,6 +889,10 @@
                 "RhymeSquad": {
                     "name": "Escuadrón de Rimas",
                     "desc": "Encontrar rimas."
+                },
+                "MathQuest": {
+                    "name": "Reto Matemático",
+                    "desc": "Cálculos mentales rápidos."
                 }
             }
         }

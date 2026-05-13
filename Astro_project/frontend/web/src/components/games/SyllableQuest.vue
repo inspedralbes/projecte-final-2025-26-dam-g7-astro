@@ -153,6 +153,10 @@
       type: Boolean,
       default: false,
     },
+    isRace: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
@@ -258,12 +262,18 @@
       setTimeout(() => {
         if (currentPhraseIndex.value < multiplayerPhrases.length - 1) {
           currentPhraseIndex.value++
-          // Si es multijugador, el host sincroniza. Si es singleplayer, sincronizamos siempre.
+          if (!props.isMultiplayer || isHost.value) syncPhrase()
+        } else if (props.isRace) {
+          currentPhraseIndex.value = 0 // Reiniciar bucle en carrera
           if (!props.isMultiplayer || isHost.value) syncPhrase()
         } else {
           finishGame()
         }
       }, 1500)
+      
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(5) // 5% fuel por frase en carrera
+      }
     }
   }
 
@@ -331,12 +341,21 @@
       triggerFeedback('success')
 
       if (currentWordIndex.value >= words.value.length - 1) {
+        if (props.isRace) {
+          currentWordIndex.value = 0 // Reiniciar en carrera
+          userSyllables.value = 0
+          return
+        }
         finishGame()
         return
       }
 
       currentWordIndex.value++
       userSyllables.value = 0
+      
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(2) // 2% fuel por palabra (es más corto)
+      }
     } else {
       score.value = Math.max(0, score.value - 10)
       message.value = t('syllableQuest.msgIncorrect')
@@ -362,7 +381,11 @@
         }
 
         if (timeLeft.value === 0) {
-          finishGame()
+          if (props.isRace) {
+            timeLeft.value = 60 // Reset en carrera
+          } else {
+            finishGame()
+          }
         }
       }
     }, 1000)

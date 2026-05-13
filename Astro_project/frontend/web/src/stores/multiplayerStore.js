@@ -33,9 +33,20 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     // --- RACE MODE STATE ---
     raceFuel: 100,
     raceProgress: 'START',
-    partnerProgress: 'START',
     completedPlanets: [],
+    // Seguimiento de todos los jugadores para el modo carrera
+    playersProgress: {}, // { username: 'NODE_ID' }
+    playersCompletedPlanets: {}, // { username: ['C1_0', ...] }
     fuelInterval: null,
+    // --- BATTLE / STUN STATE ---
+    isStunned: false,
+    stunTimeRemaining: 0,
+    stunInterval: null,
+    nextMoveAnomaly: null, // Para eventos globales (?)
+    activeGameName: null, // Para ajustar consumos según el juego
+    playerStates: {}, // { username: 'MAP' | 'IN_GAME' }
+    isRaceImmortal: false, // Evita Game Over por vidas/tiempo
+    lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
   }),
 
   getters: {
@@ -180,18 +191,31 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.lastMessage = null
           this.room = { ...data.room }
 
+          // En modo carrera, el estado real de juego es PLAYING para activar el mapa inmediatamente
+          if (this.room?.gameConfig?.mode === 'RACE') {
+            this.room.status = 'PLAYING'
+          }
+
           if (data.room.gameConfig?.subRoles) {
             this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
           }
-          this.timeLeft = 60
+          this.timeLeft = data.room?.gameConfig?.mode === 'RACE' ? 999 : 60
+          this.isRaceImmortal = data.room?.gameConfig?.mode === 'RACE'
           
           // Reset Race Mode state
           this.raceFuel = 100
-          this.raceProgress = 0
-          this.partnerProgress = 0
+          this.raceProgress = 'START'
+          this.playersProgress = {}
+          this.completedPlanets = []
+          this.playersCompletedPlanets = {}
           this.stopFuelTimer()
           
           if (this.room?.gameConfig?.mode === 'RACE') {
+            this.room.players.forEach(p => {
+              const uname = p.username || p
+              this.playersProgress[uname] = 'START'
+              this.playersCompletedPlanets[uname] = []
+            })
             this.startFuelTimer()
           }
           break
@@ -207,6 +231,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'SCORE_UPDATE_LIVE': {
+          const oldScore = this.roundScores[data.user] || 0
           this.roundScores[data.user] = data.score
           break
         }
@@ -225,6 +250,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
 
           if (data.action?.type === 'PARTNER_EMOJI') {
             this.partnerEmojis.push(data.action.emoji)
+          }
+
+          if (data.action?.type === 'GLOBAL_ANOMALY_TRIGGER') {
+            this.nextMoveAnomaly = data.action.anomaly
+            console.log('EVENTO GLOBAL ACTIVADO:', this.nextMoveAnomaly)
           }
 
           if (data.action?.type === 'COOP_CHAT') {
@@ -247,17 +277,51 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             this.timeLeft = data.action.timeLeft
           }
 
-          if (data.action?.type === 'RACE_PROGRESS_UPDATE') {
-            if (data.from !== sessionStore.user) {
-              this.partnerProgress = data.action.progress
-              if (data.action.completed) {
-                // Sincronizar planetas completados del rival si fuera necesario
+          if (data.action?.type === 'RACE_PROGRESS' || data.action?.type === 'RACE_PROGRESS_UPDATE') {
+            const uname = data.from
+            const newPos = data.action.nodeId || data.action.progress
+            if (newPos) {
+              this.playersProgress = {
+                ...this.playersProgress,
+                [uname]: newPos
+              }
+              // Si soy yo, actualizar también mi progreso local
+              if (uname === sessionStore.user) {
+                this.raceProgress = newPos
+              }
+            }
+            
+            if (data.action.isCompleted || data.action.completed) {
+              const completedNode = data.action.nodeId || data.action.progress
+              if (!this.playersCompletedPlanets[uname]) this.playersCompletedPlanets[uname] = []
+              if (!this.playersCompletedPlanets[uname].includes(completedNode)) {
+                this.playersCompletedPlanets[uname].push(completedNode)
+              }
+              if (uname === sessionStore.user && !this.completedPlanets.includes(completedNode)) {
+                this.completedPlanets.push(completedNode)
               }
             }
           }
 
+          if (data.action?.type === 'PLAYER_STATUS_UPDATE') {
+            this.playerStates[data.from] = data.action.status
+          }
+
           if (data.action?.type === 'FUEL_RECHARGE') {
             this.rechargeFuel(data.action.amount)
+          }
+
+          if (data.action?.type === 'DUEL_START') {
+            // Un jugador ha retado a otro. 
+            // Guardamos el evento para que el Lobby lo detecte y actúe
+            this.lastDuelEvent = {
+              attacker: data.action.attacker,
+              rival: data.action.rival,
+              game: data.action.game,
+              nodeId: data.action.nodeId,
+              timestamp: Date.now()
+            }
+            console.log("🔥 DUELO DETECTADO EN STORE:", this.lastDuelEvent)
           }
 
           this.lastMessage = data
@@ -424,7 +488,17 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         return
       }
 
-      // Si el host envía una sincronización de tiempo, la actualizamos localmente también
+      // En modo carrera, las penalizaciones de tiempo se convierten en consumo de gasolina
+      if (action.type === 'TIME_SYNC' && this.room?.gameConfig?.mode === 'RACE') {
+        const timeDiff = this.timeLeft - action.timeLeft
+        if (timeDiff > 0) {
+          // Si el tiempo ha bajado (penalización), restamos gasolina
+          this.consumeFuel(timeDiff) // Resta % equivalente a segundos perdidos
+          // Mantener el tiempo alto para que no se acabe la partida por tiempo
+          action.timeLeft = this.timeLeft 
+        }
+      }
+
       if (action.type === 'TIME_SYNC') {
         this.timeLeft = action.timeLeft
       }
@@ -562,6 +636,16 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           completed: isCompleted,
         },
       }))
+
+      // Actualizar mi estado local
+      const status = isCompleted ? 'MAP' : 'IN_GAME'
+      this.playerStates[sessionStore.user] = status
+      
+      // Enviar actualización de estado a los demás
+      this.sendGameAction({
+        type: 'PLAYER_STATUS_UPDATE',
+        status: status
+      })
     },
 
     rechargeFuel (amount = 20) {
@@ -577,14 +661,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.raceFuel = 100
       this.fuelInterval = setInterval(() => {
         if (this.raceFuel > 0) {
-          this.raceFuel -= 0.2 // Baja 0.2% cada medio segundo (0.4% por segundo)
+          // Consumo base: 0.05% cada 100ms
+          let decrement = 0.05
+          
+          // Si es un juego de pensar/escuchar, bajar consumo a la mitad
+          if (this.activeGameName === 'RadioSignal' || this.activeGameName === 'SpelledRosco') {
+            decrement = 0.02 // Menos de la mitad
+          }
+
+          this.raceFuel = Math.max(0, this.raceFuel - decrement) 
           if (this.raceFuel <= 0) {
             this.raceFuel = 0
             this.stopFuelTimer()
-            // El componente HUD o el Game Manager detectarán el 0 y activarán Game Over
           }
         }
-      }, 500)
+      }, 100)
     },
 
     stopFuelTimer () {
@@ -592,6 +683,29 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         clearInterval(this.fuelInterval)
         this.fuelInterval = null
       }
+    },
+
+    consumeFuel (amount) {
+      this.raceFuel = Math.max(0, this.raceFuel - amount)
+    },
+
+    applyStun (seconds = 30) {
+      if (this.stunInterval) clearInterval(this.stunInterval)
+      this.isStunned = true
+      this.stunTimeRemaining = seconds
+      
+      this.stunInterval = setInterval(() => {
+        this.stunTimeRemaining--
+        if (this.stunTimeRemaining <= 0) {
+          this.isStunned = false
+          clearInterval(this.stunInterval)
+          this.stunInterval = null
+        }
+      }, 1000)
+    },
+
+    clearGlobalAnomaly () {
+      this.nextMoveAnomaly = null
     },
   },
 })

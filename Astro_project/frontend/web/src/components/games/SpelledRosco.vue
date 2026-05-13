@@ -571,7 +571,7 @@
       feedbackColor.value = 'success'
       playFeedbackSound('success')
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(20) // Recarga 20% por palabra (es más difícil)
+        multiplayerStore.rechargeFuel(40) // 40% de gasolina por palabra (más difícil)
       }
       if (props.isMultiplayer) {
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
@@ -653,13 +653,19 @@
         if (props.isMultiplayer && isHost.value) {
           multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         }
-        if (timeLeft.value === 0) finishGame()
+        if (timeLeft.value === 0) {
+          if (props.isRace) {
+            timeLeft.value = 60 // Reset en carrera
+          } else {
+            finishGame()
+          }
+        }
       }
     }, 1000)
   }
 
   watch(score, (newScore) => {
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer || props.isRace) {
       multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
     }
   })

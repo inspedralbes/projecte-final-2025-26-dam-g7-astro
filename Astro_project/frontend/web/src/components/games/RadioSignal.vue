@@ -549,7 +549,7 @@
       }
 
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(15) // Recarga 15% por cada frase
+        multiplayerStore.rechargeFuel(30) // Recarga 30% por cada frase en carrera
       }
 
       isTuned.value = false
@@ -574,7 +574,11 @@
         }
 
         if (timeLeft.value === 0) {
-          finishGame()
+          if (props.isRace) {
+            timeLeft.value = 60 // Reset para loop infinito en carrera
+          } else {
+            finishGame()
+          }
         }
       }, 1000)
     }
@@ -679,7 +683,7 @@
   }, { immediate: true })
 
   watch(score, newScore => {
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer || props.isRace) {
       multiplayerStore.sendGameAction({
         type: 'SCORE_UPDATE',
         score: newScore,
