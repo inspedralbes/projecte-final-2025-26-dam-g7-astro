@@ -5,10 +5,9 @@ Astro es desplega com un ecosistema de serveis connectats:
 
 ```mermaid
 graph TD
-    ClientWeb[Frontend Web - Vue 3] -->|API REST / WSS| Nginx{Nginx Proxy}
-    ClientMobil[Frontend Mòbil - Expo] -->|API REST / WSS| Nginx
+    ClientWeb[Frontend Web Responsiva - Vue 3] -->|API REST / WSS| Nginx{Nginx Proxy}
     Nginx -->|/api| Backend[Backend - Node.js]
-    Nginx -->|/socket.io| Backend
+    Nginx -->|/ws| Backend
     Nginx -->|static| ClientWeb
     Backend --> DB[(MongoDB Atlas)]
 ```
@@ -27,8 +26,7 @@ graph TD
 - `docker-compose.yml`: Configuració per a l'orquestració de contenidors.
 - `/backend`: Lògica de servidor, models de dades i rutes.
     - `/src/tests`: Suite de proves unitàries i d'integració.
-- `/frontend/web`: Aplicació Vue 3 per a navegadors.
-- `/frontend/mobile`: Aplicació React Native per a dispositius mòbils.
+- `/frontend/web`: Aplicació Vue 3 per a navegadors (Adaptable a dispositius mòbils).
 
 ## 3. Endpoints Principals (Resum)
 | Ruta | Mètode | Descripció |
@@ -41,4 +39,4 @@ graph TD
 
 ## 4. Orquestració de Dades
 - **Persistència:** MongoDB gestiona la jerarquia d'usuaris, les seves possessions (inventari) i els títols desbloquejats.
-- **Volatilitat:** Socket.io gestiona l'estat momentani de la connexió per permetre notificacions instantànies de desafiaments.
+- **Volatilitat:** WebSockets (`ws`) gestiona l'estat momentani de la connexió per permetre notificacions instantànies de desafiaments i multijugador en temps real.
