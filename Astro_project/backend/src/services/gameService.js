@@ -11,7 +11,8 @@ class GameService {
         normalizeActiveBoosters,
         consumeBoostersForCompletedGame,
         getScoreMultiplier,
-        getCoinsMultiplier
+        getCoinsMultiplier,
+        statsService
     }) {
         this.userRepo = userRepository;
         this.partidaRepo = partidaRepository;
@@ -21,6 +22,7 @@ class GameService {
         this.consumeBoostersForCompletedGame = consumeBoostersForCompletedGame;
         this.getScoreMultiplier = getScoreMultiplier;
         this.getCoinsMultiplier = getCoinsMultiplier;
+        this.statsService = statsService;
     }
 
     async completeGame(username, { game, score = 0, completedMapNode, timeSeconds = 0 }) {
@@ -85,17 +87,15 @@ class GameService {
             this.userRepo.update(user)
         ]);
 
+        // Obtenir estadístiques completes actualitzades per a la resposta
+        const fullStats = await this.statsService.getUserStats(username);
+
         return {
+            ...fullStats,
             xpEarned,
             coinsEarned,
-            newLevel: user.level,
-            newXP: user.xp,
-            newCoins: user.coins,
-            newRank: user.rank,
-            newMapLevel: user.mapLevel,
-            streak: user.streak,
-            leveledUp: false, // Hauríem de comprovar-ho si cal per la resposta
-            boostedScore
+            boostedScore,
+            leveledUp: user.level > (fullStats.level || user.level) // Per si volem avisar
         };
     }
 }

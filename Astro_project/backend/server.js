@@ -58,24 +58,12 @@ const userRepository = new MongoUserRepository(() => getCollections().users);
 const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
 const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
 
-roomManager.init(roomRepository, userRepository, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
 
 const updateStreak = createUpdateStreak({
     userRepository,
     normalizeInventoryEntries: inventoryService.normalizeInventoryEntries,
     getInventoryQuantity: inventoryService.getInventoryQuantity
-});
-
-const gameService = new GameService({
-    userRepository,
-    partidaRepository,
-    updateStreak,
-    JERARQUIA,
-    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
-    consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
-    getScoreMultiplier: boosterUtils.getScoreMultiplier,
-    getCoinsMultiplier: boosterUtils.getCoinsMultiplier
 });
 
 const inventoryServiceInstance = new inventoryService.InventoryService({
@@ -138,6 +126,20 @@ const statsServiceInstance = new (require('./src/services/statsService').StatsSe
 });
 
 const getUserStats = (username) => statsServiceInstance.getUserStats(username);
+
+const gameService = new GameService({
+    userRepository,
+    partidaRepository,
+    updateStreak,
+    JERARQUIA,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
+    consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
+    getScoreMultiplier: boosterUtils.getScoreMultiplier,
+    getCoinsMultiplier: boosterUtils.getCoinsMultiplier,
+    statsService: statsServiceInstance
+});
+
+roomManager.init(roomRepository, userRepository, wss, gameService);
 
 registerStatsRoutes(app, { getUserStats });
 registerGameRoutes(app, { gameService });

@@ -3,7 +3,8 @@
         "loading": "Cargando...",
         "error": "Ha ocurrido un error.",
         "save": "Guardar",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "all": "Todos"
     },
     "sidebar": {
         "home": "Inicio",
@@ -116,6 +117,8 @@
         "recentIncursions": "INCURSIONES RECIENTES",
         "page": "PÁGINA {current} DE {total}",
         "noRecent": "No hay registros de expediciones recientes.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Logro",
         "removeAchievement": "Quitar Logro",
         "astronautSuit": "TRAJE DE ASTRONAUTA",
@@ -178,7 +181,14 @@
         "cancelDeleteAction": "CANCELAR ELIMINACIÓN",
         "recoveryTitle": "RECUPERACIÓN DE CUENTA",
         "recoverySuccess": "¡Tu cuenta ha sido recuperada con éxito! Bienvenido de nuevo, explorador.",
-        "wrongPhrase": "La frase no coincide exactamente"
+        "wrongPhrase": "La frase no coincide exactamente",
+        "levelLabel": "LEVEL",
+        "mascot_alien": "Alien",
+        "mascot_drone": "Dron",
+        "mascot_octopus": "Pop",
+        "mascot_whale": "Balena",
+        "missionCompanion": "COMPANY DE MISSIÓ",
+        "seniorityLabel": "SENIORITY"
     },
     "friends": {
         "title": "Tripulación",
@@ -445,12 +455,48 @@
         "repeatCode": "REPETIR CÓDIGO",
         "confirmFoundation": "CONFIRMAR FUNDACIÓN",
         "cancelProtocol": "CANCELAR PROTOCOLO",
+        "groupTypeLabel": "Tipo de grupo",
+        "groupTypeInfo": "Este cambio actualiza tu cuenta actual a plan grupal y mantiene tu progreso.",
+        "groupTypes": {
+            "center": "Centro (gestiona profes y alumnos)",
+            "teacher": "Profesor (gestiona alumnos)"
+        },
         "pwdMismatch": "Los códigos no coinciden",
         "individualDesc": "Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.",
         "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.",
         "individual": "Individual",
         "premium": "Premium",
-        "individual_free": "Individual (Gratis)"
+        "individual_free": "Individual (Gratis)",
+        "changeError": "No se pudo cambiar el plan",
+        "leaveRequest": {
+            "pending": "Tienes una solicitud pendiente para salir del grupo. Debes esperar la respuesta de {approver}.",
+            "rejected": "Tu solicitud para salir del grupo fue rechazada por {approver}.",
+            "dialogTitle": "Solicitud enviada",
+            "dialogDesc": "Has solicitado salir del grupo a {approver}. Debes esperar su respuesta.",
+            "dialogConfirm": "Aceptar",
+            "defaultApprover": "tu responsable",
+            "requestError": "No se pudo enviar la solicitud de salida del grupo"
+        },
+        "loginError": "No se pudo iniciar la conexión al grupo",
+        "createGroupError": "No se pudo crear el grupo"
+    },
+    "session": {
+        "errors": {
+            "register": "Error al registrar",
+            "auth": "Error de autenticación",
+            "userNotIdentified": "Usuario no identificado.",
+            "userNotIdentifiedForPlan": "Usuario no identificado para actualizar el plan.",
+            "planUpdateServer": "Error al actualizar el plan en el servidor",
+            "serverConnection": "Error al conectar con el servidor: {detail}",
+            "avatarSave": "Error al guardar avatar en servidor",
+            "titleSave": "Error al guardar título en servidor",
+            "passwordChange": "Error al cambiar la contraseña",
+            "passwordChangeSuccess": "Contraseña actualizada correctamente",
+            "groupDowngradeSchedule": "No se pudo programar la baja del plan grupal",
+            "groupDowngradeCancel": "No se pudo cancelar la baja grupal",
+            "deleteRequest": "Error al solicitar eliminación",
+            "deleteCancel": "Error al cancelar eliminación"
+        }
     },
     "spelledRosco": {
         "title": "🚀 Rosco Estelar",
@@ -635,7 +681,8 @@
         "typeAndEnter": "Escribe un mensaje y pulsa Enter...",
         "you": "TÚ",
         "success": "¡SEÑAL DESXIFRADA!",
-        "successDesc": "+150 PTS | +15s"
+        "successDesc": "+150 PTS | +15s",
+        "title": "Senyal de Ràdio"
     },
     "errors": {
         "noSession": "No hay una sesión activa.",
@@ -777,7 +824,34 @@
         "ruta": "Escuadrón de Rimas",
         "base": "Señal de Radio",
         "recarga": "Rompedor de Simetrías",
-        "reparacion": "Escáner de Radar"
+        "reparacion": "Escáner de Radar",
+        "Base": "Cridant a la Base",
+        "Desacoplamiento": "Desacoblament Orbital",
+        "Desacoplamiento Orbital": "Spelled Rosco",
+        "Despegue": "Enlairament!",
+        "Gravedad": "Trencant la Gravetat",
+        "Llamando a la Base": "Radio Signal",
+        "Minigame": "Minigame",
+        "Minijoc": "Minijoc",
+        "Preparations": "Word Construction",
+        "Preparativos": "Construcció de Paraules",
+        "Preparativos de Vuelo": "Word Construction",
+        "Recarga": "Recàrrega Solar",
+        "Recarga Solar": "Symmetry Breaker",
+        "Reparacion": "Reparació Exprés",
+        "Reparación": "Radar Scanner",
+        "Reparación Express": "Radar Scanner",
+        "Rompiendo la Gravedad": "Radio Signal",
+        "Ruta": "Ruta Estel·lar",
+        "Ruta Estelar": "Rhyme Squad",
+        "radarscan": "Escaneig de Radar",
+        "radiosignal": "Senyal de Ràdio",
+        "rhymesquad": "Esquadró de Rimes",
+        "spelledrosco": "Rosco Estelar",
+        "syllablequest": "Aventura Sil·làbica",
+        "symmetrybreaker": "Simetria Estel·lar",
+        "wordconstruction": "Construcció de Paraules",
+        "¡Despegue!": "Radar Scanner"
     },
     "multiplayerResult": {
         "victory": "¡VICTORIA!",
@@ -797,7 +871,11 @@
         "roundsPlayed": "{total} rondas jugadas",
         "missionHistory": "HISTORIAL DE LA MISIÓN",
         "backToLobby": "VOLVER A LA SALA",
-        "waitingTeam": "Esperando que el equipo regrese..."
+        "waitingTeam": "Esperando que el equipo regrese...",
+        "defeatQuote": "La derrota és només un pas més cap al coneixement.",
+        "team": "EQUIP",
+        "tieQuote": "Un equilibri perfecte de forces.",
+        "winQuote": "¡Has dominat la galàxia amb honor!"
     },
     "shop": {
         "spinError": "Error al girar",
@@ -839,6 +917,21 @@
         "totalMembers": "TOTAL MIEMBROS",
         "noData": "No hay datos disponibles para mostrar.",
         "addMember": "AÑADIR {role}",
+        "roleLabel": "Rol",
+        "modeLabel": "Método",
+        "roles": {
+            "teacher": "Profesor",
+            "student": "Alumno"
+        },
+        "addModes": {
+            "create": "Crear usuario nuevo",
+            "invite": "Invitar usuario existente"
+        },
+        "errors": {
+            "usernameRequired": "Debes indicar un nombre de usuario",
+            "passwordRequired": "Debes indicar una contraseña para el usuario nuevo",
+            "addMemberFailed": "No se pudo añadir el miembro"
+        },
         "username": "Nombre de Usuario",
         "password": "Contraseña",
         "confirmReg": "CONFIRMAR REGISTRO",
@@ -858,6 +951,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PARA CLASE",
             "deleteConfirm": "¿Eliminar este ejercicio?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EJERCICIO: {game}",
             "newTitle": "NUEVO EJERCICIO: {game}",
             "saveChanges": "GUARDAR CAMBIOS",

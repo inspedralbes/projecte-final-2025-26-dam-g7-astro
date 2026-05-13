@@ -3,7 +3,8 @@
         "loading": "Carregant...",
         "error": "Hi ha hagut un error.",
         "save": "Desar",
-        "cancel": "Cancel·lar"
+        "cancel": "Cancel·lar",
+        "all": "Tots"
     },
     "sidebar": {
         "home": "Inici",
@@ -116,6 +117,8 @@
         "recentIncursions": "INCURSIONS RECENTS",
         "page": "PÀGINA {current} DE {total}",
         "noRecent": "No hi ha registres d'expedicions recents.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Assoliment",
         "removeAchievement": "Treure Assoliment",
         "astronautSuit": "TRAJO D'ASTRONAUTA",
@@ -163,7 +166,29 @@
         "firstChangeFree": "El teu primer canvi d'apodo és gratuït!",
         "noNameChangeTokens": "No tens subministraments de Canvi de Nom.",
         "goToShop": "Anar a la botiga",
-        "tokensAvailable": "Tens {count} subministraments de Canvi de Nom."
+        "tokensAvailable": "Tens {count} subministraments de Canvi de Nom.",
+        "appearance": "APARIENCIA",
+        "cancelDeleteAction": "CANCELAR ELIMINACIÓN",
+        "dangerZone": "ZONA DE PELIGRO",
+        "deleteAccount": "ELIMINAR CUENTA",
+        "deleteAction": "SOLICITAR ELIMINACIÓN",
+        "deleteConfirmDesc": "Tu cuenta será programada para su eliminación permanente. Tienes un periodo de gracia de 30 días para recuperar tu progreso si te arrepientes.",
+        "deleteConfirmTitle": "¿ELIMINAR CUENTA?",
+        "deleteConfirmationLabel": "Escribe '{phrase}' para confirmar",
+        "deleteConfirmationPhrase": "Eliminar cuenta",
+        "deleteScheduledDesc": "Esta cuenta está programada para eliminarse el {date}. Puedes cancelar este proceso ahora mismo.",
+        "deleteScheduledTitle": "CUENTA EN PROCESO DE ELIMINACIÓN",
+        "interface": "INTERFAZ",
+        "language": "IDIOMA",
+        "levelLabel": "LEVEL",
+        "music": "MÚSICA",
+        "preferences": "PREFERENCIAS",
+        "recoverySuccess": "¡Tu cuenta ha sido recuperada con éxito! Bienvenido de nuevo, explorador.",
+        "recoveryTitle": "RECUPERACIÓN DE CUENTA",
+        "security": "SEGURIDAD",
+        "seniorityLabel": "SENIORITY",
+        "sound": "SONIDO",
+        "wrongPhrase": "La frase no coincide exactamente"
     },
     "friends": {
         "title": "Tripulació",
@@ -244,7 +269,17 @@
         "emptySubtitle": "Inicia la transmissió.",
         "placeholder": "Transmetre missatge...",
         "send": "Enviar (Retorn)",
-        "hint": "Retorn per enviar · Maj+Retorn nova línia"
+        "hint": "Retorn per enviar · Maj+Retorn nova línia",
+        "accept": "ACEPTAR",
+        "challengeAccepted": "Duelo aceptado con {user}",
+        "challengeExpired": "El desafío ha caducado",
+        "challengeReceived": "¡Has recibido un desafío!",
+        "challengeRejected": "{user} ha rechazado el duelo",
+        "decline": "RECHAZAR",
+        "duelAccepted": "DUELO ACEPTADO",
+        "duelExpired": "DESAFÍO CADUCADO",
+        "duelRejected": "DUELO RECHAZADO",
+        "duelTitle": "DUELO ESPACIAL"
     },
     "symmetryBreaker": {
         "points": "Punts: {score}",
@@ -387,10 +422,14 @@
         "premium": "Premium",
         "standard": "Estàndard",
         "individual_free": "Individual (Gratuït)",
+        "manage": "GESTIONAR",
+        "select": "SELECCIONAR",
         "selectMode": "SELECCIONA EL TEU MODE DE MISSIÓ",
         "individualTitle": "MODALITAT INDIVIDUAL",
         "individualSubtitle": "Defineix el teu nivell d'accés a la base de dades",
+        "freeTitle": "GRATUÏT",
         "freeDesc": "Exploració bàsica. <br> Sense accés a telemetria avançada.",
+        "premiumTitle": "PREMIUM",
         "currentPlan": "PLA ACTUAL",
         "premiumDesc": "Accés Total. <br> Estadístiques, rendiment i suport d'Elit.",
         "unlock": "DESBLOQUEJAR",
@@ -419,9 +458,45 @@
         "repeatCode": "REPETIR CODI",
         "confirmFoundation": "CONFIRMAR FUNDACIÓ",
         "cancelProtocol": "CANCEL·LAR PROTOCOL",
+        "groupTypeLabel": "Tipus de grup",
+        "groupTypeInfo": "Aquest canvi actualitza el teu compte actual a pla grupal i manté el teu progrés.",
+        "groupTypes": {
+            "center": "Centre (gestiona profes i alumnes)",
+            "teacher": "Professor (gestiona alumnes)"
+        },
         "pwdMismatch": "Els codis no coincideixen",
         "individualDesc": "Enlaira't en solitari. Domina les missions bàsiques i explora el cosmos al teu propi ritme.",
-        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en tempo real i panell de telemetria conjunt."
+        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en tempo real i panell de telemetria conjunt.",
+        "changeError": "No s'ha pogut canviar el pla",
+        "leaveRequest": {
+            "pending": "Tens una sol·licitud pendent per sortir del grup. Has d'esperar la resposta de {approver}.",
+            "rejected": "La teva sol·licitud per sortir del grup ha estat rebutjada per {approver}.",
+            "dialogTitle": "Sol·licitud enviada",
+            "dialogDesc": "Has sol·licitat sortir del grup a {approver}. Has d'esperar la seva resposta.",
+            "dialogConfirm": "Acceptar",
+            "defaultApprover": "la persona responsable",
+            "requestError": "No s'ha pogut enviar la sol·licitud de sortida del grup"
+        },
+        "loginError": "No s'ha pogut iniciar la connexió al grup",
+        "createGroupError": "No s'ha pogut crear el grup"
+    },
+    "session": {
+        "errors": {
+            "register": "Error en registrar-se",
+            "auth": "Error d'autenticació",
+            "userNotIdentified": "Usuari no identificat.",
+            "userNotIdentifiedForPlan": "Usuari no identificat per actualitzar el pla.",
+            "planUpdateServer": "Error en actualitzar el pla al servidor",
+            "serverConnection": "Error en connectar amb el servidor: {detail}",
+            "avatarSave": "Error en desar l'avatar al servidor",
+            "titleSave": "Error en desar el títol al servidor",
+            "passwordChange": "Error en canviar la contrasenya",
+            "passwordChangeSuccess": "Contrasenya actualitzada correctament",
+            "groupDowngradeSchedule": "No s'ha pogut programar la baixa del pla grupal",
+            "groupDowngradeCancel": "No s'ha pogut cancel·lar la baixa grupal",
+            "deleteRequest": "Error en sol·licitar l'eliminació",
+            "deleteCancel": "Error en cancel·lar l'eliminació"
+        }
     },
     "spelledRosco": {
         "title": "🚀 Rosco Estel·lar",
@@ -606,7 +681,8 @@
         "typeAndEnter": "Escriu un missatge i prem Enter...",
         "you": "TU",
         "success": "¡SENYAL DESXIFRADA!",
-        "successDesc": "+150 PTS | +15s"
+        "successDesc": "+150 PTS | +15s",
+        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR"
     },
     "errors": {
         "noSession": "No hi ha una sessió activa.",
@@ -670,7 +746,20 @@
         "multiplayer": "Multijugador",
         "Multiplayer": "Multijugador",
         "Minijuego": "Minijoc",
-        "Minijoc": "Minijoc"
+        "Minijoc": "Minijoc",
+        "Desacoplamiento Orbital": "Spelled Rosco",
+        "Llamando a la Base": "Radio Signal",
+        "Minigame": "Minigame",
+        "Preparations": "Word Construction",
+        "Preparativos de Vuelo": "Word Construction",
+        "RadarScanner": "Escáner de Radar",
+        "Recarga Solar": "Symmetry Breaker",
+        "Reparación": "Radar Scanner",
+        "Reparación Express": "Radar Scanner",
+        "Rompiendo la Gravedad": "Radio Signal",
+        "Ruta Estelar": "Rhyme Squad",
+        "radar-scanner": "Escáner de Radar",
+        "¡Despegue!": "Radar Scanner"
     },
     "shop": {
         "spinError": "Error en girar",
@@ -712,6 +801,21 @@
         "totalMembers": "TOTAL MEMBRES",
         "noData": "No hi ha dades disponibles per mostrar.",
         "addMember": "AFEGIR {role}",
+        "roleLabel": "Rol",
+        "modeLabel": "Mètode",
+        "roles": {
+            "teacher": "Professor",
+            "student": "Alumne"
+        },
+        "addModes": {
+            "create": "Crear usuari nou",
+            "invite": "Convidar usuari existent"
+        },
+        "errors": {
+            "usernameRequired": "Has d'indicar un nom d'usuari",
+            "passwordRequired": "Has d'indicar una contrasenya per a l'usuari nou",
+            "addMemberFailed": "No s'ha pogut afegir el membre"
+        },
         "username": "Nom d'Usuari",
         "password": "Contrasenya",
         "confirmReg": "CONFIRMAR REGISTRE",
@@ -731,6 +835,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PER CLASE",
             "deleteConfirm": "Eliminar aquest exercici?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EXERCICI: {game}",
             "newTitle": "NOU EXERCICI: {game}",
             "saveChanges": "GUARDAR CANVIS",
@@ -804,5 +910,98 @@
         "Arquitecte de Realitats",
         "Deitat de la Singularitat",
         "Omniscient del Cosmos"
+    ],
+    "achievementsList": [
+        {},
+        {
+            "desc": "Completa 1 misión.",
+            "metric": "Partidas",
+            "title": "Primer Vuelo"
+        },
+        {
+            "desc": "Completa 5 misiones.",
+            "metric": "Partidas",
+            "title": "Tripulante Activo"
+        },
+        {
+            "desc": "Completa 20 misiones.",
+            "metric": "Partidas",
+            "title": "Veterano Estelar"
+        },
+        {
+            "desc": "Acumula 1.200 monedas.",
+            "metric": "Monedas",
+            "title": "Primer Botín"
+        },
+        {
+            "desc": "Acumula 3.000 monedas.",
+            "metric": "Monedas",
+            "title": "Fortuna Galáctica"
+        },
+        {
+            "desc": "Consigue 1 objeto en inventario.",
+            "metric": "Objetos",
+            "title": "Primer Coleccionable"
+        },
+        {
+            "desc": "Consigue 5 objetos en inventario.",
+            "metric": "Objetos",
+            "title": "Coleccionista"
+        },
+        {
+            "desc": "Consigue 10 objetos en inventario.",
+            "metric": "Objetos",
+            "title": "Museo Orbital"
+        },
+        {
+            "desc": "Alcanza el nivel 3.",
+            "metric": "Nivel",
+            "title": "Subiendo de Rango"
+        },
+        {
+            "desc": "Alcanza el nivel 5.",
+            "metric": "Nivel",
+            "title": "Capitán Novato"
+        },
+        {
+            "desc": "Alcanza el nivel 8.",
+            "metric": "Nivel",
+            "title": "Comandante"
+        },
+        {
+            "desc": "Consigue 500 XP.",
+            "metric": "XP",
+            "title": "Energía Infinita"
+        },
+        {
+            "desc": "Completa 10 misiones.",
+            "metric": "Misiones",
+            "title": "Estratega Galáctico"
+        },
+        {
+            "desc": "Acumula 2.000 monedas.",
+            "metric": "Monedas",
+            "title": "Mercader de Estrellas"
+        },
+        {
+            "desc": "Completa 50 misiones.",
+            "metric": "Misiones",
+            "title": "Héroe del Cosmos"
+        },
+        {
+            "desc": "Acumula 5.000 monedas.",
+            "metric": "Monedas",
+            "title": "Magnate de la Nebulosa"
+        },
+        {
+            "desc": "Alcanza el nivel 10.",
+            "metric": "Nivel",
+            "title": "Soberano del Vacío"
+        },
+        {
+            "desc": "Consigue 1.000 XP.",
+            "metric": "XP",
+            "title": "Conquistador de Galaxias"
+        }
     ]
 }

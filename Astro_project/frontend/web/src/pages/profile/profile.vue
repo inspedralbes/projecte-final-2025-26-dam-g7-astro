@@ -262,24 +262,72 @@
 
             <!-- RECIENTES -->
             <v-col class="pl-md-6" cols="12" md="6">
-              <h4 class="text-overline text-cyan-accent-3 font-weight-black mb-6 d-flex align-center">
-                <v-icon class="mr-2" size="20">mdi-history</v-icon> {{ $t('profile.recentIncursions') }}
-              </h4>
-              <div v-if="gameHistory.length > 0" class="recent-list-popup ga-3 d-flex flex-column">
+              <div class="d-flex justify-space-between align-center mb-6">
+                <h4 class="text-overline text-cyan-accent-3 font-weight-black d-flex align-center mb-0">
+                  <v-icon class="mr-2" size="20">mdi-history</v-icon> {{ $t('profile.recentIncursions') }}
+                </h4>
+                <div class="d-flex ga-1">
+                  <v-btn
+                    :color="historyFilter === 'all' ? 'cyan-accent-3' : 'grey-lighten-1'"
+                    density="compact"
+                    size="small"
+                    :variant="historyFilter === 'all' ? 'flat' : 'text'"
+                    @click="historyFilter = 'all'; currentPage = 1"
+                  >
+                    {{ $t('general.all') || 'ALL' }}
+                  </v-btn>
+                  <v-btn
+                    :color="historyFilter === 'single' ? 'cyan-accent-3' : 'grey-lighten-1'"
+                    density="compact"
+                    size="small"
+                    :variant="historyFilter === 'single' ? 'flat' : 'text'"
+                    @click="historyFilter = 'single'; currentPage = 1"
+                  >
+                    {{ $t('profile.singleplayer') || 'SOLO' }}
+                  </v-btn>
+                  <v-btn
+                    :color="historyFilter === 'multi' ? 'cyan-accent-3' : 'grey-lighten-1'"
+                    density="compact"
+                    size="small"
+                    :variant="historyFilter === 'multi' ? 'flat' : 'text'"
+                    @click="historyFilter = 'multi'; currentPage = 1"
+                  >
+                    {{ $t('profile.multiplayer') || 'MULTI' }}
+                  </v-btn>
+                </div>
+              </div>
+              <div v-if="filteredHistory.length > 0" class="recent-list-popup ga-3 d-flex flex-column">
                 <div v-for="(match, idx) in paginatedHistory" :key="`hist-${idx}`" class="recent-item-popup">
                   <div class="recent-icon-popup">
-                    <v-icon color="cyan-accent-2" size="18">mdi-sword-cross</v-icon>
+                    <v-icon :color="match.game === 'Multijugador' ? 'amber-accent-2' : 'cyan-accent-2'" size="18">
+                      {{ match.game === 'Multijugador' ? 'mdi-account-group' : 'mdi-sword-cross' }}
+                    </v-icon>
                   </div>
                   <div class="game-info flex-grow-1">
-                    <span class="game-name font-weight-bold">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
-                    <span class="game-date text-caption text-grey ml-3">{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                    <div class="d-flex align-center">
+                      <span class="game-name font-weight-bold">{{ $te('games.' + match.game) ? $t('games.' + match.game) : match.game }}</span>
+                      <v-chip
+                        v-if="match.game === 'Multijugador'"
+                        class="ml-2"
+                        color="amber-accent-2"
+                        density="comfortable"
+                        size="x-small"
+                        variant="tonal"
+                      >
+                        MP
+                      </v-chip>
+                    </div>
+                    <div class="d-flex align-center text-caption text-grey">
+                      <span>{{ new Date(match.createdAt).toLocaleDateString() }}</span>
+                      <span v-if="match.timeSeconds" class="ml-2">• {{ match.timeSeconds }}s</span>
+                    </div>
                   </div>
                   <div class="game-score-small-popup font-weight-black text-white">{{ match.score }}</div>
                 </div>
               </div>
 
               <!-- Paginación Mejorada -->
-              <div v-if="gameHistory.length > pageSize" class="d-flex align-center justify-center ga-6 mt-8">
+              <div v-if="filteredHistory.length > pageSize" class="d-flex align-center justify-center ga-6 mt-8">
                 <v-btn
                   color="cyan-accent-3"
                   density="comfortable"
@@ -302,7 +350,7 @@
                 />
               </div>
 
-              <div v-if="gameHistory.length === 0" class="empty-state-popup">
+              <div v-if="filteredHistory.length === 0" class="empty-state-popup">
                 <span class="text-caption">{{ $t('profile.noRecent') }}</span>
               </div>
             </v-col>
@@ -786,6 +834,7 @@
   const settingsLoading = ref(false)
   const deleteLoading = ref(false)
   const nameChangeLoading = ref(false)
+  const historyFilter = ref('all') // 'all', 'single', 'multi'
   const deleteConfirmationInput = ref('')
   const settingsError = ref('')
   const nameChangeError = ref('')
@@ -795,7 +844,7 @@
   const newPassword = ref('')
   const confirmNewPassword = ref('')
   const currentPage = ref(1)
-  const pageSize = 6
+  const pageSize = 5
   const currentSlotIndex = ref(null)
 
   const {
@@ -818,14 +867,21 @@
     return 'rank-tier-6'
   }
 
+  const filteredHistory = computed(() => {
+    const list = gameHistory.value || []
+    if (historyFilter.value === 'single') return list.filter(m => m.game !== 'Multijugador')
+    if (historyFilter.value === 'multi') return list.filter(m => m.game === 'Multijugador')
+    return list
+  })
+
   const paginatedHistory = computed(() => {
     const start = (currentPage.value - 1) * pageSize
     const end = start + pageSize
-    return (gameHistory.value || []).slice(start, end)
+    return filteredHistory.value.slice(start, end)
   })
 
   const totalPages = computed(() => {
-    return Math.ceil((gameHistory.value || []).length / pageSize) || 1
+    return Math.ceil(filteredHistory.value.length / pageSize) || 1
   })
 
   const xpRequired = computed(() => {
@@ -1311,6 +1367,9 @@
     padding: 10px 16px; border-radius: 10px; transition: all 0.3s;
 }
 .top-game-card-popup:hover { background: rgba(255, 193, 7, 0.08); border-color: rgba(255, 193, 7, 0.3); transform: scale(1.01); }
+.top-games-list-popup, .recent-list-popup {
+    min-height: 380px;
+}
 
 .recent-item-popup {
     display: flex; align-items: center; gap: 12px;
@@ -1343,6 +1402,11 @@
     padding: 40px; text-align: center; background: rgba(255,255,255,0.01);
     border: 2px dashed rgba(255,255,255,0.05); border-radius: 20px;
     color: rgba(255,255,255,0.2);
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .glass-popup {
