@@ -234,7 +234,7 @@
     return levels.value[Math.min(currentLevel.value - 1, levels.value.length - 1)]
   })
   const currentTunnelSize = computed(() => currentConfig.value.tunnel)
-  const cellSize = computed(() => Math.max(25, 480 / currentConfig.value.grid))
+  const cellSize = computed(() => Math.max(25, 420 / currentConfig.value.grid))
   const boardSize = computed(() => currentConfig.value.grid * cellSize.value)
 
   const flashlightStyle = computed(() => {
@@ -543,9 +543,9 @@
   min-height: 600px;
   background-color: #0f172a;
   display: flex;
+  padding: 120px 20px 60px 20px;
   justify-content: center;
   align-items: center;
-  padding: 100px 20px 40px 20px;
   overflow: hidden;
   user-select: none;
 }
@@ -558,8 +558,9 @@
 
 .board {
   max-width: 95%;
-  max-height: 75%;
+  max-height: 70%;
   z-index: 2;
+  transform: translateY(-30px); /* Nudge up to close gap with HUD */
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
