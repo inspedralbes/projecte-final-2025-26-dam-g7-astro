@@ -19,9 +19,19 @@
           >
             <div class="flex-grow-1">
               <span class="text-subtitle-1 text-grey-lighten-1 block text-uppercase mb-2">{{ $t('store.balance') }}</span>
-              <div class="d-flex align-center justify-center">
-                <span class="text-h2 font-weight-black text-amber-accent-3 mr-3" style="text-shadow: 0 0 25px rgba(255, 193, 7, 0.6);">{{ userCoins }}</span>
-                <v-icon color="amber-accent-3" size="70">mdi-currency-usd</v-icon>
+              <div class="d-flex align-center justify-center position-relative">
+                <span class="text-h2 font-weight-black text-amber-accent-3 mr-3" style="text-shadow: 0 0 25px rgba(255, 193, 7, 0.6);">{{ animatedCoins }}</span>
+                <v-icon color="amber-accent-3" size="70">mdi-database</v-icon>
+                <transition-group name="float-coin">
+                  <span
+                    v-for="change in coinChanges"
+                    :key="change.id"
+                    class="coin-change-popup"
+                    :class="change.amount > 0 ? 'plus' : 'minus'"
+                  >
+                    {{ change.amount > 0 ? '+' : '' }}{{ change.amount }}
+                  </span>
+                </transition-group>
               </div>
             </div>
           </div>
@@ -162,13 +172,47 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
   const userCoins = computed(() => astroStore.coins)
+  const animatedCoins = ref(userCoins.value)
+  const coinChanges = ref([])
+  let coinTimer = null
+
+  watch(userCoins, (newVal, oldVal) => {
+    const diff = newVal - oldVal
+    if (diff !== 0) {
+      animateValue(oldVal, newVal, 800)
+      const id = Date.now()
+      coinChanges.value.push({ id, amount: diff })
+      setTimeout(() => {
+        coinChanges.value = coinChanges.value.filter(c => c.id !== id)
+      }, 2000)
+    }
+  })
+
+  function animateValue(start, end, duration) {
+    if (coinTimer) clearInterval(coinTimer)
+    const range = end - start
+    let current = start
+    const increment = range / (duration / 16)
+    const startTime = Date.now()
+    
+    coinTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      if (elapsed >= duration) {
+        animatedCoins.value = end
+        clearInterval(coinTimer)
+      } else {
+        current += increment
+        animatedCoins.value = Math.floor(current)
+      }
+    }, 16)
+  }
 
   function getItemQuantity (itemId) {
     const targetId = Number(itemId)
@@ -276,5 +320,45 @@
 
 .border-amber {
     border-color: #ffc107 !important;
+}
+
+/* Coin Animations */
+.coin-change-popup {
+    position: absolute;
+    top: -30px;
+    right: 20%;
+    font-size: 1.5rem;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.coin-change-popup.plus {
+    color: #ffeb3b;
+    text-shadow: 0 0 20px rgba(255, 235, 59, 0.8);
+}
+
+.coin-change-popup.minus {
+    color: #ff5252;
+    text-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
+}
+
+.float-coin-enter-active {
+    animation: float-up 2s ease-out forwards;
+}
+
+@keyframes float-up {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(-20px) scale(1.3);
+    }
+    100% {
+        transform: translateY(-80px) scale(0.8);
+        opacity: 0;
+    }
 }
 </style>
