@@ -21,8 +21,10 @@ Astro utilitza una arquitectura desacoblada basada en serveis que permet la inde
 | **Vue 3 (Composition API)** | Framework reactiu per a la interfície web. |
 | **MongoDB** | Emmagatzematge persistent de dades (Driver Natiu). |
 | **ws** | Protocol i llibreria per a funcionalitats en temps real (WebSockets). |
+| **Jest / Vitest** | Frameworks de testing per a backend i frontend respectivament. |
 | **Pinia** | Gestió de l'estat global a la web. |
 | **Docker / Compose** | Contenidorització i orquestració d'entorns. |
+| **GitHub Actions** | Automatització de CI/CD i execució de tests. |
 | **Nginx** | Reverse proxy, balanceig de càrrega i terminació SSL. |
 
 ## 3. Estratègia de Desplegament (DevOps)
