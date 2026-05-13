@@ -45,6 +45,6 @@ Sistema basat en Micro-serveis contenidoritzats.
 - **Frontend Web:** Desenvolupat amb Vue 3 (Composition API), gestionant l'estat global amb Pinia i la interfície amb Vuetify 3 (estètica Glassmorphism).
 - **Backend / API:** API REST construïda amb Node.js i Express. 
 - **Temps Real:** Comunicació bidireccional establerta amb **WebSockets (ws)** per al Social Hub i Multijugador.
-- **Base de Dades:** MongoDB (NoSQL) escollida per la flexibilitat d'emmagatzemar estructures complexes. Driver natiu.
+- **Base de Dades:** MongoDB (NoSQL) escollida per la flexibilitat d'emmagatzemar estructures complexes com el progrés de minijocs i inventaris d'usuaris. Driver natiu.
 - **Qualitat:** Cobertura de tests amb **Jest** (Backend) i **Vitest** (Frontend).
-- **Desplegament:** Orquestració mitjançant **Docker** i automatització amb **GitHub Actions**.
+- **Desplegament:** Orquestració mitjançant **Docker** i automatització amb **GitHub Actions**, assegurant que qualsevol membre de l'equip pugui aixecar l'entorn amb una sola comanda.

@@ -6,7 +6,7 @@
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">
-            🚀 {{ $t('spelledRosco.title') }}
+            ⭐ {{ $t('spelledRosco.title') }}
             <span v-if="props.isMultiplayer && subRole" class="text-caption text-uppercase">({{ subRole }})</span>
           </h2>
           <div class="text-caption text-grey-lighten-2">
@@ -383,30 +383,48 @@
     return roscoData[locale.value] || roscoData['es']
   })
 
-  const STAR_CENTER = 200
-  const STAR_RADIUS = 150
-  const INNER_RADIUS = 60
-
-  const starPoints = Array.from({ length: 10 }, (_, i) => {
-    const angle = (i * 36 - 90) * (Math.PI / 180)
-    const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
-    return { x: STAR_CENTER + Math.cos(angle) * r, y: STAR_CENTER + Math.sin(angle) * r }
-  })
-
-  const letterPositions = [0, 2, 4, 6, 8]
-
-  const starSegments = computed(() => starPoints.map((point, i) => ({
-    x1: point.x, y1: point.y,
-    x2: starPoints[(i + 1) % 10].x, y2: starPoints[(i + 1) % 10].y,
-  })))
-
-  const tipPolygons = computed(() => letterPositions.map(pos => {
-    const pPrev = starPoints[(pos - 1 + 10) % 10], pCurr = starPoints[pos], pNext = starPoints[(pos + 1) % 10], pCenter = { x: STAR_CENTER, y: STAR_CENTER }
-    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
-  }))
-
   const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
+
+  const STAR_CENTER = 200
+  const STAR_RADIUS = 160
+  const INNER_RADIUS = 70
+
+  const starPoints = computed(() => {
+    const numLetters = roscoLetters.value.length || 25
+    const totalPoints = numLetters * 2
+    return Array.from({ length: totalPoints }, (_, i) => {
+      const angle = (i * (360 / totalPoints) - 90) * (Math.PI / 180)
+      const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
+      return { x: STAR_CENTER + Math.cos(angle) * r, y: STAR_CENTER + Math.sin(angle) * r }
+    })
+  })
+
+  const letterPositions = computed(() => {
+    const numLetters = roscoLetters.value.length || 25
+    return Array.from({ length: numLetters }, (_, i) => i * 2)
+  })
+
+  const starSegments = computed(() => {
+    const points = starPoints.value
+    return points.map((point, i) => ({
+      x1: point.x, y1: point.y,
+      x2: points[(i + 1) % points.length].x, y2: points[(i + 1) % points.length].y,
+    }))
+  })
+
+  const tipPolygons = computed(() => {
+    const points = starPoints.value
+    const positions = letterPositions.value
+    const total = points.length
+    return positions.map(pos => {
+      const pPrev = points[(pos - 1 + total) % total]
+      const pCurr = points[pos]
+      const pNext = points[(pos + 1) % total]
+      const pCenter = { x: STAR_CENTER, y: STAR_CENTER }
+      return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
+    })
+  })
 
   // --- REFORÇ VISUAL I SONOR ---
   const sounds = {
@@ -479,16 +497,16 @@
       if (data && (roscoLetters.value.length === 0 || force)) {
         roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
         currentIndex.value = 0
-        rocketPos.x = starPoints[0].x
-        rocketPos.y = starPoints[0].y
+        rocketPos.x = starPoints.value[0].x
+        rocketPos.y = starPoints.value[0].y
       }
     } else if (roscoLetters.value.length === 0 || force) {
       if (!props.isMultiplayer || isHost.value) {
         const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 25).map(l => ({ ...l, status: 'pending' }))
         roscoLetters.value = data
         currentIndex.value = 0
-        rocketPos.x = starPoints[0].x
-        rocketPos.y = starPoints[0].y
+        rocketPos.x = starPoints.value[0].x
+        rocketPos.y = starPoints.value[0].y
         if (props.isMultiplayer) {
           multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
           multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
@@ -532,8 +550,8 @@
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) {
       roscoLetters.value = msg.action.data
       currentIndex.value = 0
-      rocketPos.x = starPoints[0].x
-      rocketPos.y = starPoints[0].y
+      rocketPos.x = starPoints.value[0].x
+      rocketPos.y = starPoints.value[0].y
     }
     if (msg.type === 'GAME_ROLES_SWAPPED') {
       feedbackMessage.value = t('spelledRosco.rolesSwapped'); feedbackColor.value = 'warning'; showFeedback.value = true
@@ -630,11 +648,11 @@
   async function animateRocket (from, to) {
     if (props.isPaused) return
     rocketAnimating.value = true
-    const start = letterPositions[from], end = letterPositions[to]
+    const start = letterPositions.value[from], end = letterPositions.value[to]
     let curr = start
     while (curr !== end) {
-      curr = (curr + 1) % 10
-      const p = starPoints[curr]
+      curr = (curr + 1) % starPoints.value.length
+      const p = starPoints.value[curr]
       rocketPos.x = p.x; rocketPos.y = p.y
       await new Promise(r => setTimeout(r, 150))
     }
@@ -685,12 +703,12 @@
   }
 
   function getStarNodeStyle (index) {
-    const p = starPoints[letterPositions[index]]
+    const p = starPoints.value[letterPositions.value[index]]
     return { left: p.x + 'px', top: p.y + 'px' }
   }
 
   function isTipGlowing (tipIdx) {
-    const pos = letterPositions[tipIdx]
+    const pos = letterPositions.value[tipIdx]
     return tipIdx === currentIndex.value || visitedSegments.value.has(pos)
   }
 
@@ -723,6 +741,7 @@
   position: relative;
   width: 400px;
   height: 400px;
+  user-select: none;
 }
 
 .star-svg {
