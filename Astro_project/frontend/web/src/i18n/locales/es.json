@@ -476,6 +476,7 @@
         "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.",
         "individual": "Individual",
         "premium": "Premium",
+        "grupal": "Grupal",
         "individual_free": "Individual (Gratis)",
         "changeError": "No se pudo cambiar el plan",
         "leaveRequest": {

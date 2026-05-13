@@ -424,6 +424,7 @@
     "plans": {
         "individual": "Individual",
         "premium": "Premium",
+        "grupal": "Group",
         "individual_free": "Individual (Free)",
         "selectMode": "SELECT YOUR MISSION MODE",
         "standard": "STANDARD",
