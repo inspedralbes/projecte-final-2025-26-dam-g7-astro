@@ -11,6 +11,20 @@
           {{ $t('plans.selectMode') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          Tu última solicitud para salir del grupo fue rechazada por <strong>{{ pendingLeaveRequest.approver }}</strong>.
+        </template>
+        <template v-else>
+          Tienes una solicitud pendiente para salir del grupo. Debes esperar la respuesta de <strong>{{ pendingLeaveRequest.approver }}</strong>.
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <v-col
@@ -89,6 +103,20 @@
           {{ $t('plans.individualSubtitle') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          Tu solicitud de salida fue rechazada por <strong>{{ pendingLeaveRequest.approver }}</strong>.
+        </template>
+        <template v-else>
+          Solicitud pendiente enviada a <strong>{{ pendingLeaveRequest.approver }}</strong>. Te avisarán cuando la resuelvan.
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <!-- Option: Free -->
@@ -371,21 +399,39 @@
       </v-card>
     </v-container>
 
+    <v-dialog v-model="showLeaveRequestDialog" max-width="520">
+      <v-card class="holo-panel pa-6 text-center">
+        <v-icon class="mb-3" color="warning" icon="mdi-timer-sand" size="56" />
+        <h3 class="text-h5 font-weight-bold text-white mb-3">Solicitud enviada</h3>
+        <p class="text-body-1 text-grey-lighten-2 mb-6">
+          Has solicitado salir del grupo a <strong>{{ leaveRequestApprover || 'tu responsable' }}</strong>.
+          Debes esperar su respuesta.
+        </p>
+        <v-btn color="cyan-accent-3" class="text-black font-weight-bold" @click="acceptLeaveRequestDialog">
+          Aceptar
+        </v-btn>
+      </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const router = useRouter()
 
   const step = ref('select-plan')
   const selectedPlan = ref('')
+  const showLeaveRequestDialog = ref(false)
+  const leaveRequestApprover = ref('')
 
   // Login Data
   const user = ref('')
@@ -417,6 +463,12 @@
     },
   ])
 
+  const pendingLeaveRequest = computed(() => astroStore.pendingGroupLeaveRequest || null)
+
+  onMounted(async () => {
+    await astroStore.fetchUserStats()
+  })
+
   function selectPlan (planId) {
     selectedPlan.value = planId
 
@@ -437,8 +489,31 @@
     if (result.success) {
       router.push('/profile')
     } else {
+      const message = String(result.message || '')
+      const needsApproval = message.toLowerCase().includes('solicitar aprobación')
+      const isSubordinateGroupMember = astroStore.plan === 'GRUPAL'
+        && !!astroStore.parentId
+        && (astroStore.role === 'STUDENT' || astroStore.role === 'TEACHER')
+
+      if (needsApproval && isSubordinateGroupMember) {
+        const leaveRequest = await groupStore.requestLeaveToIndividual(astroStore.user)
+        if (leaveRequest.success || String(leaveRequest.message || '').toLowerCase().includes('solicitud pendiente')) {
+          await astroStore.fetchUserStats()
+          leaveRequestApprover.value = astroStore.pendingGroupLeaveRequest?.approver || astroStore.parentId || ''
+          showLeaveRequestDialog.value = true
+          return
+        }
+        alert(leaveRequest.message || 'No se pudo enviar la solicitud de salida del grupo')
+        return
+      }
+
       alert(result.message || 'No se pudo cambiar el plan')
     }
+  }
+
+  function acceptLeaveRequestDialog () {
+    showLeaveRequestDialog.value = false
+    router.push('/profile')
   }
 
   async function login () {

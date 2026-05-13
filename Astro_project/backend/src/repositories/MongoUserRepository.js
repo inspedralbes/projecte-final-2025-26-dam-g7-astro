@@ -166,7 +166,8 @@ class MongoUserRepository extends UserRepository {
             deletionScheduledAt: user.deletionScheduledAt,
             groupInvitations: user.groupInvitations,
             groupApprovalRequests: user.groupApprovalRequests,
-            scheduledPlanDowngrade: user.scheduledPlanDowngrade
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade,
+            pendingGroupLeaveRequest: user.pendingGroupLeaveRequest
         };
     }
 }

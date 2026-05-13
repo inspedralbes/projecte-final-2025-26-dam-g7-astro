@@ -252,7 +252,7 @@
     }
 
     return {
-      'background-color': '#1a2235',
+      'background-color': '#000000',
       'background-image': lightSpots.join(', '),
       'background-blend-mode': 'lighten',
       'mix-blend-mode': 'multiply',
@@ -559,7 +559,7 @@
 }
 
 .letter-cell {
-  color: #334155;
+  color: #ffffff;
   transition: color 0.2s;
 }
 

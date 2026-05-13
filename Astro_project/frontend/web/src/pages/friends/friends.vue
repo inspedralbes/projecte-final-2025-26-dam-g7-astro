@@ -324,6 +324,47 @@
           </v-col>
         </v-row>
 
+        <v-row v-if="!loading && leaveApprovalRequestsList.length > 0" class="mb-6">
+          <v-col
+            v-for="request in leaveApprovalRequestsList"
+            :key="request.id"
+            cols="12"
+            lg="4"
+            md="6"
+            xl="3"
+          >
+            <v-card class="friend-card request-card detailed-card h-100" variant="flat">
+              <div class="card-header-gradient bg-requests" />
+              <div class="card-body pa-5 pt-4">
+                <div class="mb-6">
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">Solicitud de salida</h2>
+                  <div class="text-body-2 text-grey-lighten-1">
+                    {{ request.requester }} ({{ request.requesterRole }}) quiere pasar a plan individual.
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <v-btn
+                    class="flex-grow-1 font-weight-bold rounded-lg h-large"
+                    color="success"
+                    variant="elevated"
+                    @click="approveLeaveRequest(request.id)"
+                  >
+                    {{ $t('friends.accept') }}
+                  </v-btn>
+                  <v-btn
+                    class="flex-grow-1 font-weight-bold rounded-lg h-large"
+                    color="error"
+                    variant="tonal"
+                    @click="rejectLeaveRequest(request.id)"
+                  >
+                    {{ $t('friends.reject') }}
+                  </v-btn>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <v-row v-if="!loading && requestsList.length > 0">
           <v-col
             v-for="requester in requestsList"
@@ -395,7 +436,7 @@
           </v-col>
         </v-row>
 
-        <div v-if="!loading && requestsList.length === 0 && groupInvitationsList.length === 0" class="text-center py-16">
+        <div v-if="!loading && requestsList.length === 0 && groupInvitationsList.length === 0 && leaveApprovalRequestsList.length === 0" class="text-center py-16">
           <v-icon class="mb-4" color="blue-grey-darken-3" icon="mdi-inbox-outline" size="80" />
           <h3 class="text-h5 text-grey">{{ $t('friends.noReqs') }}</h3>
         </div>
@@ -503,7 +544,7 @@
   const groupStore = useGroupStore()
   const chatStore = useChatStore()
   const multiplayerStore = useMultiplayerStore()
-  const { explorers, friends, friendRequests, groupInvitations } = storeToRefs(astroStore)
+  const { explorers, friends, friendRequests, groupInvitations, groupApprovalRequests } = storeToRefs(astroStore)
 
   const loading = ref(true)
   const reloading = ref(false)
@@ -626,9 +667,10 @@
   })
 
   const groupInvitationsList = computed(() => Array.isArray(groupInvitations.value) ? groupInvitations.value : [])
+  const leaveApprovalRequestsList = computed(() => Array.isArray(groupApprovalRequests.value) ? groupApprovalRequests.value : [])
   const totalRequests = computed(() => {
     const friendCount = Array.isArray(friendRequests.value) ? friendRequests.value.length : 0
-    return friendCount + groupInvitationsList.value.length
+    return friendCount + groupInvitationsList.value.length + leaveApprovalRequestsList.value.length
   })
 
   onMounted(() => {
@@ -689,6 +731,26 @@
       return
     }
     showMessage('Invitación rechazada', 'error')
+    await astroStore.fetchUserStats()
+  }
+
+  async function approveLeaveRequest (requestId) {
+    const result = await groupStore.approveLeaveRequest(astroStore.user, requestId)
+    if (!result.success) {
+      showMessage(result.message || 'No se pudo aprobar la solicitud de salida', 'error')
+      return
+    }
+    showMessage('Solicitud de salida aprobada')
+    await astroStore.fetchUserStats()
+  }
+
+  async function rejectLeaveRequest (requestId) {
+    const result = await groupStore.rejectLeaveRequest(astroStore.user, requestId)
+    if (!result.success) {
+      showMessage(result.message || 'No se pudo rechazar la solicitud de salida', 'error')
+      return
+    }
+    showMessage('Solicitud de salida rechazada', 'error')
     await astroStore.fetchUserStats()
   }
 

@@ -110,6 +110,7 @@ class AuthService {
             groupInvitations: [],
             groupApprovalRequests: [],
             scheduledPlanDowngrade: null,
+            pendingGroupLeaveRequest: null,
             createdAt: new Date(),
             lastActivity: new Date()
         };
