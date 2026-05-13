@@ -157,7 +157,7 @@
               <!-- ACCIONES -->
               <div class="actions-container ga-3 mb-10">
                 <v-row dense>
-                  <v-col v-if="role === 'CENTER' || role === 'TEACHER'" cols="12">
+                  <v-col v-if="canAccessEducational" cols="12">
                     <v-btn
                       block
                       class="action-btn font-weight-black mb-2"
@@ -896,6 +896,11 @@
       return t(`profile.${missionKeyPrefixes[currentLvl - 1]}`).toUpperCase()
     }
     return t('profile.deepSpace', { level: currentLvl })
+  })
+
+  const canAccessEducational = computed(() => {
+    return (plan.value === 'GRUPAL' && (role.value === 'CENTER' || role.value === 'TEACHER'))
+      || plan.value === 'INDIVIDUAL_PREMIUM'
   })
 
   const translatedPlan = computed(() => {

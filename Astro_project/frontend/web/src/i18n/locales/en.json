@@ -44,7 +44,11 @@
         "retry": "RETRY",
         "goal": "Goal: {score} pts",
         "start_game": "START {game}",
-        "start_simple": "START"
+        "start_simple": "START",
+        "exerciseSourceLabel": "Active exercise",
+        "exerciseSourceDefault": "General default",
+        "exerciseSourceLoading": "Loading...",
+        "exerciseSourceNoCustomPremium": "You can edit your own exercises in Educational Management."
     },
     "store": {
         "title": "Space Bazaar",
@@ -921,9 +925,11 @@
         "student": "STUDENT",
         "level": "LEVEL",
         "telemetryTitle": "GROUP TELEMETRY",
+        "telemetryTitleIndividual": "INDIVIDUAL TELEMETRY",
         "totalGames": "TOTAL GAMES",
         "avgLevel": "AVERAGE LEVEL",
         "totalMembers": "TOTAL MEMBERS",
+        "totalPoints": "TOTAL POINTS",
         "noData": "No data available to display.",
         "addMember": "ADD {role}",
         "roleLabel": "Role",
