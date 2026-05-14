@@ -875,11 +875,31 @@
             "searchPlaceholder": "Cerca...",
             "wordLabel": "Paraula",
             "hintLabel": "Pista",
+            "listPlaceholder": "element1, element2, element3",
             "configExerciseTitle": "2. CONFIGURACIÓ DE L'EXERCICI",
             "exerciseNameLabel": "Nom de l'exercici",
             "exerciseSearchPlaceholder": "Cercar en l'exercici...",
             "assignToTeacher": "Assignar a Professor",
             "noResults": "Cap resultat per aquesta cerca.",
+            "fieldLabels": {
+                "text": "Text",
+                "syllables": "Síl·labes",
+                "char": "Lletra",
+                "question": "Pregunta",
+                "answer": "Resposta",
+                "ending": "Terminació",
+                "rhymes": "Rimes (separades per comes)",
+                "fakes": "Distractors (separats per comes)",
+                "distractor": "Distractor",
+                "target": "Objectiu",
+                "grid": "Graella",
+                "tunnel": "Mida del túnel",
+                "phrase": "Frase",
+                "decoys": "Enganys (separats per comes)"
+            },
+            "fieldHelp": {
+                "distractor": "És el símbol o lletra incorrecta que omplirà la graella per confondre l'alumnat."
+            },
             "games": {
                 "WordConstruction": {
                     "name": "Construcció de Paraules",

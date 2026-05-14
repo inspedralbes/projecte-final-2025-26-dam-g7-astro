@@ -985,11 +985,31 @@
             "searchPlaceholder": "Search...",
             "wordLabel": "Word",
             "hintLabel": "Hint",
+            "listPlaceholder": "item1, item2, item3",
             "configExerciseTitle": "2. EXERCISE CONFIGURATION",
             "exerciseNameLabel": "Exercise Name",
             "exerciseSearchPlaceholder": "Search in exercise...",
             "assignToTeacher": "Assign to Teacher",
             "noResults": "No results for this search.",
+            "fieldLabels": {
+                "text": "Text",
+                "syllables": "Syllables",
+                "char": "Letter",
+                "question": "Question",
+                "answer": "Answer",
+                "ending": "Ending",
+                "rhymes": "Rhymes (comma separated)",
+                "fakes": "Fakes (comma separated)",
+                "distractor": "Distractor",
+                "target": "Target",
+                "grid": "Grid",
+                "tunnel": "Tunnel size",
+                "phrase": "Phrase",
+                "decoys": "Decoys (comma separated)"
+            },
+            "fieldHelp": {
+                "distractor": "This is the incorrect symbol or letter used to fill the grid and create confusion."
+            },
             "games": {
                 "WordConstruction": {
                     "name": "Word Construction",

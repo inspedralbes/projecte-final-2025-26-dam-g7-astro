@@ -1003,11 +1003,31 @@
             "searchPlaceholder": "Buscar...",
             "wordLabel": "Palabra",
             "hintLabel": "Pista",
+            "listPlaceholder": "elemento1, elemento2, elemento3",
             "configExerciseTitle": "2. CONFIGURACIÓN DEL EJERCICIO",
             "exerciseNameLabel": "Nombre del ejercicio",
             "exerciseSearchPlaceholder": "Buscar en el ejercicio...",
             "assignToTeacher": "Asignar a Profesor",
             "noResults": "Ningún resultado para esta búsqueda.",
+            "fieldLabels": {
+                "text": "Texto",
+                "syllables": "Sílabas",
+                "char": "Letra",
+                "question": "Pregunta",
+                "answer": "Respuesta",
+                "ending": "Terminación",
+                "rhymes": "Rimas (separadas por comas)",
+                "fakes": "Distractores (separados por comas)",
+                "distractor": "Distractor",
+                "target": "Objetivo",
+                "grid": "Cuadrícula",
+                "tunnel": "Tamaño del túnel",
+                "phrase": "Frase",
+                "decoys": "Señuelos (separados por comas)"
+            },
+            "fieldHelp": {
+                "distractor": "Es el símbolo o letra incorrecta que rellena la cuadrícula para confundir al alumnado."
+            },
             "games": {
                 "WordConstruction": {
                     "name": "Construcción de Palabras",
