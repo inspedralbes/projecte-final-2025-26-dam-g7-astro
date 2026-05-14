@@ -13,11 +13,13 @@ const INVENTORY_ITEM_BY_ID = new Map(INVENTORY_ITEMS.map((item) => [item.id, ite
 class InventoryService {
     constructor({
         userRepository,
+        roomManager,
         normalizeActiveBoosters,
         getBoosterFieldByItemId,
         addBoosterDuration
     } = {}) {
         this.userRepo = userRepository;
+        this.roomManager = roomManager;
         this.normalizeActiveBoosters = normalizeActiveBoosters;
         this.getBoosterFieldByItemId = getBoosterFieldByItemId;
         this.addBoosterDuration = addBoosterDuration;
@@ -25,6 +27,23 @@ class InventoryService {
 
     getInventoryCatalogItem(itemId) {
         return INVENTORY_ITEM_BY_ID.get(itemId) || null;
+    }
+
+    getEquippedAvatarBoost(inventory) {
+        if (!Array.isArray(inventory)) return null;
+        const normalized = this.normalizeInventoryEntries(inventory);
+        
+        // Buscar específicamente un item de categoría 'skin' que esté equipado
+        const equippedSkinEntry = normalized.find(item => {
+            if (!item.equipped) return false;
+            const meta = this.getInventoryCatalogItem(item.id);
+            return meta?.cat === 'skin';
+        });
+        
+        if (!equippedSkinEntry) return null;
+        
+        const catalogItem = this.getInventoryCatalogItem(equippedSkinEntry.id);
+        return catalogItem?.boost || null;
     }
 
     getItemMaxQuantity(itemId) {
@@ -139,7 +158,9 @@ class InventoryService {
                     icon: catalogItem.icon,
                     color: catalogItem.color,
                     cat: catalogItem.cat,
-                    price: Number.isFinite(catalogItem.price) ? catalogItem.price : null
+                    price: Number.isFinite(catalogItem.price) ? catalogItem.price : null,
+                    image: catalogItem.image || null,
+                    boost: catalogItem.boost || null
                 };
             })
             .filter(Boolean);
@@ -307,9 +328,31 @@ class InventoryService {
 
         const serializedInventory = this.serializeInventory(updatedInventory);
         user.inventory = serializedInventory;
+
+        // Sincronizar campo específico del perfil según la categoría
+        if (itemMeta.cat === 'title') {
+            user.selectedTitle = isEquipping ? itemMeta.name : null;
+        } else if (itemMeta.cat === 'skin') {
+            user.avatar = isEquipping ? (itemMeta.image || itemMeta.name) : 'Astronauta_blanc.jpg';
+        }
+
         await this.userRepo.update(user);
 
-        return { inventory: this.enrichInventory(serializedInventory) };
+        // Notificar por WebSocket para actualización en tiempo real
+        if (this.roomManager) {
+            this.roomManager.sendToUser(username, {
+                type: 'PROFILE_UPDATE',
+                inventory: this.enrichInventory(serializedInventory),
+                selectedTitle: user.selectedTitle,
+                avatar: user.avatar
+            });
+        }
+
+        return { 
+            inventory: this.enrichInventory(serializedInventory),
+            selectedTitle: user.selectedTitle,
+            avatar: user.avatar
+        };
     }
 
     async sellItem(username, itemId) {
@@ -325,6 +368,10 @@ class InventoryService {
 
         const itemTarget = normalizedInventory[itemIndex];
         const itemMeta = this.getInventoryCatalogItem(parsedItemId);
+
+        if (!itemMeta || itemMeta.cat !== 'items') {
+            throw new Error('Solo se pueden vender suministros básicos.');
+        }
         
         // Calcular precio de venta (50% del original o valor base)
         const basePrice = itemMeta?.price || 100;
@@ -348,6 +395,16 @@ class InventoryService {
 
         await this.userRepo.update(user);
 
+        // Notificar por WebSocket para actualización en tiempo real
+        if (this.roomManager) {
+            this.roomManager.sendToUser(username, {
+                type: 'PROFILE_UPDATE',
+                inventory: this.enrichInventory(serializedInventory),
+                coins: user.coins,
+                streakFreezes: user.streakFreezes
+            });
+        }
+
         return { 
             inventory: this.enrichInventory(serializedInventory),
             newBalance: user.coins
@@ -366,6 +423,7 @@ module.exports = {
     serializeInventory: defaultService.serializeInventory.bind(defaultService),
     enrichInventory: defaultService.enrichInventory.bind(defaultService),
     getInventoryQuantity: defaultService.getInventoryQuantity.bind(defaultService),
+    getEquippedAvatarBoost: defaultService.getEquippedAvatarBoost.bind(defaultService),
     toPositiveInteger,
     normalizeAndPersistInventory: async (userDoc, usersCollection) => {
         const repo = { update: async (u) => usersCollection.updateOne({ _id: u.id || userDoc._id }, { $set: { inventory: u.inventory, streakFreezes: u.streakFreezes } }), findByUsername: () => userDoc };

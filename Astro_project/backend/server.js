@@ -68,6 +68,7 @@ const updateStreak = createUpdateStreak({
 
 const inventoryServiceInstance = new inventoryService.InventoryService({
     userRepository,
+    roomManager,
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
     getBoosterFieldByItemId: boosterUtils.getBoosterFieldByItemId,
     addBoosterDuration: boosterUtils.addBoosterDuration
@@ -136,7 +137,8 @@ const gameService = new GameService({
     consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
     getScoreMultiplier: boosterUtils.getScoreMultiplier,
     getCoinsMultiplier: boosterUtils.getCoinsMultiplier,
-    statsService: statsServiceInstance
+    statsService: statsServiceInstance,
+    inventoryService: inventoryServiceInstance
 });
 
 roomManager.init(roomRepository, userRepository, wss, gameService);

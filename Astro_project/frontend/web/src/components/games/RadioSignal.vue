@@ -633,6 +633,16 @@
 
   onMounted(() => {
     drawWaves()
+    
+    // Aplicar boost de tiempo si el avatar lo permite
+    const boost = astroStore.equippedSkinBoost
+    const baseTime = props.isMultiplayer ? 90 : 60
+    if (boost && boost.type === 'time') {
+      timeLeft.value = Math.floor(baseTime * boost.multiplier)
+    } else {
+      timeLeft.value = baseTime
+    }
+
     if (props.isMultiplayer) {
       // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {

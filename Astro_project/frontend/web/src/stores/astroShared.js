@@ -187,21 +187,14 @@ export const INVENTORY_CATALOG = Object.freeze({
   },
   102: {
     id: 102,
-    name: 'Skin Cyberpunk',
-    desc: 'Aspecto robótico.',
+    name: 'Avatar Ciber Hacker',
+    desc: 'Un hacker del futuro. Otorga +15% de puntuación en todas las misiones.',
     icon: 'mdi-robot',
-    color: 'purple-accent-3',
+    image: 'avatar_hacker.png',
+    color: 'cyan-accent-3',
     cat: 'skin',
     maxQuantity: 1,
-  },
-  103: {
-    id: 103,
-    name: 'Mascota Dron',
-    desc: 'Un compañero fiel.',
-    icon: 'mdi-quadcopter',
-    color: 'green-accent-3',
-    cat: 'pets',
-    maxQuantity: 1,
+    boost: { type: 'score', multiplier: 1.15 },
   },
   104: {
     id: 104,
@@ -250,12 +243,25 @@ export const INVENTORY_CATALOG = Object.freeze({
   },
   202: {
     id: 202,
-    name: 'Avatar Ninja',
-    desc: 'Aspecto ninja exclusivo.',
-    icon: 'mdi-ninja',
-    color: 'blue-accent-2',
+    name: 'Avatar Viajero Nebulosa',
+    desc: 'Explorador cósmico. Otorga +20% de tiempo en misiones contrarreloj.',
+    icon: 'mdi-space-invaders',
+    image: 'avatar_nebula.png',
+    color: 'purple-accent-2',
     cat: 'skin',
     maxQuantity: 1,
+    boost: { type: 'time', multiplier: 1.2 },
+  },
+  203: {
+    id: 203,
+    name: 'Avatar Caballero Estelar',
+    desc: 'Guerrero solar. Otorga +10% de créditos en todas las misiones.',
+    icon: 'mdi-shield-sun',
+    image: 'avatar_knight.png',
+    color: 'amber-accent-4',
+    cat: 'skin',
+    maxQuantity: 1,
+    boost: { type: 'coins', multiplier: 1.1 },
   },
 })
 
@@ -266,11 +272,11 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
   'Doble de Monedas': 3,
   'Doble Puntuación': 4,
   'Pin Comandante': 101,
-  'Skin Cyberpunk': 102,
-  'Mascota Dron': 103, // Mantenido
+  'Avatar Ciber Hacker': 102,
   'Rastro de Neón': 104,
   'Pin Raro': 201,
-  'Avatar Ninja': 202,
+  'Avatar Viajero Nebulosa': 202,
+  'Avatar Caballero Estelar': 203,
 })
 
 const LEGACY_WHEEL_REWARD_TO_ITEM = Object.freeze({
@@ -384,6 +390,14 @@ export function normalizeInventoryItems (values = []) {
                   ? rawItem.color || catalogItem.color
                   : catalogItem.color,
       cat: itemCat,
+      image:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                  ? rawItem.image || catalogItem.image
+                  : catalogItem.image,
+      boost:
+                rawItem && typeof rawItem === 'object' && !Array.isArray(rawItem)
+                  ? rawItem.boost || catalogItem.boost
+                  : catalogItem.boost,
     })
   }
 

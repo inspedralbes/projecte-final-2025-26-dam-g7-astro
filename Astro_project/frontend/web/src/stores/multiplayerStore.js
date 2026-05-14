@@ -379,6 +379,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           if (data.dailyPurchaseHistory !== undefined) {
             sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
           }
+          if (data.selectedTitle !== undefined) {
+            sessionStore.setSelectedTitle(data.selectedTitle)
+          }
+          if (data.avatar !== undefined) {
+            sessionStore.setAvatar(data.avatar)
+          }
           break
         }
         default: {

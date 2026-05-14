@@ -80,7 +80,7 @@
             "skin": "Skins",
             "collectible": "Collectibles",
             "trails": "Trails",
-            "pets": "Pets",
+            "title": "Titles",
             "items": "Items"
         },
         "active": "ACTIVE: {games} games",
@@ -665,6 +665,7 @@
             "name": "Asteroid Destroyer",
             "desc": "Permanent text tag."
         },
+        "titleDesc": "Permanent text tag.",
         "nameChange": {
             "name": "Name Change",
             "desc": "Change your display name. First one is free!"

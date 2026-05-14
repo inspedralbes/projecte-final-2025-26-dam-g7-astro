@@ -383,8 +383,9 @@
     return roscoData[locale.value] || roscoData['es']
   })
 
-  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+  const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), baseTime = 60, timeLeft = ref(baseTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
   let timerInterval = null
+  let totalTime = baseTime
 
   const STAR_CENTER = 200
   const STAR_RADIUS = 150
@@ -501,6 +502,14 @@
 
   onMounted(() => {
     initRosco()
+    
+    // Aplicar boost de tiempo si el avatar lo permite
+    const boost = astroStore.equippedSkinBoost
+    if (boost && boost.type === 'time') {
+      totalTime = Math.floor(baseTime * boost.multiplier)
+      timeLeft.value = totalTime
+    }
+
     if (props.isMultiplayer) {
       setTimeout(() => {
         startTimer()
