@@ -9,7 +9,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'red-accent-2',
         cat: 'items',
         price: 200,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 2,
@@ -19,7 +20,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'cyan-accent-2',
         cat: 'items',
         price: 500,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 3,
@@ -29,7 +31,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'yellow-accent-3',
         cat: 'items',
         price: 300,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 4,
@@ -39,7 +42,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'orange-accent-3',
         cat: 'items',
         price: 300,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 5,
@@ -49,7 +53,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'deep-purple-accent-2',
         cat: 'items',
         price: 500,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 6,
@@ -59,7 +64,8 @@ const INVENTORY_ITEMS = Object.freeze([
         color: 'green-accent-2',
         cat: 'items',
         price: 10000,
-        stackable: true
+        stackable: true,
+        maxQuantity: 5
     },
     {
         id: 101,
