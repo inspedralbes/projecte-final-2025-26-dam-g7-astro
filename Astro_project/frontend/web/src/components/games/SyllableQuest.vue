@@ -376,6 +376,10 @@
       userSyllables.value = 0
       triggerFeedback('error')
     }
+
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: score.value })
+    }
   }
 
   function startTimer () {

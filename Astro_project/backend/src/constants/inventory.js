@@ -27,8 +27,8 @@ const INVENTORY_ITEMS = Object.freeze([
     },
     {
         id: 3,
-        name: 'Doble de Monedas',
-        desc: 'Multiplica x2 las monedas ganadas.',
+        name: 'Doble de AstroCoins',
+        desc: 'Multiplica x2 las AstroCoins ganadas.',
         icon: 'mdi-piggy-bank',
         color: 'yellow-accent-3',
         cat: 'items',
@@ -80,7 +80,7 @@ const INVENTORY_ITEMS = Object.freeze([
         icon: 'mdi-medal',
         color: 'amber-accent-3',
         cat: 'skin',
-        price: 2500,
+        price: 15000,
         stackable: false,
         maxQuantity: 1
     },
@@ -92,7 +92,7 @@ const INVENTORY_ITEMS = Object.freeze([
         image: 'avatar_hacker.png',
         color: 'cyan-accent-3',
         cat: 'skin',
-        price: 5000,
+        price: 15000,
         stackable: false,
         maxQuantity: 1,
         boost: { type: 'score', multiplier: 1.15 }
@@ -159,7 +159,7 @@ const INVENTORY_ITEMS = Object.freeze([
         image: 'avatar_nebula.png',
         color: 'purple-accent-2',
         cat: 'skin',
-        price: 7500,
+        price: 15000,
         stackable: false,
         maxQuantity: 1,
         boost: { type: 'time', multiplier: 1.2 }
@@ -167,12 +167,12 @@ const INVENTORY_ITEMS = Object.freeze([
     {
         id: 203,
         name: 'Avatar Caballero Estelar',
-        desc: 'Guerrero solar. Otorga +10% de créditos en todas las misiones.',
+        desc: 'Guerrero solar. Otorga +10% de AstroCoins en todas las misiones.',
         icon: 'mdi-shield-sun',
         image: 'avatar_knight.png',
         color: 'amber-accent-4',
         cat: 'skin',
-        price: 8000,
+        price: 15000,
         stackable: false,
         maxQuantity: 1,
         boost: { type: 'coins', multiplier: 1.1 }
@@ -184,6 +184,7 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
     'Pack de Vidas': 1,
     'Congelar Racha': 2,
     'Doble de Monedas': 3,
+    'Doble de AstroCoins': 3,
     'Doble Puntuación': 4,
     'Pin Comandante': 101,
     'Avatar Ciber Hacker': 102,

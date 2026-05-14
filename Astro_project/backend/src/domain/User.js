@@ -45,6 +45,7 @@ class User {
         this.groupApprovalRequests = Array.isArray(data.groupApprovalRequests) ? data.groupApprovalRequests : [];
         this.scheduledPlanDowngrade = data.scheduledPlanDowngrade || null;
         this.pendingGroupLeaveRequest = data.pendingGroupLeaveRequest || null;
+        this.profileColor = data.profileColor || '#0a192f'; // Default color
         
         // Tracking de compras diarias (para límites de tienda)
         const today = new Date().toISOString().split('T')[0];

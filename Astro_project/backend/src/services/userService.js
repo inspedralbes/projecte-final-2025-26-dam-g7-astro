@@ -195,6 +195,15 @@ class UserService {
         return title;
     }
 
+    async updateProfileColor(username, color) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error("Usuario no encontrado");
+
+        user.profileColor = color;
+        await this.userRepo.update(user);
+        return color;
+    }
+
     async changePassword(username, oldPassword, newPassword) {
         const user = await this.userRepo.findByUsername(username);
         if (!user) throw new Error("Usuario no encontrado");

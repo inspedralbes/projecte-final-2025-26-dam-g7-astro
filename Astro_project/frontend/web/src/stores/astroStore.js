@@ -32,6 +32,7 @@ export const useAstroStore = defineStore('astro', () => {
   const scheduledPlanDowngrade = computed({ get: () => sessionStore.scheduledPlanDowngrade, set: value => sessionStore.setScheduledPlanDowngrade(value) })
   const pendingGroupLeaveRequest = computed({ get: () => sessionStore.pendingGroupLeaveRequest, set: value => sessionStore.setPendingGroupLeaveRequest(value) })
   const dailyPurchaseHistory = computed({ get: () => sessionStore.dailyPurchaseHistory, set: value => sessionStore.setDailyPurchaseHistory(value) })
+  const profileColor = computed({ get: () => sessionStore.profileColor, set: value => sessionStore.setProfileColor(value) })
 
   // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
@@ -336,6 +337,10 @@ export const useAstroStore = defineStore('astro', () => {
     return { success: true }
   }
 
+  async function updateProfileColorAction (color) {
+    return sessionStore.updateProfileColorAction(color)
+  }
+
   function setCoins (newCoins) {
     progressStore.setCoins(newCoins)
   }
@@ -347,6 +352,7 @@ export const useAstroStore = defineStore('astro', () => {
     user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
     inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
     groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest, dailyPurchaseHistory,
+    profileColor,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
@@ -356,5 +362,6 @@ export const useAstroStore = defineStore('astro', () => {
     addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,
     connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
     updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, requestGroupOwnerDowngrade, cancelGroupOwnerDowngrade, changeDisplayName, useStreakFreeze, setCoins, setInventory,
+    updateProfileColorAction,
   }
 })

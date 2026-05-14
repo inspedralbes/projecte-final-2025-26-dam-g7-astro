@@ -221,6 +221,22 @@ app.put('/api/user/title', async (req, res) => {
     }
 });
 
+app.put('/api/user/color', async (req, res) => {
+    const { user, color } = req.body;
+    if (!user || !color) {
+        return res.status(400).json({ message: 'Usuario y color requeridos.' });
+    }
+
+    try {
+        await userServiceInstance.updateProfileColor(user, color);
+        console.log(`👤 Color de perfil actualizado en DB para ${user}: ${color}`);
+        res.json({ success: true, color });
+    } catch (error) {
+        console.error("❌ Error al actualizar color de perfil en DB:", error);
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
+    }
+});
+
 app.post('/api/user/change-name', async (req, res) => {
     const { user, newDisplayName } = req.body;
     if (!user || !newDisplayName) {

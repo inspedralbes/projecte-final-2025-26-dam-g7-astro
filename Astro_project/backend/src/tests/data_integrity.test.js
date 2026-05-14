@@ -46,6 +46,7 @@ describe('Data Integrity Tests', () => {
         expect(stats.level).toBe(1);
         expect(stats.coins).toBe(1000);
         expect(stats.rank).toBe('Cadete de Vuelo');
+        expect(stats.profileColor).toBe('#0a192f');
     });
 
     test('getUserStats debe sanear valores negativos en campos críticos (coins, level)', async () => {

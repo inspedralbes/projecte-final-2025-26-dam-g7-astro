@@ -61,7 +61,7 @@
         "title": "Bazar Espacial",
         "subtitle": "Mejora tu equipamiento para la misión",
         "wheelTitle": "Vórtice Cuántico",
-        "wheelDesc": "Gira el vórtice para obtener suministros únicos, monedas o aspectos épicos. La suerte favorece a los audaces.",
+        "wheelDesc": "Gira el vórtice para obtener suministros únicos, AstroCoins o aspectos épicos. La suerte favorece a los audaces.",
         "extract": "EXTRAER (100",
         "buy10": "COMPRAR 10 TIRADAS (900",
         "freeSpins": "{spins} TIRADAS GRATIS",
@@ -98,7 +98,7 @@
         "goToShop": "Visitar la Tienda",
         "useError": "No se pudo usar el objeto.",
         "sell": "VENDER",
-        "sellConfirm": "¿Seguro que quieres vender {item} por {price} monedas?"
+        "sellConfirm": "¿Seguro que quieres vender {item} por {price} AstroCoins?"
     },
     "profile": {
         "guest": "Explorador",
@@ -173,6 +173,8 @@
         "passwordChangeError": "Error al actualizar la contraseña",
         "changeDisplayName": "Cambiar Apodo",
         "newDisplayName": "Nuevo Apodo",
+        "cardColor": "Color de Tarjeta Personalizada",
+        "colorUpdated": "¡Color de tarjeta actualizado!",
         "firstChangeFree": "¡Tu primer cambio de apodo es gratis!",
         "noNameChangeTokens": "No tienes suministros de Cambio de Nombre.",
         "goToShop": "Ir a la tienda",
@@ -324,7 +326,7 @@
         "progress": "PROGRESO",
         "streak": "Racha",
         "streakCaps": "RACHA",
-        "credits": "CRÉDITOS",
+        "credits": "ASTROCOINS",
         "coins": "AstroCoins",
         "level": "NIVEL {level}",
         "xpRemaining": "Faltan {xp} XP para el siguiente nivel",
@@ -356,7 +358,7 @@
         "locked": "Bloqueado",
         "metrics": {
             "missions": "Misiones",
-            "coins": "Monedas",
+            "coins": "AstroCoins",
             "inventory": "Objetos",
             "level": "Nivel",
             "xp": "XP"
@@ -613,10 +615,10 @@
         "destino": "Destino Final"
     },
     "shopActions": {
-        "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 monedas?",
+        "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 AstroCoins?",
         "alreadyOwned": "¡Ya tienes {item} en tu inventario!",
         "maxReached": "Has alcanzado el máximo de 99 unidades para {item}.",
-        "confirmBuy": "¿Quieres comprar {item} por {price} créditos?",
+        "confirmBuy": "¿Quieres comprar {item} por {price} AstroCoins?",
         "confirmTitle": "CONFIRMACIÓN DE COMPRA",
         "buySuccess": "Compra exitosa",
         "buySuccessTitle": "¡OBJETO DESBLOQUEADO!"
@@ -631,8 +633,8 @@
             "desc": "Protege tu racha un día."
         },
         "dobleMonedas": {
-            "name": "Doble de Monedas",
-            "desc": "Multiplica x2 las monedas ganadas."
+            "name": "Doble de AstroCoins",
+            "desc": "Multiplica x2 las AstroCoins ganadas."
         },
         "doblePuntos": {
             "name": "Doble Puntuación",
@@ -664,7 +666,7 @@
         },
         "avatarKnight": {
             "name": "Avatar Caballero Estelar",
-            "desc": "Guerrero solar. Otorga +10% de créditos en todas las misiones."
+            "desc": "Guerrero solar. Otorga +10% de AstroCoins en todas las misiones."
         },
         "sabotageRay": {
             "name": "Rayo Saboteador",
@@ -732,14 +734,14 @@
     "missionsList": {
         "daily": {
             "games": "Juega {goal} partidas",
-            "coins": "Gana {goal} créditos",
+            "coins": "Gana {goal} AstroCoins",
             "xp": "Consigue {goal} XP",
             "item": "Usa {goal} objetos",
             "streak": "Mantén tu racha"
         },
         "weekly": {
             "games": "Maestro de Juegos ({goal} partidas)",
-            "coins": "Buscador de Oro ({goal} créditos)",
+            "coins": "Buscador de Oro ({goal} AstroCoins)",
             "xp": "Ascensión Lunar ({goal} XP)",
             "streak": "Superviviente (Racha {goal} días)",
             "item": "Interacción Pro ({goal} objetos)"
@@ -763,13 +765,13 @@
         },
         "4": {
             "title": "Primer Botín",
-            "desc": "Acumula 1.200 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 1.200 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "5": {
             "title": "Fortuna Galáctica",
-            "desc": "Acumula 3.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 3.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "6": {
             "title": "Primer Coleccionable",
@@ -813,8 +815,8 @@
         },
         "14": {
             "title": "Mercader de Estrellas",
-            "desc": "Acumula 2.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 2.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "15": {
             "title": "Héroe del Cosmos",
@@ -823,8 +825,8 @@
         },
         "16": {
             "title": "Magnate de la Nebulosa",
-            "desc": "Acumula 5.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 5.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "17": {
             "title": "Soberano del Vacío",

@@ -52,7 +52,7 @@ describe('Premium Avatar Boosts Logic', () => {
         expect(result.coinsEarned).toBe(11);
     });
 
-    test('Avatar Caballero Estelar debe aplicar multiplicador x1.1 a las monedas', async () => {
+    test('Avatar Caballero Estelar debe aplicar multiplicador x1.1 a las AstroCoins', async () => {
         const username = 'testuser';
         const user = new User({ user: username, xp: 0, coins: 0, inventory: [] });
         userRepo.findByUsername.mockResolvedValue(user);
