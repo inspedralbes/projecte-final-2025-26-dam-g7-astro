@@ -204,7 +204,7 @@
             <h2 class="text-h5 font-weight-bold text-white mt-4">{{ $t('shopActions.confirmTitle') }}</h2>
             <p class="text-body-2 text-grey-lighten-1 mt-2">
               ¿Quieres comprar <span class="text-cyan-accent-3 font-weight-black">{{ pendingQuantity }}x</span> 
-              {{ pendingItem?.name }} por <span class="text-amber-accent-3 font-weight-black">{{ pendingItem?.price * pendingQuantity }} créditos</span>?
+              {{ pendingItem?.name }} por <span class="text-amber-accent-3 font-weight-black">{{ pendingItem?.price * pendingQuantity }} AstroCoins</span>?
             </p>
           </div>
           <v-row dense>

@@ -57,7 +57,11 @@
             md="6"
             xl="3"
           >
-            <v-card class="friend-card detailed-card h-100" variant="flat">
+            <v-card
+              class="friend-card detailed-card h-100"
+              :style="{ background: friend.profileColor ? `${friend.profileColor}CC` : 'rgba(30, 41, 59, 0.4)' }"
+              variant="flat"
+            >
               <div class="card-header-gradient" :class="getRankClass(friend.level)" />
 
               <div class="card-body pa-5 pt-2">
@@ -199,7 +203,11 @@
             md="6"
             xl="3"
           >
-            <v-card class="friend-card explorer-card detailed-card h-100" variant="flat">
+            <v-card
+              class="friend-card explorer-card detailed-card h-100"
+              :style="{ background: explorer.profileColor ? `${explorer.profileColor}CC` : 'rgba(30, 41, 59, 0.4)' }"
+              variant="flat"
+            >
               <div class="card-header-gradient" :class="getRankClass(explorer.level)" />
 
               <div class="card-body pa-5 pt-2">

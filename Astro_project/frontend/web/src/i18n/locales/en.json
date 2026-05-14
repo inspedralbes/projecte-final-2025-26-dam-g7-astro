@@ -55,7 +55,7 @@
         "title": "Space Bazaar",
         "subtitle": "Improve your equipment for the mission",
         "wheelTitle": "Quantum Vortex",
-        "wheelDesc": "Spin the vortex to obtain unique supplies, coins, or epic skins. Luck favors the bold.",
+        "wheelDesc": "Spin the vortex to obtain unique supplies, AstroCoins, or epic skins. Luck favors the bold.",
         "extract": "EXTRACT (100",
         "buy10": "BUY 10 SPINS (900",
         "freeSpins": "{spins} FREE SPINS",
@@ -92,7 +92,7 @@
         "goToShop": "Visit the Shop",
         "useError": "Could not use the item.",
         "sell": "SELL",
-        "sellConfirm": "Are you sure you want to sell {item} for {price} coins?"
+        "sellConfirm": "Are you sure you want to sell {item} for {price} AstroCoins?"
     },
     "profile": {
         "guest": "Explorer",
@@ -318,7 +318,7 @@
         "progress": "PROGRESS",
         "streak": "Streak",
         "streakCaps": "STREAK",
-        "credits": "CREDITS",
+        "credits": "ASTROCOINS",
         "coins": "AstroCoins",
         "level": "LEVEL {level}",
         "xpRemaining": "{xp} XP remaining for next level",
@@ -350,7 +350,7 @@
         "locked": "Locked",
         "metrics": {
             "missions": "Missions",
-            "coins": "Coins",
+            "coins": "AstroCoins",
             "inventory": "Items",
             "level": "Level",
             "xp": "XP"
@@ -607,10 +607,10 @@
         "silabas": "Syllable Quest"
     },
     "shopActions": {
-        "confirmMulti": "Do you want to buy a 10-spin pack for 900 coins?",
+        "confirmMulti": "Do you want to buy a 10-spin pack for 900 AstroCoins?",
         "alreadyOwned": "You already have {item} in your inventory!",
         "maxReached": "You have reached the maximum of 99 units for {item}.",
-        "confirmBuy": "Do you want to buy {item} for {price} credits?",
+        "confirmBuy": "Do you want to buy {item} for {price} AstroCoins?",
         "confirmTitle": "PURCHASE CONFIRMATION",
         "buySuccess": "Purchase successful",
         "buySuccessTitle": "ITEM UNLOCKED!"
@@ -714,14 +714,14 @@
     "missionsList": {
         "daily": {
             "games": "Play {goal} games",
-            "coins": "Earn {goal} credits",
+            "coins": "Earn {goal} AstroCoins",
             "xp": "Get {goal} XP",
             "item": "Use {goal} items",
             "streak": "Keep your streak"
         },
         "weekly": {
             "games": "Game Master ({goal} games)",
-            "coins": "Gold Digger ({goal} credits)",
+            "coins": "Gold Digger ({goal} AstroCoins)",
             "xp": "Lunar Ascension ({goal} XP)",
             "streak": "Survivor ({goal} days streak)",
             "item": "Pro Interaction ({goal} items)"
@@ -746,12 +746,12 @@
         "4": {
             "title": "First Loot",
             "desc": "Accumulate 1,200 coins.",
-            "metric": "Coins"
+            "metric": "AstroCoins"
         },
         "5": {
             "title": "Galactic Fortune",
             "desc": "Accumulate 3,000 coins.",
-            "metric": "Coins"
+            "metric": "AstroCoins"
         },
         "6": {
             "title": "First Collectible",
@@ -796,7 +796,7 @@
         "14": {
             "title": "Star Merchant",
             "desc": "Accumulate 2,000 coins.",
-            "metric": "Coins"
+            "metric": "AstroCoins"
         },
         "15": {
             "title": "Hero of the Cosmos",

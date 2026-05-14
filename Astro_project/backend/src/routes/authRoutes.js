@@ -69,7 +69,8 @@ function registerAuthRoutes(app, {
                     groupInvitations: user.groupInvitations || [],
                     groupApprovalRequests: user.groupApprovalRequests || [],
                     scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
-                    pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null
+                    pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null,
+                    profileColor: user.profileColor || '#0a192f'
                 }
             });
         } catch (error) {

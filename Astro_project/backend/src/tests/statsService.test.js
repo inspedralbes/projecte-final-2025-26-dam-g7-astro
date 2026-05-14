@@ -44,6 +44,7 @@ describe('StatsService', () => {
         expect(stats.totalPoints).toBe(300);
         expect(stats.gamesByType.RadarScan).toBe(1);
         expect(stats.gamesByType.RadioSignal).toBe(1);
+        expect(stats.profileColor).toBe('#0a192f');
     });
 
     test('Hauria de retornar null si l\'usuari no existeix', async () => {

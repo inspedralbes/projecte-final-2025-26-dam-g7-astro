@@ -778,7 +778,7 @@
   const raceRoutes = {
     'SISTEMA_SOLAR': {
       name: 'Sistema Solar',
-      sequence: ['WordConstruction', 'RadioSignal', 'RadarScan', 'SymmetryBreaker', 'SpelledRosco', 'RhymeSquad'],
+      sequence: ['WordConstruction', 'RadioSignal', 'RadarScan', 'SymmetryBreaker', 'SpelledRosco', 'SyllableQuest', 'RhymeSquad'],
       planets: ['Terra', 'Mart', 'Júpiter', 'Saturn', 'Urà', 'Neptú'],
     },
     'NEBULOSA_KALI': {

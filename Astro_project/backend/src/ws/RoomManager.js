@@ -15,6 +15,7 @@ class RoomManager {
             'RadioSignal',
             'RhymeSquad',
             'SpelledRosco',
+            'SyllableQuest',
             'SymmetryBreaker',
             'WordConstruction'
         ];
@@ -603,7 +604,7 @@ class RoomManager {
             try {
                 const currentGame = room.gameConfig.currentGame;
                 const playerArray = Array.from(room.players);
-                const isPairGame = ['RadioSignal', 'SpelledRosco', 'RhymeSquad', 'RadarScan'].includes(currentGame);
+                const isPairGame = ['RadioSignal', 'SpelledRosco', 'RhymeSquad', 'RadarScan', 'SyllableQuest'].includes(currentGame);
                 const half = Math.ceil(playerArray.length / 2);
 
                 if (currentGame === 'SpelledRosco') {

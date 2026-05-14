@@ -40,6 +40,7 @@ export const useSessionStore = defineStore('session', {
     scheduledPlanDowngrade: null,
     pendingGroupLeaveRequest: null,
     dailyPurchaseHistory: { date: '', items: {} },
+    profileColor: storageGetItem(STORAGE_KEYS.profileColor) || '#0a192f',
     error: null,
   }),
 
@@ -100,6 +101,10 @@ export const useSessionStore = defineStore('session', {
       this.avatar = avatar || 'Astronauta_blanc.jpg'
       persistNullable(STORAGE_KEYS.avatar, this.avatar)
     },
+    setProfileColor (color) {
+      this.profileColor = color || '#0a192f'
+      persistNullable(STORAGE_KEYS.profileColor, this.profileColor)
+    },
 
     setSelectedTitle (title) {
       this.selectedTitle = title || null
@@ -154,6 +159,9 @@ export const useSessionStore = defineStore('session', {
       }
       if (profile.dailyPurchaseHistory !== undefined) {
         this.setDailyPurchaseHistory(profile.dailyPurchaseHistory)
+      }
+      if (profile.profileColor) {
+        this.setProfileColor(profile.profileColor)
       }
     },
 
@@ -445,6 +453,23 @@ export const useSessionStore = defineStore('session', {
       }
     },
 
+    async updateProfileColorAction (color) {
+      if (!this.user) return { success: false, message: tr('session.errors.userNotIdentified') }
+      try {
+        const { response, data } = await requestJson('/api/user/color', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: this.user, color }),
+        })
+        if (!response.ok) throw new Error(data.message || 'Error actualizando color')
+        this.setProfileColor(color)
+        return { success: true }
+      } catch (error) {
+        console.error('❌ Error actualizando color:', error)
+        return { success: false, message: error.message }
+      }
+    },
+
     clearSession () {
       this.user = null
       this.plan = 'INDIVIDUAL_FREE'
@@ -461,6 +486,7 @@ export const useSessionStore = defineStore('session', {
       this.groupApprovalRequests = []
       this.scheduledPlanDowngrade = null
       this.pendingGroupLeaveRequest = null
+      this.profileColor = '#0a192f'
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
@@ -477,6 +503,7 @@ export const useSessionStore = defineStore('session', {
         'astro_display_name',
         'astro_name_changes',
         'astro_deletion_scheduled',
+        STORAGE_KEYS.profileColor,
       ]) {
         storageRemoveItem(key, false) // Session
         storageRemoveItem(key, true) // Local

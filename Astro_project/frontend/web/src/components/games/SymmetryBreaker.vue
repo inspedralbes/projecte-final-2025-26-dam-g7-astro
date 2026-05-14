@@ -458,6 +458,7 @@
           amount: isSaboteurActive ? 4 : 2,
         })
         multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+        multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: score.value })
       } else {
         multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
       }

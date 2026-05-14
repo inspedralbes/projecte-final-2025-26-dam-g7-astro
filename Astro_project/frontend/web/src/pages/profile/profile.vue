@@ -4,7 +4,11 @@
       <v-row justify="center">
         <!-- COLUMNA PERFIL -->
         <v-col cols="12" lg="8" md="10">
-          <v-card class="profile-card elevation-24" height="100%">
+          <v-card
+            class="profile-card elevation-24"
+            height="100%"
+            :style="{ background: profileColor ? `${profileColor}CC` : 'rgba(10, 12, 16, 0.95)' }"
+          >
             <!-- BANNER SUPERIOR -->
             <div class="banner-section">
               <v-img class="banner-image" cover height="200" src="/fondo3.jpg">
@@ -591,6 +595,20 @@
                   variant="outlined"
                 />
 
+                <div class="text-subtitle-2 text-grey-lighten-1 mb-3">{{ $t('profile.cardColor') }}</div>
+                <div class="d-flex flex-wrap ga-3 mb-6">
+                  <div
+                    v-for="color in profileColorOptions"
+                    :key="color"
+                    class="color-option"
+                    :class="{ 'active-color': profileColor === color }"
+                    :style="{ backgroundColor: color }"
+                    @click="updateColor(color)"
+                  >
+                    <v-icon v-if="profileColor === color" color="white" icon="mdi-check" size="20" />
+                  </div>
+                </div>
+
                 <v-alert
                   v-if="nameChangeError"
                   class="mb-4"
@@ -851,7 +869,7 @@
   const {
     user, rank, selectedTitle, plan, role, parentId, selectedAchievements, unlockedAchievements,
     avatar, level, coins, xp, partides, inventory, displayName, nameChangesCount,
-    gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints, deletionScheduledAt,
+    gameHistory, topGames, maxScores, totalGamesPlayed, totalPoints, deletionScheduledAt, profileColor,
   } = storeToRefs(astroStore)
 
   function getRankName (lvl = 1) {
@@ -945,6 +963,34 @@
     { id: 106, name: 'Leyenda Galáctica', key: 'titleLegend', icon: 'mdi-format-title', color: 'cyan-accent-3' },
     { id: 107, name: 'Destructor de Asteroides', key: 'titleDestroyer', icon: 'mdi-format-title', color: 'amber-accent-3' },
   ]
+
+  const profileColorOptions = [
+    '#0a192f', // Deep Space Blue
+    '#1a237e', // Indigo Nebula
+    '#311b92', // Deep Purple Galaxy
+    '#004d40', // Teal Void
+    '#1b5e20', // Emerald Nebula
+    '#b71c1c', // Crimson Pulsar
+    '#4a148c', // Dark Matter Purple
+    '#263238', // Charcoal Meteor
+  ]
+
+  async function updateColor (color) {
+    settingsLoading.value = true
+    try {
+      const result = await astroStore.updateProfileColorAction(color)
+      if (result.success) {
+        settingsSuccess.value = t('profile.colorUpdated')
+        setTimeout(() => { settingsSuccess.value = '' }, 3000)
+      } else {
+        settingsError.value = result.message
+      }
+    } catch (e) {
+      settingsError.value = e.message
+    } finally {
+      settingsLoading.value = false
+    }
+  }
 
   function getTitleKey (titleName) {
     if (!titleName) return ''
@@ -1484,4 +1530,25 @@
     transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+.color-option {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.active-color {
+    border: 3px solid #00f2ff !important;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+}
 </style>

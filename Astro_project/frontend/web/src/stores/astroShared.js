@@ -24,6 +24,7 @@ export const STORAGE_KEYS = Object.freeze({
   parentId: 'astro_parent_id',
   lastActivity: 'astro_last_activity',
   lastGame: 'astro_last_game',
+  profileColor: 'astro_profile_color',
 })
 
 export const SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutos en milisegundos
@@ -142,8 +143,8 @@ export const INVENTORY_CATALOG = Object.freeze({
   },
   3: {
     id: 3,
-    name: 'Doble de Monedas',
-    desc: 'Multiplica x2 las monedas ganadas.',
+    name: 'Doble de AstroCoins',
+    desc: 'Multiplica x2 las AstroCoins ganadas.',
     icon: 'mdi-piggy-bank',
     color: 'yellow-accent-3',
     cat: 'items',
@@ -255,7 +256,7 @@ export const INVENTORY_CATALOG = Object.freeze({
   203: {
     id: 203,
     name: 'Avatar Caballero Estelar',
-    desc: 'Guerrero solar. Otorga +10% de créditos en todas las misiones.',
+    desc: 'Guerrero solar. Otorga +10% de AstroCoins en todas las misiones.',
     icon: 'mdi-shield-sun',
     image: 'avatar_knight.png',
     color: 'amber-accent-4',
@@ -270,6 +271,7 @@ const LEGACY_ITEM_NAME_TO_ID = Object.freeze({
   'Pack de Vidas': 1,
   'Congelar Racha': 2,
   'Doble de Monedas': 3,
+  'Doble de AstroCoins': 3,
   'Doble Puntuación': 4,
   'Pin Comandante': 101,
   'Avatar Ciber Hacker': 102,
