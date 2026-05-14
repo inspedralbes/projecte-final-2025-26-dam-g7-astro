@@ -7,7 +7,7 @@
         rounded="lg"
         variant="text"
       >
-        <v-img :src="currentFlag" width="22" height="15" class="mr-2 rounded-sm" cover />
+        <img :src="currentFlag" alt="" class="lang-flag mr-2">
         <v-icon class="opacity-50" color="white" icon="mdi-chevron-down" size="14" />
       </v-btn>
     </template>
@@ -21,7 +21,7 @@
         @click="changeLanguage(lang.value)"
       >
         <div class="d-flex align-center ga-3 px-2">
-          <v-img :src="lang.flag" width="22" height="15" class="rounded-sm shadow-sm" cover />
+          <img :src="lang.flag" :alt="$t(lang.labelKey)" class="lang-flag lang-flag-menu">
           <span class="text-white font-weight-bold text-caption">{{ $t(lang.labelKey).toUpperCase() }}</span>
         </div>
       </v-list-item>
@@ -87,6 +87,20 @@
 .active-lang-v3 {
   background: rgba(0, 242, 255, 0.1) !important;
   color: #00f2ff !important;
+}
+
+.lang-flag {
+  width: 24px;
+  height: 15px;
+  min-width: 24px;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+.lang-flag-menu {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 .opacity-70 { opacity: 0.7; }
