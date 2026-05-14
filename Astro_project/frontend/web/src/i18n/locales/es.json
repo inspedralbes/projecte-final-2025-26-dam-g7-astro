@@ -4,6 +4,7 @@
         "error": "Ha ocurrido un error.",
         "save": "Guardar",
         "cancel": "Cancelar",
+        "confirm": "Confirmar",
         "all": "Todos"
     },
     "sidebar": {
@@ -68,10 +69,14 @@
         "suppliesTitle": "Suministros Básicos",
         "eliteTitle": "Colección de Élite",
         "units": "Unidades: x{qty}",
-        "max": "MAX 99",
+        "max": "MÁXIMO ALCANZADO",
+        "dailyLimit": "Límite diario",
         "owned": "ADQUIRIDO",
+        "available": "DISPONIBLE",
         "reward": "¡RECOMPENSA!",
-        "accept": "Aceptar"
+        "accept": "Aceptar",
+        "goToInventory": "IR AL INVENTARIO",
+        "keepBuying": "SEGUIR COMPRANDO"
     },
     "inventory": {
         "title": "MI INVENTARIO",
@@ -611,7 +616,9 @@
         "alreadyOwned": "¡Ya tienes {item} en tu inventario!",
         "maxReached": "Has alcanzado el máximo de 99 unidades para {item}.",
         "confirmBuy": "¿Quieres comprar {item} por {price} créditos?",
-        "buySuccess": "Compra exitosa"
+        "confirmTitle": "CONFIRMACIÓN DE COMPRA",
+        "buySuccess": "Compra exitosa",
+        "buySuccessTitle": "¡OBJETO DESBLOQUEADO!"
     },
     "shopItems": {
         "vidas": {

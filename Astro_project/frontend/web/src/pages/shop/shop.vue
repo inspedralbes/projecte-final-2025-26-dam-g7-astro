@@ -38,7 +38,6 @@
         </v-col>
 
         <v-col cols="12" max-width="1200">
-
           <div class="d-flex align-center mb-6 px-2">
             <v-icon class="mr-3" color="cyan-accent-3">mdi-cube-outline</v-icon>
             <h3 class="text-h5 font-weight-bold text-white">{{ $t('store.suppliesTitle') }}</h3>
@@ -70,34 +69,57 @@
                     >
                       {{ item.desc }}
                     </div>
-                    <div
-                      v-if="item.limitacio"
-                      class="text-cyan-accent-1 font-weight-bold"
-                      style="font-size: 0.65rem !important;"
-                    >
-                      {{ item.limitacio }}
-                    </div>
-                    <div class="text-caption text-grey mt-1">
+                    <div class="text-caption text-cyan-accent-1 mt-1 font-weight-bold">
                       {{ $t('store.units', { qty: getItemQuantity(item.id) }) }} / 99
+                    </div>
+                    <div class="text-caption text-amber-accent-2 opacity-80">
+                      {{ $t('store.dailyLimit') }}: {{ getDailyBoughtToday(item.id) }}/5
                     </div>
                   </div>
                 </div>
 
-                <div style="width: 130px; flex-shrink: 0;">
+                <div class="d-flex flex-column align-end ga-2" style="width: 150px; flex-shrink: 0;">
+                  <!-- Selector de Cantidad para Suministros Básicos -->
+                  <div v-if="!hasReachedMax(item.id)" class="d-flex align-center ga-2 mb-1">
+                    <v-btn
+                      class="qty-btn"
+                      color="grey-darken-3"
+                      density="compact"
+                      size="small"
+                      variant="tonal"
+                      @click="decreaseQty(item.id)"
+                    >
+                      <v-icon color="white" size="small">mdi-minus</v-icon>
+                    </v-btn>
+                    <span class="text-body-2 font-weight-bold text-white" style="min-width: 20px; text-align: center;">
+                      {{ selectedQuantities[item.id] || 1 }}
+                    </span>
+                    <v-btn
+                      class="qty-btn"
+                      color="grey-darken-3"
+                      density="compact"
+                      size="small"
+                      variant="tonal"
+                      @click="increaseQty(item.id)"
+                    >
+                      <v-icon color="white" size="small">mdi-plus</v-icon>
+                    </v-btn>
+                  </div>
+
                   <v-btn
                     block
                     class="font-weight-bold rounded-lg text-black"
-                    :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= item.price ? 'amber-accent-3' : 'grey-darken-3')"
-                    :disabled="userCoins < item.price || hasReachedMax(item.id)"
+                    :color="hasReachedMax(item.id) ? 'grey-darken-2' : (userCoins >= (item.price * (selectedQuantities[item.id] || 1)) ? 'amber-accent-3' : 'grey-darken-3')"
+                    :disabled="userCoins < (item.price * (selectedQuantities[item.id] || 1)) || hasReachedMax(item.id)"
                     height="44"
                     :variant="hasReachedMax(item.id) ? 'outlined' : 'flat'"
-                    @click="buyProduct(item)"
+                    @click="openConfirmDialog(item)"
                   >
                     <template v-if="hasReachedMax(item.id)">
                       {{ $t('store.max') }}
                     </template>
                     <template v-else>
-                      {{ item.price }} <v-icon end size="x-small">mdi-currency-usd</v-icon>
+                      {{ item.price * (selectedQuantities[item.id] || 1) }} <v-icon end size="x-small">mdi-database</v-icon>
                     </template>
                   </v-btn>
                 </div>
@@ -140,7 +162,7 @@
                   {{ item.name }}
                 </v-card-title>
                 <div class="text-center text-caption text-grey mb-2">
-                  {{ $t('store.units', { qty: getItemQuantity(item.id) }) }}
+                  {{ isOwned(item.id) ? $t('store.owned') : $t('store.available') }}
                 </div>
                 <v-card-actions class="justify-center px-4 pb-2">
                   <v-btn
@@ -150,13 +172,13 @@
                     :disabled="(userCoins < item.price && !isOwned(item.id)) || isOwned(item.id)"
                     height="40"
                     :variant="isOwned(item.id) ? 'tonal' : (userCoins >= item.price ? 'flat' : 'outlined')"
-                    @click="buyProduct(item)"
+                    @click="openConfirmDialog(item)"
                   >
                     <template v-if="isOwned(item.id)">
                       {{ $t('store.owned') }} <v-icon end>mdi-check</v-icon>
                     </template>
                     <template v-else>
-                      {{ item.price }} <v-icon end size="small">mdi-currency-usd</v-icon>
+                      {{ item.price }} <v-icon end size="small">mdi-database</v-icon>
                     </template>
                   </v-btn>
                 </v-card-actions>
@@ -164,8 +186,89 @@
             </v-col>
           </v-row>
         </v-col>
-
       </v-row>
+
+      <!-- Diálogo de Confirmación de Compra -->
+      <v-dialog v-model="showConfirmDialog" max-width="400" persistent>
+        <v-card class="rounded-xl pa-6 confirm-dialog-card" color="#0f172a">
+          <div class="text-center mb-6">
+            <v-avatar :color="pendingItem?.bgColor" size="80">
+              <v-icon :color="pendingItem?.color" size="40">{{ pendingItem?.icon }}</v-icon>
+            </v-avatar>
+            <h2 class="text-h5 font-weight-bold text-white mt-4">{{ $t('shopActions.confirmTitle') }}</h2>
+            <p class="text-body-2 text-grey-lighten-1 mt-2">
+              ¿Quieres comprar <span class="text-cyan-accent-3 font-weight-black">{{ pendingQuantity }}x</span> 
+              {{ pendingItem?.name }} por <span class="text-amber-accent-3 font-weight-black">{{ pendingItem?.price * pendingQuantity }} créditos</span>?
+            </p>
+          </div>
+          <v-row dense>
+            <v-col cols="6">
+              <v-btn block class="rounded-lg" color="grey-darken-3" variant="flat" @click="showConfirmDialog = false">
+                {{ $t('general.cancel') }}
+              </v-btn>
+            </v-col>
+            <v-col cols="6">
+              <v-btn 
+                block 
+                class="rounded-lg font-weight-bold" 
+                color="cyan-accent-3" 
+                :loading="isBuying" 
+                variant="flat"
+                @click="confirmPurchase"
+              >
+                {{ $t('general.confirm') }}
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card>
+      </v-dialog>
+
+      <!-- Diálogo de Éxito de Compra -->
+      <v-dialog v-model="showSuccessDialog" max-width="450">
+        <v-card class="rounded-xl pa-8 text-center success-dialog-card overflow-visible" color="#020617">
+          <div class="success-glow" />
+          
+          <div class="unlock-animation-wrapper mb-6">
+            <v-avatar class="elevation-12 main-icon-bounce" :color="purchasedItem?.bgColor" size="120">
+              <v-icon :color="purchasedItem?.color" size="60">{{ purchasedItem?.icon }}</v-icon>
+            </v-avatar>
+            <div class="sparkles">
+              <span v-for="i in 8" :key="i" :class="`sparkle s${i}`">✦</span>
+            </div>
+          </div>
+
+          <h2 class="text-h4 font-weight-black text-white mb-2 text-uppercase">
+            {{ $t('shopActions.buySuccessTitle') }}
+          </h2>
+          <p class="text-body-1 text-grey-lighten-1 mb-8">
+            Has adquirido <span class="text-cyan-accent-3 font-weight-bold">{{ purchasedQuantity }}x</span> {{ purchasedItem?.name }}.
+            <br>
+            <span class="text-caption text-grey mt-2 block">Puedes utilizarlo desde tu inventario.</span>
+          </p>
+
+          <v-row class="ga-3" no-gutters>
+            <v-btn 
+              block 
+              class="rounded-xl font-weight-black mb-3" 
+              color="cyan-accent-3" 
+              size="large" 
+              @click="goToInventory"
+            >
+              {{ $t('store.goToInventory') }}
+            </v-btn>
+            <v-btn 
+              block 
+              class="rounded-xl font-weight-bold text-grey-lighten-1" 
+              color="white" 
+              size="large" 
+              variant="outlined" 
+              @click="showSuccessDialog = false"
+            >
+              {{ $t('store.keepBuying') }}
+            </v-btn>
+          </v-row>
+        </v-card>
+      </v-dialog>
 
     </v-container>
   </div>
@@ -173,15 +276,27 @@
 
 <script setup>
   import { computed, onMounted, ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { useAstroStore } from '@/stores/astroStore'
 
   const { t } = useI18n()
+  const router = useRouter()
   const astroStore = useAstroStore()
   const userCoins = computed(() => astroStore.coins)
   const animatedCoins = ref(userCoins.value)
   const coinChanges = ref([])
   let coinTimer = null
+
+  // Nuevos estados para diálogos y cantidades
+  const selectedQuantities = ref({})
+  const showConfirmDialog = ref(false)
+  const showSuccessDialog = ref(false)
+  const pendingItem = ref(null)
+  const pendingQuantity = ref(1)
+  const purchasedItem = ref(null)
+  const purchasedQuantity = ref(1)
+  const isBuying = ref(false)
 
   watch(userCoins, (newVal, oldVal) => {
     const diff = newVal - oldVal
@@ -220,38 +335,92 @@
     return Number(found?.quantity) || 0
   }
 
+  function getDailyBoughtToday (itemId) {
+    return astroStore.dailyPurchaseHistory?.items?.[itemId] || 0
+  }
+
+  function getRemainingDailyLimit (itemId) {
+    const id = Number(itemId)
+    if (id >= 1 && id <= 6) {
+      const bought = getDailyBoughtToday(itemId)
+      return Math.max(0, 5 - bought)
+    }
+    return 1 // Elite: 1 unidad máximo (ya se controla con isOwned)
+  }
+
+  function getMaxInventoryQuantity (itemId) {
+    const id = Number(itemId)
+    if (id >= 1 && id <= 6) return 99
+    return 1
+  }
+
+  function getMaxPurchasableNow (itemId) {
+    const remainingDaily = getRemainingDailyLimit(itemId)
+    const currentInInv = getItemQuantity(itemId)
+    const maxInv = getMaxInventoryQuantity(itemId)
+    const remainingInv = Math.max(0, maxInv - currentInInv)
+    
+    return Math.min(remainingDaily, remainingInv)
+  }
+
   function isOwned (itemId) {
     return getItemQuantity(itemId) > 0
   }
 
   function hasReachedMax (itemId) {
-    return getItemQuantity(itemId) >= 99
+    const id = Number(itemId)
+    // Para elite, "max reached" es si ya lo tiene
+    if (id >= 101) return isOwned(id)
+    // Para básicos, "max reached" es si no le queda cupo diario O si tiene 99 en inv
+    return getRemainingDailyLimit(id) <= 0 || getItemQuantity(id) >= 99
   }
 
-  async function buyProduct (item) {
-    const quantity = getItemQuantity(item.id)
-    if (item.cat !== 'items' && quantity > 0) {
-      alert(t('shopActions.alreadyOwned', { item: item.name }))
-      return
+  function increaseQty (itemId) {
+    const maxNow = getMaxPurchasableNow(itemId)
+    const selected = selectedQuantities.value[itemId] || 1
+    if (selected < maxNow) {
+      selectedQuantities.value[itemId] = selected + 1
     }
+  }
 
-    if (item.cat === 'items' && quantity >= 99) {
-      alert(t('shopActions.maxReached', { item: item.name }))
-      return
+  function decreaseQty (itemId) {
+    const selected = selectedQuantities.value[itemId] || 1
+    if (selected > 1) {
+      selectedQuantities.value[itemId] = selected - 1
     }
+  }
 
-    if (!confirm(t('shopActions.confirmBuy', { item: item.name, price: item.price }))) return
+  function openConfirmDialog (item) {
+    pendingItem.value = item
+    pendingQuantity.value = selectedQuantities.value[item.id] || 1
+    showConfirmDialog.value = true
+  }
 
+  async function confirmPurchase () {
+    if (!pendingItem.value) return
+    isBuying.value = true
     try {
-      const result = await astroStore.buyItem(item)
+      const result = await astroStore.buyItem(pendingItem.value, pendingQuantity.value)
       if (result.success) {
-        console.log(t('shopActions.buySuccess'))
+        purchasedItem.value = pendingItem.value
+        purchasedQuantity.value = pendingQuantity.value
+        showConfirmDialog.value = false
+        showSuccessDialog.value = true
+        // Limpiar cantidad seleccionada
+        selectedQuantities.value[pendingItem.value.id] = 1
       } else {
         alert(result.message)
       }
     } catch (error) {
       console.error('Error en la tienda:', error)
+    } finally {
+      isBuying.value = false
     }
+  }
+
+  function goToInventory () {
+    showSuccessDialog.value = false
+    router.push('/inventory')
   }
 
   const basicItems = computed(() => [
@@ -360,5 +529,84 @@
         transform: translateY(-80px) scale(0.8);
         opacity: 0;
     }
+}
+
+/* Botones de cantidad */
+.qty-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.qty-btn:active {
+    transform: scale(0.85) !important;
+    opacity: 0.7;
+}
+
+/* Dialog Styles */
+.confirm-dialog-card {
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.success-dialog-card {
+    border: 2px solid #00e5ff;
+    box-shadow: 0 0 50px rgba(0, 229, 255, 0.3);
+    position: relative;
+}
+
+.success-glow {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
+    z-index: -1;
+}
+
+.unlock-animation-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.main-icon-bounce {
+    animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bounce-in {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+.sparkles {
+    position: absolute;
+    inset: -20px;
+    pointer-events: none;
+}
+
+.sparkle {
+    position: absolute;
+    color: #00e5ff;
+    font-size: 20px;
+    opacity: 0;
+    animation: sparkle-fade 1.5s infinite;
+}
+
+.s1 { top: 10%; left: 10%; animation-delay: 0.1s; }
+.s2 { top: 20%; right: 10%; animation-delay: 0.3s; }
+.s3 { bottom: 20%; left: 15%; animation-delay: 0.5s; }
+.s4 { bottom: 10%; right: 15%; animation-delay: 0.7s; }
+.s5 { top: 50%; left: -10%; animation-delay: 0.2s; }
+.s6 { top: 50%; right: -10%; animation-delay: 0.4s; }
+.s7 { top: -10%; left: 50%; animation-delay: 0.6s; }
+.s8 { bottom: -10%; left: 50%; animation-delay: 0.8s; }
+
+@keyframes sparkle-fade {
+    0%, 100% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2) rotate(15deg); opacity: 1; }
+}
+
+.block {
+    display: block;
 }
 </style>

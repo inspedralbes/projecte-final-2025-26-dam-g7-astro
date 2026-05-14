@@ -4,6 +4,7 @@
         "error": "Hi ha hagut un error.",
         "save": "Desar",
         "cancel": "Cancel·lar",
+        "confirm": "Confirmar",
         "all": "Tots"
     },
     "sidebar": {
@@ -68,10 +69,14 @@
         "suppliesTitle": "Subministraments Bàsics",
         "eliteTitle": "Col·lecció d'Elit",
         "units": "Unitats: x{qty}",
-        "max": "MÀX 99",
+        "max": "MÀXIM ASSOLIT",
+        "dailyLimit": "Límit diari",
         "owned": "ADQUIRIT",
+        "available": "DISPONIBLE",
         "reward": "¡RECOMPENSA!",
-        "accept": "Acceptar"
+        "accept": "Acceptar",
+        "goToInventory": "ANAR A L'INVENTARI",
+        "keepBuying": "SEGUIR COMPRANT"
     },
     "inventory": {
         "title": "EL MEU INVENTARI",
@@ -611,7 +616,9 @@
         "alreadyOwned": "Ja tens {item} al teu inventari!",
         "maxReached": "Has assolit el màxim de 99 unitats per {item}.",
         "confirmBuy": "Vols comprar {item} per {price} crèdits?",
-        "buySuccess": "Compra amb èxit"
+        "confirmTitle": "CONFIRMACIÓ DE COMPRA",
+        "buySuccess": "Compra amb èxit",
+        "buySuccessTitle": "¡OBJECTE DESBLOQUEJAT!"
     },
     "shopItems": {
         "vidas": {

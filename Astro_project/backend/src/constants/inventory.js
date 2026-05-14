@@ -10,7 +10,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 200,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 2,
@@ -21,7 +22,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 500,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 3,
@@ -32,7 +34,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 300,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 4,
@@ -43,7 +46,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 300,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 5,
@@ -54,7 +58,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 500,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 6,
@@ -65,7 +70,8 @@ const INVENTORY_ITEMS = Object.freeze([
         cat: 'items',
         price: 10000,
         stackable: true,
-        maxQuantity: 5
+        maxQuantity: 99,
+        dailyPurchaseLimit: 5
     },
     {
         id: 101,

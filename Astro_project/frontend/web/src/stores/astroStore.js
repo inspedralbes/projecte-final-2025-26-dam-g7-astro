@@ -31,6 +31,7 @@ export const useAstroStore = defineStore('astro', () => {
   const groupApprovalRequests = computed({ get: () => sessionStore.groupApprovalRequests, set: value => sessionStore.setGroupApprovalRequests(value) })
   const scheduledPlanDowngrade = computed({ get: () => sessionStore.scheduledPlanDowngrade, set: value => sessionStore.setScheduledPlanDowngrade(value) })
   const pendingGroupLeaveRequest = computed({ get: () => sessionStore.pendingGroupLeaveRequest, set: value => sessionStore.setPendingGroupLeaveRequest(value) })
+  const dailyPurchaseHistory = computed({ get: () => sessionStore.dailyPurchaseHistory, set: value => sessionStore.setDailyPurchaseHistory(value) })
 
   // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
@@ -141,6 +142,7 @@ export const useAstroStore = defineStore('astro', () => {
       sessionStore.setGroupApprovalRequests(result.stats.groupApprovalRequests || [])
       sessionStore.setScheduledPlanDowngrade(result.stats.scheduledPlanDowngrade || null)
       sessionStore.setPendingGroupLeaveRequest(result.stats.pendingGroupLeaveRequest || null)
+      sessionStore.setDailyPurchaseHistory(result.stats.dailyPurchaseHistory || { date: '', items: {} })
     }
     return result
   }
@@ -160,8 +162,8 @@ export const useAstroStore = defineStore('astro', () => {
     return result
   }
 
-  async function buyItem (item) {
-    const result = await inventoryStore.buyItem(item)
+  async function buyItem (item, quantity = 1) {
+    const result = await inventoryStore.buyItem(item, quantity)
     if (!result.success) {
       return result
     }
@@ -175,6 +177,12 @@ export const useAstroStore = defineStore('astro', () => {
     } else if (Number(item?.id) === 2) {
       progressStore.setStreakFreezes(progressStore.streakFreezes + 1)
     }
+    
+    // Update daily purchase history if returned by server
+    if (data.dailyPurchaseHistory) {
+      sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
+    }
+
     return { success: true, data }
   }
 
@@ -334,7 +342,7 @@ export const useAstroStore = defineStore('astro', () => {
   return {
     user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
     inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
-    groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest,
+    groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest, dailyPurchaseHistory,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,

@@ -9,16 +9,19 @@ class ShopService {
         this.inventoryService = inventoryService;
     }
 
-    async buyItem(username, itemId) {
+    async buyItem(username, itemId, quantity = 1) {
         const catalogItem = this.inventoryService.getInventoryCatalogItem(itemId);
         if (!catalogItem || !Number.isFinite(catalogItem.price)) {
             throw new Error('Artículo no válido.');
         }
 
+        const safeQuantity = Math.max(1, parseInt(quantity) || 1);
+        const totalPrice = catalogItem.price * safeQuantity;
+
         const user = await this.userRepo.findByUsername(username);
         if (!user) throw new Error('Usuario no encontrado');
 
-        if (user.coins < catalogItem.price) {
+        if (user.coins < totalPrice) {
             throw new Error('Créditos insuficientes.');
         }
 
@@ -27,20 +30,31 @@ class ShopService {
         const currentEntryIndex = normalizedInventory.findIndex((inventoryItem) => inventoryItem.id === itemId);
         const currentQuantity = currentEntryIndex === -1 ? 0 : normalizedInventory[currentEntryIndex].quantity;
 
-        if (currentQuantity >= itemMax) {
-            throw new Error(`Has alcanzado el máximo (${itemMax}) para este objeto.`);
+        if (currentQuantity + safeQuantity > itemMax) {
+            throw new Error(`Has alcanzado el máximo en inventario (${itemMax}) para este objeto.`);
+        }
+
+        // Nuevo: Límite de compra diaria
+        if (catalogItem.dailyPurchaseLimit) {
+            const dailyBought = user.getDailyPurchaseCount(itemId);
+            if (dailyBought + safeQuantity > catalogItem.dailyPurchaseLimit) {
+                throw new Error(`Límite diario alcanzado. Ya has comprado ${dailyBought} hoy. Solo puedes comprar ${catalogItem.dailyPurchaseLimit} al día.`);
+            }
         }
 
         if (currentEntryIndex === -1) {
-            normalizedInventory.push({ id: itemId, quantity: 1, equipped: false });
+            normalizedInventory.push({ id: itemId, quantity: safeQuantity, equipped: false });
         } else {
-            normalizedInventory[currentEntryIndex].quantity += 1;
+            normalizedInventory[currentEntryIndex].quantity += safeQuantity;
         }
 
         normalizedInventory = this.inventoryService.serializeInventory(normalizedInventory);
-        user.coins -= catalogItem.price;
+        user.coins -= totalPrice;
         user.inventory = normalizedInventory;
         user.streakFreezes = this.inventoryService.getInventoryQuantity(normalizedInventory, 2);
+        
+        // Registrar compra diaria
+        user.recordPurchase(itemId, safeQuantity);
 
         await this.userRepo.update(user);
 
@@ -51,7 +65,8 @@ class ShopService {
             newBalance: user.coins,
             streakFreezes: user.streakFreezes,
             item: this.inventoryService.enrichInventory([boughtItem])[0],
-            inventory: this.inventoryService.enrichInventory(normalizedInventory)
+            inventory: this.inventoryService.enrichInventory(normalizedInventory),
+            dailyPurchaseHistory: user.dailyPurchaseHistory
         };
     }
 }

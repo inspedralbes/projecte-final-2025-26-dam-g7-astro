@@ -4,6 +4,7 @@
         "error": "An error has occurred.",
         "save": "Save",
         "cancel": "Cancel",
+        "confirm": "Confirm",
         "all": "All"
     },
     "sidebar": {
@@ -62,10 +63,14 @@
         "suppliesTitle": "Basic Supplies",
         "eliteTitle": "Elite Collection",
         "units": "Units: x{qty}",
-        "max": "MAX 99",
+        "max": "MAX REACHED",
+        "dailyLimit": "Daily limit",
         "owned": "OWNED",
+        "available": "AVAILABLE",
         "reward": "REWARD!",
-        "accept": "Accept"
+        "accept": "Accept",
+        "goToInventory": "GO TO INVENTORY",
+        "keepBuying": "KEEP BUYING"
     },
     "inventory": {
         "title": "MY INVENTORY",
@@ -605,7 +610,9 @@
         "alreadyOwned": "You already have {item} in your inventory!",
         "maxReached": "You have reached the maximum of 99 units for {item}.",
         "confirmBuy": "Do you want to buy {item} for {price} credits?",
-        "buySuccess": "Purchase successful"
+        "confirmTitle": "PURCHASE CONFIRMATION",
+        "buySuccess": "Purchase successful",
+        "buySuccessTitle": "ITEM UNLOCKED!"
     },
     "shopItems": {
         "vidas": {
