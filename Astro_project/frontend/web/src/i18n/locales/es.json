@@ -86,7 +86,7 @@
             "skin": "Skins",
             "collectible": "Coleccionables",
             "trails": "Rastros",
-            "pets": "Mascotas",
+            "title": "Títulos",
             "items": "Objetos"
         },
         "active": "ACTIVO: {games} partidas",
@@ -654,6 +654,18 @@
             "name": "Dron de Reconocimiento",
             "desc": "Un pequeño compañero robótico."
         },
+        "avatarHacker": {
+            "name": "Avatar Ciber Hacker",
+            "desc": "Un hacker del futuro. Otorga +15% de puntuación en todas las misiones."
+        },
+        "avatarNebula": {
+            "name": "Avatar Viajero Nebulosa",
+            "desc": "Explorador cósmico. Otorga +20% de tiempo en misiones contrarreloj."
+        },
+        "avatarKnight": {
+            "name": "Avatar Caballero Estelar",
+            "desc": "Guerrero solar. Otorga +10% de créditos en todas las misiones."
+        },
         "sabotageRay": {
             "name": "Rayo Saboteador",
             "desc": "En multijugador, tus aciertos restan el doble de tiempo al rival.",
@@ -671,6 +683,7 @@
             "name": "Destructor de Asteroides",
             "desc": "Etiqueta de texto permanente."
         },
+        "titleDesc": "Etiqueta de texto permanente.",
         "nameChange": {
             "name": "Cambio de Nombre",
             "desc": "Cambia tu apodo. ¡El primero es gratis!"
@@ -693,7 +706,7 @@
         "time": "Tiempo: {time}s",
         "timeLabel": "TIEMPO",
         "locked": "SINCRONIZADO",
-        "scanning": "ESCANER...",
+        "scanning": "ESCANEANDO...",
         "placeholder": "Introduce la frase...",
         "send": "ENVIAR",
         "waiting": "ESPERANDO SEÑAL...",
@@ -707,9 +720,9 @@
         "youHear": "SINTONIZAS:",
         "typeAndEnter": "Escribe un mensaje y pulsa Enter...",
         "you": "TÚ",
-        "success": "¡SEÑAL DESXIFRADA!",
+        "success": "¡SEÑAL DESCIFRADA!",
         "successDesc": "+150 PTS | +15s",
-        "title": "Senyal de Ràdio"
+        "title": "Señal de Radio"
     },
     "errors": {
         "noSession": "No hay una sesión activa.",

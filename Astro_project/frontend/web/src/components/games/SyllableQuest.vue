@@ -405,6 +405,14 @@
   }
 
   onMounted(() => {
+    // Aplicar boost de tiempo si el avatar lo permite
+    const boost = astroStore.equippedSkinBoost
+    if (boost && boost.type === 'time') {
+      timeLeft.value = Math.floor(60 * boost.multiplier)
+    } else {
+      timeLeft.value = 60
+    }
+
     startTimer()
     if (!props.isMultiplayer || isHost.value) {
       syncPhrase()

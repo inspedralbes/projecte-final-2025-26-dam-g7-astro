@@ -86,7 +86,7 @@
             "skin": "Aparences",
             "collectible": "Col·leccionables",
             "trails": "Rastres",
-            "pets": "Mascotes",
+            "title": "Títols",
             "items": "Objectes"
         },
         "active": "ACTIU: {games} partides",
@@ -671,6 +671,7 @@
             "name": "Destructor d'Asteroides",
             "desc": "Etiqueta de text permanent."
         },
+        "titleDesc": "Etiqueta de text permanent.",
         "nameChange": {
             "name": "Canvi de Nom",
             "desc": "Canvia el teu apodo. El primer és gratis!"
@@ -707,9 +708,9 @@
         "youHear": "SINTONITZES:",
         "typeAndEnter": "Escriu un missatge i prem Enter...",
         "you": "TU",
-        "success": "¡SENYAL DESXIFRADA!",
+        "success": "¡SENYAL DESXIFRAT!",
         "successDesc": "+150 PTS | +15s",
-        "error": "✗ DATOS INCORRECTOS - VUELVE A INTENTAR"
+        "error": "✗ DADES INCORRECTES - TORNA A INTENTAR-HO"
     },
     "errors": {
         "noSession": "No hi ha una sessió activa.",
@@ -722,7 +723,7 @@
             "coins": "Guanya {goal} crèdits",
             "xp": "Aconsegueix {goal} XP",
             "item": "Utilitza {goal} objectes",
-            "streak": "Manté la teva racha"
+            "streak": "Manté la teva ratxa"
         },
         "weekly": {
             "games": "Mestre de Jocs ({goal} partides)",

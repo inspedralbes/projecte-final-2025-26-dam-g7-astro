@@ -12,7 +12,8 @@ class GameService {
         consumeBoostersForCompletedGame,
         getScoreMultiplier,
         getCoinsMultiplier,
-        statsService
+        statsService,
+        inventoryService
     }) {
         this.userRepo = userRepository;
         this.partidaRepo = partidaRepository;
@@ -23,6 +24,7 @@ class GameService {
         this.getScoreMultiplier = getScoreMultiplier;
         this.getCoinsMultiplier = getCoinsMultiplier;
         this.statsService = statsService;
+        this.inventoryService = inventoryService;
     }
 
     async completeGame(username, { game, score = 0, completedMapNode, timeSeconds = 0 }) {
@@ -35,12 +37,19 @@ class GameService {
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
 
         const currentBoosters = this.normalizeActiveBoosters(user.activeBoosters);
-        const scoreMultiplier = this.getScoreMultiplier(currentBoosters);
-        const coinsMultiplier = this.getCoinsMultiplier(currentBoosters);
-        const boostedScore = normalizedScore * scoreMultiplier;
+        const avatarBoost = this.inventoryService.getEquippedAvatarBoost(user.inventory);
+        
+        let scoreMultiplier = this.getScoreMultiplier(currentBoosters);
+        let coinsMultiplier = this.getCoinsMultiplier(currentBoosters);
 
+        if (avatarBoost) {
+            if (avatarBoost.type === 'score') scoreMultiplier *= avatarBoost.multiplier;
+            if (avatarBoost.type === 'coins') coinsMultiplier *= avatarBoost.multiplier;
+        }
+
+        const boostedScore = Math.round(normalizedScore * scoreMultiplier);
         const xpEarned = Math.floor(boostedScore / 10);
-        const coinsEarned = xpEarned * coinsMultiplier;
+        const coinsEarned = Math.floor(xpEarned * coinsMultiplier);
 
         // Utilitzar els mètodes de l'entitat de domini User
         user.addXP(xpEarned);

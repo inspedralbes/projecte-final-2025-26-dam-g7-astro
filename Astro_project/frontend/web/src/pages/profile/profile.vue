@@ -819,6 +819,7 @@
   import LanguageSelector from '@/components/layout/LanguageSelector.vue'
   import { ACHIEVEMENTS } from '@/constants/achievements'
   import { useAstroStore } from '@/stores/astroStore'
+  import { INVENTORY_CATALOG } from '@/stores/astroShared'
 
   const { t, te } = useI18n()
   const router = useRouter()
@@ -915,15 +916,29 @@
     return t('plans.individual').toUpperCase()
   })
 
-  const avatarOptions = computed(() => [
-    { label: t('profile.avatar_white'), file: 'Astronauta_blanc.jpg' },
-    { label: t('profile.avatar_yellow'), file: 'Astronauta_groc.jpg' },
-    { label: t('profile.avatar_purple'), file: 'Astronauta_lila.jpg' },
-    { label: t('profile.avatar_black'), file: 'Astronauta_negre.jpg' },
-    { label: t('profile.avatar_orange'), file: 'Astronauta_taronja.jpg' },
-    { label: t('profile.avatar_green'), file: 'Astronauta_verd.jpg' },
-    { label: t('profile.avatar_red'), file: 'Astronauta_vermell.jpg' },
-  ])
+  const avatarOptions = computed(() => {
+    const base = [
+      { label: t('profile.avatar_white'), file: 'Astronauta_blanc.jpg' },
+      { label: t('profile.avatar_yellow'), file: 'Astronauta_groc.jpg' },
+      { label: t('profile.avatar_purple'), file: 'Astronauta_lila.jpg' },
+      { label: t('profile.avatar_black'), file: 'Astronauta_negre.jpg' },
+      { label: t('profile.avatar_orange'), file: 'Astronauta_taronja.jpg' },
+      { label: t('profile.avatar_green'), file: 'Astronauta_verd.jpg' },
+      { label: t('profile.avatar_red'), file: 'Astronauta_vermell.jpg' },
+    ]
+
+    if (inventory.value) {
+      // Usamos el catálogo como fallback si falta la propiedad image en el item
+      const skins = inventory.value.filter(i => i.cat === 'skin')
+      skins.forEach(s => {
+        const image = s.image || INVENTORY_CATALOG[s.id]?.image
+        if (image && !base.find(b => b.file === image)) {
+          base.push({ label: s.name, file: image })
+        }
+      })
+    }
+    return base
+  })
 
   const ALL_TITLES = [
     { id: 105, name: 'El Imparable', key: 'titleUnstoppable', icon: 'mdi-format-title', color: 'red-accent-3' },

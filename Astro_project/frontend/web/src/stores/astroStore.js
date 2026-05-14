@@ -79,6 +79,10 @@ export const useAstroStore = defineStore('astro', () => {
 
   const isStreakActiveToday = computed(() => progressStore.isStreakActiveToday)
   const inventoryUnits = computed(() => inventoryStore.inventoryUnits)
+  const equippedSkinBoost = computed(() => {
+    const skin = inventory.value?.find(i => i.equipped && i.cat === 'skin')
+    return skin?.boost || null
+  })
 
   // Actions
   async function registerTripulante (userData) {
@@ -346,7 +350,7 @@ export const useAstroStore = defineStore('astro', () => {
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
-    isStreakActiveToday, inventoryUnits,
+    isStreakActiveToday, inventoryUnits, equippedSkinBoost,
     registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
     buyItem, useInventoryItem, sellItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
     addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,

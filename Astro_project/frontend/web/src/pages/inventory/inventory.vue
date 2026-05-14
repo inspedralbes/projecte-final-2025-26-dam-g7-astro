@@ -73,7 +73,12 @@
                     size="90"
                     :style="{ backgroundColor: item.color + '20' }"
                   >
-                    <v-icon :color="item.color" size="45">{{ item.icon }}</v-icon>
+                    <v-img v-if="item.image" :src="`/${item.image}`" cover>
+                      <template #error>
+                        <v-icon :color="item.color" size="45">{{ item.icon }}</v-icon>
+                      </template>
+                    </v-img>
+                    <v-icon v-else :color="item.color" size="45">{{ item.icon }}</v-icon>
                   </v-avatar>
 
                   <h3 class="text-h6 font-weight-bold text-white mb-1 text-center">
@@ -216,9 +221,9 @@
   const categories = computed(() => [
     { id: 'all', name: t('inventory.categories.all'), icon: 'mdi-apps' },
     { id: 'skin', name: t('inventory.categories.skin'), icon: 'mdi-palette' },
-    { id: 'pets', name: t('inventory.categories.pets'), icon: 'mdi-robot' },
     { id: 'collectible', name: t('inventory.categories.collectible'), icon: 'mdi-trophy' },
     { id: 'trails', name: t('inventory.categories.trails'), icon: 'mdi-creation' },
+    { id: 'title', name: t('inventory.categories.title'), icon: 'mdi-format-title' },
     { id: 'items', name: t('inventory.categories.items'), icon: 'mdi-flask-outline' },
   ])
 
@@ -269,6 +274,8 @@
       const data = await response.json()
       if (data.success) {
         astroStore.setInventory(data.inventory || [])
+        if (data.selectedTitle !== undefined) astroStore.selectedTitle = data.selectedTitle
+        if (data.avatar !== undefined) astroStore.avatar = data.avatar
       }
     } catch (error) {
       console.error('Error al equipar item:', error)
@@ -326,8 +333,8 @@
   }
 
   function canSell (item) {
-    // No permitir vender items equipados
-    return item.quantity > 0 && !item.equipped
+    // Solo permitir vender suministros básicos (cat === 'items') y que no estén equipados
+    return item.quantity > 0 && !item.equipped && item.cat === 'items'
   }
 
   function confirmSell (item) {
@@ -362,12 +369,13 @@
       5: 'sabotageRay',
       6: 'nameChange',
       101: 'pin',
-      102: 'cyberpunk',
-      103: 'dron',
+      102: 'avatarHacker',
       104: 'neon',
       105: 'titleUnstoppable',
       106: 'titleLegend',
       107: 'titleDestroyer',
+      202: 'avatarNebula',
+      203: 'avatarKnight',
     }
     const key = idMap[item.id]
     return key ? `shopItems.${key}.name` : null
@@ -382,9 +390,10 @@
       5: 'sabotageRay',
       6: 'nameChange',
       101: 'pin',
-      102: 'cyberpunk',
-      103: 'dron',
+      102: 'avatarHacker',
       104: 'neon',
+      202: 'avatarNebula',
+      203: 'avatarKnight',
     }
     if ([105, 106, 107].includes(Number(item.id))) return 'shopItems.titleDesc'
     const key = idMap[item.id]

@@ -155,7 +155,12 @@
                     :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
                     size="80"
                   >
-                    <v-icon :color="item.color" size="40">{{ item.icon }}</v-icon>
+                    <v-img v-if="item.image" :src="`/${item.image}`" cover>
+                      <template #error>
+                        <v-icon :color="item.color" size="40">{{ item.icon }}</v-icon>
+                      </template>
+                    </v-img>
+                    <v-icon v-else :color="item.color" size="40">{{ item.icon }}</v-icon>
                   </v-avatar>
                 </div>
                 <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0">
@@ -193,7 +198,8 @@
         <v-card class="rounded-xl pa-6 confirm-dialog-card" color="#0f172a">
           <div class="text-center mb-6">
             <v-avatar :color="pendingItem?.bgColor" size="80">
-              <v-icon :color="pendingItem?.color" size="40">{{ pendingItem?.icon }}</v-icon>
+              <v-img v-if="pendingItem?.image" :src="`/${pendingItem?.image}`" cover />
+              <v-icon v-else :color="pendingItem?.color" size="40">{{ pendingItem?.icon }}</v-icon>
             </v-avatar>
             <h2 class="text-h5 font-weight-bold text-white mt-4">{{ $t('shopActions.confirmTitle') }}</h2>
             <p class="text-body-2 text-grey-lighten-1 mt-2">
@@ -230,7 +236,8 @@
           
           <div class="unlock-animation-wrapper mb-6">
             <v-avatar class="elevation-12 main-icon-bounce" :color="purchasedItem?.bgColor" size="120">
-              <v-icon :color="purchasedItem?.color" size="60">{{ purchasedItem?.icon }}</v-icon>
+              <v-img v-if="purchasedItem?.image" :src="`/${purchasedItem.image}`" cover />
+              <v-icon v-else :color="purchasedItem?.color" size="60">{{ purchasedItem?.icon }}</v-icon>
             </v-avatar>
             <div class="sparkles">
               <span v-for="i in 8" :key="i" :class="`sparkle s${i}`">✦</span>
@@ -434,8 +441,9 @@
 
   const premiumItems = computed(() => [
     { id: 101, name: t('shopItems.pin.name'), cat: 'skin', price: 2500, icon: 'mdi-medal', color: 'amber-accent-3', desc: t('shopItems.pin.desc'), bgColor: 'rgba(255, 193, 7, 0.15)' },
-    { id: 102, name: t('shopItems.cyberpunk.name'), cat: 'skin', price: 5000, icon: 'mdi-robot', color: 'purple-accent-3', desc: t('shopItems.cyberpunk.desc'), bgColor: 'rgba(224, 64, 251, 0.15)' },
-    { id: 103, name: t('shopItems.dron.name'), cat: 'pets', price: 3500, icon: 'mdi-quadcopter', color: 'green-accent-3', desc: t('shopItems.dron.desc'), bgColor: 'rgba(0, 230, 118, 0.15)' },
+    { id: 102, name: t('shopItems.avatarHacker.name'), cat: 'skin', price: 5000, icon: 'mdi-robot-vacuum-variant', color: 'purple-accent-3', desc: t('shopItems.avatarHacker.desc'), image: 'avatar_hacker.png', bgColor: 'rgba(224, 64, 251, 0.15)' },
+    { id: 202, name: t('shopItems.avatarNebula.name'), cat: 'skin', price: 7500, icon: 'mdi-rocket-launch', color: 'cyan-accent-3', desc: t('shopItems.avatarNebula.desc'), image: 'avatar_nebula.png', bgColor: 'rgba(0, 229, 255, 0.15)' },
+    { id: 203, name: t('shopItems.avatarKnight.name'), cat: 'skin', price: 8000, icon: 'mdi-shield-sun', color: 'amber-accent-4', desc: t('shopItems.avatarKnight.desc'), image: 'avatar_knight.png', bgColor: 'rgba(255, 160, 0, 0.15)' },
     { id: 104, name: t('shopItems.neon.name'), cat: 'trails', price: 1500, icon: 'mdi-creation', color: 'pink-accent-3', desc: t('shopItems.neon.desc'), bgColor: 'rgba(255, 64, 129, 0.15)' },
     { id: 105, name: t('shopItems.titleUnstoppable.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'red-accent-3', desc: t('shopItems.titleUnstoppable.desc'), bgColor: 'rgba(255, 82, 82, 0.15)' },
     { id: 106, name: t('shopItems.titleLegend.name'), cat: 'title', price: 1000, icon: 'mdi-format-title', color: 'cyan-accent-3', desc: t('shopItems.titleLegend.desc'), bgColor: 'rgba(0, 229, 255, 0.15)' },
