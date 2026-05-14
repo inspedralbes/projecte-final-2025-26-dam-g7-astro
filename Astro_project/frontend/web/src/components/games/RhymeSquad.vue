@@ -205,11 +205,13 @@
   import { useI18n } from 'vue-i18n'
   import { rhymeData } from '@/data/rhymeGamesData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const props = defineProps({
     isMultiplayer: {
@@ -228,8 +230,35 @@
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
   const isWaitingForOthers = ref(false)
 
-  const currentDictionary = computed(() => {
+  function normalizeRhymeEntry (entry = {}) {
+    return {
+      word: String(entry.word || ''),
+      ending: String(entry.ending || ''),
+      rhymes: Array.isArray(entry.rhymes) ? entry.rhymes.map(word => String(word)) : [],
+      fakes: Array.isArray(entry.fakes) ? entry.fakes.map(word => String(word)) : [],
+    }
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'RhymeSquad' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'RhymeSquad'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
     return rhymeData[locale.value] || rhymeData['es']
+  })
+
+  const currentDictionary = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeRhymeEntry)
+      .filter(item => item.word && item.rhymes.length > 0 && item.fakes.length > 0)
+    return normalized.length > 0 ? normalized : (rhymeData[locale.value] || rhymeData['es']).map(normalizeRhymeEntry)
   })
 
   const isPlaying = ref(false)

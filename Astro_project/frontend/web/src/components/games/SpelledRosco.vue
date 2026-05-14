@@ -346,6 +346,7 @@
   import { useI18n } from 'vue-i18n'
   import { roscoData } from '@/data/roscoGamesData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
   import { isValidHint } from '@/utils/hintValidator'
   import { getWordCategory, getWordType } from '@/utils/roscoHints'
@@ -353,6 +354,7 @@
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const textHint = ref('')
   const currentHints = reactive({
@@ -379,8 +381,34 @@
     }
   }
 
-  const allLettersData = computed(() => {
+  function normalizeRoscoEntry (entry = {}) {
+    return {
+      char: String(entry.char || ''),
+      question: String(entry.question || ''),
+      answer: String(entry.answer || ''),
+    }
+  }
+
+  const gameData = computed(() => {
+    if (groupStore.trainingActiveSupplySet?.gameId === 'SpelledRosco' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'SpelledRosco'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
     return roscoData[locale.value] || roscoData['es']
+  })
+
+  const allLettersData = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeRoscoEntry)
+      .filter(item => item.char && item.question && item.answer)
+    return normalized.length > 0 ? normalized : (roscoData[locale.value] || roscoData['es']).map(normalizeRoscoEntry)
   })
 
   const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), totalTime = 60, timeLeft = ref(totalTime), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())

@@ -132,11 +132,13 @@
   import { useI18n } from 'vue-i18n'
   import { radarScanData } from '@/data/radarScanData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const emit = defineEmits(['game-over'])
   const props = defineProps({
@@ -227,7 +229,36 @@
   const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
 
   // --- CONFIGURACIÓ DE NIVELLS ---
-  const levels = computed(() => radarScanData[locale.value] || radarScanData['es'])
+  function normalizeLevelConfig (entry = {}) {
+    return {
+      distractor: String(entry.distractor || ''),
+      target: String(entry.target || ''),
+      grid: Number(entry.grid) || 5,
+      tunnel: Number(entry.tunnel) || 250,
+    }
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'RadarScan' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'RadarScan'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
+    return radarScanData[locale.value] || radarScanData['es']
+  })
+
+  const levels = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeLevelConfig)
+      .filter(item => item.target && item.distractor && item.grid > 0 && item.tunnel > 0)
+    return normalized.length > 0 ? normalized : (radarScanData[locale.value] || radarScanData['es']).map(normalizeLevelConfig)
+  })
 
   // --- COMPUTADES ---
   const currentConfig = computed(() => {
