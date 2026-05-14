@@ -195,11 +195,13 @@
   import { useI18n } from 'vue-i18n'
   import { radioSignalData } from '@/data/radioSignalData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const props = defineProps({
     isMultiplayer: {
@@ -254,7 +256,33 @@
     setTimeout(() => { showFeedback.value = false }, 800)
   }
 
-  const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es'])
+  function normalizePhrase (entry) {
+    if (typeof entry === 'string') return entry
+    if (entry && typeof entry === 'object') {
+      return String(entry.phrase || entry.text || '').trim()
+    }
+    return ''
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'RadioSignal' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'RadioSignal'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
+    return radioSignalData[locale.value] || radioSignalData['es']
+  })
+
+  const phrases = computed(() => {
+    const normalized = gameData.value.map(normalizePhrase).filter(Boolean)
+    return normalized.length > 0 ? normalized : (radioSignalData[locale.value] || radioSignalData['es'])
+  })
   const shuffledPhrases = ref([])
   const phraseIndex = ref(0)
   const phraseToSolve = ref('')
@@ -278,9 +306,9 @@
           // Asimetría: uno resuelve una parte y el otro la otra
           if (subRole.value === 'listener') {
             phraseToSolve.value = teamData.phrase
-            phraseToHear.value = teamData.partnerPhrase || phrases.value[1]
+            phraseToHear.value = teamData.partnerPhrase || phrases.value[1] || phrases.value[0] || ''
           } else {
-            phraseToSolve.value = teamData.partnerPhrase || phrases.value[1]
+            phraseToSolve.value = teamData.partnerPhrase || phrases.value[1] || phrases.value[0] || ''
             phraseToHear.value = teamData.phrase
           }
         }
@@ -668,7 +696,7 @@
         // Rotamos frases para el equipo
         phraseIndex.value++
         const p1 = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
-        const p2 = shuffledPhrases.value[phraseIndex.value + 1] || phrases.value[1]
+        const p2 = shuffledPhrases.value[phraseIndex.value + 1] || phrases.value[1] || phrases.value[0]
 
         if (subRole.value === 'listener') {
           phraseToSolve.value = p1
