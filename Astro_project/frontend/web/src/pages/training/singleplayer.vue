@@ -13,12 +13,12 @@
 
               <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
                 <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ $t(level.phaseSubtitleKey) }}</div>
-                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
+                <h2 class="text-h5 font-weight-black text-white text-uppercase glow-text mb-1">
                   {{ $t(level.phaseTitleKey) }}
                 </h2>
               </div>
 
-              <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
+              <div class="flex-grow-1 px-4 px-md-8 d-flex align-center mt-4">
                 <v-divider class="border-cyan opacity-40" />
                 <div class="phase-center-node mx-2" />
                 <v-divider class="border-cyan opacity-40" />
@@ -31,19 +31,12 @@
           </div>
 
           <div class="path-row">
-            <div
-              class="node-wrapper"
-              :class="{
-                'pos-left': index % 2 === 0,
-                'pos-right': index % 2 !== 0,
-                'on-top': activePreviewIndex === index
-              }"
-            >
-
               <div
                 v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitleKey"
                 class="path-connector"
-                :class="{ 'connector-flip': index % 2 !== 0 }"
+                :class="[
+                  isNodeRight(index) ? 'pos-right connector-flip' : 'pos-left'
+                ]"
               >
                 <svg viewBox="0 0 140 140">
                   <path
@@ -53,6 +46,15 @@
                   />
                 </svg>
               </div>
+
+              <div
+                class="node-wrapper"
+                :class="{
+                  'pos-left': !isNodeRight(index),
+                  'pos-right': isNodeRight(index),
+                  'on-top': activePreviewIndex === index
+                }"
+              >
 
               <div
                 v-if="index + 1 <= astroStore.mapLevel"
@@ -105,7 +107,7 @@
                 <div
                   v-if="activePreviewIndex === index"
                   class="level-preview-card"
-                  :class="index % 2 === 0 ? 'preview-right' : 'preview-left'"
+                  :class="getPreviewAlignment(index)"
                   @click.stop
                 >
                   <div class="preview-gif-container">
@@ -394,10 +396,26 @@
 
     // FASE 3: Espacio Profundo (4)
     { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 400, phaseTitleKey: 'singleplayerLevels.fase3Title', phaseSubtitleKey: 'singleplayerLevels.fase3Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-auto-fix', previewGif: '/previews/radar-scan-2.gif' },
-    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.senalperdida', component: SpelledRosco, minScore: 1200, previewGif: '/previews/spelled-rosco.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.senalperdida', component: SpelledRosco, minScore: 600, previewGif: '/previews/spelled-rosco.gif' },
     { id: 'word-construction', supplyGameId: 'WordConstruction', nameKey: 'singleplayerLevels.horizontes', component: WordConstruction, minScore: 1500, previewGif: '/previews/word-construction.gif' },
     { id: 'syllable-quest', nameKey: 'singleplayerLevels.destino', component: SyllableQuest, minScore: 1000, previewGif: '/previews/syllable-quest.gif' },
   ]
+
+  function isNodeRight (index) {
+    // Fase 1: 0-3 -> Paridad estándar (1, 3 son R)
+    // Fase 2: 4-7 -> Paridad invertida (4, 6 son R)
+    // Fase 3: 8-11 -> Paridad estándar (9, 11 son R)
+    if (index >= 4 && index <= 7) {
+      return index % 2 === 0
+    }
+    return index % 2 !== 0
+  }
+
+  function getPreviewAlignment (index) {
+    const isRight = isNodeRight(index)
+    // Siempre hacia fuera (exterior del mapa) en todas las fases
+    return isRight ? 'preview-right' : 'preview-left'
+  }
 
   function getLevelState (index) {
     const levelNum = index + 1
@@ -696,16 +714,19 @@
 
 .path-connector {
     position: absolute;
-    top: 50%;
+    top: 40px;
     left: 50%;
     width: 140px;
     height: 140px;
-    z-index: -1;
+    z-index: 1;
     pointer-events: none;
     transform-origin: top left;
 }
 
-.connector-flip { transform: scaleX(-1); }
+.path-connector.pos-left { transform: translateX(-70px); }
+.path-connector.pos-right { transform: translateX(70px) scaleX(-1); }
+
+.connector-flip { /* El flip ya se maneja en pos-right para evitar conflictos de transform */ }
 
 svg {
     width: 100%;

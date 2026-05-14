@@ -59,7 +59,7 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
-    async buyItem (item) {
+    async buyItem (item, quantity = 1) {
       this.error = null
       const user = this.resolveUser()
       if (!user) {
@@ -70,7 +70,7 @@ export const useInventoryStore = defineStore('inventory', {
         const { response, data } = await requestJson('/api/shop/buy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user, item }),
+          body: JSON.stringify({ user, item, quantity }),
         })
 
         if (!response.ok) {

@@ -39,6 +39,7 @@ export const useSessionStore = defineStore('session', {
     groupApprovalRequests: [],
     scheduledPlanDowngrade: null,
     pendingGroupLeaveRequest: null,
+    dailyPurchaseHistory: { date: '', items: {} },
     error: null,
   }),
 
@@ -151,6 +152,13 @@ export const useSessionStore = defineStore('session', {
       if (profile.pendingGroupLeaveRequest !== undefined) {
         this.setPendingGroupLeaveRequest(profile.pendingGroupLeaveRequest)
       }
+      if (profile.dailyPurchaseHistory !== undefined) {
+        this.setDailyPurchaseHistory(profile.dailyPurchaseHistory)
+      }
+    },
+
+    setDailyPurchaseHistory (history) {
+      this.dailyPurchaseHistory = history || { date: '', items: {} }
     },
 
     setDeletionScheduled (date) {

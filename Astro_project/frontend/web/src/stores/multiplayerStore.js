@@ -4,6 +4,7 @@ import { useChatStore } from './chatStore'
 import { useSessionStore } from './sessionStore'
 import { useSocialStore } from './socialStore'
 import { useAstroStore } from './astroStore'
+import { useProgressStore } from './progressStore'
 
 function buildWsUrl () {
   let wsUrl = API_BASE_URL.replace(/^http/i, 'ws')
@@ -364,6 +365,19 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
           if (Array.isArray(data.groupInvitations)) {
             sessionStore.setGroupInvitations(data.groupInvitations)
+          }
+          break
+        }
+        case 'PROFILE_UPDATE': {
+          const astroStore = useAstroStore()
+          if (data.coins !== undefined) astroStore.setCoins(data.coins)
+          if (data.inventory !== undefined) astroStore.setInventory(data.inventory)
+          if (data.streakFreezes !== undefined) {
+            const progressStore = useProgressStore()
+            progressStore.setStreakFreezes(data.streakFreezes)
+          }
+          if (data.dailyPurchaseHistory !== undefined) {
+            sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
           }
           break
         }

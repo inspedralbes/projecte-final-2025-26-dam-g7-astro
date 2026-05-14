@@ -149,7 +149,7 @@ registerAuthRoutes(app, {
     getInventoryQuantity: inventoryServiceInstance.getInventoryQuantity.bind(inventoryServiceInstance),
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
 });
-registerShopRoutes(app, { shopService });
+registerShopRoutes(app, { shopService, roomManager });
 registerAchievementRoutes(app, { achievementService });
 registerPlanRoutes(app, { userService: userServiceInstance });
 registerGroupRoutes(app, { groupService, statsService: statsServiceInstance });
