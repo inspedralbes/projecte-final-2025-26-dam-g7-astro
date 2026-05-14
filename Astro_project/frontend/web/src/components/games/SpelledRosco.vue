@@ -387,44 +387,26 @@
   let timerInterval = null
 
   const STAR_CENTER = 200
-  const STAR_RADIUS = 160
-  const INNER_RADIUS = 70
+  const STAR_RADIUS = 150
+  const INNER_RADIUS = 60
 
-  const starPoints = computed(() => {
-    const numLetters = roscoLetters.value.length || 25
-    const totalPoints = numLetters * 2
-    return Array.from({ length: totalPoints }, (_, i) => {
-      const angle = (i * (360 / totalPoints) - 90) * (Math.PI / 180)
-      const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
-      return { x: STAR_CENTER + Math.cos(angle) * r, y: STAR_CENTER + Math.sin(angle) * r }
-    })
+  const starPoints = Array.from({ length: 10 }, (_, i) => {
+    const angle = (i * 36 - 90) * (Math.PI / 180)
+    const r = i % 2 === 0 ? STAR_RADIUS : INNER_RADIUS
+    return { x: STAR_CENTER + Math.cos(angle) * r, y: STAR_CENTER + Math.sin(angle) * r }
   })
 
-  const letterPositions = computed(() => {
-    const numLetters = roscoLetters.value.length || 25
-    return Array.from({ length: numLetters }, (_, i) => i * 2)
-  })
+  const letterPositions = [0, 2, 4, 6, 8]
 
-  const starSegments = computed(() => {
-    const points = starPoints.value
-    return points.map((point, i) => ({
-      x1: point.x, y1: point.y,
-      x2: points[(i + 1) % points.length].x, y2: points[(i + 1) % points.length].y,
-    }))
-  })
+  const starSegments = computed(() => starPoints.map((point, i) => ({
+    x1: point.x, y1: point.y,
+    x2: starPoints[(i + 1) % 10].x, y2: starPoints[(i + 1) % 10].y,
+  })))
 
-  const tipPolygons = computed(() => {
-    const points = starPoints.value
-    const positions = letterPositions.value
-    const total = points.length
-    return positions.map(pos => {
-      const pPrev = points[(pos - 1 + total) % total]
-      const pCurr = points[pos]
-      const pNext = points[(pos + 1) % total]
-      const pCenter = { x: STAR_CENTER, y: STAR_CENTER }
-      return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
-    })
-  })
+  const tipPolygons = computed(() => letterPositions.map(pos => {
+    const pPrev = starPoints[(pos - 1 + 10) % 10], pCurr = starPoints[pos], pNext = starPoints[(pos + 1) % 10], pCenter = { x: STAR_CENTER, y: STAR_CENTER }
+    return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
+  }))
 
   // --- REFORÇ VISUAL I SONOR ---
   const sounds = {
@@ -497,16 +479,16 @@
       if (data && (roscoLetters.value.length === 0 || force)) {
         roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
         currentIndex.value = 0
-        rocketPos.x = starPoints.value[0].x
-        rocketPos.y = starPoints.value[0].y
+        rocketPos.x = starPoints[0].x
+        rocketPos.y = starPoints[0].y
       }
     } else if (roscoLetters.value.length === 0 || force) {
       if (!props.isMultiplayer || isHost.value) {
-        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 25).map(l => ({ ...l, status: 'pending' }))
+        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
         roscoLetters.value = data
         currentIndex.value = 0
-        rocketPos.x = starPoints.value[0].x
-        rocketPos.y = starPoints.value[0].y
+        rocketPos.x = starPoints[0].x
+        rocketPos.y = starPoints[0].y
         if (props.isMultiplayer) {
           multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
           multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
@@ -550,8 +532,8 @@
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) {
       roscoLetters.value = msg.action.data
       currentIndex.value = 0
-      rocketPos.x = starPoints.value[0].x
-      rocketPos.y = starPoints.value[0].y
+      rocketPos.x = starPoints[0].x
+      rocketPos.y = starPoints[0].y
     }
     if (msg.type === 'GAME_ROLES_SWAPPED') {
       feedbackMessage.value = t('spelledRosco.rolesSwapped'); feedbackColor.value = 'warning'; showFeedback.value = true
@@ -648,11 +630,11 @@
   async function animateRocket (from, to) {
     if (props.isPaused) return
     rocketAnimating.value = true
-    const start = letterPositions.value[from], end = letterPositions.value[to]
+    const start = letterPositions[from], end = letterPositions[to]
     let curr = start
     while (curr !== end) {
-      curr = (curr + 1) % starPoints.value.length
-      const p = starPoints.value[curr]
+      curr = (curr + 1) % 10
+      const p = starPoints[curr]
       rocketPos.x = p.x; rocketPos.y = p.y
       await new Promise(r => setTimeout(r, 150))
     }
@@ -703,12 +685,12 @@
   }
 
   function getStarNodeStyle (index) {
-    const p = starPoints.value[letterPositions.value[index]]
+    const p = starPoints[letterPositions[index]]
     return { left: p.x + 'px', top: p.y + 'px' }
   }
 
   function isTipGlowing (tipIdx) {
-    const pos = letterPositions.value[tipIdx]
+    const pos = letterPositions[tipIdx]
     return tipIdx === currentIndex.value || visitedSegments.value.has(pos)
   }
 
@@ -741,7 +723,6 @@
   position: relative;
   width: 400px;
   height: 400px;
-  user-select: none;
 }
 
 .star-svg {
