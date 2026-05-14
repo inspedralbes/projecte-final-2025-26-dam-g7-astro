@@ -152,17 +152,35 @@
                 <div v-for="item in filteredWordBank" :key="item.__editorId" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
                   <v-icon color="grey" icon="mdi-drag-variant" />
                   <div class="flex-grow-1 d-flex flex-column ga-2">
-                    <v-text-field
+                    <div
                       v-for="field in currentGameFields"
                       :key="field.key"
-                      v-model="item[field.key]"
-                      density="compact"
-                      hide-details
-                      :label="field.label"
-                      :placeholder="field.type === 'list' ? 'item1, item2, item3' : undefined"
-                      :type="field.type === 'number' ? 'number' : 'text'"
-                      variant="solo-filled"
-                    />
+                      class="d-flex align-center ga-2"
+                    >
+                      <v-text-field
+                        v-model="item[field.key]"
+                        class="flex-grow-1"
+                        density="compact"
+                        hide-details
+                        :label="field.label"
+                        :placeholder="field.type === 'list' ? $t('educational.supplyEditorPage.listPlaceholder') : undefined"
+                        :type="field.type === 'number' ? 'number' : 'text'"
+                        variant="solo-filled"
+                      />
+                      <v-tooltip v-if="field.help" location="top">
+                        <template #activator="{ props: tooltipProps }">
+                          <v-btn
+                            v-bind="tooltipProps"
+                            color="cyan-accent-2"
+                            density="comfortable"
+                            icon="mdi-help-circle-outline"
+                            size="x-small"
+                            variant="text"
+                          />
+                        </template>
+                        <span>{{ field.help }}</span>
+                      </v-tooltip>
+                    </div>
                   </div>
                   <v-btn
                     color="red"
@@ -311,67 +329,77 @@
       contentType: 'object',
       primaryKey: 'word',
       fields: [
-        { key: 'word', label: t('educational.supplyEditorPage.wordLabel'), type: 'text', required: true },
-        { key: 'hint', label: t('educational.supplyEditorPage.hintLabel'), type: 'text', required: false },
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', type: 'text', required: true },
+        { key: 'hint', labelKey: 'educational.supplyEditorPage.hintLabel', type: 'text', required: false },
       ],
     },
     SyllableQuest: {
       contentType: 'object',
       primaryKey: 'text',
       fields: [
-        { key: 'text', label: 'Text', type: 'text', required: true },
-        { key: 'syllables', label: 'Syllables', type: 'number', required: true },
+        { key: 'text', labelKey: 'educational.supplyEditorPage.fieldLabels.text', type: 'text', required: true },
+        { key: 'syllables', labelKey: 'educational.supplyEditorPage.fieldLabels.syllables', type: 'number', required: true },
       ],
     },
     SpelledRosco: {
       contentType: 'object',
       primaryKey: 'answer',
       fields: [
-        { key: 'char', label: 'Char', type: 'text', required: true },
-        { key: 'question', label: 'Question', type: 'text', required: true },
-        { key: 'answer', label: 'Answer', type: 'text', required: true },
+        { key: 'char', labelKey: 'educational.supplyEditorPage.fieldLabels.char', type: 'text', required: true },
+        { key: 'question', labelKey: 'educational.supplyEditorPage.fieldLabels.question', type: 'text', required: true },
+        { key: 'answer', labelKey: 'educational.supplyEditorPage.fieldLabels.answer', type: 'text', required: true },
       ],
     },
     RhymeSquad: {
       contentType: 'object',
       primaryKey: 'word',
       fields: [
-        { key: 'word', label: 'Word', type: 'text', required: true },
-        { key: 'ending', label: 'Ending', type: 'text', required: true },
-        { key: 'rhymes', label: 'Rhymes (comma separated)', type: 'list', required: true },
-        { key: 'fakes', label: 'Fakes (comma separated)', type: 'list', required: true },
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', type: 'text', required: true },
+        { key: 'ending', labelKey: 'educational.supplyEditorPage.fieldLabels.ending', type: 'text', required: true },
+        { key: 'rhymes', labelKey: 'educational.supplyEditorPage.fieldLabels.rhymes', type: 'list', required: true },
+        { key: 'fakes', labelKey: 'educational.supplyEditorPage.fieldLabels.fakes', type: 'list', required: true },
       ],
     },
     RadarScan: {
       contentType: 'object',
       primaryKey: 'target',
       fields: [
-        { key: 'distractor', label: 'Distractor', type: 'text', required: true },
-        { key: 'target', label: 'Target', type: 'text', required: true },
-        { key: 'grid', label: 'Grid', type: 'number', required: true },
-        { key: 'tunnel', label: 'Tunnel', type: 'number', required: true },
+        {
+          key: 'distractor',
+          labelKey: 'educational.supplyEditorPage.fieldLabels.distractor',
+          helpKey: 'educational.supplyEditorPage.fieldHelp.distractor',
+          type: 'text',
+          required: true,
+        },
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', type: 'text', required: true },
+        { key: 'grid', labelKey: 'educational.supplyEditorPage.fieldLabels.grid', type: 'number', required: true },
+        { key: 'tunnel', labelKey: 'educational.supplyEditorPage.fieldLabels.tunnel', type: 'number', required: true },
       ],
     },
     RadioSignal: {
       contentType: 'string',
       primaryKey: 'phrase',
       fields: [
-        { key: 'phrase', label: 'Phrase', type: 'text', required: true },
+        { key: 'phrase', labelKey: 'educational.supplyEditorPage.fieldLabels.phrase', type: 'text', required: true },
       ],
     },
     SymmetryBreaker: {
       contentType: 'object',
       primaryKey: 'target',
       fields: [
-        { key: 'target', label: 'Target', type: 'text', required: true },
-        { key: 'decoys', label: 'Decoys (comma separated)', type: 'list', required: true },
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', type: 'text', required: true },
+        { key: 'decoys', labelKey: 'educational.supplyEditorPage.fieldLabels.decoys', type: 'list', required: true },
       ],
     },
   }))
 
   const currentGameId = computed(() => selectedGame.value?.id || 'WordConstruction')
   const currentGameSchema = computed(() => gameSchemas.value[currentGameId.value] || gameSchemas.value.WordConstruction)
-  const currentGameFields = computed(() => currentGameSchema.value.fields)
+  const currentGameFields = computed(() => currentGameSchema.value.fields.map(field => ({
+    ...field,
+    label: field.labelKey ? t(field.labelKey) : field.key,
+    help: field.helpKey ? t(field.helpKey) : '',
+  })))
 
   function parseCommaList (value) {
     if (Array.isArray(value)) {
@@ -484,10 +512,10 @@
       .map(field => {
         if (field.type === 'list') {
           const values = parseCommaList(item[field.key])
-          return values.length > 0 ? `${field.key}: ${values.join(', ')}` : ''
+          return values.length > 0 ? `${field.label}: ${values.join(', ')}` : ''
         }
         const value = toText(item[field.key]).trim()
-        return value ? `${field.key}: ${value}` : ''
+        return value ? `${field.label}: ${value}` : ''
       })
       .filter(Boolean)
     return parts.join(' • ')
