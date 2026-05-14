@@ -604,7 +604,7 @@
     return filteredSets.value.some(s => s.active)
   })
 
-  const isExerciseValid = computed(() => exerciseName.value.trim().length > 0 && exerciseContent.value.some(isItemValid))
+  const isExerciseValid = computed(() => exerciseName.value.trim().length > 0 && exerciseContent.value.length > 0)
 
   function selectGame (game) {
     selectedGame.value = game
@@ -634,13 +634,10 @@
   }
 
   async function saveExercise () {
-    const normalizedContent = exerciseContent.value
-      .filter(isItemValid)
-      .map(toSaveItem)
-    if (normalizedContent.length === 0) return
+    const normalizedContent = exerciseContent.value.map(toSaveItem)
 
     const payload = {
-      ownerId: editingId.value ? undefined : targetOwner.value, // El backend hauria de mantenir l'owner si s'edita
+      ownerId: targetOwner.value || astroStore.user,
       gameId: selectedGame.value.id,
       name: exerciseName.value,
       type: 'words',
@@ -653,6 +650,8 @@
     if (result.success) {
       showDialog.value = false
       refreshSupplies()
+    } else {
+      console.error('Error guardant set educatiu:', result)
     }
   }
 
