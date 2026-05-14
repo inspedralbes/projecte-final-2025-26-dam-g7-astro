@@ -329,35 +329,35 @@
       contentType: 'object',
       primaryKey: 'word',
       fields: [
-        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', type: 'text', required: true },
-        { key: 'hint', labelKey: 'educational.supplyEditorPage.hintLabel', type: 'text', required: false },
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.word', type: 'text', required: true },
+        { key: 'hint', labelKey: 'educational.supplyEditorPage.hintLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.hint', type: 'text', required: false },
       ],
     },
     SyllableQuest: {
       contentType: 'object',
       primaryKey: 'text',
       fields: [
-        { key: 'text', labelKey: 'educational.supplyEditorPage.fieldLabels.text', type: 'text', required: true },
-        { key: 'syllables', labelKey: 'educational.supplyEditorPage.fieldLabels.syllables', type: 'number', required: true },
+        { key: 'text', labelKey: 'educational.supplyEditorPage.fieldLabels.text', helpKey: 'educational.supplyEditorPage.fieldHelp.text', type: 'text', required: true },
+        { key: 'syllables', labelKey: 'educational.supplyEditorPage.fieldLabels.syllables', helpKey: 'educational.supplyEditorPage.fieldHelp.syllables', type: 'number', required: true },
       ],
     },
     SpelledRosco: {
       contentType: 'object',
       primaryKey: 'answer',
       fields: [
-        { key: 'char', labelKey: 'educational.supplyEditorPage.fieldLabels.char', type: 'text', required: true },
-        { key: 'question', labelKey: 'educational.supplyEditorPage.fieldLabels.question', type: 'text', required: true },
-        { key: 'answer', labelKey: 'educational.supplyEditorPage.fieldLabels.answer', type: 'text', required: true },
+        { key: 'char', labelKey: 'educational.supplyEditorPage.fieldLabels.char', helpKey: 'educational.supplyEditorPage.fieldHelp.char', type: 'text', required: true },
+        { key: 'question', labelKey: 'educational.supplyEditorPage.fieldLabels.question', helpKey: 'educational.supplyEditorPage.fieldHelp.question', type: 'text', required: true },
+        { key: 'answer', labelKey: 'educational.supplyEditorPage.fieldLabels.answer', helpKey: 'educational.supplyEditorPage.fieldHelp.answer', type: 'text', required: true },
       ],
     },
     RhymeSquad: {
       contentType: 'object',
       primaryKey: 'word',
       fields: [
-        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', type: 'text', required: true },
-        { key: 'ending', labelKey: 'educational.supplyEditorPage.fieldLabels.ending', type: 'text', required: true },
-        { key: 'rhymes', labelKey: 'educational.supplyEditorPage.fieldLabels.rhymes', type: 'list', required: true },
-        { key: 'fakes', labelKey: 'educational.supplyEditorPage.fieldLabels.fakes', type: 'list', required: true },
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.word', type: 'text', required: true },
+        { key: 'ending', labelKey: 'educational.supplyEditorPage.fieldLabels.ending', helpKey: 'educational.supplyEditorPage.fieldHelp.ending', type: 'text', required: true },
+        { key: 'rhymes', labelKey: 'educational.supplyEditorPage.fieldLabels.rhymes', helpKey: 'educational.supplyEditorPage.fieldHelp.rhymes', type: 'list', required: true },
+        { key: 'fakes', labelKey: 'educational.supplyEditorPage.fieldLabels.fakes', helpKey: 'educational.supplyEditorPage.fieldHelp.fakes', type: 'list', required: true },
       ],
     },
     RadarScan: {
@@ -371,24 +371,24 @@
           type: 'text',
           required: true,
         },
-        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', type: 'text', required: true },
-        { key: 'grid', labelKey: 'educational.supplyEditorPage.fieldLabels.grid', type: 'number', required: true },
-        { key: 'tunnel', labelKey: 'educational.supplyEditorPage.fieldLabels.tunnel', type: 'number', required: true },
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', helpKey: 'educational.supplyEditorPage.fieldHelp.target', type: 'text', required: true },
+        { key: 'grid', labelKey: 'educational.supplyEditorPage.fieldLabels.grid', helpKey: 'educational.supplyEditorPage.fieldHelp.grid', type: 'number', required: true },
+        { key: 'tunnel', labelKey: 'educational.supplyEditorPage.fieldLabels.tunnel', helpKey: 'educational.supplyEditorPage.fieldHelp.tunnel', type: 'number', required: true },
       ],
     },
     RadioSignal: {
       contentType: 'string',
       primaryKey: 'phrase',
       fields: [
-        { key: 'phrase', labelKey: 'educational.supplyEditorPage.fieldLabels.phrase', type: 'text', required: true },
+        { key: 'phrase', labelKey: 'educational.supplyEditorPage.fieldLabels.phrase', helpKey: 'educational.supplyEditorPage.fieldHelp.phrase', type: 'text', required: true },
       ],
     },
     SymmetryBreaker: {
       contentType: 'object',
       primaryKey: 'target',
       fields: [
-        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', type: 'text', required: true },
-        { key: 'decoys', labelKey: 'educational.supplyEditorPage.fieldLabels.decoys', type: 'list', required: true },
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', helpKey: 'educational.supplyEditorPage.fieldHelp.target', type: 'text', required: true },
+        { key: 'decoys', labelKey: 'educational.supplyEditorPage.fieldLabels.decoys', helpKey: 'educational.supplyEditorPage.fieldHelp.decoys', type: 'list', required: true },
       ],
     },
   }))

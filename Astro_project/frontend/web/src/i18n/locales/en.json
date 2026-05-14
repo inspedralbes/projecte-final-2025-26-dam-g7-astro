@@ -1008,7 +1008,22 @@
                 "decoys": "Decoys (comma separated)"
             },
             "fieldHelp": {
-                "distractor": "This is the incorrect symbol or letter used to fill the grid and create confusion."
+                "word": "Main word used in the exercise.",
+                "hint": "Optional hint to help identify the word.",
+                "text": "Text or word that students will work with.",
+                "syllables": "Total number of syllables in the text.",
+                "char": "Reference letter for this rosco entry.",
+                "question": "Definition or prompt shown to students.",
+                "answer": "Expected correct answer.",
+                "ending": "Ending used to validate rhymes.",
+                "rhymes": "Words that rhyme with the main word, comma separated.",
+                "fakes": "Trap words that do not rhyme, comma separated.",
+                "distractor": "Incorrect symbol or letter used to fill the grid and create confusion.",
+                "target": "Correct symbol or letter students must find.",
+                "grid": "Grid size (for example 5 creates a 5x5 grid).",
+                "tunnel": "Vision radius or spotlight opening in the game.",
+                "phrase": "Sentence that students must hear and type.",
+                "decoys": "Misleading options that are not the target, comma separated."
             },
             "games": {
                 "WordConstruction": {

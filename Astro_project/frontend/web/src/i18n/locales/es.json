@@ -1026,7 +1026,22 @@
                 "decoys": "Señuelos (separados por comas)"
             },
             "fieldHelp": {
-                "distractor": "Es el símbolo o letra incorrecta que rellena la cuadrícula para confundir al alumnado."
+                "word": "Palabra principal que se usará en el ejercicio.",
+                "hint": "Pista opcional para ayudar a identificar la palabra.",
+                "text": "Texto o palabra que el alumnado deberá trabajar.",
+                "syllables": "Número total de sílabas del texto.",
+                "char": "Letra de referencia para esta entrada del rosco.",
+                "question": "Definición o enunciado que verá el alumnado.",
+                "answer": "Respuesta correcta esperada.",
+                "ending": "Terminación que se usará para comprobar las rimas.",
+                "rhymes": "Palabras que sí riman con la principal, separadas por comas.",
+                "fakes": "Palabras trampa que no riman, separadas por comas.",
+                "distractor": "Es el símbolo o letra incorrecta que rellena la cuadrícula para confundir al alumnado.",
+                "target": "Símbolo o letra correcta que el alumnado debe encontrar.",
+                "grid": "Tamaño de la cuadrícula (por ejemplo 5 crea una cuadrícula 5x5).",
+                "tunnel": "Radio de visión o apertura del foco en el juego.",
+                "phrase": "Frase que el alumnado deberá escuchar y escribir.",
+                "decoys": "Opciones engañosas que no son el objetivo, separadas por comas."
             },
             "games": {
                 "WordConstruction": {
