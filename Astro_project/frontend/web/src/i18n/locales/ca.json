@@ -435,6 +435,7 @@
     "plans": {
         "individual": "Individual",
         "premium": "Premium",
+        "grupal": "Grupal",
         "standard": "Estàndard",
         "individual_free": "Individual (Gratuït)",
         "manage": "GESTIONAR",
