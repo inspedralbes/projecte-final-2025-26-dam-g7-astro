@@ -139,11 +139,13 @@
   import { useI18n } from 'vue-i18n'
   import { syllableData } from '@/data/syllableGamesData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { locale, t } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const emit = defineEmits(['game-over'])
   const props = defineProps({
@@ -158,7 +160,34 @@
   })
 
   // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
-  const words = computed(() => syllableData[locale.value] || syllableData['es'])
+  function normalizeWordData (entry = {}) {
+    return {
+      text: String(entry.text || ''),
+      syllables: Number(entry.syllables) || 0,
+    }
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'SyllableQuest' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'SyllableQuest'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
+    return syllableData[locale.value] || syllableData['es']
+  })
+
+  const words = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeWordData)
+      .filter(item => item.text && item.syllables > 0)
+    return normalized.length > 0 ? normalized : (syllableData[locale.value] || syllableData['es']).map(normalizeWordData)
+  })
 
   const currentWordIndex = ref(0)
   const currentWord = computed(() => words.value[currentWordIndex.value])

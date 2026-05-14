@@ -896,6 +896,18 @@
                 "RhymeSquad": {
                     "name": "Squad de Rimes",
                     "desc": "Trobar rimes."
+                },
+                "RadarScan": {
+                    "name": "Escaneig Radar",
+                    "desc": "Detectar objectius amagats."
+                },
+                "RadioSignal": {
+                    "name": "Senyal de Ràdio",
+                    "desc": "Desxifrar transmissions."
+                },
+                "SymmetryBreaker": {
+                    "name": "Trencador de Simetria",
+                    "desc": "Identificar el símbol correcte."
                 }
             }
         }

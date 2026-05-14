@@ -124,11 +124,13 @@
   import { useI18n } from 'vue-i18n'
   import { symmetryBreakerData } from '@/data/symmetryBreakerData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const props = defineProps({
     isMultiplayer: {
@@ -155,8 +157,33 @@
   const shieldImmunityLeft = ref(0)
   const showShieldFeedback = ref(false)
 
-  const confusionSetsDynamic = computed(() => {
+  function normalizeConfusionSet (entry = {}) {
+    return {
+      target: String(entry.target || ''),
+      decoys: Array.isArray(entry.decoys) ? entry.decoys.map(decoy => String(decoy)) : [],
+    }
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'SymmetryBreaker' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'SymmetryBreaker'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
     return symmetryBreakerData[locale.value] || symmetryBreakerData['es']
+  })
+
+  const confusionSetsDynamic = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeConfusionSet)
+      .filter(item => item.target && item.decoys.length > 0)
+    return normalized.length > 0 ? normalized : (symmetryBreakerData[locale.value] || symmetryBreakerData['es']).map(normalizeConfusionSet)
   })
 
   const wordSets = computed(() => confusionSetsDynamic.value.filter(s => s.target.length > 1))

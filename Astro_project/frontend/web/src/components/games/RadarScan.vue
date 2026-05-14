@@ -344,52 +344,58 @@ function checkLetter(index) {
   }
 }
 
-const boost = astroStore.equippedSkinBoost
-if (boost && boost.type === 'time') {
-  totalDuration.value = Math.floor(60 * boost.multiplier)
-  timeLeft.value = totalDuration.value
-} else {
-  totalDuration.value = 60
-  timeLeft.value = 60
-}
+function startGame() {
+  showStartOverlay.value = false
+  showGameOverOverlay.value = false
+  score.value = 0
+  
+  const boost = astroStore.equippedSkinBoost
+  if (boost && boost.type === 'time') {
+    totalDuration.value = Math.floor(60 * boost.multiplier)
+    timeLeft.value = totalDuration.value
+  } else {
+    totalDuration.value = 60
+    timeLeft.value = 60
+  }
 
-startTime.value = Date.now()
-currentLevel.value = 1
-generateBoard()
+  startTime.value = Date.now()
+  currentLevel.value = 1
+  generateBoard()
 
-if (props.isMultiplayer && isHost.value) {
-  multiplayerStore.sendGameAction({
-    type: 'START_TIME_SYNC',
-    startTime: startTime.value,
-    duration: totalDuration.value,
-  })
-}
+  if (props.isMultiplayer && isHost.value) {
+    multiplayerStore.sendGameAction({
+      type: 'START_TIME_SYNC',
+      startTime: startTime.value,
+      duration: totalDuration.value,
+    })
+  }
 
-let lastTick = Date.now()
-timerInterval = setInterval(() => {
-  if (!isTransitioning.value && timeLeft.value > 0 && !props.isPaused) {
-    const now = Date.now()
-    const delta = Math.floor((now - lastTick) / 1000)
-    if (delta >= 1) {
-      timeLeft.value = Math.max(0, timeLeft.value - delta)
-      lastTick += delta * 1000
+  let lastTick = Date.now()
+  timerInterval = setInterval(() => {
+    if (!isTransitioning.value && timeLeft.value > 0 && !props.isPaused) {
+      const now = Date.now()
+      const delta = Math.floor((now - lastTick) / 1000)
+      if (delta >= 1) {
+        timeLeft.value = Math.max(0, timeLeft.value - delta)
+        lastTick += delta * 1000
 
-      if (props.isMultiplayer && isHost.value) {
-        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-      }
-
-      if (timeLeft.value <= 0) {
         if (props.isMultiplayer && isHost.value) {
-          multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         }
-        endGame()
+
+        if (timeLeft.value <= 0) {
+          if (props.isMultiplayer && isHost.value) {
+            multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+          }
+          endGame()
+        }
       }
     }
-  }
-}, 500)
+  }, 500)
+}
 
 function endGame(silent = false) {
-  clearInterval(timerInterval)
+  if (timerInterval) clearInterval(timerInterval)
   if (props.isMultiplayer) {
     multiplayerStore.submitRoundResult()
     return
@@ -490,56 +496,60 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .game-container {
-  position: relative;
   width: 100%;
   height: 100%;
-  min-height: 600px;
-  background-color: #0f172a;
-  display: flex;
-  padding: 120px 20px 60px 20px;
-  justify-content: center;
-  align-items: center;
+  background-color: #0b1120;
   overflow: hidden;
+  position: relative;
   user-select: none;
 }
 
-.game-paused {
-  pointer-events: none;
-  filter: blur(4px) grayscale(0.5);
-  transition: all 0.3s ease;
+.hud-pill {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 12px 32px;
+  border-radius: 100px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .board {
-  max-width: 95%;
-  max-height: 70%;
+  gap: 12px;
+  padding: 20px;
   z-index: 2;
-  transform: translateY(-30px);
-  /* Nudge up to close gap with HUD */
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 
 .board-transitioning {
+  transform: translate(-50%, -50%) scale(0.9);
   opacity: 0;
-  transform: scale(0.95);
 }
 
 .letter-cell {
-  color: #ffffff;
-  transition: color 0.2s;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
 }
 
 .letter-correct {
-  color: #00e5ff !important;
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
-  transform: scale(1.3);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: 10;
+  background: rgba(0, 230, 118, 0.2) !important;
+  border-color: #00e676 !important;
+  color: #00e676 !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.5);
 }
 
 .letter-incorrect {
+  background: rgba(255, 82, 82, 0.2) !important;
+  border-color: #ff5252 !important;
   color: #ff5252 !important;
-  text-shadow: 0 0 10px rgba(255, 82, 82, 0.5);
-  transition: all 0.2s;
+  animation: shake 0.4s ease;
 }
 
 .flashlight-overlay {
@@ -550,7 +560,7 @@ onBeforeUnmount(() => {
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  transition: opacity 0.4s ease-in-out;
+  transition: opacity 0.5s ease;
 }
 
 .flashlight-hidden {
@@ -565,56 +575,32 @@ onBeforeUnmount(() => {
   border: 1px solid #00e5ff;
 }
 
-.hud-pill {
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(0, 229, 255, 0.35);
-  border-radius: 999px;
-  padding: 10px 22px;
-  backdrop-filter: blur(4px);
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  75% {
+    transform: translateX(10px);
+  }
 }
 
-.remote-cursors-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.feedback-container {
   pointer-events: none;
-  z-index: 1000;
-}
-
-.remote-cursor {
-  position: absolute;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  will-change: left, top;
-}
-
-.cursor-pointer-visual {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 4px;
 }
 
-.cursor-label {
-  font-size: 0.75rem;
-  background: #00e5ff;
-  color: black;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: bold;
-  white-space: nowrap;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-}
-
-/* Feedback Animations */
-.animate-success {
-  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-}
-
-.animate-error {
-  animation: shake 0.4s ease-in-out forwards;
+.feedback-icon {
+  filter: drop-shadow(0 0 20px currentColor);
+  animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes bounceIn {
@@ -638,26 +624,29 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-10px);
-  }
-
-  75% {
-    transform: translateX(10px);
-  }
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 6;
+  transition: left 0.1s linear, top 0.1s linear;
 }
 
-.feedback-container {
+.cursor-pointer-visual {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  pointer-events: none;
+}
+
+.cursor-label {
+  position: absolute;
+  top: 100%;
+  background: rgba(0, 229, 255, 0.8);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 </style>

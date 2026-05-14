@@ -1006,6 +1006,18 @@
                 "RhymeSquad": {
                     "name": "Rhyme Squad",
                     "desc": "Find rhymes."
+                },
+                "RadarScan": {
+                    "name": "Radar Scan",
+                    "desc": "Detect hidden targets."
+                },
+                "RadioSignal": {
+                    "name": "Radio Signal",
+                    "desc": "Decode transmissions."
+                },
+                "SymmetryBreaker": {
+                    "name": "Symmetry Breaker",
+                    "desc": "Identify the correct symbol."
                 }
             }
         }

@@ -1024,6 +1024,18 @@
                 "RhymeSquad": {
                     "name": "Escuadrón de Rimas",
                     "desc": "Encontrar rimas."
+                },
+                "RadarScan": {
+                    "name": "Escaneo Radar",
+                    "desc": "Detectar objetivos ocultos."
+                },
+                "RadioSignal": {
+                    "name": "Señal de Radio",
+                    "desc": "Descifrar transmisiones."
+                },
+                "SymmetryBreaker": {
+                    "name": "Rompedor de Simetría",
+                    "desc": "Identificar el símbolo correcto."
                 }
             }
         }
