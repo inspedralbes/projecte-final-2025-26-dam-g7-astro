@@ -1,5 +1,5 @@
 <template>
-  <v-container class="d-flex flex-column align-center justify-start game-container pa-0" fluid style="height: 100vh; overflow: hidden;">
+  <v-container class="d-flex flex-column align-center justify-start game-container pa-0" :class="{ 'game-paused': props.isPaused }" fluid style="height: 100vh; overflow: hidden;">
 
     <v-card
       v-if="!isPlaying && !isGameOver"
@@ -159,7 +159,7 @@
     </template>
 
     <v-card
-      v-else-if="isGameOver && !isMultiplayer"
+      v-else-if="isGameOver"
       class="pa-10 text-center bg-grey-darken-4 border-cyan"
       max-width="600"
       rounded="xl"
@@ -213,6 +213,10 @@
 
   const props = defineProps({
     isMultiplayer: {
+      type: Boolean,
+      default: false,
+    },
+    isPaused: {
       type: Boolean,
       default: false,
     },
@@ -306,7 +310,7 @@
 
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
-      if (!isPlaying.value) return
+      if (!isPlaying.value || props.isPaused) return
 
       if (!props.isMultiplayer || isHost.value) {
         const now = Date.now()
@@ -337,7 +341,7 @@
   }
 
   function spawnWord () {
-    if (!isPlaying.value) return
+    if (!isPlaying.value || props.isPaused) return
     if (props.isMultiplayer && !isHost.value) return
 
     let wordsToSpawn = 1
@@ -596,6 +600,16 @@
 .game-container { 
   background: radial-gradient(circle at center, #0d0221 0%, #020617 100%);
   color: white;
+}
+
+.game-paused {
+  pointer-events: none;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
+}
+
+.game-paused .falling-word {
+  animation-play-state: paused !important;
 }
 
 .arcade-hud {

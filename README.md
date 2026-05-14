@@ -31,13 +31,15 @@ Astro utilitza una arquitectura de micro-serveis contenidoritzats per garantir e
 | :--- | :--- |
 | **Frontend Web** | [Vue 3](https://vuejs.org/) + [Vuetify](https://vuetifyjs.com/) + [Pinia](https://pinia.vuejs.org/) |
 | **Frontend Mòbil** | [React Native](https://reactnative.dev/) + [Expo](https://expo.dev/) + [Zustand](https://github.com/pmndrs/zustand) |
-| **Backend** | [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) + [Socket.io](https://socket.io/) |
-| **Base de Dades** | [MongoDB](https://www.mongodb.com/) (Mongoose) |
+| **Backend** | [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) + **WebSockets (ws)** |
+| **Testing** | **Jest** (Backend) + **Vitest** (Frontend) |
+| **Base de Dades** | [MongoDB](https://www.mongodb.com/) (Driver Natiu) |
 | **Infraestructura** | [Docker](https://www.docker.com/) + [Nginx](https://www.nginx.com/) |
+| **CI/CD** | **GitHub Actions** |
 
 ## 📂 Estructura del Repositori
 - **[`/Astro_project`](./Astro_project)**: Codi font de l'ecosistema (Web, Mobile i Backend).
-- **[`/doc`](./doc)**: Documentació tècnica, guies de context i especificacions OpenSpec.
+- **[`/doc`](./doc)**: Punt d'entrada a la **Documentació Tècnica**, presentacions comercials, tècniques i manual d'usuari.
 - **[`/doc/context`](./doc/context)**: Cervell del projecte amb guies d'arquitectura i convencions.
 
 ## 🔗 Recursos i Enllaços

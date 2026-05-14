@@ -163,7 +163,11 @@ class MongoUserRepository extends UserRepository {
             selectedTitle: user.selectedTitle,
             displayName: user.displayName,
             nameChangesCount: user.nameChangesCount,
-            deletionScheduledAt: user.deletionScheduledAt
+            deletionScheduledAt: user.deletionScheduledAt,
+            groupInvitations: user.groupInvitations,
+            groupApprovalRequests: user.groupApprovalRequests,
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade,
+            pendingGroupLeaveRequest: user.pendingGroupLeaveRequest
         };
     }
 }

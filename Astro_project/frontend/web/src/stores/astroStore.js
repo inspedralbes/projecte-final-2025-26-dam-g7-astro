@@ -27,6 +27,10 @@ export const useAstroStore = defineStore('astro', () => {
   const avatar = computed({ get: () => sessionStore.avatar, set: value => sessionStore.setAvatar(value) })
   const token = computed({ get: () => sessionStore.token, set: value => sessionStore.setToken(value) })
   const deletionScheduledAt = computed({ get: () => sessionStore.deletionScheduledAt, set: value => sessionStore.setDeletionScheduled(value) })
+  const groupInvitations = computed({ get: () => sessionStore.groupInvitations, set: value => sessionStore.setGroupInvitations(value) })
+  const groupApprovalRequests = computed({ get: () => sessionStore.groupApprovalRequests, set: value => sessionStore.setGroupApprovalRequests(value) })
+  const scheduledPlanDowngrade = computed({ get: () => sessionStore.scheduledPlanDowngrade, set: value => sessionStore.setScheduledPlanDowngrade(value) })
+  const pendingGroupLeaveRequest = computed({ get: () => sessionStore.pendingGroupLeaveRequest, set: value => sessionStore.setPendingGroupLeaveRequest(value) })
 
   // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
@@ -116,6 +120,8 @@ export const useAstroStore = defineStore('astro', () => {
       if (result.stats.plan) {
         sessionStore.setPlan(result.stats.plan)
       }
+      sessionStore.setRole(result.stats.role ?? null)
+      sessionStore.setParentId(result.stats.parentId ?? null)
       if (result.stats.avatar) {
         sessionStore.setAvatar(result.stats.avatar)
       }
@@ -131,6 +137,10 @@ export const useAstroStore = defineStore('astro', () => {
 
       socialStore.setFriends(result.stats.friends || [])
       socialStore.setFriendRequests(result.stats.friendRequests || [])
+      sessionStore.setGroupInvitations(result.stats.groupInvitations || [])
+      sessionStore.setGroupApprovalRequests(result.stats.groupApprovalRequests || [])
+      sessionStore.setScheduledPlanDowngrade(result.stats.scheduledPlanDowngrade || null)
+      sessionStore.setPendingGroupLeaveRequest(result.stats.pendingGroupLeaveRequest || null)
     }
     return result
   }
@@ -142,8 +152,8 @@ export const useAstroStore = defineStore('astro', () => {
     return progressStore.fetchUserBalance()
   }
 
-  async function registerCompletedGame (game, score = 0, completedMapNode = null) {
-    const result = await progressStore.registerCompletedGame(game, score, completedMapNode)
+  async function registerCompletedGame (game, score = 0, completedMapNode = null, timeSeconds = 0) {
+    const result = await progressStore.registerCompletedGame(game, score, completedMapNode, timeSeconds)
     if (result.success && result.data?.newRank) {
       sessionStore.setRank(result.data.newRank)
     }
@@ -256,8 +266,8 @@ export const useAstroStore = defineStore('astro', () => {
   async function updateAchievements (achievements) {
     return achievementsStore.updateAchievements(achievements)
   }
-  async function updatePlan (planType) {
-    return sessionStore.updatePlan(planType)
+  async function updatePlan (planType, options = {}) {
+    return sessionStore.updatePlan(planType, options)
   }
   async function changePassword (oldPassword, newPassword) {
     return sessionStore.changePassword(oldPassword, newPassword)
@@ -267,6 +277,12 @@ export const useAstroStore = defineStore('astro', () => {
   }
   async function cancelAccountDeletion () {
     return sessionStore.cancelAccountDeletion()
+  }
+  async function requestGroupOwnerDowngrade (password, targetPlan = 'INDIVIDUAL_FREE') {
+    return sessionStore.requestGroupOwnerDowngrade(password, targetPlan)
+  }
+  async function cancelGroupOwnerDowngrade () {
+    return sessionStore.cancelGroupOwnerDowngrade()
   }
 
   async function changeDisplayName (newDisplayName) {
@@ -318,6 +334,7 @@ export const useAstroStore = defineStore('astro', () => {
   return {
     user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
     inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
+    groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
@@ -326,6 +343,6 @@ export const useAstroStore = defineStore('astro', () => {
     buyItem, useInventoryItem, sellItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
     addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,
     connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
-    updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, changeDisplayName, useStreakFreeze, setCoins, setInventory,
+    updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, requestGroupOwnerDowngrade, cancelGroupOwnerDowngrade, changeDisplayName, useStreakFreeze, setCoins, setInventory,
   }
 })

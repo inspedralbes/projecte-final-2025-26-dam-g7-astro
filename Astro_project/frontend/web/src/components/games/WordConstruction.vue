@@ -1,5 +1,5 @@
 <template>
-  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" style="position: relative;">
+  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;">
 
     <!-- Cursors remots -->
     <div v-if="props.isMultiplayer" class="remote-cursors-container">
@@ -58,6 +58,7 @@
         :animation="180"
         chosen-class="chosen-chip"
         class="d-flex justify-center flex-wrap gap-2 mb-6"
+        :disabled="isRoundLocked || props.isPaused"
         ghost-class="ghost-chip"
         item-key="id"
         tag="div"
@@ -206,15 +207,37 @@
       type: Boolean,
       default: false,
     },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
 
-  const wordsList = computed(() => {
-    if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT' && groupStore.activeSupplySet?.content?.length > 0) {
-      return groupStore.activeSupplySet.content
+  function normalizeWordObj (entry = {}) {
+    return {
+      ...entry,
+      word: String(entry.word || '').toUpperCase(),
     }
-    return wordConstructionData[locale.value] || wordConstructionData['es']
+  }
+
+  function normalizeLetters (letters = []) {
+    return (Array.isArray(letters) ? letters : []).map(tile => ({
+      ...tile,
+      letter: String(tile.letter || '').toUpperCase(),
+    }))
+  }
+
+  const wordsList = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'WordConstruction' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content.map(normalizeWordObj)
+    }
+    if (astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT' && groupStore.activeSupplySet?.content?.length > 0) {
+      return groupStore.activeSupplySet.content.map(normalizeWordObj)
+    }
+    const fallback = wordConstructionData[locale.value] || wordConstructionData['es']
+    return fallback.map(normalizeWordObj)
   })
 
   const level = ref(1)
@@ -278,7 +301,7 @@
   }
 
   function toLetterTiles (word) {
-    return word.split('').map(letter => ({
+    return String(word || '').toUpperCase().split('').map(letter => ({
       id: letterId.value++,
       letter,
     }))
@@ -412,7 +435,7 @@
     let lastTick = Date.now()
 
     timerInterval = setInterval(() => {
-      if (gameFinished.value) return
+      if (gameFinished.value || props.isPaused) return
 
       if (!props.isMultiplayer || isHost.value) {
         const now = Date.now()
@@ -486,15 +509,15 @@
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BOARD_SYNC') {
-      currentWordObj.value = msg.action.wordObj
-      scrambledLetters.value = msg.action.letters
+      currentWordObj.value = normalizeWordObj(msg.action.wordObj)
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
       message.value = ''
       isRoundLocked.value = false
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user) {
       isUpdatingFromSync = true
-      scrambledLetters.value = msg.action.letters
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
@@ -647,5 +670,10 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+}
+.game-paused {
+  pointer-events: none !important;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 </style>

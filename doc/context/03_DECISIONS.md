@@ -27,3 +27,11 @@ Aquest document recull el "perquè" de les eleccions tècniques i canvis estruct
 ## 7. Refactorització de RoomManager per a Testabilitat (Maig 2026)
 - **Decisió:** Permetre la instanciació de la classe `RoomManager` en lloc de dependre exclusivament d'un singleton global, i afegir mètodes de control de cicle de vida com `stop()`.
 - **Racional:** La dependència de singletons dificultava el testatge paral·lel i causava "leaks" de memòria i interferències entre tests degut als intervals actius (Garbage Collector). Aquesta modularització permet proves unitàries aïllades i deterministes.
+
+## 8. Prescindir d'Aplicacions Mòbils Natives (Maig 2026)
+- **Decisió:** Eliminar l'aplicació Expo / React Native i centrar-se exclusivament en una aplicació Web Responsiva.
+- **Racional:** Es va avaluar que l'esforç de mantenir dues codebases no estava justificat donada la capacitat de Vue i Vuetify per oferir una experiència excel·lent a dispositius mòbils a través del navegador.
+
+## 9. Substitució de Socket.io i Mongoose per llibreries natives (Maig 2026)
+- **Decisió:** Utilitzar la llibreria nativa `ws` per a WebSockets i el driver natiu de `mongodb`, en lloc de Socket.io i Mongoose.
+- **Racional:** Socket.io i Mongoose afegien sobrecàrrega innecessària. Prescindir-ne redueix la dependència de paquets grans i ofereix un millor control sobre el rendiment (especialment per a entorns de temps real) i l'arquitectura de base de dades.

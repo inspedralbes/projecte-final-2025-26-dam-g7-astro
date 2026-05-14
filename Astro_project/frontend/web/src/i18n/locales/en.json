@@ -3,7 +3,8 @@
         "loading": "Loading...",
         "error": "An error has occurred.",
         "save": "Save",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "all": "All"
     },
     "sidebar": {
         "home": "Home",
@@ -43,7 +44,11 @@
         "retry": "RETRY",
         "goal": "Goal: {score} pts",
         "start_game": "START {game}",
-        "start_simple": "START"
+        "start_simple": "START",
+        "exerciseSourceLabel": "Active exercise",
+        "exerciseSourceDefault": "General default",
+        "exerciseSourceLoading": "Loading...",
+        "exerciseSourceNoCustomPremium": "You can edit your own exercises in Educational Management."
     },
     "store": {
         "title": "Space Bazaar",
@@ -104,7 +109,7 @@
         "inventoryBtn": "INVENTORY",
         "changePlanBtn": "CHANGE PLAN",
         "logoutBtn": "LOGOUT AND EXIT",
-        "logoutConfirm": "You are about to disconnect from ASTRO system. Do you wish to continue?",
+        "logoutConfirm": "Are you sure you want to log out? You will need to authenticate again to access your data.",
         "topGames": "BEST MISSIONS (TOP 5)",
         "flightHistory": "FLIGHT HISTORY",
         "flightHistorySub": "Your latest mission records in deep space.",
@@ -117,6 +122,8 @@
         "recentIncursions": "RECENT INCURSIONS",
         "page": "PAGE {current} OF {total}",
         "noRecent": "No recent expedition records found.",
+        "singleplayer": "Solo",
+        "multiplayer": "Multiplayer",
         "selectAchievement": "Select Achievement",
         "removeAchievement": "Remove Achievement",
         "astronautSuit": "Astronaut Suit",
@@ -147,7 +154,6 @@
         "rankBasedOnLevel": "Rank based on your level",
         "boughtInShop": "Bought in the shop",
         "noSpecialTitles": "You don't have any special titles. Visit the Space Bazaar to acquire them.",
-        "logoutConfirm": "Are you sure you want to log out? You will need to authenticate again to access your data.",
         "accountSettings": "ACCOUNT SETTINGS",
         "settings": "SETTINGS",
         "changePassword": "CHANGE PASSWORD",
@@ -185,7 +191,8 @@
         "cancelDeleteAction": "CANCEL DELETION",
         "recoveryTitle": "ACCOUNT RECOVERY",
         "recoverySuccess": "Your account has been successfully recovered! Welcome back, explorer.",
-        "wrongPhrase": "The phrase does not match exactly"
+        "wrongPhrase": "The phrase does not match exactly",
+        "missionCompanion": "COMPANY DE MISSIÓ"
     },
     "friends": {
         "title": "Crew",
@@ -266,7 +273,17 @@
         "emptySubtitle": "Start the transmission.",
         "placeholder": "Transmit message...",
         "send": "Send (Enter)",
-        "hint": "Enter to send · Shift+Enter new line"
+        "hint": "Enter to send · Shift+Enter new line",
+        "accept": "ACEPTAR",
+        "challengeAccepted": "Duelo aceptado con {user}",
+        "challengeExpired": "El desafío ha caducado",
+        "challengeReceived": "¡Has recibido un desafío!",
+        "challengeRejected": "{user} ha rechazado el duelo",
+        "decline": "RECHAZAR",
+        "duelAccepted": "DUELO ACEPTADO",
+        "duelExpired": "DESAFÍO CADUCADO",
+        "duelRejected": "DUELO RECHAZADO",
+        "duelTitle": "DUELO ESPACIAL"
     },
     "symmetryBreaker": {
         "points": "Points: {score}",
@@ -393,9 +410,22 @@
         "opponent": "Opponent",
         "level": "Level",
         "team": "Team",
-        "randomizeTeams": "Randomize"
+        "randomizeTeams": "Randomize",
+        "autoStarting": "Iniciant automàticament...",
+        "briefingTitle": "INSTRUCCIONS DE MISSIÓ",
+        "fuel": "COMBUSTIBLE QUÀNTIC",
+        "lowFuel": "¡COMBUSTIBLE CRÍTIC!",
+        "nextGameStarting": "PREPARANT SEGÜENT MISSIÓ...",
+        "nextPlanet": "VIATJANT AL SEGÜENT PLANETA...",
+        "roleCatcher": "RECOL·LECTOR",
+        "roleSniper": "DESTRUCTOR",
+        "selectRoute": "SELECCIONA RUTA DE CARRERA"
     },
     "plans": {
+        "individual": "Individual",
+        "premium": "Premium",
+        "grupal": "Group",
+        "individual_free": "Individual (Free)",
         "selectMode": "SELECT YOUR MISSION MODE",
         "standard": "STANDARD",
         "manage": "MANAGE",
@@ -433,9 +463,45 @@
         "repeatCode": "REPEAT CODE",
         "confirmFoundation": "CONFIRM FOUNDATION",
         "cancelProtocol": "CANCEL PROTOCOL",
+        "groupTypeLabel": "Group type",
+        "groupTypeInfo": "This change upgrades your current account to a group plan and keeps your progress.",
+        "groupTypes": {
+            "center": "Center (manages teachers and students)",
+            "teacher": "Teacher (manages students)"
+        },
         "pwdMismatch": "Passwords do not match",
         "individualDesc": "Take off solo. Master basic missions and explore the cosmos at your own pace.",
-        "grupalDesc": "Join a squad. Tactical coordination, real-time tracking, and joint telemetry panel."
+        "grupalDesc": "Join a squad. Tactical coordination, real-time tracking, and joint telemetry panel.",
+        "changeError": "Could not change the plan",
+        "leaveRequest": {
+            "pending": "You have a pending request to leave the group. You must wait for {approver}'s response.",
+            "rejected": "Your request to leave the group was rejected by {approver}.",
+            "dialogTitle": "Request sent",
+            "dialogDesc": "You requested to leave the group to {approver}. You must wait for a response.",
+            "dialogConfirm": "Accept",
+            "defaultApprover": "your supervisor",
+            "requestError": "Could not send the request to leave the group"
+        },
+        "loginError": "Could not start group connection",
+        "createGroupError": "Could not create the group"
+    },
+    "session": {
+        "errors": {
+            "register": "Registration error",
+            "auth": "Authentication error",
+            "userNotIdentified": "User not identified.",
+            "userNotIdentifiedForPlan": "User not identified to update the plan.",
+            "planUpdateServer": "Error updating the plan on the server",
+            "serverConnection": "Error connecting to the server: {detail}",
+            "avatarSave": "Error saving avatar on server",
+            "titleSave": "Error saving title on server",
+            "passwordChange": "Error changing password",
+            "passwordChangeSuccess": "Password updated successfully",
+            "groupDowngradeSchedule": "Could not schedule group plan downgrade",
+            "groupDowngradeCancel": "Could not cancel group downgrade",
+            "deleteRequest": "Error requesting account deletion",
+            "deleteCancel": "Error canceling account deletion"
+        }
     },
     "spelledRosco": {
         "title": "🚀 Stellar Rosco",
@@ -473,7 +539,11 @@
         "errors": "Errors",
         "finalScore": "Final Score: {score}",
         "maxCombo": "Max Combo: x{combo}",
-        "getReward": "Get Reward"
+        "getReward": "Get Reward",
+        "catcherDesc": "Catch only the words that RHYME with the hint!",
+        "roleCatcher": "COLLECTOR",
+        "roleSniper": "STRIKER",
+        "sniperDesc": "Destroy the words that DO NOT rhyme to protect the team!"
     },
     "syllableQuest": {
         "points": "Points: {score}",
@@ -487,7 +557,11 @@
         "reward": "Reward: {reward}",
         "getReward": "Get Reward",
         "msgCorrect": "Correct!",
-        "msgIncorrect": "Incorrect, try again."
+        "msgIncorrect": "Incorrect, try again.",
+        "orderPhrase": "Order the phrase!",
+        "clickOrder": "Click the words in the correct order...",
+        "phraseCompleted": "Phrase completed!",
+        "incorrectOrder": "Incorrect order! Restarting phrase..."
     },
     "wordConstruction": {
         "level": "Level {level}",
@@ -519,7 +593,13 @@
         "fase1Title": "Training",
         "fase1Subtitle": "Phase 1: Earth",
         "fase2Title": "The Journey Begins",
-        "fase2Subtitle": "Phase 2: Near Space"
+        "fase2Subtitle": "Phase 2: Near Space",
+        "fase3Title": "Into the Unknown",
+        "fase3Subtitle": "Phase 3: Deep Space",
+        "senalperdida": "Lost Signal",
+        "horizontes": "New Horizons",
+        "destino": "Final Destination",
+        "silabas": "Syllable Quest"
     },
     "shopActions": {
         "confirmMulti": "Do you want to buy a 10-spin pack for 900 coins?",
@@ -585,24 +665,38 @@
         "limit3": "* Only valid for 3 games"
     },
     "radarScan": {
-        "points": "Points: {score}",
-        "time": "Time:",
         "title": "Radar Scan",
-        "desc": "Find the different letter before time runs out. Be careful, your field of vision is limited and random clicks will deduct time!",
-        "startBtn": "START (60s)",
-        "completed": "Scan Completed!",
-        "totalPoints": "Total Points: {score}",
-        "returnMenu": "RETURN TO MENU"
+        "points": "Points: {score}",
+        "time": "Time: ",
+        "desc": "Find the target using the scanner!",
+        "startBtn": "START MISSION",
+        "completed": "Scan Finished",
+        "totalPoints": "Final Score: {score}",
+        "returnMenu": "Get Reward"
     },
     "radioSignal": {
+        "title": "Radio Signal",
         "points": "Points: {score}",
+        "pointsLabel": "POINTS",
         "time": "Time: {time}s",
-        "locked": "● LOCKED",
-        "scanning": "○ SCANNING",
-        "placeholder": "Type the phrase...",
+        "timeLabel": "TIME",
+        "locked": "LOCKED",
+        "scanning": "SCANNING...",
+        "placeholder": "Enter the phrase...",
         "send": "SEND",
-        "waiting": "WAITING FOR SIGNAL...",
-        "error": "✗ INCORRECT DATA - TRY AGAIN"
+        "waiting": "Waiting for signal...",
+        "commsReceiver": "COMMS RECEIVER",
+        "targetLabel": "TARGET",
+        "signalLabel": "SIGNAL",
+        "incomingTransmission": "INCOMING TRANSMISSION",
+        "error": "✗ INCORRECT DATA - RETRY",
+        "partner": "PARTNER",
+        "partnerComms": "COMMUNICATION WITH PARTNER",
+        "success": "¡SIGNAL DECODED!",
+        "successDesc": "+150 PTS | +15s",
+        "typeAndEnter": "Type a message and press Enter...",
+        "you": "YOU",
+        "youHear": "TUNING:"
     },
     "errors": {
         "noSession": "There is no active session.",
@@ -612,17 +706,17 @@
     "missionsList": {
         "daily": {
             "games": "Play {goal} games",
-            "coins": "Earn {goal} coins",
+            "coins": "Earn {goal} credits",
             "xp": "Get {goal} XP",
-            "item": "Use {goal} Boosters",
-            "streak": "Daily Activity"
+            "item": "Use {goal} items",
+            "streak": "Keep your streak"
         },
         "weekly": {
             "games": "Game Master ({goal} games)",
-            "coins": "Gold Digger ({goal} coins)",
-            "xp": "Lunar Ascension (Get {goal} XP)",
-            "streak": "Space Survivor ({goal} day streak)",
-            "item": "Object Interaction ({goal} items)"
+            "coins": "Gold Digger ({goal} credits)",
+            "xp": "Lunar Ascension ({goal} XP)",
+            "streak": "Survivor ({goal} days streak)",
+            "item": "Pro Interaction ({goal} items)"
         }
     },
     "achievementsList": {
@@ -717,189 +811,6 @@
             "metric": "XP"
         }
     },
-    "radarScan": {
-        "title": "Radar Scan",
-        "points": "Points: {score}",
-        "time": "Time: ",
-        "desc": "Find the target using the scanner!",
-        "startBtn": "START MISSION",
-        "completed": "Scan Finished",
-        "totalPoints": "Final Score: {score}",
-        "returnMenu": "Get Reward"
-    },
-    "radioSignal": {
-        "title": "Radio Signal",
-        "points": "Points: {score}",
-        "pointsLabel": "POINTS",
-        "time": "Time: {time}s",
-        "timeLabel": "TIME",
-        "locked": "LOCKED",
-        "scanning": "SCANNING...",
-        "placeholder": "Enter the phrase...",
-        "send": "SEND",
-        "waiting": "Waiting for signal...",
-        "commsReceiver": "COMMS RECEIVER",
-        "targetLabel": "TARGET",
-        "signalLabel": "SIGNAL",
-        "incomingTransmission": "INCOMING TRANSMISSION"
-    },
-    "games": {
-        "SymmetryBreaker": "Symmetry Breaker",
-        "symmetry-breaker": "Symmetry Breaker",
-        "symmetrybreaker": "Symmetry Breaker",
-        "WordConstruction": "Word Construction",
-        "word-construction": "Word Construction",
-        "wordconstruction": "Word Construction",
-        "RhymeSquad": "Rhyme Squad",
-        "rhyme-squad": "Rhyme Squad",
-        "rhymesquad": "Rhyme Squad",
-        "SyllableQuest": "Syllable Quest",
-        "syllable-quest": "Syllable Quest",
-        "syllablequest": "Syllable Quest",
-        "SpelledRosco": "Stellar Rosco",
-        "spelled-rosco": "Stellar Rosco",
-        "spelledrosco": "Stellar Rosco",
-        "RadarScan": "Radar Scan",
-        "radar-scan": "Radar Scan",
-        "radarscan": "Radar Scan",
-        "RadioSignal": "Radio Signal",
-        "radio-signal": "Radio Signal",
-        "radiosignal": "Radio Signal",
-        "Preparativos": "Preparations",
-        "preparativos": "Preparations",
-        "Despegue": "Liftoff!",
-        "despegue": "Liftoff!",
-        "Gravedad": "Breaking Gravity",
-        "gravedad": "Breaking Gravity",
-        "Desacoplamiento": "Orbital Decoupling",
-        "desacoplamiento": "Orbital Decoupling",
-        "Ruta": "Stellar Route",
-        "ruta": "Stellar Route",
-        "Base": "Calling Base",
-        "base": "Calling Base",
-        "Recarga": "Solar Recharge",
-        "recarga": "Solar Recharge",
-        "Reparacion": "Express Repair",
-        "reparacion": "Express Repair"
-    },
-    "plans": {
-        "individual": "Individual",
-        "premium": "Premium",
-        "standard": "Standard",
-        "individual_free": "Individual (Free)"
-    },
-    "multiplayerResult": {
-        "victory": "VICTORY!",
-        "tie": "TIE!",
-        "defeat": "DEFEAT!",
-        "winDesc": "You have conquered the galaxy",
-        "tieDesc": "No one dominates the cosmos today",
-        "defeatDesc": "The cosmos has beaten you this time",
-        "you": "YOU",
-        "roundsWon": "rounds won",
-        "winner": "WINNER",
-        "loser": "LOSER",
-        "ready": "READY",
-        "waiting": "WAITING...",
-        "pending": "PENDING",
-        "vs": "VS",
-        "roundsPlayed": "{total} rounds played",
-        "missionHistory": "MISSION HISTORY",
-        "backToLobby": "BACK TO LOBBY",
-        "waitingTeam": "Waiting for the team to return..."
-    },
-    "shop": {
-        "spinError": "Error while spinning",
-        "unknownPrize": "The server returned an unknown prize.",
-        "commError": "Communication error"
-    },
-    "languages": {
-        "es": "Spanish",
-        "ca": "Catalan",
-        "en": "English"
-    },
-    "footer": {
-        "docs": "Documentation",
-        "support": "Technical Support",
-        "x": "Twitter / X",
-        "github": "GitHub Repository",
-        "discord": "Discord Community",
-        "reddit": "Reddit Forum"
-    },
-    "educational": {
-        "title": "EDUCATIONAL PANEL",
-        "manageTeachers": "Teacher Management",
-        "myClass": "My Class",
-        "stats": "Statistics",
-        "supplyEditor": "Supply Editor",
-        "backToProfile": "BACK TO PROFILE",
-        "teachersTitle": "TEACHERS",
-        "addTeacher": "ADD TEACHER",
-        "teacher": "TEACHER",
-        "rank": "RANK",
-        "actions": "ACTIONS",
-        "studentsTitle": "CLASS STUDENTS",
-        "addStudent": "ADD STUDENT",
-        "student": "STUDENT",
-        "level": "LEVEL",
-        "telemetryTitle": "GROUP TELEMETRY",
-        "totalGames": "TOTAL GAMES",
-        "avgLevel": "AVERAGE LEVEL",
-        "totalMembers": "TOTAL MEMBERS",
-        "noData": "No data available to display.",
-        "addMember": "ADD {role}",
-        "username": "Username",
-        "password": "Password",
-        "confirmReg": "CONFIRM REGISTRATION",
-        "supplyEditorPage": {
-            "selectGame": "SELECT A GAME",
-            "editorTitle": "EDITOR: {game}",
-            "filterByTeacher": "Filter by Teacher",
-            "allTeachers": "All Teachers",
-            "newExercise": "NEW EXERCISE",
-            "defaultContent": "Default Content",
-            "active": "ACTIVE",
-            "defaultDesc": "Use the system's prefab words (Astronautics, Tech, etc.).",
-            "alreadyActive": "ALREADY ACTIVE",
-            "backToDefault": "BACK TO DEFAULT",
-            "author": "Author: {name}",
-            "wordsConfigured": "{count} words configured.",
-            "deactivate": "DEACTIVATE",
-            "activateForClass": "ACTIVATE FOR CLASS",
-            "deleteConfirm": "Delete this exercise?",
-            "editTitle": "EDIT EXERCISE: {game}",
-            "newTitle": "NEW EXERCISE: {game}",
-            "saveChanges": "SAVE CHANGES",
-            "wordBankTitle": "1. WORD BANK",
-            "addWord": "ADD WORD",
-            "searchPlaceholder": "Search...",
-            "wordLabel": "Word",
-            "hintLabel": "Hint",
-            "configExerciseTitle": "2. EXERCISE CONFIGURATION",
-            "exerciseNameLabel": "Exercise Name",
-            "exerciseSearchPlaceholder": "Search in exercise...",
-            "assignToTeacher": "Assign to Teacher",
-            "noResults": "No results for this search.",
-            "games": {
-                "WordConstruction": {
-                    "name": "Word Construction",
-                    "desc": "Build scrambled words."
-                },
-                "SyllableQuest": {
-                    "name": "Syllable Quest",
-                    "desc": "Split into syllables."
-                },
-                "SpelledRosco": {
-                    "name": "Stellar Rosco",
-                    "desc": "Guess by letters."
-                },
-                "RhymeSquad": {
-                    "name": "Rhyme Squad",
-                    "desc": "Find rhymes."
-                }
-            }
-        }
-    },
     "games": {
         "word-construction": "Word Construction",
         "WordConstruction": "Word Construction",
@@ -937,7 +848,159 @@
         "Recarga": "Symmetry Breaker",
         "Recarga Solar": "Symmetry Breaker",
         "Reparación": "Radar Scanner",
-        "Reparación Express": "Radar Scanner"
+        "Reparación Express": "Radar Scanner",
+        "Minijoc": "Minigame",
+        "Reparacion": "Express Repair",
+        "base": "Calling Base",
+        "desacoplamiento": "Orbital Decoupling",
+        "despegue": "Liftoff!",
+        "gravedad": "Breaking Gravity",
+        "preparativos": "Word Construction",
+        "radarscan": "Radar Scan",
+        "radiosignal": "Radio Signal",
+        "recarga": "Solar Recharge",
+        "reparacion": "Express Repair",
+        "rhymesquad": "Rhyme Squad",
+        "ruta": "Stellar Route",
+        "spelledrosco": "Stellar Rosco",
+        "syllablequest": "Syllable Quest",
+        "symmetrybreaker": "Symmetry Breaker",
+        "wordconstruction": "Word Construction"
+    },
+    "multiplayerResult": {
+        "victory": "VICTORY!",
+        "tie": "TIE!",
+        "defeat": "DEFEAT!",
+        "winDesc": "You have conquered the galaxy",
+        "tieDesc": "No one dominates the cosmos today",
+        "defeatDesc": "The cosmos has beaten you this time",
+        "you": "YOU",
+        "roundsWon": "rounds won",
+        "winner": "WINNER",
+        "loser": "LOSER",
+        "ready": "READY",
+        "waiting": "WAITING...",
+        "pending": "PENDING",
+        "vs": "VS",
+        "roundsPlayed": "{total} rounds played",
+        "missionHistory": "MISSION HISTORY",
+        "backToLobby": "BACK TO LOBBY",
+        "waitingTeam": "Waiting for the team to return...",
+        "defeatQuote": "Defeat is just another step towards knowledge.",
+        "team": "TEAM",
+        "tieQuote": "A perfect balance of forces.",
+        "winQuote": "You have dominated the galaxy with honor!"
+    },
+    "shop": {
+        "spinError": "Error while spinning",
+        "unknownPrize": "The server returned an unknown prize.",
+        "commError": "Communication error"
+    },
+    "languages": {
+        "es": "Spanish",
+        "ca": "Catalan",
+        "en": "English"
+    },
+    "footer": {
+        "docs": "Documentation",
+        "support": "Technical Support",
+        "x": "Twitter / X",
+        "github": "GitHub Repository",
+        "discord": "Discord Community",
+        "reddit": "Reddit Forum"
+    },
+    "educational": {
+        "title": "EDUCATIONAL PANEL",
+        "manageTeachers": "Teacher Management",
+        "myClass": "My Class",
+        "stats": "Statistics",
+        "supplyEditor": "Supply Editor",
+        "backToProfile": "BACK TO PROFILE",
+        "teachersTitle": "TEACHERS",
+        "addTeacher": "ADD TEACHER",
+        "teacher": "TEACHER",
+        "rank": "RANK",
+        "actions": "ACTIONS",
+        "studentsTitle": "CLASS STUDENTS",
+        "addStudent": "ADD STUDENT",
+        "student": "STUDENT",
+        "level": "LEVEL",
+        "telemetryTitle": "GROUP TELEMETRY",
+        "telemetryTitleIndividual": "INDIVIDUAL TELEMETRY",
+        "totalGames": "TOTAL GAMES",
+        "avgLevel": "AVERAGE LEVEL",
+        "totalMembers": "TOTAL MEMBERS",
+        "totalPoints": "TOTAL POINTS",
+        "noData": "No data available to display.",
+        "addMember": "ADD {role}",
+        "roleLabel": "Role",
+        "modeLabel": "Method",
+        "roles": {
+            "teacher": "Teacher",
+            "student": "Student"
+        },
+        "addModes": {
+            "create": "Create new user",
+            "invite": "Invite existing user"
+        },
+        "errors": {
+            "usernameRequired": "You must provide a username",
+            "passwordRequired": "You must provide a password for the new user",
+            "addMemberFailed": "Could not add the member"
+        },
+        "username": "Username",
+        "password": "Password",
+        "confirmReg": "CONFIRM REGISTRATION",
+        "supplyEditorPage": {
+            "selectGame": "SELECT A GAME",
+            "editorTitle": "EDITOR: {game}",
+            "filterByTeacher": "Filter by Teacher",
+            "allTeachers": "All Teachers",
+            "newExercise": "NEW EXERCISE",
+            "defaultContent": "Default Content",
+            "active": "ACTIVE",
+            "defaultDesc": "Use the system's prefab words (Astronautics, Tech, etc.).",
+            "alreadyActive": "ALREADY ACTIVE",
+            "backToDefault": "BACK TO DEFAULT",
+            "author": "Author: {name}",
+            "wordsConfigured": "{count} words configured.",
+            "deactivate": "DEACTIVATE",
+            "activateForClass": "ACTIVATE FOR CLASS",
+            "deleteConfirm": "Delete this exercise?",
+            "exportJSON": "Export JSON",
+            "importJSON": "Import JSON",
+            "editTitle": "EDIT EXERCISE: {game}",
+            "newTitle": "NEW EXERCISE: {game}",
+            "saveChanges": "SAVE CHANGES",
+            "wordBankTitle": "1. WORD BANK",
+            "addWord": "ADD WORD",
+            "searchPlaceholder": "Search...",
+            "wordLabel": "Word",
+            "hintLabel": "Hint",
+            "configExerciseTitle": "2. EXERCISE CONFIGURATION",
+            "exerciseNameLabel": "Exercise Name",
+            "exerciseSearchPlaceholder": "Search in exercise...",
+            "assignToTeacher": "Assign to Teacher",
+            "noResults": "No results for this search.",
+            "games": {
+                "WordConstruction": {
+                    "name": "Word Construction",
+                    "desc": "Build scrambled words."
+                },
+                "SyllableQuest": {
+                    "name": "Syllable Quest",
+                    "desc": "Split into syllables."
+                },
+                "SpelledRosco": {
+                    "name": "Stellar Rosco",
+                    "desc": "Guess by letters."
+                },
+                "RhymeSquad": {
+                    "name": "Rhyme Squad",
+                    "desc": "Find rhymes."
+                }
+            }
+        }
     },
     "ranks": [
         "Flight Cadet",
@@ -955,21 +1018,5 @@
         "Architect of Realities",
         "Deity of the Singularity",
         "Omniscient of the Cosmos"
-    ],
-    "missionsList": {
-        "daily": {
-            "games": "Play {goal} games",
-            "coins": "Earn {goal} credits",
-            "xp": "Get {goal} XP",
-            "item": "Use {goal} items",
-            "streak": "Keep your streak"
-        },
-        "weekly": {
-            "games": "Game Master ({goal} games)",
-            "coins": "Gold Digger ({goal} credits)",
-            "xp": "Lunar Ascension ({goal} XP)",
-            "streak": "Survivor ({goal} days streak)",
-            "item": "Pro Interaction ({goal} items)"
-        }
-    }
+    ]
 }

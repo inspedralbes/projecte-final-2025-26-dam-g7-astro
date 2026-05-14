@@ -41,6 +41,10 @@ class User {
         this.nameChangesCount = data.nameChangesCount || 0;
         this.selectedTitle = data.selectedTitle || null;
         this.deletionScheduledAt = data.deletionScheduledAt || null;
+        this.groupInvitations = Array.isArray(data.groupInvitations) ? data.groupInvitations : [];
+        this.groupApprovalRequests = Array.isArray(data.groupApprovalRequests) ? data.groupApprovalRequests : [];
+        this.scheduledPlanDowngrade = data.scheduledPlanDowngrade || null;
+        this.pendingGroupLeaveRequest = data.pendingGroupLeaveRequest || null;
     }
 
     getXPNeeded() {

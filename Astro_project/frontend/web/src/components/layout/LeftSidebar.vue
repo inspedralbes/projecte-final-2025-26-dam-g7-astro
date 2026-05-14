@@ -116,7 +116,7 @@
       { titleKey: 'sidebar.profile', icon: 'mdi-card-account-details', to: '/profile' },
     ]
 
-    if (store.role === 'TEACHER' || store.role === 'CENTER') {
+    if ((store.plan === 'GRUPAL' && (store.role === 'TEACHER' || store.role === 'CENTER')) || store.plan === 'INDIVIDUAL_PREMIUM') {
       items.push({ titleKey: 'sidebar.educational', icon: 'mdi-school', to: '/educational' })
     }
 

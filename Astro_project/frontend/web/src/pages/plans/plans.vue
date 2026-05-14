@@ -11,6 +11,20 @@
           {{ $t('plans.selectMode') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+        <template v-else>
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <v-col
@@ -89,6 +103,20 @@
           {{ $t('plans.individualSubtitle') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+        <template v-else>
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <!-- Option: Free -->
@@ -106,7 +134,7 @@
               <div class="icon-glow" style="background: #00e5ff" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.freeTitle') || 'FREE' }}
+              {{ $t('plans.freeTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="cyan-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.freeDesc')" />
@@ -138,7 +166,7 @@
               <div class="icon-glow" style="background: #ffab40" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.premiumTitle') || 'PREMIUM' }}
+              {{ $t('plans.premiumTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="orange-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.premiumDesc')" />
@@ -326,57 +354,30 @@
 
         <v-row dense>
           <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.unitDesignation') }}</label>
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.groupTypeLabel') }}</label>
           </v-col>
           <v-col class="mb-4" cols="12">
-            <v-text-field
-              v-model="newGroupName"
+            <v-select
+              v-model="groupType"
+              :items="groupTypeOptions"
               bg-color="rgba(10, 30, 20, 0.6)"
               class="tech-input-green"
               color="green-accent-3"
               hide-details
-              :placeholder="$t('plans.squadName')"
-              prepend-inner-icon="mdi-format-title"
+              prepend-inner-icon="mdi-account-group"
               variant="solo-filled"
             />
           </v-col>
 
-          <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.securityProtocols') }}</label>
-          </v-col>
-          <v-col class="mb-1" cols="12" sm="6">
-            <v-text-field
-              v-model="newGroupPassword"
-              bg-color="rgba(10, 30, 20, 0.6)"
-              class="tech-input-green"
-              color="green-accent-3"
-              hide-details
-              :placeholder="$t('plans.password')"
-              prepend-inner-icon="mdi-key-plus"
-              type="password"
-              variant="solo-filled"
-            />
-          </v-col>
-          <v-col class="mb-6" cols="12" sm="6">
-            <v-text-field
-              v-model="newGroupPasswordConfirm"
-              bg-color="rgba(10, 30, 20, 0.6)"
-              class="tech-input-green"
-              color="green-accent-3"
-              :error-messages="newGroupPassword !== newGroupPasswordConfirm ? $t('plans.pwdMismatch') : ''"
-              hide-details
-              :placeholder="$t('plans.repeatCode')"
-              prepend-inner-icon="mdi-key-check"
-              type="password"
-              variant="solo-filled"
-            />
+          <v-col class="mb-6 text-caption text-green-lighten-4 text-left" cols="12">
+            {{ $t('plans.groupTypeInfo') }}
           </v-col>
         </v-row>
 
         <v-btn
           class="mb-6 font-weight-bold glow-btn-success text-h6 text-black mx-auto"
           color="green-accent-3"
-          :disabled="!newGroupName || !newGroupPassword || newGroupPassword !== newGroupPasswordConfirm"
+          :disabled="!groupType"
           height="54"
           min-width="280"
           rounded="lg"
@@ -398,30 +399,49 @@
       </v-card>
     </v-container>
 
+    <v-dialog v-model="showLeaveRequestDialog" max-width="520">
+      <v-card class="holo-panel pa-6 text-center">
+        <v-icon class="mb-3" color="warning" icon="mdi-timer-sand" size="56" />
+        <h3 class="text-h5 font-weight-bold text-white mb-3">{{ $t('plans.leaveRequest.dialogTitle') }}</h3>
+        <p class="text-body-1 text-grey-lighten-2 mb-6">
+          {{ $t('plans.leaveRequest.dialogDesc', { approver: leaveRequestApprover || $t('plans.leaveRequest.defaultApprover') }) }}
+        </p>
+        <v-btn color="cyan-accent-3" class="text-black font-weight-bold" @click="acceptLeaveRequestDialog">
+          {{ $t('plans.leaveRequest.dialogConfirm') }}
+        </v-btn>
+      </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const router = useRouter()
 
   const step = ref('select-plan')
   const selectedPlan = ref('')
+  const showLeaveRequestDialog = ref(false)
+  const leaveRequestApprover = ref('')
 
   // Login Data
   const user = ref('')
   const password = ref('')
 
   // Registration Data (Group)
-  const newGroupName = ref('')
-  const newGroupPassword = ref('')
-  const newGroupPasswordConfirm = ref('')
+  const groupType = ref('CENTER')
+  const groupTypeOptions = computed(() => [
+    { title: t('plans.groupTypes.center'), value: 'CENTER' },
+    { title: t('plans.groupTypes.teacher'), value: 'TEACHER' },
+  ])
 
   const plans = computed(() => [
     {
@@ -429,7 +449,7 @@
       icon: 'mdi-rocket-launch',
       color: 'cyan-accent-3',
       glowColor: 'cyan',
-      desc: t('plans.individualDesc') || 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
+      desc: t('plans.individualDesc'),
       recommended: true,
     },
     {
@@ -437,10 +457,16 @@
       icon: 'mdi-account-group-outline',
       color: 'purple-accent-2',
       glowColor: 'purple',
-      desc: t('plans.grupalDesc') || 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
+      desc: t('plans.grupalDesc'),
       recommended: false,
     },
   ])
+
+  const pendingLeaveRequest = computed(() => astroStore.pendingGroupLeaveRequest || null)
+
+  onMounted(async () => {
+    await astroStore.fetchUserStats()
+  })
 
   function selectPlan (planId) {
     selectedPlan.value = planId
@@ -462,9 +488,31 @@
     if (result.success) {
       router.push('/profile')
     } else {
-      console.error('No se pudo sincronizar el plan:', result.message)
-      router.push('/profile')
+      const message = String(result.message || '')
+      const needsApproval = message.toLowerCase().includes('solicitar aprobación')
+      const isSubordinateGroupMember = astroStore.plan === 'GRUPAL'
+        && !!astroStore.parentId
+        && (astroStore.role === 'STUDENT' || astroStore.role === 'TEACHER')
+
+      if (needsApproval && isSubordinateGroupMember) {
+        const leaveRequest = await groupStore.requestLeaveToIndividual(astroStore.user)
+        if (leaveRequest.success || String(leaveRequest.message || '').toLowerCase().includes('solicitud pendiente')) {
+          await astroStore.fetchUserStats()
+          leaveRequestApprover.value = astroStore.pendingGroupLeaveRequest?.approver || astroStore.parentId || ''
+          showLeaveRequestDialog.value = true
+          return
+        }
+        alert(leaveRequest.message || t('plans.leaveRequest.requestError'))
+        return
+      }
+
+      alert(result.message || t('plans.changeError'))
     }
+  }
+
+  function acceptLeaveRequestDialog () {
+    showLeaveRequestDialog.value = false
+    router.push('/profile')
   }
 
   async function login () {
@@ -478,31 +526,17 @@
     if (result.success) {
       router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
     } else {
-      alert(result.message)
+      alert(t('plans.loginError'))
     }
   }
 
   async function createGroup () {
-    if (!newGroupName.value || !newGroupPassword.value) return
-
-    // Al fundar escuadra desde aquí, el usuario actual se convierte en el "CENTRO"
-    const result = await astroStore.registerTripulante({
-      username: newGroupName.value,
-      password: newGroupPassword.value,
-      plan: 'GRUPAL',
-      role: 'CENTER',
-      rank: 'Centro de Mando',
-    })
+    const result = await astroStore.updatePlan('GRUPAL', { groupType: groupType.value })
 
     if (result.success) {
-      // Hacemos login automático con el nuevo centro
-      await astroStore.loginTripulante({
-        user: newGroupName.value,
-        password: newGroupPassword.value,
-      })
       router.push('/profile')
     } else {
-      alert(result.message)
+      alert(t('plans.createGroupError'))
     }
   }
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="radio-cabinet">
+  <div class="radio-cabinet" :class="{ 'game-paused': props.isPaused }">
     <div class="screw screw-tl" />
     <div class="screw screw-tr" />
     <div class="screw screw-bl" />
@@ -210,6 +210,10 @@
       type: Boolean,
       default: false,
     },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   const emit = defineEmits(['game-over'])
@@ -395,6 +399,10 @@
   let time = 0
 
   function drawWaves () {
+    if (props.isPaused) {
+      animationFrame = requestAnimationFrame(drawWaves)
+      return
+    }
     time += 0.04
     if (targetWaveCanvas.value && currentWaveCanvas.value) {
       renderWave(targetWaveCanvas.value, true)
@@ -566,7 +574,7 @@
 
     if (!props.isMultiplayer || isHost.value) {
       roundTimer = setInterval(() => {
-        if (gameFinished.value) return
+        if (gameFinished.value || props.isPaused) return
         timeLeft.value = Math.max(0, timeLeft.value - 1)
 
         if (props.isMultiplayer && isHost.value) {
@@ -710,6 +718,12 @@
         0 8px 30px rgba(0,0,0,0.6),
         inset 0 1px 0 rgba(255,255,255,0.05),
         inset 0 -1px 0 rgba(0,0,0,0.3);
+}
+
+.game-paused {
+    pointer-events: none;
+    filter: blur(4px) grayscale(0.5);
+    transition: all 0.3s ease;
 }
 
 .screw {

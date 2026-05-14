@@ -3,6 +3,7 @@ import { API_BASE_URL, requestJson } from './astroShared'
 import { useChatStore } from './chatStore'
 import { useSessionStore } from './sessionStore'
 import { useSocialStore } from './socialStore'
+import { useAstroStore } from './astroStore'
 
 function buildWsUrl () {
   let wsUrl = API_BASE_URL.replace(/^http/i, 'ws')
@@ -284,6 +285,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
           this.lastMessage = data
           this.stopFuelTimer()
+
+          // Actualizar estadísticas tras partida multijugador
+          const astroStore = useAstroStore()
+          astroStore.fetchUserStats()
+
           break
         }
         case 'PLAYER_RETURNED': {
@@ -335,6 +341,30 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           useSocialStore().setFriends(data.friends)
           useSocialStore().setFriendRequests(data.friendRequests)
           useSocialStore().fetchAllUsers()
+          break
+        }
+        case 'GROUP_INVITATION_UPDATE': {
+          sessionStore.setGroupInvitations(data.groupInvitations || [])
+          break
+        }
+        case 'GROUP_APPROVAL_UPDATE': {
+          sessionStore.setGroupApprovalRequests(data.groupApprovalRequests || [])
+          break
+        }
+        case 'GROUP_MEMBERSHIP_UPDATE': {
+          if (data.profile) {
+            sessionStore.setPlan(data.profile.plan || sessionStore.plan)
+            sessionStore.setRole(data.profile.role || null)
+            sessionStore.setParentId(data.profile.parentId || null)
+            if (Object.prototype.hasOwnProperty.call(data.profile, 'pendingGroupLeaveRequest')) {
+              sessionStore.setPendingGroupLeaveRequest(data.profile.pendingGroupLeaveRequest)
+            } else if (!data.profile.parentId) {
+              sessionStore.setPendingGroupLeaveRequest(null)
+            }
+          }
+          if (Array.isArray(data.groupInvitations)) {
+            sessionStore.setGroupInvitations(data.groupInvitations)
+          }
           break
         }
         default: {

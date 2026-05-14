@@ -115,7 +115,9 @@
 
           <!-- TAB: ESTADÍSTICAS -->
           <div v-if="currentTab === 'stats'">
-            <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.telemetryTitle') }}</h3>
+            <h3 class="text-h4 font-weight-black text-white mb-6">
+              {{ isPremium ? $t('educational.telemetryTitleIndividual') : $t('educational.telemetryTitle') }}
+            </h3>
 
             <v-row v-if="groupStore.currentStats">
               <v-col cols="4">
@@ -126,14 +128,18 @@
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.avgLevel') }}</div>
-                  <div class="text-h4 text-amber-accent-2">{{ groupStore.currentStats.avgLevel.toFixed(1) }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.level') : $t('educational.avgLevel') }}</div>
+                  <div class="text-h4 text-amber-accent-2">
+                    {{ isPremium ? groupStore.currentStats.level : Number(groupStore.currentStats.avgLevel || 0).toFixed(1) }}
+                  </div>
                 </v-card>
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.totalMembers') }}</div>
-                  <div class="text-h4 text-purple-accent-1">{{ groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.totalPoints') : $t('educational.totalMembers') }}</div>
+                  <div class="text-h4 text-purple-accent-1">
+                    {{ isPremium ? groupStore.currentStats.totalPoints : (groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers) }}
+                  </div>
                 </v-card>
               </v-col>
             </v-row>
@@ -153,9 +159,25 @@
     <!-- DIALOGO: AÑADIR MIEMBRO -->
     <v-dialog v-model="showAddDialog" max-width="400">
       <v-card class="glass-popup pa-6">
-        <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: role === 'CENTER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
+        <h3 class="text-h5 text-white mb-6">{{ $t('educational.addMember', { role: selectedRole === 'TEACHER' ? $t('educational.teacher') : $t('educational.student') }) }}</h3>
+        <v-select
+          v-if="role === 'CENTER'"
+          v-model="selectedRole"
+          class="mb-4"
+          :items="roleOptions"
+          :label="$t('educational.roleLabel')"
+          variant="solo-filled"
+        />
+        <v-select
+          v-model="addMode"
+          class="mb-4"
+          :items="modeOptions"
+          :label="$t('educational.modeLabel')"
+          variant="solo-filled"
+        />
         <v-text-field v-model="newName" class="mb-4" :label="$t('educational.username')" variant="solo-filled" />
         <v-text-field
+          v-if="addMode === 'create'"
           v-model="newPass"
           class="mb-6"
           :label="$t('educational.password')"
@@ -171,38 +193,73 @@
 
 <script setup>
   import { storeToRefs } from 'pinia'
-  import { onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import SupplyEditor from '@/components/educational/SupplyEditor.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useGroupStore } from '@/stores/groupStore'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const groupStore = useGroupStore()
-  const { user, role } = storeToRefs(astroStore)
+  const { user, role, plan } = storeToRefs(astroStore)
+  const isPremium = computed(() => plan.value === 'INDIVIDUAL_PREMIUM')
 
   const currentTab = ref('stats')
   const showAddDialog = ref(false)
 
   // Forms
+  const addMode = ref('create')
+  const selectedRole = ref('STUDENT')
   const newName = ref('')
   const newPass = ref('')
+  const roleOptions = computed(() => [
+    { title: t('educational.roles.teacher'), value: 'TEACHER' },
+    { title: t('educational.roles.student'), value: 'STUDENT' },
+  ])
+  const modeOptions = computed(() => [
+    { title: t('educational.addModes.create'), value: 'create' },
+    { title: t('educational.addModes.invite'), value: 'invite' },
+  ])
 
   onMounted(async () => {
     if (role.value === 'CENTER') {
       currentTab.value = 'teachers'
+      selectedRole.value = 'TEACHER'
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchCenterStats(user.value)
     } else if (role.value === 'TEACHER') {
       currentTab.value = 'students'
+      selectedRole.value = 'STUDENT'
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchClassStats(user.value)
+      await groupStore.fetchSupplySets(user.value)
+    } else if (isPremium.value) {
+      currentTab.value = 'stats'
+      await groupStore.fetchIndividualStats(user.value)
       await groupStore.fetchSupplySets(user.value)
     }
   })
 
   async function addMember () {
+    if (role.value !== 'CENTER' && role.value !== 'TEACHER') return
+
+    if (!newName.value) {
+      alert(t('educational.errors.usernameRequired'))
+      return
+    }
+    if (addMode.value === 'create' && !newPass.value) {
+      alert(t('educational.errors.passwordRequired'))
+      return
+    }
+
     let result
-    result = await (role.value === 'CENTER' ? groupStore.createTeacher(user.value, { username: newName.value, password: newPass.value }) : groupStore.createStudent(user.value, { username: newName.value, password: newPass.value }))
+    const targetRole = role.value === 'CENTER' ? selectedRole.value : 'STUDENT'
+    if (addMode.value === 'invite') {
+      result = await groupStore.inviteExistingMember(user.value, newName.value, targetRole)
+    } else {
+      result = await groupStore.createMember(user.value, targetRole, { username: newName.value, password: newPass.value })
+    }
 
     if (result.success) {
       showAddDialog.value = false
@@ -210,7 +267,7 @@
       newPass.value = ''
       await groupStore.fetchMembers(user.value)
     } else {
-      alert(result.message)
+      alert(result.message || t('educational.errors.addMemberFailed'))
     }
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <div ref="gameArea" class="game-container" @mousemove="updateFlashlight">
+  <div ref="gameArea" class="game-container" :class="{ 'game-paused': props.isPaused }" @mousemove="updateFlashlight">
     <div class="hud d-flex justify-center align-center pa-2 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
         <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('radarScan.points', { score }) }}</div>
@@ -148,6 +148,10 @@
       type: Boolean,
       default: false,
     },
+    isPaused: {
+      type: Boolean,
+      default: false,
+    },
   })
 
   // --- VARIABLES D'ESTAT ---
@@ -230,7 +234,7 @@
     return levels.value[Math.min(currentLevel.value - 1, levels.value.length - 1)]
   })
   const currentTunnelSize = computed(() => currentConfig.value.tunnel)
-  const cellSize = computed(() => Math.max(30, 600 / currentConfig.value.grid))
+  const cellSize = computed(() => Math.max(25, 420 / currentConfig.value.grid))
   const boardSize = computed(() => currentConfig.value.grid * cellSize.value)
 
   const flashlightStyle = computed(() => {
@@ -252,7 +256,7 @@
     }
 
     return {
-      'background-color': '#1a2235',
+      'background-color': '#000000',
       'background-image': lightSpots.join(', '),
       'background-blend-mode': 'lighten',
       'mix-blend-mode': 'multiply',
@@ -409,7 +413,7 @@
 
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
-      if (!isTransitioning.value && timeLeft.value > 0) {
+      if (!isTransitioning.value && timeLeft.value > 0 && !props.isPaused) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
         if (delta >= 1) {
@@ -539,17 +543,24 @@
   min-height: 600px;
   background-color: #0f172a;
   display: flex;
+  padding: 120px 20px 60px 20px;
   justify-content: center;
   align-items: center;
-  padding-top: 80px;
   overflow: hidden;
   user-select: none;
 }
 
+.game-paused {
+  pointer-events: none;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
+}
+
 .board {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 95%;
+  max-height: 70%;
   z-index: 2;
+  transform: translateY(-30px); /* Nudge up to close gap with HUD */
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
@@ -559,7 +570,7 @@
 }
 
 .letter-cell {
-  color: #334155;
+  color: #ffffff;
   transition: color 0.2s;
 }
 

@@ -11,7 +11,8 @@ class GameService {
         normalizeActiveBoosters,
         consumeBoostersForCompletedGame,
         getScoreMultiplier,
-        getCoinsMultiplier
+        getCoinsMultiplier,
+        statsService
     }) {
         this.userRepo = userRepository;
         this.partidaRepo = partidaRepository;
@@ -21,11 +22,14 @@ class GameService {
         this.consumeBoostersForCompletedGame = consumeBoostersForCompletedGame;
         this.getScoreMultiplier = getScoreMultiplier;
         this.getCoinsMultiplier = getCoinsMultiplier;
+        this.statsService = statsService;
     }
 
     async completeGame(username, { game, score = 0, completedMapNode, timeSeconds = 0 }) {
         const user = await this.userRepo.findByUsername(username);
         if (!user) throw new Error('Usuari no trobat');
+
+        const previousLevel = user.level;
 
         const parsedScore = Number.parseInt(score, 10);
         const normalizedScore = Number.isNaN(parsedScore) ? 0 : Math.max(0, parsedScore);
@@ -85,17 +89,19 @@ class GameService {
             this.userRepo.update(user)
         ]);
 
+        // Obtenir estadístiques completes actualitzades per a la resposta
+        const fullStats = await this.statsService.getUserStats(username);
+
         return {
+            ...fullStats,
             xpEarned,
             coinsEarned,
+            boostedScore,
+            leveledUp: user.level > previousLevel,
             newLevel: user.level,
-            newXP: user.xp,
-            newCoins: user.coins,
-            newRank: user.rank,
-            newMapLevel: user.mapLevel,
-            streak: user.streak,
-            leveledUp: false, // Hauríem de comprovar-ho si cal per la resposta
-            boostedScore
+            newBalance: user.coins,
+            newXp: user.xp,
+            newRank: user.rank
         };
     }
 }
