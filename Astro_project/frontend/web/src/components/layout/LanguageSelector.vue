@@ -7,7 +7,7 @@
         rounded="lg"
         variant="text"
       >
-        <span class="text-white text-caption font-weight-bold opacity-70 mr-1">{{ currentLangCode }}</span>
+        <v-img :src="currentFlag" width="22" height="15" class="mr-2 rounded-sm" cover />
         <v-icon class="opacity-50" color="white" icon="mdi-chevron-down" size="14" />
       </v-btn>
     </template>
@@ -20,9 +20,10 @@
         :class="{ 'active-lang-v3': locale === lang.value }"
         @click="changeLanguage(lang.value)"
       >
-        <v-list-item-title class="text-white font-weight-bold text-caption text-center">
-          {{ lang.flag }} - {{ $t(lang.labelKey).toUpperCase() }}
-        </v-list-item-title>
+        <div class="d-flex align-center ga-3 px-2">
+          <v-img :src="lang.flag" width="22" height="15" class="rounded-sm shadow-sm" cover />
+          <span class="text-white font-weight-bold text-caption">{{ $t(lang.labelKey).toUpperCase() }}</span>
+        </div>
       </v-list-item>
     </v-list>
   </v-menu>
@@ -31,17 +32,20 @@
 <script setup>
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import esFlag from '@/assets/es.png'
+  import caFlag from '@/assets/ca.png'
+  import enFlag from '@/assets/en.png'
 
   const { locale } = useI18n()
 
   const languageList = [
-    { labelKey: 'languages.es', value: 'es', flag: 'ES' },
-    { labelKey: 'languages.ca', value: 'ca', flag: 'CA' },
-    { labelKey: 'languages.en', value: 'en', flag: 'EN' },
+    { labelKey: 'languages.es', value: 'es', flag: esFlag },
+    { labelKey: 'languages.ca', value: 'ca', flag: caFlag },
+    { labelKey: 'languages.en', value: 'en', flag: enFlag },
   ]
 
-  const currentLangCode = computed(() => {
-    return locale.value.toUpperCase()
+  const currentFlag = computed(() => {
+    return languageList.find(l => l.value === locale.value)?.flag
   })
 
   function changeLanguage (newLang) {
