@@ -99,7 +99,8 @@ class MongoUserRepository extends UserRepository {
                 streak: 1,
                 selectedAchievements: 1,
                 friendRequests: 1,
-                selectedTitle: 1
+                selectedTitle: 1,
+                profileColor: 1
             }
         }).toArray();
 
@@ -166,7 +167,10 @@ class MongoUserRepository extends UserRepository {
             deletionScheduledAt: user.deletionScheduledAt,
             groupInvitations: user.groupInvitations,
             groupApprovalRequests: user.groupApprovalRequests,
-            scheduledPlanDowngrade: user.scheduledPlanDowngrade
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade,
+            pendingGroupLeaveRequest: user.pendingGroupLeaveRequest,
+            dailyPurchaseHistory: user.dailyPurchaseHistory,
+            profileColor: user.profileColor
         };
     }
 }

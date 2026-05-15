@@ -13,12 +13,12 @@
 
               <div class="phase-text-box" :class="level.phaseAlign === 'right' ? 'text-right' : 'text-left'">
                 <div class="text-overline text-cyan-accent-3 font-weight-bold tracking-widest">{{ $t(level.phaseSubtitleKey) }}</div>
-                <h2 class="text-h4 font-weight-black text-white text-uppercase glow-text">
+                <h2 class="text-h5 font-weight-black text-white text-uppercase glow-text mb-1">
                   {{ $t(level.phaseTitleKey) }}
                 </h2>
               </div>
 
-              <div class="flex-grow-1 px-4 px-md-8 d-flex align-center">
+              <div class="flex-grow-1 px-4 px-md-8 d-flex align-center mt-4">
                 <v-divider class="border-cyan opacity-40" />
                 <div class="phase-center-node mx-2" />
                 <v-divider class="border-cyan opacity-40" />
@@ -31,19 +31,12 @@
           </div>
 
           <div class="path-row">
-            <div
-              class="node-wrapper"
-              :class="{
-                'pos-left': index % 2 === 0,
-                'pos-right': index % 2 !== 0,
-                'on-top': activePreviewIndex === index
-              }"
-            >
-
               <div
                 v-if="index < levelSequence.length - 1 && !levelSequence[index + 1].phaseTitleKey"
                 class="path-connector"
-                :class="{ 'connector-flip': index % 2 !== 0 }"
+                :class="[
+                  isNodeRight(index) ? 'pos-right connector-flip' : 'pos-left'
+                ]"
               >
                 <svg viewBox="0 0 140 140">
                   <path
@@ -53,6 +46,15 @@
                   />
                 </svg>
               </div>
+
+              <div
+                class="node-wrapper"
+                :class="{
+                  'pos-left': !isNodeRight(index),
+                  'pos-right': isNodeRight(index),
+                  'on-top': activePreviewIndex === index
+                }"
+              >
 
               <div
                 v-if="index + 1 <= astroStore.mapLevel"
@@ -105,7 +107,7 @@
                 <div
                   v-if="activePreviewIndex === index"
                   class="level-preview-card"
-                  :class="index % 2 === 0 ? 'preview-right' : 'preview-left'"
+                  :class="getPreviewAlignment(index)"
                   @click.stop
                 >
                   <div class="preview-gif-container">
@@ -127,6 +129,46 @@
                       <v-icon icon="mdi-play" start />
                       {{ $t('singleplayer.start_simple') }}
                     </v-btn>
+
+                    <div v-if="level.supplyGameId && canSelectCustomExerciseSource" class="exercise-source mt-2">
+                      <div class="exercise-source-label">{{ $t('singleplayer.exerciseSourceLabel') }}</div>
+                      <v-tooltip
+                        location="bottom"
+                        :disabled="!getExerciseSelectorTooltip(level.supplyGameId)"
+                      >
+                        <template #activator="{ props: tooltipProps }">
+                          <div v-bind="tooltipProps">
+                            <v-menu :disabled="isExerciseSelectorLocked(level.supplyGameId)">
+                              <template #activator="{ props: menuProps }">
+                                <v-btn
+                                  block
+                                  class="exercise-source-btn"
+                                  color="blue-grey-darken-3"
+                                  density="comfortable"
+                                  rounded="lg"
+                                  size="small"
+                                  variant="tonal"
+                                  v-bind="menuProps"
+                                >
+                                  {{ getSelectedExerciseSourceLabel(level.supplyGameId) }}
+                                </v-btn>
+                              </template>
+                              <v-list density="compact" min-width="220">
+                                <v-list-item
+                                  v-for="option in getExerciseSourceOptions(level.supplyGameId)"
+                                  :key="option.key"
+                                  @click="selectExerciseSource(level.supplyGameId, option.key)"
+                                >
+                                  <v-list-item-title>{{ option.label }}</v-list-item-title>
+                                  <v-list-item-subtitle v-if="option.subtitle">{{ option.subtitle }}</v-list-item-subtitle>
+                                </v-list-item>
+                              </v-list>
+                            </v-menu>
+                          </div>
+                        </template>
+                        <span>{{ getExerciseSelectorTooltip(level.supplyGameId) }}</span>
+                      </v-tooltip>
+                    </div>
                   </div>
                   <div class="preview-arrow" />
                 </div>
@@ -147,11 +189,46 @@
           color="white"
           icon="mdi-close"
           variant="tonal"
-          @click="activeGameComponent = null"
+          @click="requestExit"
         />
-        <component :is="activeGameComponent" @game-over="handleGameOver" />
+        <component :is="activeGameComponent" :is-paused="showExitConfirm" @game-over="handleGameOver" />
       </div>
     </transition>
+
+    <!-- Diálogo de Confirmación de Salida -->
+    <v-dialog v-model="showExitConfirm" max-width="400" persistent z-index="300">
+      <v-card class="text-center pa-6 rounded-xl elevation-24 exit-dialog-card">
+        <div class="exit-icon-wrapper mb-4">
+          <v-icon color="red-accent-3" icon="mdi-alert-octagon" size="64" />
+        </div>
+        <h2 class="text-h5 font-weight-black text-white mb-2">{{ $t('singleplayer.exit_confirm.title') }}</h2>
+        <p class="text-body-2 text-blue-grey-lighten-2 mb-6">
+          {{ $t('singleplayer.exit_confirm.desc') }}
+        </p>
+        <div class="d-flex ga-3">
+          <v-btn
+            class="font-weight-bold flex-grow-1"
+            color="grey-darken-4"
+            height="48"
+            rounded="lg"
+            variant="flat"
+            @click="showExitConfirm = false"
+          >
+            {{ $t('singleplayer.exit_confirm.cancel') }}
+          </v-btn>
+          <v-btn
+            class="font-weight-bold flex-grow-1"
+            color="red-accent-3"
+            height="48"
+            rounded="lg"
+            variant="flat"
+            @click="confirmExit"
+          >
+            {{ $t('singleplayer.exit_confirm.confirm') }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="showLevelUpDialog" max-width="450" persistent z-index="200">
       <v-card
@@ -234,7 +311,8 @@
 </template>
 
 <script setup>
-  import { ref, shallowRef } from 'vue'
+  import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
+  import { onBeforeRouteLeave } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import RadarScan from '@/components/games/RadarScan.vue'
   import RadioSignal from '@/components/games/RadioSignal.vue'
@@ -244,10 +322,44 @@
   import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const activeGameComponent = shallowRef(null)
+  const showExitConfirm = ref(false)
+  const pendingRoute = ref(null)
+
+  // Guard de navegación para evitar salida accidental
+  onBeforeRouteLeave((to, from, next) => {
+    if (activeGameComponent.value && !showExitConfirm.value) {
+      pendingRoute.value = to
+      showExitConfirm.value = true
+      next(false)
+    } else {
+      next()
+    }
+  })
+
+  function requestExit () {
+    showExitConfirm.value = true
+  }
+
+  function confirmExit () {
+    showExitConfirm.value = false
+    activeGameComponent.value = null
+    groupStore.setTrainingActiveSupplySet(null)
+    if (pendingRoute.value) {
+      // Si veníamos de un intento de navegación, completarlo
+      const route = pendingRoute.value
+      pendingRoute.value = null
+      // Usar timeout para evitar conflictos con el cierre del diálogo
+      setTimeout(() => {
+        window.location.hash = route.fullPath // O usar router.push si es accesible
+      }, 100)
+    }
+  }
   const currentPlayingIndex = ref(null)
   const activePreviewIndex = ref(null)
 
@@ -263,17 +375,47 @@
     rankChanged: false,
   })
 
+  const gameStartTime = ref(null)
+  const exerciseSourceState = ref({})
+  const isPremium = computed(() => astroStore.plan === 'INDIVIDUAL_PREMIUM')
+  const isGroupManager = computed(() => astroStore.plan === 'GRUPAL' && (astroStore.role === 'CENTER' || astroStore.role === 'TEACHER'))
+  const canSelectCustomExerciseSource = computed(() => isPremium.value || isGroupManager.value)
+
   const levelSequence = [
-    { id: 'word-construction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
-    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 200, previewGif: '/previews/radar-scan.gif' },
-    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 350, previewGif: '/previews/radio-signal.gif' },
-    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 500, previewGif: '/previews/spelled-rosco.gif' },
-    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 750, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
-    { id: 'syllable-quest', nameKey: 'singleplayerLevels.silabas', component: SyllableQuest, minScore: 900, previewGif: '/previews/syllable-quest.gif' },
-    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 1100, previewGif: '/previews/radio-signal-2.gif' },
-    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1350, previewGif: '/previews/symmetry-breaker.gif' },
-    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 1600, previewGif: '/previews/radar-scan-2.gif' },
+    // FASE 1: La Tierra (4)
+    { id: 'word-construction', supplyGameId: 'WordConstruction', nameKey: 'singleplayerLevels.preparativos', component: WordConstruction, minScore: 100, phaseTitleKey: 'singleplayerLevels.fase1Title', phaseSubtitleKey: 'singleplayerLevels.fase1Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-earth', previewGif: '/previews/word-construction.gif' },
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.despegue', component: RadarScan, minScore: 60, previewGif: '/previews/radar-scan.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.gravedad', component: RadioSignal, minScore: 150, previewGif: '/previews/radio-signal.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.desacoplamiento', component: SpelledRosco, minScore: 300, previewGif: '/previews/spelled-rosco.gif' },
+
+    // FASE 2: Espacio Cercano (4)
+    { id: 'rhyme-squad', nameKey: 'singleplayerLevels.ruta', component: RhymeSquad, minScore: 300, phaseTitleKey: 'singleplayerLevels.fase2Title', phaseSubtitleKey: 'singleplayerLevels.fase2Subtitle', phaseAlign: 'right', phaseIcon: 'mdi-solar-system', previewGif: '/previews/rhyme-squad.gif' },
+    { id: 'syllable-quest', nameKey: 'singleplayerLevels.silabas', component: SyllableQuest, minScore: 400, previewGif: '/previews/syllable-quest.gif' },
+    { id: 'radio-signal', nameKey: 'singleplayerLevels.base', component: RadioSignal, minScore: 750, previewGif: '/previews/radio-signal-2.gif' },
+    { id: 'symmetry-breaker', nameKey: 'singleplayerLevels.recarga', component: SymmetryBreaker, minScore: 1000, previewGif: '/previews/symmetry-breaker.gif' },
+
+    // FASE 3: Espacio Profundo (4)
+    { id: 'radar-scan', nameKey: 'singleplayerLevels.reparacion', component: RadarScan, minScore: 400, phaseTitleKey: 'singleplayerLevels.fase3Title', phaseSubtitleKey: 'singleplayerLevels.fase3Subtitle', phaseAlign: 'left', phaseIcon: 'mdi-auto-fix', previewGif: '/previews/radar-scan-2.gif' },
+    { id: 'spelled-rosco', nameKey: 'singleplayerLevels.senalperdida', component: SpelledRosco, minScore: 600, previewGif: '/previews/spelled-rosco.gif' },
+    { id: 'word-construction', supplyGameId: 'WordConstruction', nameKey: 'singleplayerLevels.horizontes', component: WordConstruction, minScore: 1500, previewGif: '/previews/word-construction.gif' },
+    { id: 'syllable-quest', nameKey: 'singleplayerLevels.destino', component: SyllableQuest, minScore: 1000, previewGif: '/previews/syllable-quest.gif' },
   ]
+
+  function isNodeRight (index) {
+    // Fase 1: 0-3 -> Paridad estándar (1, 3 son R)
+    // Fase 2: 4-7 -> Paridad invertida (4, 6 son R)
+    // Fase 3: 8-11 -> Paridad estándar (9, 11 son R)
+    if (index >= 4 && index <= 7) {
+      return index % 2 === 0
+    }
+    return index % 2 !== 0
+  }
+
+  function getPreviewAlignment (index) {
+    const isRight = isNodeRight(index)
+    // Siempre hacia fuera (exterior del mapa) en todas las fases
+    return isRight ? 'preview-right' : 'preview-left'
+  }
 
   function getLevelState (index) {
     const levelNum = index + 1
@@ -287,13 +429,141 @@
     const state = getLevelState(index)
     if (state !== 'locked') {
       activePreviewIndex.value = activePreviewIndex.value === index ? null : index
+      if (activePreviewIndex.value !== null) {
+        void prepareExerciseSelector(index)
+      }
     }
   }
 
-  function startGame (index) {
+  function buildDefaultExerciseOption () {
+    return {
+      key: 'default',
+      label: t('singleplayer.exerciseSourceDefault'),
+      subtitle: '',
+      set: null,
+    }
+  }
+
+  function buildSetOption (set) {
+    return {
+      key: set._id,
+      label: set.ownerId,
+      subtitle: set.name,
+      set,
+    }
+  }
+
+  async function loadExerciseSourceState (gameId) {
+    if (!gameId || exerciseSourceState.value[gameId]) return
+
+    exerciseSourceState.value[gameId] = {
+      loading: true,
+      options: [buildDefaultExerciseOption()],
+      selectedKey: 'default',
+      locked: true,
+      tooltip: '',
+    }
+
+    let sets = []
+    if (canSelectCustomExerciseSource.value) {
+      if (isPremium.value) {
+        await groupStore.fetchSupplySets(astroStore.user)
+      } else if (astroStore.role === 'CENTER') {
+        await groupStore.fetchCenterSupplies(astroStore.user)
+      } else if (astroStore.role === 'TEACHER' && astroStore.parentId) {
+        await groupStore.fetchCenterSupplies(astroStore.parentId)
+      } else {
+        await groupStore.fetchSupplySets(astroStore.user)
+      }
+
+      sets = (groupStore.supplySets || [])
+        .filter(s => s.gameId === gameId && s.active)
+        .sort((a, b) => String(a.ownerId || '').localeCompare(String(b.ownerId || '')))
+    }
+
+    const ownActiveSet = sets.find(s => s.ownerId === astroStore.user) || null
+    const options = [buildDefaultExerciseOption()]
+
+    if (isPremium.value) {
+      if (ownActiveSet) {
+        options.push(buildSetOption(ownActiveSet))
+      }
+      exerciseSourceState.value[gameId] = {
+        loading: false,
+        options,
+        selectedKey: ownActiveSet ? ownActiveSet._id : 'default',
+        locked: !ownActiveSet,
+        tooltip: ownActiveSet ? '' : t('singleplayer.exerciseSourceNoCustomPremium'),
+      }
+      return
+    }
+
+    for (const set of sets) {
+      options.push(buildSetOption(set))
+    }
+
+    exerciseSourceState.value[gameId] = {
+      loading: false,
+      options,
+      selectedKey: ownActiveSet ? ownActiveSet._id : 'default',
+      locked: false,
+      tooltip: '',
+    }
+  }
+
+  async function prepareExerciseSelector (index) {
+    const level = levelSequence[index]
+    if (!level?.supplyGameId || !canSelectCustomExerciseSource.value) return
+    await loadExerciseSourceState(level.supplyGameId)
+  }
+
+  function getExerciseSourceOptions (gameId) {
+    return exerciseSourceState.value[gameId]?.options || [buildDefaultExerciseOption()]
+  }
+
+  function getSelectedExerciseSourceLabel (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state) return t('singleplayer.exerciseSourceLoading')
+    const selected = state.options.find(option => option.key === state.selectedKey)
+    return selected?.label || t('singleplayer.exerciseSourceDefault')
+  }
+
+  function selectExerciseSource (gameId, key) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state || state.locked) return
+    state.selectedKey = key
+  }
+
+  function isExerciseSelectorLocked (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    if (!state) return true
+    return state.loading || state.locked || state.options.length <= 1
+  }
+
+  function getExerciseSelectorTooltip (gameId) {
+    const state = exerciseSourceState.value[gameId]
+    return state?.tooltip || ''
+  }
+
+  async function applyTrainingSourceForLevel (index) {
+    const level = levelSequence[index]
+    if (!level?.supplyGameId || !canSelectCustomExerciseSource.value) {
+      groupStore.setTrainingActiveSupplySet(null)
+      return
+    }
+
+    await loadExerciseSourceState(level.supplyGameId)
+    const state = exerciseSourceState.value[level.supplyGameId]
+    const selected = state?.options?.find(option => option.key === state.selectedKey)
+    groupStore.setTrainingActiveSupplySet(selected?.set || null)
+  }
+
+  async function startGame (index) {
+    await applyTrainingSourceForLevel(index)
     activePreviewIndex.value = null
     currentPlayingIndex.value = index
     activeGameComponent.value = levelSequence[index].component
+    gameStartTime.value = Date.now()
   }
 
   async function handleGameOver (finalScore) {
@@ -318,7 +588,8 @@
 
         const nodeToComplete = (levelIndex + 1 === currentMap) ? currentMap : null
 
-        const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete)
+        const timeSeconds = gameStartTime.value ? Math.floor((Date.now() - gameStartTime.value) / 1000) : 0
+        const result = await astroStore.registerCompletedGame(gameName, finalScore, nodeToComplete, timeSeconds)
 
         if (!result.success) throw new Error(result.message)
 
@@ -337,6 +608,10 @@
       }
     }
   }
+
+  onBeforeUnmount(() => {
+    groupStore.setTrainingActiveSupplySet(null)
+  })
 </script>
 
 <style scoped>
@@ -439,16 +714,19 @@
 
 .path-connector {
     position: absolute;
-    top: 50%;
+    top: 40px;
     left: 50%;
     width: 140px;
     height: 140px;
-    z-index: -1;
+    z-index: 1;
     pointer-events: none;
     transform-origin: top left;
 }
 
-.connector-flip { transform: scaleX(-1); }
+.path-connector.pos-left { transform: translateX(-70px); }
+.path-connector.pos-right { transform: translateX(70px) scaleX(-1); }
+
+.connector-flip { /* El flip ya se maneja en pos-right para evitar conflictos de transform */ }
 
 svg {
     width: 100%;
@@ -708,6 +986,25 @@ svg {
     height: 38px !important;
 }
 
+.exercise-source {
+    margin-top: 8px;
+}
+
+.exercise-source-label {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    color: rgba(148, 163, 184, 0.95);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.exercise-source-btn {
+    justify-content: flex-start !important;
+    text-transform: none;
+    font-size: 0.75rem;
+    height: 30px !important;
+}
+
 .preview-arrow {
     position: absolute;
     top: 50%;
@@ -751,5 +1048,31 @@ svg {
         transform: none !important;
     }
     .preview-arrow { display: none; }
+}
+
+.exit-dialog-card {
+  background: #0a0c10 !important;
+  border: 2px solid rgba(255, 82, 82, 0.4) !important;
+  box-shadow: 0 0 30px rgba(255, 82, 82, 0.15) !important;
+}
+
+.exit-icon-wrapper {
+  background: rgba(255, 82, 82, 0.1);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 82, 82, 0.2);
+}
+
+.fade-zoom-enter-active, .fade-zoom-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-zoom-enter-from, .fade-zoom-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

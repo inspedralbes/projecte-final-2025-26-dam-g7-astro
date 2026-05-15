@@ -1,5 +1,5 @@
 <template>
-  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" style="position: relative;">
+  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;">
 
     <!-- Cursors remots -->
     <div v-if="props.isMultiplayer && !props.isRace && !props.isDuel" class="remote-cursors-container">
@@ -58,6 +58,7 @@
         :animation="180"
         chosen-class="chosen-chip"
         class="d-flex justify-center flex-wrap gap-2 mb-6"
+        :disabled="isRoundLocked || props.isPaused"
         ghost-class="ghost-chip"
         item-key="id"
         tag="div"
@@ -132,6 +133,7 @@
     isRace: { type: Boolean, default: false },
     isDuel: { type: Boolean, default: false },
     duration: { type: Number, default: 60 },
+    isPaused: { type: Boolean, default: false },
   })
 
   const emit = defineEmits(['game-over'])
@@ -167,8 +169,26 @@
   let timerInterval = null
   let isUpdatingFromSync = false
 
+  function normalizeWordObj (entry = {}) {
+    return {
+      ...entry,
+      word: String(entry.word || '').toUpperCase(),
+    }
+  }
+
+  function normalizeLetters (letters = []) {
+    return (Array.isArray(letters) ? letters : []).map(tile => ({
+      ...tile,
+      letter: String(tile.letter || '').toUpperCase(),
+    }))
+  }
+
   const wordPool = computed(() => {
-    return wordConstructionData[locale.value] || wordConstructionData['es']
+    if (!props.isMultiplayer && astroStore.plan === 'GRUPAL' && astroStore.role === 'STUDENT' && multiplayerStore.room?.gameConfig?.trainingSet) {
+       // Si hay un set de entrenamiento específico
+    }
+    const fallback = wordConstructionData[locale.value] || wordConstructionData['es']
+    return fallback.map(normalizeWordObj)
   })
 
   const orderedGuess = computed(() => scrambledLetters.value.map(l => l.letter).join(''))
@@ -287,7 +307,7 @@
     if (timerInterval) clearInterval(timerInterval)
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
-      if (gameFinished.value) return
+      if (gameFinished.value || props.isPaused) return
       if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
@@ -356,6 +376,34 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value) {
+      finishGame()
+      return
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+      if (timeLeft.value <= 0 && !gameFinished.value) {
+        finishGame()
+      }
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BOARD_SYNC') {
+      currentWordObj.value = normalizeWordObj(msg.action.wordObj)
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
+      message.value = ''
+      isRoundLocked.value = false
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user) {
+      isUpdatingFromSync = true
+      scrambledLetters.value = normalizeLetters(msg.action.letters)
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
+      checkAnswer(true)
+    }
+
+    if (msg.action?.type === 'WC_TIME_UP') {
       finishGame()
       return
     }
@@ -497,5 +545,10 @@
 
 .word-construction-container {
   background: radial-gradient(circle at center, #0d0221 0%, #020617 100%);
+}
+.game-paused {
+  pointer-events: none !important;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 </style>

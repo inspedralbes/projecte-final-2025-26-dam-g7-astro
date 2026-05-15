@@ -3,7 +3,9 @@
         "loading": "Cargando...",
         "error": "Ha ocurrido un error.",
         "save": "Guardar",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "all": "Todos"
     },
     "sidebar": {
         "home": "Inicio",
@@ -43,13 +45,23 @@
         "retry": "INTENTAR DE NUEVO",
         "goal": "Meta: {score} pts",
         "start_game": "EMPEZAR {game}",
-        "start_simple": "EMPEZAR"
+        "start_simple": "EMPEZAR",
+        "exerciseSourceLabel": "Ejercicio activo",
+        "exerciseSourceDefault": "Predeterminado general",
+        "exerciseSourceLoading": "Cargando...",
+        "exerciseSourceNoCustomPremium": "Puedes editar tus propios ejercicios en Gestión Educativa.",
+        "exit_confirm": {
+            "title": "¿ABORTAR MISIÓN?",
+            "desc": "Si abandonas ahora, perderás todo el progreso de esta sesión y tus puntos de entrenamiento no se guardarán.",
+            "cancel": "MANTENERSE EN ÓRBITA",
+            "confirm": "ABORTAR Y SALIR"
+        }
     },
     "store": {
         "title": "Bazar Espacial",
         "subtitle": "Mejora tu equipamiento para la misión",
         "wheelTitle": "Vórtice Cuántico",
-        "wheelDesc": "Gira el vórtice para obtener suministros únicos, monedas o aspectos épicos. La suerte favorece a los audaces.",
+        "wheelDesc": "Gira el vórtice para obtener suministros únicos, AstroCoins o aspectos épicos. La suerte favorece a los audaces.",
         "extract": "EXTRAER (100",
         "buy10": "COMPRAR 10 TIRADAS (900",
         "freeSpins": "{spins} TIRADAS GRATIS",
@@ -57,10 +69,14 @@
         "suppliesTitle": "Suministros Básicos",
         "eliteTitle": "Colección de Élite",
         "units": "Unidades: x{qty}",
-        "max": "MAX 99",
+        "max": "MÁXIMO ALCANZADO",
+        "dailyLimit": "Límite diario",
         "owned": "ADQUIRIDO",
+        "available": "DISPONIBLE",
         "reward": "¡RECOMPENSA!",
-        "accept": "Aceptar"
+        "accept": "Aceptar",
+        "goToInventory": "IR AL INVENTARIO",
+        "keepBuying": "SEGUIR COMPRANDO"
     },
     "inventory": {
         "title": "MI INVENTARIO",
@@ -70,7 +86,7 @@
             "skin": "Skins",
             "collectible": "Coleccionables",
             "trails": "Rastros",
-            "pets": "Mascotas",
+            "title": "Títulos",
             "items": "Objetos"
         },
         "active": "ACTIVO: {games} partidas",
@@ -82,7 +98,7 @@
         "goToShop": "Visitar la Tienda",
         "useError": "No se pudo usar el objeto.",
         "sell": "VENDER",
-        "sellConfirm": "¿Seguro que quieres vender {item} por {price} monedas?"
+        "sellConfirm": "¿Seguro que quieres vender {item} por {price} AstroCoins?"
     },
     "profile": {
         "guest": "Explorador",
@@ -116,6 +132,8 @@
         "recentIncursions": "INCURSIONES RECIENTES",
         "page": "PÁGINA {current} DE {total}",
         "noRecent": "No hay registros de expediciones recientes.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Logro",
         "removeAchievement": "Quitar Logro",
         "astronautSuit": "TRAJE DE ASTRONAUTA",
@@ -155,6 +173,8 @@
         "passwordChangeError": "Error al actualizar la contraseña",
         "changeDisplayName": "Cambiar Apodo",
         "newDisplayName": "Nuevo Apodo",
+        "cardColor": "Color de Tarjeta Personalizada",
+        "colorUpdated": "¡Color de tarjeta actualizado!",
         "firstChangeFree": "¡Tu primer cambio de apodo es gratis!",
         "noNameChangeTokens": "No tienes suministros de Cambio de Nombre.",
         "goToShop": "Ir a la tienda",
@@ -178,7 +198,14 @@
         "cancelDeleteAction": "CANCELAR ELIMINACIÓN",
         "recoveryTitle": "RECUPERACIÓN DE CUENTA",
         "recoverySuccess": "¡Tu cuenta ha sido recuperada con éxito! Bienvenido de nuevo, explorador.",
-        "wrongPhrase": "La frase no coincide exactamente"
+        "wrongPhrase": "La frase no coincide exactamente",
+        "levelLabel": "LEVEL",
+        "mascot_alien": "Alien",
+        "mascot_drone": "Dron",
+        "mascot_octopus": "Pop",
+        "mascot_whale": "Balena",
+        "missionCompanion": "COMPANY DE MISSIÓ",
+        "seniorityLabel": "SENIORITY"
     },
     "friends": {
         "title": "Tripulación",
@@ -299,7 +326,7 @@
         "progress": "PROGRESO",
         "streak": "Racha",
         "streakCaps": "RACHA",
-        "credits": "CRÉDITOS",
+        "credits": "ASTROCOINS",
         "coins": "AstroCoins",
         "level": "NIVEL {level}",
         "xpRemaining": "Faltan {xp} XP para el siguiente nivel",
@@ -331,7 +358,7 @@
         "locked": "Bloqueado",
         "metrics": {
             "missions": "Misiones",
-            "coins": "Monedas",
+            "coins": "AstroCoins",
             "inventory": "Objetos",
             "level": "Nivel",
             "xp": "XP"
@@ -445,15 +472,52 @@
         "repeatCode": "REPETIR CÓDIGO",
         "confirmFoundation": "CONFIRMAR FUNDACIÓN",
         "cancelProtocol": "CANCELAR PROTOCOLO",
+        "groupTypeLabel": "Tipo de grupo",
+        "groupTypeInfo": "Este cambio actualiza tu cuenta actual a plan grupal y mantiene tu progreso.",
+        "groupTypes": {
+            "center": "Centro (gestiona profes y alumnos)",
+            "teacher": "Profesor (gestiona alumnos)"
+        },
         "pwdMismatch": "Los códigos no coinciden",
         "individualDesc": "Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.",
         "grupalDesc": "Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.",
         "individual": "Individual",
         "premium": "Premium",
-        "individual_free": "Individual (Gratis)"
+        "grupal": "Grupal",
+        "individual_free": "Individual (Gratis)",
+        "changeError": "No se pudo cambiar el plan",
+        "leaveRequest": {
+            "pending": "Tienes una solicitud pendiente para salir del grupo. Debes esperar la respuesta de {approver}.",
+            "rejected": "Tu solicitud para salir del grupo fue rechazada por {approver}.",
+            "dialogTitle": "Solicitud enviada",
+            "dialogDesc": "Has solicitado salir del grupo a {approver}. Debes esperar su respuesta.",
+            "dialogConfirm": "Aceptar",
+            "defaultApprover": "tu responsable",
+            "requestError": "No se pudo enviar la solicitud de salida del grupo"
+        },
+        "loginError": "No se pudo iniciar la conexión al grupo",
+        "createGroupError": "No se pudo crear el grupo"
+    },
+    "session": {
+        "errors": {
+            "register": "Error al registrar",
+            "auth": "Error de autenticación",
+            "userNotIdentified": "Usuario no identificado.",
+            "userNotIdentifiedForPlan": "Usuario no identificado para actualizar el plan.",
+            "planUpdateServer": "Error al actualizar el plan en el servidor",
+            "serverConnection": "Error al conectar con el servidor: {detail}",
+            "avatarSave": "Error al guardar avatar en servidor",
+            "titleSave": "Error al guardar título en servidor",
+            "passwordChange": "Error al cambiar la contraseña",
+            "passwordChangeSuccess": "Contraseña actualizada correctamente",
+            "groupDowngradeSchedule": "No se pudo programar la baja del plan grupal",
+            "groupDowngradeCancel": "No se pudo cancelar la baja grupal",
+            "deleteRequest": "Error al solicitar eliminación",
+            "deleteCancel": "Error al cancelar eliminación"
+        }
     },
     "spelledRosco": {
-        "title": "🚀 Rosco Estelar",
+        "title": "Rosco Estelar",
         "score": "Puntuación: {score}",
         "time": "Tiempo: {time}s",
         "definition": "Definición",
@@ -506,7 +570,11 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtener Recompensa",
         "msgCorrect": "¡Correcto!",
-        "msgIncorrect": "Incorrecto, vuelve a intentar."
+        "msgIncorrect": "Incorrecto, vuelve a intentar.",
+        "orderPhrase": "¡Ordena la frase!",
+        "clickOrder": "Haz clic en las palabras en el orden correcto...",
+        "phraseCompleted": "¡Frase completada!",
+        "incorrectOrder": "¡Orden incorrecto! Reiniciando frase..."
     },
     "wordConstruction": {
         "level": "Nivel {level}",
@@ -539,14 +607,21 @@
         "fase1Title": "Entrenamiento",
         "fase1Subtitle": "Fase 1: La Tierra",
         "fase2Title": "El Viaje Comienza",
-        "fase2Subtitle": "Fase 2: Espacio Cercano"
+        "fase2Subtitle": "Fase 2: Espacio Cercano",
+        "fase3Title": "Hacia lo Desconocido",
+        "fase3Subtitle": "Fase 3: Espacio Profundo",
+        "senalperdida": "Señal Perdida",
+        "horizontes": "Nuevos Horizontes",
+        "destino": "Destino Final"
     },
     "shopActions": {
-        "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 monedas?",
+        "confirmMulti": "¿Quieres comprar un pack de 10 tiradas por 900 AstroCoins?",
         "alreadyOwned": "¡Ya tienes {item} en tu inventario!",
         "maxReached": "Has alcanzado el máximo de 99 unidades para {item}.",
-        "confirmBuy": "¿Quieres comprar {item} por {price} créditos?",
-        "buySuccess": "Compra exitosa"
+        "confirmBuy": "¿Quieres comprar {item} por {price} AstroCoins?",
+        "confirmTitle": "CONFIRMACIÓN DE COMPRA",
+        "buySuccess": "Compra exitosa",
+        "buySuccessTitle": "¡OBJETO DESBLOQUEADO!"
     },
     "shopItems": {
         "vidas": {
@@ -558,8 +633,8 @@
             "desc": "Protege tu racha un día."
         },
         "dobleMonedas": {
-            "name": "Doble de Monedas",
-            "desc": "Multiplica x2 las monedas ganadas."
+            "name": "Doble de AstroCoins",
+            "desc": "Multiplica x2 las AstroCoins ganadas."
         },
         "doblePuntos": {
             "name": "Doble Puntuación",
@@ -581,6 +656,18 @@
             "name": "Dron de Reconocimiento",
             "desc": "Un pequeño compañero robótico."
         },
+        "avatarHacker": {
+            "name": "Avatar Ciber Hacker",
+            "desc": "Un hacker del futuro. Otorga +15% de puntuación en todas las misiones."
+        },
+        "avatarNebula": {
+            "name": "Avatar Viajero Nebulosa",
+            "desc": "Explorador cósmico. Otorga +20% de tiempo en misiones contrarreloj."
+        },
+        "avatarKnight": {
+            "name": "Avatar Caballero Estelar",
+            "desc": "Guerrero solar. Otorga +10% de AstroCoins en todas las misiones."
+        },
         "sabotageRay": {
             "name": "Rayo Saboteador",
             "desc": "En multijugador, tus aciertos restan el doble de tiempo al rival.",
@@ -598,6 +685,7 @@
             "name": "Destructor de Asteroides",
             "desc": "Etiqueta de texto permanente."
         },
+        "titleDesc": "Etiqueta de texto permanente.",
         "nameChange": {
             "name": "Cambio de Nombre",
             "desc": "Cambia tu apodo. ¡El primero es gratis!"
@@ -620,7 +708,7 @@
         "time": "Tiempo: {time}s",
         "timeLabel": "TIEMPO",
         "locked": "SINCRONIZADO",
-        "scanning": "ESCANER...",
+        "scanning": "ESCANEANDO...",
         "placeholder": "Introduce la frase...",
         "send": "ENVIAR",
         "waiting": "ESPERANDO SEÑAL...",
@@ -634,8 +722,9 @@
         "youHear": "SINTONIZAS:",
         "typeAndEnter": "Escribe un mensaje y pulsa Enter...",
         "you": "TÚ",
-        "success": "¡SEÑAL DESXIFRADA!",
+        "success": "¡SEÑAL DESCIFRADA!",
         "successDesc": "+150 PTS | +15s",
+        "title": "Señal de Radio",
         "errorCount": "¡Te has equivocado en {count} letras!"
     },
     "errors": {
@@ -646,14 +735,14 @@
     "missionsList": {
         "daily": {
             "games": "Juega {goal} partidas",
-            "coins": "Gana {goal} créditos",
+            "coins": "Gana {goal} AstroCoins",
             "xp": "Consigue {goal} XP",
             "item": "Usa {goal} objetos",
             "streak": "Mantén tu racha"
         },
         "weekly": {
             "games": "Maestro de Juegos ({goal} partidas)",
-            "coins": "Buscador de Oro ({goal} créditos)",
+            "coins": "Buscador de Oro ({goal} AstroCoins)",
             "xp": "Ascensión Lunar ({goal} XP)",
             "streak": "Superviviente (Racha {goal} días)",
             "item": "Interacción Pro ({goal} objetos)"
@@ -677,13 +766,13 @@
         },
         "4": {
             "title": "Primer Botín",
-            "desc": "Acumula 1.200 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 1.200 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "5": {
             "title": "Fortuna Galáctica",
-            "desc": "Acumula 3.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 3.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "6": {
             "title": "Primer Coleccionable",
@@ -727,8 +816,8 @@
         },
         "14": {
             "title": "Mercader de Estrellas",
-            "desc": "Acumula 2.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 2.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "15": {
             "title": "Héroe del Cosmos",
@@ -737,8 +826,8 @@
         },
         "16": {
             "title": "Magnate de la Nebulosa",
-            "desc": "Acumula 5.000 monedas.",
-            "metric": "Monedas"
+            "desc": "Acumula 5.000 AstroCoins.",
+            "metric": "AstroCoins"
         },
         "17": {
             "title": "Soberano del Vacío",
@@ -780,7 +869,34 @@
         "ruta": "Escuadrón de Rimas",
         "base": "Señal de Radio",
         "recarga": "Rompedor de Simetrías",
-        "reparacion": "Escáner de Radar"
+        "reparacion": "Escáner de Radar",
+        "Base": "Cridant a la Base",
+        "Desacoplamiento": "Desacoblament Orbital",
+        "Desacoplamiento Orbital": "Spelled Rosco",
+        "Despegue": "Enlairament!",
+        "Gravedad": "Trencant la Gravetat",
+        "Llamando a la Base": "Radio Signal",
+        "Minigame": "Minigame",
+        "Minijoc": "Minijoc",
+        "Preparations": "Word Construction",
+        "Preparativos": "Construcció de Paraules",
+        "Preparativos de Vuelo": "Word Construction",
+        "Recarga": "Recàrrega Solar",
+        "Recarga Solar": "Symmetry Breaker",
+        "Reparacion": "Reparació Exprés",
+        "Reparación": "Radar Scanner",
+        "Reparación Express": "Radar Scanner",
+        "Rompiendo la Gravedad": "Radio Signal",
+        "Ruta": "Ruta Estel·lar",
+        "Ruta Estelar": "Rhyme Squad",
+        "radarscan": "Escaneig de Radar",
+        "radiosignal": "Senyal de Ràdio",
+        "rhymesquad": "Esquadró de Rimes",
+        "spelledrosco": "Rosco Estelar",
+        "syllablequest": "Aventura Sil·làbica",
+        "symmetrybreaker": "Simetria Estel·lar",
+        "wordconstruction": "Construcció de Paraules",
+        "¡Despegue!": "Radar Scanner"
     },
     "multiplayerResult": {
         "victory": "¡VICTORIA!",
@@ -800,7 +916,11 @@
         "roundsPlayed": "{total} rondas jugadas",
         "missionHistory": "HISTORIAL DE LA MISIÓN",
         "backToLobby": "VOLVER A LA SALA",
-        "waitingTeam": "Esperando que el equipo regrese..."
+        "waitingTeam": "Esperando que el equipo regrese...",
+        "defeatQuote": "La derrota és només un pas més cap al coneixement.",
+        "team": "EQUIP",
+        "tieQuote": "Un equilibri perfecte de forces.",
+        "winQuote": "¡Has dominat la galàxia amb honor!"
     },
     "shop": {
         "spinError": "Error al girar",
@@ -837,11 +957,28 @@
         "student": "ALUMNO",
         "level": "NIVEL",
         "telemetryTitle": "TELEMETRÍA DE GRUPO",
+        "telemetryTitleIndividual": "TELEMETRÍA INDIVIDUAL",
         "totalGames": "TOTAL JUEGOS",
         "avgLevel": "NIVEL PROMEDIO",
         "totalMembers": "TOTAL MIEMBROS",
+        "totalPoints": "PUNTOS TOTALES",
         "noData": "No hay datos disponibles para mostrar.",
         "addMember": "AÑADIR {role}",
+        "roleLabel": "Rol",
+        "modeLabel": "Método",
+        "roles": {
+            "teacher": "Profesor",
+            "student": "Alumno"
+        },
+        "addModes": {
+            "create": "Crear usuario nuevo",
+            "invite": "Invitar usuario existente"
+        },
+        "errors": {
+            "usernameRequired": "Debes indicar un nombre de usuario",
+            "passwordRequired": "Debes indicar una contraseña para el usuario nuevo",
+            "addMemberFailed": "No se pudo añadir el miembro"
+        },
         "username": "Nombre de Usuario",
         "password": "Contraseña",
         "confirmReg": "CONFIRMAR REGISTRO",
@@ -861,6 +998,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PARA CLASE",
             "deleteConfirm": "¿Eliminar este ejercicio?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EJERCICIO: {game}",
             "newTitle": "NUEVO EJERCICIO: {game}",
             "saveChanges": "GUARDAR CAMBIOS",
@@ -869,11 +1008,46 @@
             "searchPlaceholder": "Buscar...",
             "wordLabel": "Palabra",
             "hintLabel": "Pista",
+            "listPlaceholder": "elemento1, elemento2, elemento3",
             "configExerciseTitle": "2. CONFIGURACIÓN DEL EJERCICIO",
             "exerciseNameLabel": "Nombre del ejercicio",
             "exerciseSearchPlaceholder": "Buscar en el ejercicio...",
             "assignToTeacher": "Asignar a Profesor",
             "noResults": "Ningún resultado para esta búsqueda.",
+            "fieldLabels": {
+                "text": "Texto",
+                "syllables": "Sílabas",
+                "char": "Letra",
+                "question": "Pregunta",
+                "answer": "Respuesta",
+                "ending": "Terminación",
+                "rhymes": "Rimas (separadas por comas)",
+                "fakes": "Distractores (separados por comas)",
+                "distractor": "Distractor",
+                "target": "Objetivo",
+                "grid": "Cuadrícula",
+                "tunnel": "Tamaño del túnel",
+                "phrase": "Frase",
+                "decoys": "Señuelos (separados por comas)"
+            },
+            "fieldHelp": {
+                "word": "Palabra principal que se usará en el ejercicio.",
+                "hint": "Pista opcional para ayudar a identificar la palabra.",
+                "text": "Texto o palabra que el alumnado deberá trabajar.",
+                "syllables": "Número total de sílabas del texto.",
+                "char": "Letra de referencia para esta entrada del rosco.",
+                "question": "Definición o enunciado que verá el alumnado.",
+                "answer": "Respuesta correcta esperada.",
+                "ending": "Terminación que se usará para comprobar las rimas.",
+                "rhymes": "Palabras que sí riman con la principal, separadas por comas.",
+                "fakes": "Palabras trampa que no riman, separadas por comas.",
+                "distractor": "Es el símbolo o letra incorrecta que rellena la cuadrícula para confundir al alumnado.",
+                "target": "Símbolo o letra correcta que el alumnado debe encontrar.",
+                "grid": "Tamaño de la cuadrícula (por ejemplo 5 crea una cuadrícula 5x5).",
+                "tunnel": "Radio de visión o apertura del foco en el juego.",
+                "phrase": "Frase que el alumnado deberá escuchar y escribir.",
+                "decoys": "Opciones engañosas que no son el objetivo, separadas por comas."
+            },
             "games": {
                 "WordConstruction": {
                     "name": "Construcción de Palabras",
@@ -894,6 +1068,19 @@
                 "MathQuest": {
                     "name": "Reto Matemático",
                     "desc": "Cálculos mentales rápidos."
+                },
+                "RadarScan": {
+                    "name": "Escaneo Radar",
+                    "desc": "Detectar objetivos ocultos."
+                },
+                "RadioSignal": {
+                    "name": "Señal de Radio",
+                    "desc": "Descifrar transmisiones."
+                },
+                "SymmetryBreaker": {
+                    "name": "Rompedor de Simetría",
+                    "desc": "Identificar el símbolo correcto."
+                }
                 }
             }
         }

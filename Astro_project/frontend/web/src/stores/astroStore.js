@@ -30,6 +30,9 @@ export const useAstroStore = defineStore('astro', () => {
   const groupInvitations = computed({ get: () => sessionStore.groupInvitations, set: value => sessionStore.setGroupInvitations(value) })
   const groupApprovalRequests = computed({ get: () => sessionStore.groupApprovalRequests, set: value => sessionStore.setGroupApprovalRequests(value) })
   const scheduledPlanDowngrade = computed({ get: () => sessionStore.scheduledPlanDowngrade, set: value => sessionStore.setScheduledPlanDowngrade(value) })
+  const pendingGroupLeaveRequest = computed({ get: () => sessionStore.pendingGroupLeaveRequest, set: value => sessionStore.setPendingGroupLeaveRequest(value) })
+  const dailyPurchaseHistory = computed({ get: () => sessionStore.dailyPurchaseHistory, set: value => sessionStore.setDailyPurchaseHistory(value) })
+  const profileColor = computed({ get: () => sessionStore.profileColor, set: value => sessionStore.setProfileColor(value) })
 
   // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
@@ -77,6 +80,10 @@ export const useAstroStore = defineStore('astro', () => {
 
   const isStreakActiveToday = computed(() => progressStore.isStreakActiveToday)
   const inventoryUnits = computed(() => inventoryStore.inventoryUnits)
+  const equippedSkinBoost = computed(() => {
+    const skin = inventory.value?.find(i => i.equipped && i.cat === 'skin')
+    return skin?.boost || null
+  })
 
   // Actions
   async function registerTripulante (userData) {
@@ -139,6 +146,8 @@ export const useAstroStore = defineStore('astro', () => {
       sessionStore.setGroupInvitations(result.stats.groupInvitations || [])
       sessionStore.setGroupApprovalRequests(result.stats.groupApprovalRequests || [])
       sessionStore.setScheduledPlanDowngrade(result.stats.scheduledPlanDowngrade || null)
+      sessionStore.setPendingGroupLeaveRequest(result.stats.pendingGroupLeaveRequest || null)
+      sessionStore.setDailyPurchaseHistory(result.stats.dailyPurchaseHistory || { date: '', items: {} })
     }
     return result
   }
@@ -150,16 +159,16 @@ export const useAstroStore = defineStore('astro', () => {
     return progressStore.fetchUserBalance()
   }
 
-  async function registerCompletedGame (game, score = 0, completedMapNode = null) {
-    const result = await progressStore.registerCompletedGame(game, score, completedMapNode)
+  async function registerCompletedGame (game, score = 0, completedMapNode = null, timeSeconds = 0) {
+    const result = await progressStore.registerCompletedGame(game, score, completedMapNode, timeSeconds)
     if (result.success && result.data?.newRank) {
       sessionStore.setRank(result.data.newRank)
     }
     return result
   }
 
-  async function buyItem (item) {
-    const result = await inventoryStore.buyItem(item)
+  async function buyItem (item, quantity = 1) {
+    const result = await inventoryStore.buyItem(item, quantity)
     if (!result.success) {
       return result
     }
@@ -173,6 +182,12 @@ export const useAstroStore = defineStore('astro', () => {
     } else if (Number(item?.id) === 2) {
       progressStore.setStreakFreezes(progressStore.streakFreezes + 1)
     }
+    
+    // Update daily purchase history if returned by server
+    if (data.dailyPurchaseHistory) {
+      sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
+    }
+
     return { success: true, data }
   }
 
@@ -322,6 +337,10 @@ export const useAstroStore = defineStore('astro', () => {
     return { success: true }
   }
 
+  async function updateProfileColorAction (color) {
+    return sessionStore.updateProfileColorAction(color)
+  }
+
   function setCoins (newCoins) {
     progressStore.setCoins(newCoins)
   }
@@ -332,15 +351,17 @@ export const useAstroStore = defineStore('astro', () => {
   return {
     user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
     inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
-    groupInvitations, groupApprovalRequests, scheduledPlanDowngrade,
+    groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest, dailyPurchaseHistory,
+    profileColor,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,
-    isStreakActiveToday, inventoryUnits,
+    isStreakActiveToday, inventoryUnits, equippedSkinBoost,
     registerTripulante, loginTripulante, fetchUserStats, fetchAllUsers, fetchUserBalance, registerCompletedGame,
     buyItem, useInventoryItem, sellItem, claimMissionReward, fetchUserInventory, fetchUserAchievements, syncUnlockedAchievements,
     addFriendAction, removeFriendAction, sendFriendRequest, acceptFriendRequest, rejectFriendRequest,
     connectWebSocket, logout, updateAvatar, updateSelectedTitle, updateAchievements,
     updatePlan, changePassword, scheduleAccountDeletion, cancelAccountDeletion, requestGroupOwnerDowngrade, cancelGroupOwnerDowngrade, changeDisplayName, useStreakFreeze, setCoins, setInventory,
+    updateProfileColorAction,
   }
 })

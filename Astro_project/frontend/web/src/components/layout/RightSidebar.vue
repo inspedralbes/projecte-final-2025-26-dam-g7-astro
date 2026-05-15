@@ -38,8 +38,18 @@
                 size="28"
               />
             </div>
-            <div class="stat-value text-h5 font-weight-bold text-yellow-accent-3">
-              {{ userCoins }}
+            <div class="stat-value text-h5 font-weight-bold text-yellow-accent-3 position-relative">
+              {{ animatedCoins }}
+              <transition-group name="float-coin">
+                <span
+                  v-for="change in coinChanges"
+                  :key="change.id"
+                  class="coin-change-popup"
+                  :class="change.amount > 0 ? 'plus' : 'minus'"
+                >
+                  {{ change.amount > 0 ? '+' : '' }}{{ change.amount }}
+                </span>
+              </transition-group>
             </div>
             <div class="stat-label">{{ $t('rightSidebar.credits') }}</div>
           </div>
@@ -388,6 +398,44 @@
     streak: userStreak,
     isStreakActiveToday,
   } = storeToRefs(progressStore)
+  
+  const animatedCoins = ref(userCoins.value)
+  const coinChanges = ref([])
+  let coinTimer = null
+
+  watch(userCoins, (newVal, oldVal) => {
+    const diff = newVal - oldVal
+    if (diff !== 0) {
+      // Animation del numero
+      animateValue(oldVal, newVal, 1000)
+      
+      // Popup de cambio
+      const id = Date.now()
+      coinChanges.value.push({ id, amount: diff })
+      setTimeout(() => {
+        coinChanges.value = coinChanges.value.filter(c => c.id !== id)
+      }, 2000)
+    }
+  })
+
+  function animateValue(start, end, duration) {
+    if (coinTimer) clearInterval(coinTimer)
+    const range = end - start
+    let current = start
+    const increment = range / (duration / 16)
+    const startTime = Date.now()
+    
+    coinTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      if (elapsed >= duration) {
+        animatedCoins.value = end
+        clearInterval(coinTimer)
+      } else {
+        current += increment
+        animatedCoins.value = Math.floor(current)
+      }
+    }, 16)
+  }
 
   onMounted(async () => {
     if (astroStore.user) {
@@ -506,6 +554,9 @@
 
 .glow-bar {
     filter: drop-shadow(0 0 4px rgba(0, 242, 255, 0.4));
+}
+.glow-bar :deep(.v-progress-linear__determinate) {
+    transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .streak-container {
@@ -672,5 +723,45 @@
 .mission-item-claimed {
     filter: grayscale(0.8);
     opacity: 0.6;
+}
+
+/* Coin Animations */
+.coin-change-popup {
+    position: absolute;
+    top: -20px;
+    right: -10px;
+    font-size: 0.9rem;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.coin-change-popup.plus {
+    color: #ffeb3b;
+    text-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
+}
+
+.coin-change-popup.minus {
+    color: #ff5252;
+    text-shadow: 0 0 10px rgba(255, 82, 82, 0.8);
+}
+
+.float-coin-enter-active {
+    animation: float-up 2s ease-out forwards;
+}
+
+@keyframes float-up {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(-10px) scale(1.2);
+    }
+    100% {
+        transform: translateY(-40px) scale(0.8);
+        opacity: 0;
+    }
 }
 </style>

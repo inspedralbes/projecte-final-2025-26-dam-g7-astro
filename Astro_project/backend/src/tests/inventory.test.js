@@ -23,4 +23,15 @@ describe('Inventory Service', () => {
     test('getInventoryQuantity debe retornar 0 si no existe el item', () => {
         expect(inventoryService.getInventoryQuantity([], 1)).toBe(0);
     });
+
+    test('getEquippedAvatarBoost debe encontrar el boost del item equipado tipo skin', () => {
+        const inventory = [
+            { id: 102, equipped: true, cat: 'skin', boost: { type: 'score', multiplier: 1.15 } },
+            { id: 105, equipped: true, cat: 'title' } // No debe ser tomado como avatar boost
+        ];
+        const boost = inventoryService.getEquippedAvatarBoost(inventory);
+        expect(boost).not.toBeNull();
+        expect(boost.type).toBe('score');
+        expect(boost.multiplier).toBe(1.15);
+    });
 });

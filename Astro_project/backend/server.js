@@ -58,7 +58,6 @@ const userRepository = new MongoUserRepository(() => getCollections().users);
 const partidaRepository = new MongoPartidaRepository(() => getCollections().partides);
 const roomRepository = new MongoRoomRepository(() => getCollections().rooms);
 
-roomManager.init(roomRepository, userRepository, wss);
 const ensureIndexes = createEnsureIndexes(getDB);
 
 const updateStreak = createUpdateStreak({
@@ -67,19 +66,9 @@ const updateStreak = createUpdateStreak({
     getInventoryQuantity: inventoryService.getInventoryQuantity
 });
 
-const gameService = new GameService({
-    userRepository,
-    partidaRepository,
-    updateStreak,
-    JERARQUIA,
-    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
-    consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
-    getScoreMultiplier: boosterUtils.getScoreMultiplier,
-    getCoinsMultiplier: boosterUtils.getCoinsMultiplier
-});
-
 const inventoryServiceInstance = new inventoryService.InventoryService({
     userRepository,
+    roomManager,
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
     getBoosterFieldByItemId: boosterUtils.getBoosterFieldByItemId,
     addBoosterDuration: boosterUtils.addBoosterDuration
@@ -139,6 +128,21 @@ const statsServiceInstance = new (require('./src/services/statsService').StatsSe
 
 const getUserStats = (username) => statsServiceInstance.getUserStats(username);
 
+const gameService = new GameService({
+    userRepository,
+    partidaRepository,
+    updateStreak,
+    JERARQUIA,
+    normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters,
+    consumeBoostersForCompletedGame: boosterUtils.consumeBoostersForCompletedGame,
+    getScoreMultiplier: boosterUtils.getScoreMultiplier,
+    getCoinsMultiplier: boosterUtils.getCoinsMultiplier,
+    statsService: statsServiceInstance,
+    inventoryService: inventoryServiceInstance
+});
+
+roomManager.init(roomRepository, userRepository, wss, gameService);
+
 registerStatsRoutes(app, { getUserStats });
 registerGameRoutes(app, { gameService });
 registerAuthRoutes(app, {
@@ -147,7 +151,7 @@ registerAuthRoutes(app, {
     getInventoryQuantity: inventoryServiceInstance.getInventoryQuantity.bind(inventoryServiceInstance),
     normalizeActiveBoosters: boosterUtils.normalizeActiveBoosters
 });
-registerShopRoutes(app, { shopService });
+registerShopRoutes(app, { shopService, roomManager });
 registerAchievementRoutes(app, { achievementService });
 registerPlanRoutes(app, { userService: userServiceInstance });
 registerGroupRoutes(app, { groupService, statsService: statsServiceInstance });
@@ -213,6 +217,22 @@ app.put('/api/user/title', async (req, res) => {
         res.json({ success: true, title });
     } catch (error) {
         console.error("❌ Error al actualizar título en DB:", error);
+        res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
+    }
+});
+
+app.put('/api/user/color', async (req, res) => {
+    const { user, color } = req.body;
+    if (!user || !color) {
+        return res.status(400).json({ message: 'Usuario y color requeridos.' });
+    }
+
+    try {
+        await userServiceInstance.updateProfileColor(user, color);
+        console.log(`👤 Color de perfil actualizado en DB para ${user}: ${color}`);
+        res.json({ success: true, color });
+    } catch (error) {
+        console.error("❌ Error al actualizar color de perfil en DB:", error);
         res.status(error.message.includes('encontrado') ? 404 : 500).json({ message: error.message });
     }
 });

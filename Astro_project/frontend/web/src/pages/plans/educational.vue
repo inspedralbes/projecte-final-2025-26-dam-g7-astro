@@ -115,7 +115,9 @@
 
           <!-- TAB: ESTADÍSTICAS -->
           <div v-if="currentTab === 'stats'">
-            <h3 class="text-h4 font-weight-black text-white mb-6">{{ $t('educational.telemetryTitle') }}</h3>
+            <h3 class="text-h4 font-weight-black text-white mb-6">
+              {{ isPremium ? $t('educational.telemetryTitleIndividual') : $t('educational.telemetryTitle') }}
+            </h3>
 
             <v-row v-if="groupStore.currentStats">
               <v-col cols="4">
@@ -126,14 +128,18 @@
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.avgLevel') }}</div>
-                  <div class="text-h4 text-amber-accent-2">{{ groupStore.currentStats.avgLevel.toFixed(1) }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.level') : $t('educational.avgLevel') }}</div>
+                  <div class="text-h4 text-amber-accent-2">
+                    {{ isPremium ? groupStore.currentStats.level : Number(groupStore.currentStats.avgLevel || 0).toFixed(1) }}
+                  </div>
                 </v-card>
               </v-col>
               <v-col cols="4">
                 <v-card class="stat-mini-card">
-                  <div class="text-overline">{{ $t('educational.totalMembers') }}</div>
-                  <div class="text-h4 text-purple-accent-1">{{ groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers }}</div>
+                  <div class="text-overline">{{ isPremium ? $t('educational.totalPoints') : $t('educational.totalMembers') }}</div>
+                  <div class="text-h4 text-purple-accent-1">
+                    {{ isPremium ? groupStore.currentStats.totalPoints : (groupStore.currentStats.totalStudents || groupStore.currentStats.totalTeachers) }}
+                  </div>
                 </v-card>
               </v-col>
             </v-row>
@@ -159,14 +165,14 @@
           v-model="selectedRole"
           class="mb-4"
           :items="roleOptions"
-          label="Rol"
+          :label="$t('educational.roleLabel')"
           variant="solo-filled"
         />
         <v-select
           v-model="addMode"
           class="mb-4"
           :items="modeOptions"
-          label="Método"
+          :label="$t('educational.modeLabel')"
           variant="solo-filled"
         />
         <v-text-field v-model="newName" class="mb-4" :label="$t('educational.username')" variant="solo-filled" />
@@ -187,14 +193,17 @@
 
 <script setup>
   import { storeToRefs } from 'pinia'
-  import { onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import SupplyEditor from '@/components/educational/SupplyEditor.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useGroupStore } from '@/stores/groupStore'
 
+  const { t } = useI18n()
   const astroStore = useAstroStore()
   const groupStore = useGroupStore()
-  const { user, role } = storeToRefs(astroStore)
+  const { user, role, plan } = storeToRefs(astroStore)
+  const isPremium = computed(() => plan.value === 'INDIVIDUAL_PREMIUM')
 
   const currentTab = ref('stats')
   const showAddDialog = ref(false)
@@ -204,14 +213,14 @@
   const selectedRole = ref('STUDENT')
   const newName = ref('')
   const newPass = ref('')
-  const roleOptions = [
-    { title: 'Profesor', value: 'TEACHER' },
-    { title: 'Alumno', value: 'STUDENT' },
-  ]
-  const modeOptions = [
-    { title: 'Crear usuario nuevo', value: 'create' },
-    { title: 'Invitar usuario existente', value: 'invite' },
-  ]
+  const roleOptions = computed(() => [
+    { title: t('educational.roles.teacher'), value: 'TEACHER' },
+    { title: t('educational.roles.student'), value: 'STUDENT' },
+  ])
+  const modeOptions = computed(() => [
+    { title: t('educational.addModes.create'), value: 'create' },
+    { title: t('educational.addModes.invite'), value: 'invite' },
+  ])
 
   onMounted(async () => {
     if (role.value === 'CENTER') {
@@ -225,16 +234,22 @@
       await groupStore.fetchMembers(user.value)
       await groupStore.fetchClassStats(user.value)
       await groupStore.fetchSupplySets(user.value)
+    } else if (isPremium.value) {
+      currentTab.value = 'stats'
+      await groupStore.fetchIndividualStats(user.value)
+      await groupStore.fetchSupplySets(user.value)
     }
   })
 
   async function addMember () {
+    if (role.value !== 'CENTER' && role.value !== 'TEACHER') return
+
     if (!newName.value) {
-      alert('Debes indicar un nombre de usuario')
+      alert(t('educational.errors.usernameRequired'))
       return
     }
     if (addMode.value === 'create' && !newPass.value) {
-      alert('Debes indicar una contraseña para el usuario nuevo')
+      alert(t('educational.errors.passwordRequired'))
       return
     }
 
@@ -252,7 +267,7 @@
       newPass.value = ''
       await groupStore.fetchMembers(user.value)
     } else {
-      alert(result.message)
+      alert(result.message || t('educational.errors.addMemberFailed'))
     }
   }
 

@@ -7,6 +7,7 @@ export const useGroupStore = defineStore('group', {
     currentStats: null, // Stats de clase o globales
     supplySets: [],
     activeSupplySet: null,
+    trainingActiveSupplySet: null,
     loading: false,
     error: null,
   }),
@@ -174,6 +175,23 @@ export const useGroupStore = defineStore('group', {
       }
     },
 
+    async fetchIndividualStats (username) {
+      try {
+        const { response, data } = await requestJson(`/api/users/${encodeURIComponent(username)}/stats`)
+        if (response.ok) {
+          const stats = data?.stats || {}
+          this.currentStats = {
+            totalGames: stats.totalGamesPlayed || 0,
+            level: stats.level || 1,
+            totalPoints: stats.totalPoints || 0,
+            raw: stats,
+          }
+        }
+      } catch (error) {
+        this.error = error.message
+      }
+    },
+
     // --- SUMINISTROS (SUPPLY SETS) ---
     async fetchSupplySets (ownerId) {
       try {
@@ -246,6 +264,10 @@ export const useGroupStore = defineStore('group', {
       } catch (error) {
         console.error('Error fetching active supplies:', error)
       }
+    },
+
+    setTrainingActiveSupplySet (set = null) {
+      this.trainingActiveSupplySet = set || null
     },
   },
 })

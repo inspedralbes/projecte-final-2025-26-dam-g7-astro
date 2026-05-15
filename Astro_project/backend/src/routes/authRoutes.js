@@ -68,7 +68,9 @@ function registerAuthRoutes(app, {
                     deletionScheduledAt: user.deletionScheduledAt || null,
                     groupInvitations: user.groupInvitations || [],
                     groupApprovalRequests: user.groupApprovalRequests || [],
-                    scheduledPlanDowngrade: user.scheduledPlanDowngrade || null
+                    scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
+                    pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null,
+                    profileColor: user.profileColor || '#0a192f'
                 }
             });
         } catch (error) {

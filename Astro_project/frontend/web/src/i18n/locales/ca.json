@@ -3,7 +3,9 @@
         "loading": "Carregant...",
         "error": "Hi ha hagut un error.",
         "save": "Desar",
-        "cancel": "Cancel·lar"
+        "cancel": "Cancel·lar",
+        "confirm": "Confirmar",
+        "all": "Tots"
     },
     "sidebar": {
         "home": "Inici",
@@ -43,13 +45,23 @@
         "retry": "TORNAR A INTENTAR",
         "goal": "Meta: {score} pts",
         "start_game": "COMENÇAR {game}",
-        "start_simple": "COMENÇAR"
+        "start_simple": "COMENÇAR",
+        "exerciseSourceLabel": "Exercici actiu",
+        "exerciseSourceDefault": "Predeterminat general",
+        "exerciseSourceLoading": "Carregant...",
+        "exerciseSourceNoCustomPremium": "Pots editar els teus propis exercicis a Gestió Educativa.",
+        "exit_confirm": {
+            "title": "AVORTAR MISSIÓ?",
+            "desc": "Si abandones ara, perdràs tot el progrés d'aquesta sessió i els teus punts d'entrenament no es guardaran.",
+            "cancel": "MANTENIR-SE EN ÒRBITA",
+            "confirm": "AVORTAR I SORTIR"
+        }
     },
     "store": {
         "title": "Basar Espacial",
         "subtitle": "Millora el teu equipament per a la missió",
         "wheelTitle": "Vòrtex Quàntic",
-        "wheelDesc": "Gira el vòrtex per obtenir subministraments únics, monedes o aspectes èpics. La sort afavoreix als audaços.",
+        "wheelDesc": "Gira el vòrtex per obtenir subministraments únics, AstroCoins o aspectes èpics. La sort afavoreix als audaços.",
         "extract": "EXTRAURE (100",
         "buy10": "COMPRAR 10 TIRADES (900",
         "freeSpins": "{spins} TIRADES GRATIS",
@@ -57,10 +69,14 @@
         "suppliesTitle": "Subministraments Bàsics",
         "eliteTitle": "Col·lecció d'Elit",
         "units": "Unitats: x{qty}",
-        "max": "MÀX 99",
+        "max": "MÀXIM ASSOLIT",
+        "dailyLimit": "Límit diari",
         "owned": "ADQUIRIT",
+        "available": "DISPONIBLE",
         "reward": "¡RECOMPENSA!",
-        "accept": "Acceptar"
+        "accept": "Acceptar",
+        "goToInventory": "ANAR A L'INVENTARI",
+        "keepBuying": "SEGUIR COMPRANT"
     },
     "inventory": {
         "title": "EL MEU INVENTARI",
@@ -70,7 +86,7 @@
             "skin": "Aparences",
             "collectible": "Col·leccionables",
             "trails": "Rastres",
-            "pets": "Mascotes",
+            "title": "Títols",
             "items": "Objectes"
         },
         "active": "ACTIU: {games} partides",
@@ -82,7 +98,7 @@
         "goToShop": "Visitar la Botiga",
         "useError": "No s'ha pogut utilitzar l'objecte.",
         "sell": "VENDRE",
-        "sellConfirm": "Estàs segur que vols vendre {item} per {price} monedes?"
+        "sellConfirm": "Estàs segur que vols vendre {item} per {price} AstroCoins?"
     },
     "profile": {
         "guest": "Explorador",
@@ -116,6 +132,8 @@
         "recentIncursions": "INCURSIONS RECENTS",
         "page": "PÀGINA {current} DE {total}",
         "noRecent": "No hi ha registres d'expedicions recents.",
+        "singleplayer": "Individual",
+        "multiplayer": "Multijugador",
         "selectAchievement": "Seleccionar Assoliment",
         "removeAchievement": "Treure Assoliment",
         "astronautSuit": "TRAJO D'ASTRONAUTA",
@@ -160,10 +178,34 @@
         "passwordChangeError": "Error en actualitzar la contrasenya",
         "changeDisplayName": "Canviar Apodo",
         "newDisplayName": "Nou Apodo",
+        "cardColor": "Color de Targeta Personalitzada",
+        "colorUpdated": "Color de targeta actualitzat!",
         "firstChangeFree": "El teu primer canvi d'apodo és gratuït!",
         "noNameChangeTokens": "No tens subministraments de Canvi de Nom.",
         "goToShop": "Anar a la botiga",
-        "tokensAvailable": "Tens {count} subministraments de Canvi de Nom."
+        "tokensAvailable": "Tens {count} subministraments de Canvi de Nom.",
+        "appearance": "APARIENCIA",
+        "cancelDeleteAction": "CANCEL·LAR ELIMINACIÓ",
+        "dangerZone": "ZONA DE PERILL",
+        "deleteAccount": "ELIMINAR COMPTE",
+        "deleteAction": "SOL·LICITAR ELIMINACIÓ",
+        "deleteConfirmDesc": "El teu compte serà programat per a l'eliminació permanent. Tens un període de gràcia de 30 dies per recuperar el teu progrés si te'n penedeixes.",
+        "deleteConfirmTitle": "¿ELIMINAR COMPTE?",
+        "deleteConfirmationLabel": "Escriu '{phrase}' per confirmar",
+        "deleteConfirmationPhrase": "Eliminar compte",
+        "deleteScheduledDesc": "Aquest compte està programat per eliminar-se el {date}. Pots cancel·lar aquest procés ara mateix.",
+        "deleteScheduledTitle": "COMPTE EN PROCÉS D'ELIMINACIÓ",
+        "interface": "INTERFÍCIE",
+        "language": "IDIOMA",
+        "levelLabel": "NIVELL",
+        "music": "MÚSICA",
+        "preferences": "PREFERÈNCIES",
+        "recoverySuccess": "¡El teu compte ha estat recuperat amb èxit! Benvingut de nou, explorador.",
+        "recoveryTitle": "RECUPERACIÓ DE COMPTE",
+        "security": "SEGURTAT",
+        "seniorityLabel": "ANTIGUITAT",
+        "sound": "SO",
+        "wrongPhrase": "La frase no coincideix exactament"
     },
     "friends": {
         "title": "Tripulació",
@@ -244,7 +286,17 @@
         "emptySubtitle": "Inicia la transmissió.",
         "placeholder": "Transmetre missatge...",
         "send": "Enviar (Retorn)",
-        "hint": "Retorn per enviar · Maj+Retorn nova línia"
+        "hint": "Retorn per enviar · Maj+Retorn nova línia",
+        "accept": "ACEPTAR",
+        "challengeAccepted": "Duelo aceptado con {user}",
+        "challengeExpired": "El desafío ha caducado",
+        "challengeReceived": "¡Has recibido un desafío!",
+        "challengeRejected": "{user} ha rechazado el duelo",
+        "decline": "RECHAZAR",
+        "duelAccepted": "DUELO ACEPTADO",
+        "duelExpired": "DESAFÍO CADUCADO",
+        "duelRejected": "DUELO RECHAZADO",
+        "duelTitle": "DUELO ESPACIAL"
     },
     "symmetryBreaker": {
         "points": "Punts: {score}",
@@ -274,7 +326,7 @@
         "progress": "PROGRÉS",
         "streak": "Ratxa",
         "streakCaps": "RATXA",
-        "credits": "CRÈDITS",
+        "credits": "ASTROCOINS",
         "coins": "AstroCoins",
         "level": "NIVELL {level}",
         "xpRemaining": "Falten {xp} XP per al següent nivell",
@@ -306,7 +358,7 @@
         "locked": "Bloquejat",
         "metrics": {
             "missions": "Missions",
-            "coins": "Monedes",
+            "coins": "AstroCoins",
             "inventory": "Objectes",
             "level": "Nivell",
             "xp": "XP"
@@ -385,12 +437,17 @@
     "plans": {
         "individual": "Individual",
         "premium": "Premium",
+        "grupal": "Grupal",
         "standard": "Estàndard",
         "individual_free": "Individual (Gratuït)",
+        "manage": "GESTIONAR",
+        "select": "SELECCIONAR",
         "selectMode": "SELECCIONA EL TEU MODE DE MISSIÓ",
         "individualTitle": "MODALITAT INDIVIDUAL",
         "individualSubtitle": "Defineix el teu nivell d'accés a la base de dades",
+        "freeTitle": "GRATUÏT",
         "freeDesc": "Exploració bàsica. <br> Sense accés a telemetria avançada.",
+        "premiumTitle": "PREMIUM",
         "currentPlan": "PLA ACTUAL",
         "premiumDesc": "Accés Total. <br> Estadístiques, rendiment i suport d'Elit.",
         "unlock": "DESBLOQUEJAR",
@@ -419,12 +476,48 @@
         "repeatCode": "REPETIR CODI",
         "confirmFoundation": "CONFIRMAR FUNDACIÓ",
         "cancelProtocol": "CANCEL·LAR PROTOCOL",
+        "groupTypeLabel": "Tipus de grup",
+        "groupTypeInfo": "Aquest canvi actualitza el teu compte actual a pla grupal i manté el teu progrés.",
+        "groupTypes": {
+            "center": "Centre (gestiona profes i alumnes)",
+            "teacher": "Professor (gestiona alumnes)"
+        },
         "pwdMismatch": "Els codis no coincideixen",
         "individualDesc": "Enlaira't en solitari. Domina les missions bàsiques i explora el cosmos al teu propi ritme.",
-        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en tempo real i panell de telemetria conjunt."
+        "grupalDesc": "Uneix-te a una esquadra. Coordinació tàctica, seguiment en tempo real i panell de telemetria conjunt.",
+        "changeError": "No s'ha pogut canviar el pla",
+        "leaveRequest": {
+            "pending": "Tens una sol·licitud pendent per sortir del grup. Has d'esperar la resposta de {approver}.",
+            "rejected": "La teva sol·licitud per sortir del grup ha estat rebutjada per {approver}.",
+            "dialogTitle": "Sol·licitud enviada",
+            "dialogDesc": "Has sol·licitat sortir del grup a {approver}. Has d'esperar la seva resposta.",
+            "dialogConfirm": "Acceptar",
+            "defaultApprover": "la persona responsable",
+            "requestError": "No s'ha pogut enviar la sol·licitud de sortida del grup"
+        },
+        "loginError": "No s'ha pogut iniciar la connexió al grup",
+        "createGroupError": "No s'ha pogut crear el grup"
+    },
+    "session": {
+        "errors": {
+            "register": "Error en registrar-se",
+            "auth": "Error d'autenticació",
+            "userNotIdentified": "Usuari no identificat.",
+            "userNotIdentifiedForPlan": "Usuari no identificat per actualitzar el pla.",
+            "planUpdateServer": "Error en actualitzar el pla al servidor",
+            "serverConnection": "Error en connectar amb el servidor: {detail}",
+            "avatarSave": "Error en desar l'avatar al servidor",
+            "titleSave": "Error en desar el títol al servidor",
+            "passwordChange": "Error en canviar la contrasenya",
+            "passwordChangeSuccess": "Contrasenya actualitzada correctament",
+            "groupDowngradeSchedule": "No s'ha pogut programar la baixa del pla grupal",
+            "groupDowngradeCancel": "No s'ha pogut cancel·lar la baixa grupal",
+            "deleteRequest": "Error en sol·licitar l'eliminació",
+            "deleteCancel": "Error en cancel·lar l'eliminació"
+        }
     },
     "spelledRosco": {
-        "title": "🚀 Rosco Estel·lar",
+        "title": "Rosco Estel·lar",
         "score": "Puntuació: {score}",
         "time": "Temps: {time}s",
         "definition": "Definició",
@@ -477,7 +570,11 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtenir Recompensa",
         "msgCorrect": "Correcte!",
-        "msgIncorrect": "Incorrecte, torna a provar."
+        "msgIncorrect": "Incorrecte, torna a provar.",
+        "orderPhrase": "Ordena la frase!",
+        "clickOrder": "Fes clic a les paraules en l'ordre correcte...",
+        "phraseCompleted": "Frase completada!",
+        "incorrectOrder": "Ordre incorrecte! Reiniciant frase..."
     },
     "wordConstruction": {
         "level": "Nivell {level}",
@@ -510,14 +607,21 @@
         "fase1Title": "Entrenament",
         "fase1Subtitle": "Fase 1: La Terra",
         "fase2Title": "El Viatge Comença",
-        "fase2Subtitle": "Fase 2: Espai Proper"
+        "fase2Subtitle": "Fase 2: Espai Cercà",
+        "fase3Title": "Cap al Desconegut",
+        "fase3Subtitle": "Fase 3: Espai Profund",
+        "senalperdida": "Senyal Perduda",
+        "horizontes": "Nous Horitzons",
+        "destino": "Destí Final"
     },
     "shopActions": {
-        "confirmMulti": "Vols comprar un pack de 10 tirades per 900 monedes?",
+        "confirmMulti": "Vols comprar un pack de 10 tirades per 900 AstroCoins?",
         "alreadyOwned": "Ja tens {item} al teu inventari!",
         "maxReached": "Has assolit el màxim de 99 unitats per {item}.",
-        "confirmBuy": "Vols comprar {item} per {price} crèdits?",
-        "buySuccess": "Compra amb èxit"
+        "confirmBuy": "Vols comprar {item} per {price} AstroCoins?",
+        "confirmTitle": "CONFIRMACIÓ DE COMPRA",
+        "buySuccess": "Compra amb èxit",
+        "buySuccessTitle": "¡OBJECTE DESBLOQUEJAT!"
     },
     "shopItems": {
         "vidas": {
@@ -529,8 +633,8 @@
             "desc": "Protegeix la teva ratxa un dia."
         },
         "dobleMonedas": {
-            "name": "Doble de Monedes",
-            "desc": "Multiplica x2 les monedes guanyades."
+            "name": "Doble de AstroCoins",
+            "desc": "Multiplica x2 les AstroCoins guanyades."
         },
         "doblePuntos": {
             "name": "Doble Puntuació",
@@ -569,6 +673,7 @@
             "name": "Destructor d'Asteroides",
             "desc": "Etiqueta de text permanent."
         },
+        "titleDesc": "Etiqueta de text permanent.",
         "nameChange": {
             "name": "Canvi de Nom",
             "desc": "Canvia el teu apodo. El primer és gratis!"
@@ -605,8 +710,9 @@
         "youHear": "SINTONITZES:",
         "typeAndEnter": "Escriu un missatge i prem Enter...",
         "you": "TU",
-        "success": "¡SENYAL DESXIFRADA!",
+        "success": "¡SENYAL DESXIFRAT!",
         "successDesc": "+150 PTS | +15s",
+        "error": "✗ DADES INCORRECTES - TORNA A INTENTAR-HO",
         "errorCount": "Tens {count} lletres incorrectes!"
     },
     "errors": {
@@ -617,17 +723,109 @@
     "missionsList": {
         "daily": {
             "games": "Juga {goal} partides",
-            "coins": "Guanya {goal} crèdits",
+            "coins": "Guanya {goal} AstroCoins",
             "xp": "Aconsegueix {goal} XP",
             "item": "Utilitza {goal} objectes",
-            "streak": "Manté la teva racha"
+            "streak": "Manté la teva ratxa"
         },
         "weekly": {
             "games": "Mestre de Jocs ({goal} partides)",
-            "coins": "Cercador d'Or ({goal} crèdits)",
+            "coins": "Cercador d'Or ({goal} AstroCoins)",
             "xp": "Ascensió Lunar ({goal} XP)",
             "streak": "Supervivient (Racha {goal} dies)",
             "item": "Interacció Pro ({goal} objectes)"
+        }
+    },
+    "achievementsList": {
+        "1": {
+            "title": "Primer Vol",
+            "desc": "Completa 1 missió.",
+            "metric": "Partides"
+        },
+        "2": {
+            "title": "Tripulant Actiu",
+            "desc": "Completa 5 missions.",
+            "metric": "Partides"
+        },
+        "3": {
+            "title": "Veterà Estelar",
+            "desc": "Completa 20 missions.",
+            "metric": "Partides"
+        },
+        "4": {
+            "title": "Primer Botí",
+            "desc": "Acumula 1.200 AstroCoins.",
+            "metric": "AstroCoins"
+        },
+        "5": {
+            "title": "Fortuna Galàctica",
+            "desc": "Acumula 3.000 AstroCoins.",
+            "metric": "AstroCoins"
+        },
+        "6": {
+            "title": "Primer Col·leccionable",
+            "desc": "Aconsegueix 1 objecte a l'inventari.",
+            "metric": "Objectes"
+        },
+        "7": {
+            "title": "Col·leccionista",
+            "desc": "Aconsegueix 5 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "8": {
+            "title": "Museu Orbital",
+            "desc": "Aconsegueix 10 objectes a l'inventari.",
+            "metric": "Objectes"
+        },
+        "9": {
+            "title": "Pujant de Rang",
+            "desc": "Arriba al nivell 3.",
+            "metric": "Nivell"
+        },
+        "10": {
+            "title": "Capità Novell",
+            "desc": "Arriba al nivell 5.",
+            "metric": "Nivell"
+        },
+        "11": {
+            "title": "Comandant",
+            "desc": "Arriba al nivell 8.",
+            "metric": "Nivell"
+        },
+        "12": {
+            "title": "Energia Infinita",
+            "desc": "Aconsegueix 500 XP.",
+            "metric": "XP"
+        },
+        "13": {
+            "title": "Estratega Galàctic",
+            "desc": "Completa 10 missions.",
+            "metric": "Missions"
+        },
+        "14": {
+            "title": "Mercader d'Estrelles",
+            "desc": "Acumula 2.000 AstroCoins.",
+            "metric": "AstroCoins"
+        },
+        "15": {
+            "title": "Heroi del Cosmos",
+            "desc": "Completa 50 missions.",
+            "metric": "Missions"
+        },
+        "16": {
+            "title": "Magnat de la Nebulosa",
+            "desc": "Acumula 5.000 AstroCoins.",
+            "metric": "AstroCoins"
+        },
+        "17": {
+            "title": "Sobirà del Buit",
+            "desc": "Arriba al nivell 10.",
+            "metric": "Nivell"
+        },
+        "18": {
+            "title": "Conqueridor de Galàxies",
+            "desc": "Aconsegueix 1.000 XP.",
+            "metric": "XP"
         }
     },
     "games": {
@@ -640,9 +838,9 @@
         "RhymeSquad": "Esquadró de Rimes",
         "rhyme-squad": "Esquadró de Rimes",
         "rhymesquad": "Esquadró de Rimes",
-        "SyllableQuest": "Aventura Sil·làbica",
-        "syllable-quest": "Aventura Sil·làbica",
-        "syllablequest": "Aventura Sil·làbica",
+        "SyllableQuest": "Missió de Síl·labes",
+        "syllable-quest": "Missió de Síl·labes",
+        "syllablequest": "Missió de Síl·labes",
         "SpelledRosco": "Rosco Estelar",
         "spelled-rosco": "Rosco Estelar",
         "spelledrosco": "Rosco Estelar",
@@ -674,7 +872,20 @@
         "multiplayer": "Multijugador",
         "Multiplayer": "Multijugador",
         "Minijuego": "Minijoc",
-        "Minijoc": "Minijoc"
+        "Minijoc": "Minijoc",
+        "Desacoplamiento Orbital": "Spelled Rosco",
+        "Llamando a la Base": "Radio Signal",
+        "Minigame": "Minigame",
+        "Preparations": "Word Construction",
+        "Preparativos de Vuelo": "Word Construction",
+        "RadarScanner": "Escáner de Radar",
+        "Recarga Solar": "Symmetry Breaker",
+        "Reparación": "Radar Scanner",
+        "Reparación Express": "Radar Scanner",
+        "Rompiendo la Gravedad": "Radio Signal",
+        "Ruta Estelar": "Rhyme Squad",
+        "radar-scanner": "Escáner de Radar",
+        "¡Despegue!": "Radar Scanner"
     },
     "shop": {
         "spinError": "Error en girar",
@@ -711,11 +922,28 @@
         "student": "ALUMNE",
         "level": "NIVELL",
         "telemetryTitle": "TELEMETRIA DE GRUP",
+        "telemetryTitleIndividual": "TELEMETRIA INDIVIDUAL",
         "totalGames": "TOTAL JOCS",
         "avgLevel": "NIVELL MITJÀ",
         "totalMembers": "TOTAL MEMBRES",
+        "totalPoints": "PUNTS TOTALS",
         "noData": "No hi ha dades disponibles per mostrar.",
         "addMember": "AFEGIR {role}",
+        "roleLabel": "Rol",
+        "modeLabel": "Mètode",
+        "roles": {
+            "teacher": "Professor",
+            "student": "Alumne"
+        },
+        "addModes": {
+            "create": "Crear usuari nou",
+            "invite": "Convidar usuari existent"
+        },
+        "errors": {
+            "usernameRequired": "Has d'indicar un nom d'usuari",
+            "passwordRequired": "Has d'indicar una contrasenya per a l'usuari nou",
+            "addMemberFailed": "No s'ha pogut afegir el membre"
+        },
         "username": "Nom d'Usuari",
         "password": "Contrasenya",
         "confirmReg": "CONFIRMAR REGISTRE",
@@ -735,6 +963,8 @@
             "deactivate": "DESACTIVAR",
             "activateForClass": "ACTIVAR PER CLASE",
             "deleteConfirm": "Eliminar aquest exercici?",
+            "exportJSON": "Exportar JSON",
+            "importJSON": "Importar JSON",
             "editTitle": "EDITAR EXERCICI: {game}",
             "newTitle": "NOU EXERCICI: {game}",
             "saveChanges": "GUARDAR CANVIS",
@@ -743,11 +973,46 @@
             "searchPlaceholder": "Cerca...",
             "wordLabel": "Paraula",
             "hintLabel": "Pista",
+            "listPlaceholder": "element1, element2, element3",
             "configExerciseTitle": "2. CONFIGURACIÓ DE L'EXERCICI",
             "exerciseNameLabel": "Nom de l'exercici",
             "exerciseSearchPlaceholder": "Cercar en l'exercici...",
             "assignToTeacher": "Assignar a Professor",
             "noResults": "Cap resultat per aquesta cerca.",
+            "fieldLabels": {
+                "text": "Text",
+                "syllables": "Síl·labes",
+                "char": "Lletra",
+                "question": "Pregunta",
+                "answer": "Resposta",
+                "ending": "Terminació",
+                "rhymes": "Rimes (separades per comes)",
+                "fakes": "Distractors (separats per comes)",
+                "distractor": "Distractor",
+                "target": "Objectiu",
+                "grid": "Graella",
+                "tunnel": "Mida del túnel",
+                "phrase": "Frase",
+                "decoys": "Enganys (separats per comes)"
+            },
+            "fieldHelp": {
+                "word": "Paraula principal que s'utilitzarà a l'exercici.",
+                "hint": "Pista opcional per ajudar a identificar la paraula.",
+                "text": "Text o paraula que l'alumnat haurà de treballar.",
+                "syllables": "Nombre total de síl·labes que té el text.",
+                "char": "Lletra de referència per a aquesta entrada del rosco.",
+                "question": "Definició o enunciat que es mostrarà a l'alumnat.",
+                "answer": "Resposta correcta esperada.",
+                "ending": "Terminació que es farà servir per comprovar les rimes.",
+                "rhymes": "Paraules que sí rimen amb la paraula principal, separades per comes.",
+                "fakes": "Paraules trampa que no rimen, separades per comes.",
+                "distractor": "És el símbol o lletra incorrecta que omplirà la graella per confondre l'alumnat.",
+                "target": "Símbol o lletra correcta que l'alumnat ha de trobar.",
+                "grid": "Mida de la graella (per exemple 5 crea una graella de 5x5).",
+                "tunnel": "Radi de visió o obertura del focus en el joc.",
+                "phrase": "Frase que l'alumnat haurà d'escoltar i escriure.",
+                "decoys": "Opcions enganyoses que no són l'objectiu, separades per comes."
+            },
             "games": {
                 "WordConstruction": {
                     "name": "Construcció de Paraules",
@@ -768,13 +1033,26 @@
                 "MathQuest": {
                     "name": "Repte Matemàtic",
                     "desc": "Càlculs mentals ràpids."
+                },
+                "RadarScan": {
+                    "name": "Escaneig Radar",
+                    "desc": "Detectar objectius amagats."
+                },
+                "RadioSignal": {
+                    "name": "Senyal de Ràdio",
+                    "desc": "Desxifrar transmissions."
+                },
+                "SymmetryBreaker": {
+                    "name": "Trencador de Simetria",
+                    "desc": "Identificar el símbol correcte."
+                }
                 }
             }
         }
     },
     "multiplayerResult": {
         "victory": "¡VICTÒRIA!",
-        "tie": "¡EMPATE!",
+        "tie": "¡EMPAT!",
         "defeat": "¡DERROTA!",
         "winDesc": "Has conquistat la galàxia",
         "tieDesc": "Ningú domina el cosmos avui",

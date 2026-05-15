@@ -3,6 +3,8 @@ import { API_BASE_URL, requestJson } from './astroShared'
 import { useChatStore } from './chatStore'
 import { useSessionStore } from './sessionStore'
 import { useSocialStore } from './socialStore'
+import { useAstroStore } from './astroStore'
+import { useProgressStore } from './progressStore'
 
 function buildWsUrl () {
   let wsUrl = API_BASE_URL.replace(/^http/i, 'ws')
@@ -367,6 +369,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
           this.lastMessage = data
           this.stopFuelTimer()
+
+          // Actualizar estadísticas tras partida multijugador
+          const astroStore = useAstroStore()
+          astroStore.fetchUserStats()
+
           break
         }
         case 'PLAYER_RETURNED': {
@@ -433,9 +440,33 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             sessionStore.setPlan(data.profile.plan || sessionStore.plan)
             sessionStore.setRole(data.profile.role || null)
             sessionStore.setParentId(data.profile.parentId || null)
+            if (Object.prototype.hasOwnProperty.call(data.profile, 'pendingGroupLeaveRequest')) {
+              sessionStore.setPendingGroupLeaveRequest(data.profile.pendingGroupLeaveRequest)
+            } else if (!data.profile.parentId) {
+              sessionStore.setPendingGroupLeaveRequest(null)
+            }
           }
           if (Array.isArray(data.groupInvitations)) {
             sessionStore.setGroupInvitations(data.groupInvitations)
+          }
+          break
+        }
+        case 'PROFILE_UPDATE': {
+          const astroStore = useAstroStore()
+          if (data.coins !== undefined) astroStore.setCoins(data.coins)
+          if (data.inventory !== undefined) astroStore.setInventory(data.inventory)
+          if (data.streakFreezes !== undefined) {
+            const progressStore = useProgressStore()
+            progressStore.setStreakFreezes(data.streakFreezes)
+          }
+          if (data.dailyPurchaseHistory !== undefined) {
+            sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
+          }
+          if (data.selectedTitle !== undefined) {
+            sessionStore.setSelectedTitle(data.selectedTitle)
+          }
+          if (data.avatar !== undefined) {
+            sessionStore.setAvatar(data.avatar)
           }
           break
         }

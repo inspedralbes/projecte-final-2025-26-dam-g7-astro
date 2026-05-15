@@ -1165,6 +1165,18 @@
   }
 
   const availableGames = Object.keys(gameComponents)
+  const raceRoutes = {
+    'SISTEMA_SOLAR': {
+      name: 'Sistema Solar',
+      sequence: ['WordConstruction', 'RadioSignal', 'RadarScan', 'SymmetryBreaker', 'SpelledRosco', 'SyllableQuest', 'RhymeSquad'],
+      planets: ['Terra', 'Mart', 'Júpiter', 'Saturn', 'Urà', 'Neptú'],
+    },
+    'NEBULOSA_KALI': {
+      name: 'Nebulosa Kali',
+      sequence: ['RadarScan', 'RadioSignal', 'SyllableQuest', 'WordConstruction'],
+      planets: ['Kali-1', 'Kali-2', 'Kali-Alpha', 'Vortex'],
+    },
+  }
 
   // Configuración del mapa de carrera
   const numGoldMines    = ref(Number(localStorage.getItem('astro_mp_goldMines'))    || 1)

@@ -5,7 +5,7 @@ Mantenir una nomenclatura consistent és vital per a la llegibilitat del codi.
 
 - **Variables i Funcions:** `camelCase` (ex: `calculateUserXP`, `isOnline`).
 - **Classes:** `PascalCase` (ex: `UserService`, `AuthRepository`).
-- **Components (Vue/React):** `PascalCase` (ex: `SidebarRight.vue`, `GameCard.js`).
+- **Components (Vue):** `PascalCase` (ex: `SidebarRight.vue`, `GameCard.vue`).
 - **Fitxers de Constants:** `SCREAMING_SNAKE_CASE` (ex: `MAX_LEVEL_REACHED`).
 - **Base de Dades (MongoDB):** Col·leccions en plural i minúscules (ex: `users`, `partides`).
 

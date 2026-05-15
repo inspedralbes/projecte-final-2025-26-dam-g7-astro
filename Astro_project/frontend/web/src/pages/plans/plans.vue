@@ -11,6 +11,20 @@
           {{ $t('plans.selectMode') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+        <template v-else>
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <v-col
@@ -89,6 +103,20 @@
           {{ $t('plans.individualSubtitle') }}
         </p>
       </div>
+      <v-alert
+        v-if="pendingLeaveRequest"
+        class="mb-6 mx-auto"
+        :color="pendingLeaveRequest.status === 'REJECTED' ? 'error' : 'warning'"
+        max-width="800"
+        variant="tonal"
+      >
+        <template v-if="pendingLeaveRequest.status === 'REJECTED'">
+          {{ $t('plans.leaveRequest.rejected', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+        <template v-else>
+          {{ $t('plans.leaveRequest.pending', { approver: pendingLeaveRequest.approver || $t('plans.leaveRequest.defaultApprover') }) }}
+        </template>
+      </v-alert>
 
       <v-row align="stretch" class="plans-row" justify="center">
         <!-- Option: Free -->
@@ -106,7 +134,7 @@
               <div class="icon-glow" style="background: #00e5ff" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.freeTitle') || 'FREE' }}
+              {{ $t('plans.freeTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="cyan-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.freeDesc')" />
@@ -138,7 +166,7 @@
               <div class="icon-glow" style="background: #ffab40" />
             </div>
             <h2 class="text-h4 font-weight-bold text-uppercase tracking-wider text-white">
-              {{ $t('plans.premiumTitle') || 'PREMIUM' }}
+              {{ $t('plans.premiumTitle') }}
             </h2>
             <v-divider class="my-4 w-25" color="orange-accent-3" />
             <p class="text-body-1 text-grey-lighten-2 mt-2" v-html="$t('plans.premiumDesc')" />
@@ -326,7 +354,7 @@
 
         <v-row dense>
           <v-col class="text-left mb-1" cols="12">
-            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">Tipo de grupo</label>
+            <label class="text-caption text-green-lighten-4 font-weight-bold ml-1">{{ $t('plans.groupTypeLabel') }}</label>
           </v-col>
           <v-col class="mb-4" cols="12">
             <v-select
@@ -342,7 +370,7 @@
           </v-col>
 
           <v-col class="mb-6 text-caption text-green-lighten-4 text-left" cols="12">
-            Este cambio actualiza tu cuenta actual a plan grupal y mantiene tu progreso.
+            {{ $t('plans.groupTypeInfo') }}
           </v-col>
         </v-row>
 
@@ -371,21 +399,38 @@
       </v-card>
     </v-container>
 
+    <v-dialog v-model="showLeaveRequestDialog" max-width="520">
+      <v-card class="holo-panel pa-6 text-center">
+        <v-icon class="mb-3" color="warning" icon="mdi-timer-sand" size="56" />
+        <h3 class="text-h5 font-weight-bold text-white mb-3">{{ $t('plans.leaveRequest.dialogTitle') }}</h3>
+        <p class="text-body-1 text-grey-lighten-2 mb-6">
+          {{ $t('plans.leaveRequest.dialogDesc', { approver: leaveRequestApprover || $t('plans.leaveRequest.defaultApprover') }) }}
+        </p>
+        <v-btn color="cyan-accent-3" class="text-black font-weight-bold" @click="acceptLeaveRequestDialog">
+          {{ $t('plans.leaveRequest.dialogConfirm') }}
+        </v-btn>
+      </v-card>
+    </v-dialog>
+
   </v-container>
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
   const router = useRouter()
 
   const step = ref('select-plan')
   const selectedPlan = ref('')
+  const showLeaveRequestDialog = ref(false)
+  const leaveRequestApprover = ref('')
 
   // Login Data
   const user = ref('')
@@ -393,10 +438,10 @@
 
   // Registration Data (Group)
   const groupType = ref('CENTER')
-  const groupTypeOptions = [
-    { title: 'Centro (gestiona profes y alumnos)', value: 'CENTER' },
-    { title: 'Profesor (gestiona alumnos)', value: 'TEACHER' },
-  ]
+  const groupTypeOptions = computed(() => [
+    { title: t('plans.groupTypes.center'), value: 'CENTER' },
+    { title: t('plans.groupTypes.teacher'), value: 'TEACHER' },
+  ])
 
   const plans = computed(() => [
     {
@@ -404,7 +449,7 @@
       icon: 'mdi-rocket-launch',
       color: 'cyan-accent-3',
       glowColor: 'cyan',
-      desc: t('plans.individualDesc') || 'Despega en solitario. Domina las misiones básicas y explora el cosmos a tu propio ritmo.',
+      desc: t('plans.individualDesc'),
       recommended: true,
     },
     {
@@ -412,10 +457,16 @@
       icon: 'mdi-account-group-outline',
       color: 'purple-accent-2',
       glowColor: 'purple',
-      desc: t('plans.grupalDesc') || 'Únete a una escuadra. Coordinación táctica, seguimiento en tiempo real y panel de telemetría conjunto.',
+      desc: t('plans.grupalDesc'),
       recommended: false,
     },
   ])
+
+  const pendingLeaveRequest = computed(() => astroStore.pendingGroupLeaveRequest || null)
+
+  onMounted(async () => {
+    await astroStore.fetchUserStats()
+  })
 
   function selectPlan (planId) {
     selectedPlan.value = planId
@@ -437,8 +488,31 @@
     if (result.success) {
       router.push('/profile')
     } else {
-      alert(result.message || 'No se pudo cambiar el plan')
+      const message = String(result.message || '')
+      const needsApproval = message.toLowerCase().includes('solicitar aprobación')
+      const isSubordinateGroupMember = astroStore.plan === 'GRUPAL'
+        && !!astroStore.parentId
+        && (astroStore.role === 'STUDENT' || astroStore.role === 'TEACHER')
+
+      if (needsApproval && isSubordinateGroupMember) {
+        const leaveRequest = await groupStore.requestLeaveToIndividual(astroStore.user)
+        if (leaveRequest.success || String(leaveRequest.message || '').toLowerCase().includes('solicitud pendiente')) {
+          await astroStore.fetchUserStats()
+          leaveRequestApprover.value = astroStore.pendingGroupLeaveRequest?.approver || astroStore.parentId || ''
+          showLeaveRequestDialog.value = true
+          return
+        }
+        alert(leaveRequest.message || t('plans.leaveRequest.requestError'))
+        return
+      }
+
+      alert(result.message || t('plans.changeError'))
     }
+  }
+
+  function acceptLeaveRequestDialog () {
+    showLeaveRequestDialog.value = false
+    router.push('/profile')
   }
 
   async function login () {
@@ -452,7 +526,7 @@
     if (result.success) {
       router.push('/multiplayer') // Asumimos que si entra por grupo, va al multi
     } else {
-      alert(result.message)
+      alert(t('plans.loginError'))
     }
   }
 
@@ -462,7 +536,7 @@
     if (result.success) {
       router.push('/profile')
     } else {
-      alert(result.message)
+      alert(t('plans.createGroupError'))
     }
   }
 </script>

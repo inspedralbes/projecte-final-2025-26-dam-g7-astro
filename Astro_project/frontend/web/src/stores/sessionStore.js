@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import i18n from '@/i18n'
 import {
   requestJson,
   SESSION_TIMEOUT_MS,
@@ -7,6 +8,10 @@ import {
   storageRemoveItem,
   storageSetItem,
 } from './astroShared'
+
+function tr (key, params = {}) {
+  return i18n.global.t(key, params)
+}
 
 function persistNullable (key, value) {
   if (value === null || value === undefined || value === '') {
@@ -33,6 +38,9 @@ export const useSessionStore = defineStore('session', {
     groupInvitations: [],
     groupApprovalRequests: [],
     scheduledPlanDowngrade: null,
+    pendingGroupLeaveRequest: null,
+    dailyPurchaseHistory: { date: '', items: {} },
+    profileColor: storageGetItem(STORAGE_KEYS.profileColor) || '#0a192f',
     error: null,
   }),
 
@@ -93,6 +101,10 @@ export const useSessionStore = defineStore('session', {
       this.avatar = avatar || 'Astronauta_blanc.jpg'
       persistNullable(STORAGE_KEYS.avatar, this.avatar)
     },
+    setProfileColor (color) {
+      this.profileColor = color || '#0a192f'
+      persistNullable(STORAGE_KEYS.profileColor, this.profileColor)
+    },
 
     setSelectedTitle (title) {
       this.selectedTitle = title || null
@@ -142,6 +154,19 @@ export const useSessionStore = defineStore('session', {
       if (profile.scheduledPlanDowngrade !== undefined) {
         this.setScheduledPlanDowngrade(profile.scheduledPlanDowngrade)
       }
+      if (profile.pendingGroupLeaveRequest !== undefined) {
+        this.setPendingGroupLeaveRequest(profile.pendingGroupLeaveRequest)
+      }
+      if (profile.dailyPurchaseHistory !== undefined) {
+        this.setDailyPurchaseHistory(profile.dailyPurchaseHistory)
+      }
+      if (profile.profileColor) {
+        this.setProfileColor(profile.profileColor)
+      }
+    },
+
+    setDailyPurchaseHistory (history) {
+      this.dailyPurchaseHistory = history || { date: '', items: {} }
     },
 
     setDeletionScheduled (date) {
@@ -161,6 +186,10 @@ export const useSessionStore = defineStore('session', {
       this.scheduledPlanDowngrade = scheduled || null
     },
 
+    setPendingGroupLeaveRequest (pending = null) {
+      this.pendingGroupLeaveRequest = pending || null
+    },
+
     async registerTripulante (userData) {
       this.error = null
       try {
@@ -171,7 +200,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error al registrar')
+          throw new Error(data.message || tr('session.errors.register'))
         }
 
         return { success: true, message: data.message }
@@ -195,7 +224,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error de autenticación')
+          throw new Error(data.message || tr('session.errors.auth'))
         }
 
         this.applyLoginPayload(data)
@@ -215,7 +244,7 @@ export const useSessionStore = defineStore('session', {
       }
 
       if (!this.user) {
-        this.error = 'Usuario no identificado para actualizar el plan.'
+        this.error = tr('session.errors.userNotIdentifiedForPlan')
         return { success: false, message: this.error }
       }
 
@@ -232,7 +261,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error al actualizar el plan en el servidor')
+          throw new Error(data.message || tr('session.errors.planUpdateServer'))
         }
 
         this.setPlan(data.profile?.plan || planType)
@@ -245,7 +274,7 @@ export const useSessionStore = defineStore('session', {
         return { success: true }
       } catch (error) {
         console.error('❌ Error sincronizando plan:', error)
-        this.error = 'Error al conectar con el servidor: ' + error.message
+        this.error = tr('session.errors.serverConnection', { detail: error.message })
         return { success: false, message: this.error }
       }
     },
@@ -269,7 +298,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error al guardar avatar en servidor')
+          throw new Error(data.message || tr('session.errors.avatarSave'))
         }
         console.log('✅ Avatar sincronizado en servidor')
       } catch (error) {
@@ -296,7 +325,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error al guardar título en servidor')
+          throw new Error(data.message || tr('session.errors.titleSave'))
         }
         console.log('✅ Título sincronizado en servidor')
       } catch (error) {
@@ -307,7 +336,7 @@ export const useSessionStore = defineStore('session', {
     async changePassword (oldPassword, newPassword) {
       this.error = null
       if (!this.user) {
-        this.error = 'Usuario no identificado.'
+        this.error = tr('session.errors.userNotIdentified')
         return { success: false, message: this.error }
       }
 
@@ -323,20 +352,20 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'Error al cambiar la contraseña')
+          throw new Error(data.message || tr('session.errors.passwordChange'))
         }
 
-        return { success: true, message: data.message || 'Contraseña actualizada correctamente' }
+        return { success: true, message: data.message || tr('session.errors.passwordChangeSuccess') }
       } catch (error) {
         console.error('❌ Error cambiando contraseña:', error)
-        this.error = error.message || 'Error al cambiar la contraseña'
+        this.error = error.message || tr('session.errors.passwordChange')
         return { success: false, message: this.error }
       }
     },
 
     async requestGroupOwnerDowngrade (password, targetPlan = 'INDIVIDUAL_FREE') {
       if (!this.user) {
-        return { success: false, message: 'Usuario no identificado' }
+        return { success: false, message: tr('session.errors.userNotIdentified') }
       }
 
       try {
@@ -347,7 +376,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'No se pudo programar la baja del plan grupal')
+          throw new Error(data.message || tr('session.errors.groupDowngradeSchedule'))
         }
 
         this.setScheduledPlanDowngrade(data.scheduledPlanDowngrade)
@@ -359,7 +388,7 @@ export const useSessionStore = defineStore('session', {
 
     async cancelGroupOwnerDowngrade () {
       if (!this.user) {
-        return { success: false, message: 'Usuario no identificado' }
+        return { success: false, message: tr('session.errors.userNotIdentified') }
       }
 
       try {
@@ -370,7 +399,7 @@ export const useSessionStore = defineStore('session', {
         })
 
         if (!response.ok) {
-          throw new Error(data.message || 'No se pudo cancelar la baja grupal')
+          throw new Error(data.message || tr('session.errors.groupDowngradeCancel'))
         }
 
         this.setScheduledPlanDowngrade(null)
@@ -382,7 +411,7 @@ export const useSessionStore = defineStore('session', {
 
     async scheduleAccountDeletion () {
       if (!this.user) {
-        return { success: false, message: 'Usuario no identificado' }
+        return { success: false, message: tr('session.errors.userNotIdentified') }
       }
       try {
         const { response, data } = await requestJson('/api/user/delete-request', {
@@ -391,7 +420,7 @@ export const useSessionStore = defineStore('session', {
           body: JSON.stringify({ user: this.user }),
         })
         if (!response.ok) {
-          throw new Error(data.message || 'Error al solicitar eliminación')
+          throw new Error(data.message || tr('session.errors.deleteRequest'))
         }
 
         this.setDeletionScheduled(data.deletionScheduledAt)
@@ -404,7 +433,7 @@ export const useSessionStore = defineStore('session', {
 
     async cancelAccountDeletion () {
       if (!this.user) {
-        return { success: false, message: 'Usuario no identificado' }
+        return { success: false, message: tr('session.errors.userNotIdentified') }
       }
       try {
         const { response, data } = await requestJson('/api/user/delete-cancel', {
@@ -413,13 +442,30 @@ export const useSessionStore = defineStore('session', {
           body: JSON.stringify({ user: this.user }),
         })
         if (!response.ok) {
-          throw new Error(data.message || 'Error al cancelar eliminación')
+          throw new Error(data.message || tr('session.errors.deleteCancel'))
         }
 
         this.setDeletionScheduled(null)
         return { success: true }
       } catch (error) {
         console.error('❌ Error cancelando eliminación:', error)
+        return { success: false, message: error.message }
+      }
+    },
+
+    async updateProfileColorAction (color) {
+      if (!this.user) return { success: false, message: tr('session.errors.userNotIdentified') }
+      try {
+        const { response, data } = await requestJson('/api/user/color', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: this.user, color }),
+        })
+        if (!response.ok) throw new Error(data.message || 'Error actualizando color')
+        this.setProfileColor(color)
+        return { success: true }
+      } catch (error) {
+        console.error('❌ Error actualizando color:', error)
         return { success: false, message: error.message }
       }
     },
@@ -439,6 +485,8 @@ export const useSessionStore = defineStore('session', {
       this.groupInvitations = []
       this.groupApprovalRequests = []
       this.scheduledPlanDowngrade = null
+      this.pendingGroupLeaveRequest = null
+      this.profileColor = '#0a192f'
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
@@ -455,6 +503,7 @@ export const useSessionStore = defineStore('session', {
         'astro_display_name',
         'astro_name_changes',
         'astro_deletion_scheduled',
+        STORAGE_KEYS.profileColor,
       ]) {
         storageRemoveItem(key, false) // Session
         storageRemoveItem(key, true) // Local

@@ -2,7 +2,7 @@
 
 const DAILY_TEMPLATES = [
     { text: "Juega 3 partidas", goal: 3, reward: 150, type: "games" },
-    { text: "Gana 500 créditos", goal: 500, reward: 100, type: "coins" },
+    { text: "Gana 500 AstroCoins", goal: 500, reward: 100, type: "coins" },
     { text: "Consigue 200 XP", goal: 200, reward: 120, type: "xp" },
     { text: "Usa un objeto", goal: 1, reward: 80, type: "item" },
     { text: "Mantén tu racha", goal: 1, reward: 200, type: "streak" }
@@ -10,7 +10,7 @@ const DAILY_TEMPLATES = [
 
 const WEEKLY_TEMPLATES = [
     { text: "Maestro de Juegos (20 partidas)", goal: 20, reward: 1000, type: "games" },
-    { text: "Buscador de Oro (3000 créditos)", goal: 3000, reward: 800, type: "coins" },
+    { text: "Buscador de Oro (3000 AstroCoins)", goal: 3000, reward: 800, type: "coins" },
     { text: "Ascensión Lunar (Consigue 1500 XP)", goal: 1500, reward: 1200, type: "xp" },
     { text: "Superviviente Espacial (Racha 5 días)", goal: 5, reward: 2000, type: "streak" },
     { text: "Interacción de Objetos (10 objetos)", goal: 10, reward: 500, type: "item" }
@@ -105,7 +105,9 @@ class StatsService {
             friendRequests: user.friendRequests || [],
             groupInvitations: user.groupInvitations || [],
             groupApprovalRequests: user.groupApprovalRequests || [],
-            scheduledPlanDowngrade: user.scheduledPlanDowngrade || null
+            scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
+            pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null,
+            profileColor: user.profileColor || '#0a192f'
         };
     }
 

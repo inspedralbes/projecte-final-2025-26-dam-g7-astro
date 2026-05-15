@@ -44,6 +44,27 @@ class User {
         this.groupInvitations = Array.isArray(data.groupInvitations) ? data.groupInvitations : [];
         this.groupApprovalRequests = Array.isArray(data.groupApprovalRequests) ? data.groupApprovalRequests : [];
         this.scheduledPlanDowngrade = data.scheduledPlanDowngrade || null;
+        this.pendingGroupLeaveRequest = data.pendingGroupLeaveRequest || null;
+        this.profileColor = data.profileColor || '#0a192f'; // Default color
+        
+        // Tracking de compras diarias (para límites de tienda)
+        const today = new Date().toISOString().split('T')[0];
+        this.dailyPurchaseHistory = data.dailyPurchaseHistory || { date: today, items: {} };
+        if (this.dailyPurchaseHistory.date !== today) {
+            this.dailyPurchaseHistory = { date: today, items: {} };
+        }
+    }
+
+    getDailyPurchaseCount(itemId) {
+        return this.dailyPurchaseHistory.items[itemId] || 0;
+    }
+
+    recordPurchase(itemId, quantity) {
+        const today = new Date().toISOString().split('T')[0];
+        if (this.dailyPurchaseHistory.date !== today) {
+            this.dailyPurchaseHistory = { date: today, items: {} };
+        }
+        this.dailyPurchaseHistory.items[itemId] = (this.dailyPurchaseHistory.items[itemId] || 0) + quantity;
     }
 
     getXPNeeded() {

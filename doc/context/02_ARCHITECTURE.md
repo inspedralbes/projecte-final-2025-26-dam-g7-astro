@@ -5,26 +5,26 @@ Astro utilitza una arquitectura desacoblada basada en serveis que permet la inde
 
 ### 1.1. Capa de Presentació (Frontend)
 - **Web App:** Single Page Application (SPA) construïda amb **Vue 3**. Utilitza **Vuetify 3** per a una interfície d'usuari responsiva i **Pinia** per a la gestió d'estat reactiva.
-- **Mobile App:** Aplicació híbrida amb **Expo/React Native**, utilitzant **Zustand** per a un estat lleuger i eficient.
 
 ### 1.2. Capa de Lògica (Backend)
 - **Servidor d'Aplicacions:** Node.js amb Express. Implementa un patró de **Repositoris i Serveis** per separar l'accés a dades de la lògica de negoci.
-- **Comunicació en Temps Real:** Integració de **Socket.io** per gestionar connexions bidireccionals persistents.
+- **Comunicació en Temps Real:** Integració de **ws (WebSockets)** per gestionar connexions bidireccionals persistents.
 
 ### 1.3. Capa de Dades (Persistence)
 - **Base de Dades NoSQL:** MongoDB. Ideal per a l'estructura flexible de dades d'usuaris, inventaris i historial de jocs.
-- **ORM/ODM:** Mongoose per al modelatge d'esquemes i validació de dades.
+- **Driver de BD:** Driver natiu de MongoDB, prescindint d'ORMs pesats com Mongoose per obtenir més rendiment i control de les dades.
 
 ## 2. Stack Tecnològic Detallat
 | Tecnologia | Propòsit |
 | :--- | :--- |
 | **Node.js / Express** | Runtime de backend i framework web. |
 | **Vue 3 (Composition API)** | Framework reactiu per a la interfície web. |
-| **React Native (Expo)** | Framework per a l'aplicació mòbil nativa. |
-| **MongoDB** | Emmagatzematge persistent de dades. |
-| **Socket.io** | Protocol per a funcionalitats en temps real. |
-| **Pinia / Zustand** | Gestió de l'estat global en web i mòbil respectivament. |
+| **MongoDB** | Emmagatzematge persistent de dades (Driver Natiu). |
+| **ws** | Protocol i llibreria per a funcionalitats en temps real (WebSockets). |
+| **Jest / Vitest** | Frameworks de testing per a backend i frontend respectivament. |
+| **Pinia** | Gestió de l'estat global a la web. |
 | **Docker / Compose** | Contenidorització i orquestració d'entorns. |
+| **GitHub Actions** | Automatització de CI/CD i execució de tests. |
 | **Nginx** | Reverse proxy, balanceig de càrrega i terminació SSL. |
 
 ## 3. Estratègia de Desplegament (DevOps)

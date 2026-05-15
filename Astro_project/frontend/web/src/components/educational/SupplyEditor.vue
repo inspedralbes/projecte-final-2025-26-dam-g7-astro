@@ -111,8 +111,22 @@
           <v-btn icon="mdi-close" @click="showDialog = false" />
           <v-toolbar-title>{{ editingId ? $t('educational.supplyEditorPage.editTitle', { game: selectedGame?.name }) : $t('educational.supplyEditorPage.newTitle', { game: selectedGame?.name }) }}</v-toolbar-title>
           <v-spacer />
+          <v-btn class="mr-2" color="cyan-lighten-4" prepend-icon="mdi-download" variant="outlined" @click="exportExercise">
+            {{ $t('educational.supplyEditorPage.exportJSON') }}
+          </v-btn>
+          <v-btn class="mr-4" color="cyan-lighten-4" prepend-icon="mdi-upload" variant="outlined" @click="triggerImport">
+            {{ $t('educational.supplyEditorPage.importJSON') }}
+          </v-btn>
           <v-btn color="orange-accent-3" :disabled="!isExerciseValid" variant="flat" @click="saveExercise">{{ $t('educational.supplyEditorPage.saveChanges') }}</v-btn>
         </v-toolbar>
+
+        <input
+          ref="importFile"
+          accept=".json"
+          style="display: none"
+          type="file"
+          @change="handleImport"
+        />
 
         <v-container class="pa-8 bg-editor fill-height align-start" fluid>
           <v-row class="fill-height">
@@ -135,22 +149,39 @@
               />
 
               <v-card class="bank-area flex-grow-1 pa-4 overflow-y-auto" variant="outlined">
-                <div v-for="(item, idx) in filteredWordBank" :key="idx" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
+                <div v-for="item in filteredWordBank" :key="item.__editorId" class="d-flex ga-2 mb-3 align-center bank-item pa-2 rounded-lg">
                   <v-icon color="grey" icon="mdi-drag-variant" />
-                  <v-text-field
-                    v-model="item.word"
-                    density="compact"
-                    hide-details
-                    :label="$t('educational.supplyEditorPage.wordLabel')"
-                    variant="solo-filled"
-                  />
-                  <v-text-field
-                    v-model="item.hint"
-                    density="compact"
-                    hide-details
-                    :label="$t('educational.supplyEditorPage.hintLabel')"
-                    variant="solo-filled"
-                  />
+                  <div class="flex-grow-1 d-flex flex-column ga-2">
+                    <div
+                      v-for="field in currentGameFields"
+                      :key="field.key"
+                      class="d-flex align-center ga-2"
+                    >
+                      <v-text-field
+                        v-model="item[field.key]"
+                        class="flex-grow-1"
+                        density="compact"
+                        hide-details
+                        :label="field.label"
+                        :placeholder="field.type === 'list' ? $t('educational.supplyEditorPage.listPlaceholder') : undefined"
+                        :type="field.type === 'number' ? 'number' : 'text'"
+                        variant="solo-filled"
+                      />
+                      <v-tooltip v-if="field.help" location="top">
+                        <template #activator="{ props: tooltipProps }">
+                          <v-btn
+                            v-bind="tooltipProps"
+                            color="cyan-accent-2"
+                            density="comfortable"
+                            icon="mdi-help-circle-outline"
+                            size="x-small"
+                            variant="text"
+                          />
+                        </template>
+                        <span>{{ field.help }}</span>
+                      </v-tooltip>
+                    </div>
+                  </div>
                   <v-btn
                     color="red"
                     icon="mdi-delete"
@@ -203,14 +234,14 @@
                   v-model="exerciseContent"
                   class="d-flex flex-column ga-2"
                   ghost-class="ghost-card"
-                  item-key="word"
+                  item-key="__editorId"
                 >
                   <template #item="{ element, index }">
                     <div class="d-flex align-center pa-3 bg-white-5 rounded-lg border-orange">
                       <v-chip class="mr-3" color="orange" size="small">{{ index + 1 }}</v-chip>
                       <div class="flex-grow-1">
-                        <div class="text-subtitle-1 font-weight-bold">{{ element.word }}</div>
-                        <div class="text-caption text-grey">{{ element.hint }}</div>
+                        <div class="text-subtitle-1 font-weight-bold">{{ formatItemTitle(element) }}</div>
+                        <div v-if="formatItemSubtitle(element)" class="text-caption text-grey">{{ formatItemSubtitle(element) }}</div>
                       </div>
                       <v-btn
                         color="grey"
@@ -226,13 +257,13 @@
                 <div v-else class="d-flex flex-column ga-2">
                   <div
                     v-for="(element, index) in filteredExerciseContent"
-                    :key="`${element.word}-${element.hint}-${index}`"
+                    :key="element.__editorId"
                     class="d-flex align-center pa-3 bg-white-5 rounded-lg border-orange"
                   >
                     <v-chip class="mr-3" color="orange" size="small">{{ index + 1 }}</v-chip>
                     <div class="flex-grow-1">
-                      <div class="text-subtitle-1 font-weight-bold">{{ element.word }}</div>
-                      <div class="text-caption text-grey">{{ element.hint }}</div>
+                      <div class="text-subtitle-1 font-weight-bold">{{ formatItemTitle(element) }}</div>
+                      <div v-if="formatItemSubtitle(element)" class="text-caption text-grey">{{ formatItemSubtitle(element) }}</div>
                     </div>
                     <v-btn
                       color="grey"
@@ -271,30 +302,275 @@
     { id: 'SyllableQuest', name: t('educational.supplyEditorPage.games.SyllableQuest.name'), icon: 'mdi-dots-horizontal', description: t('educational.supplyEditorPage.games.SyllableQuest.desc') },
     { id: 'SpelledRosco', name: t('educational.supplyEditorPage.games.SpelledRosco.name'), icon: 'mdi-alpha-a-circle', description: t('educational.supplyEditorPage.games.SpelledRosco.desc') },
     { id: 'RhymeSquad', name: t('educational.supplyEditorPage.games.RhymeSquad.name'), icon: 'mdi-music-note', description: t('educational.supplyEditorPage.games.RhymeSquad.desc') },
+    { id: 'RadarScan', name: t('educational.supplyEditorPage.games.RadarScan.name'), icon: 'mdi-radar', description: t('educational.supplyEditorPage.games.RadarScan.desc') },
+    { id: 'RadioSignal', name: t('educational.supplyEditorPage.games.RadioSignal.name'), icon: 'mdi-radio-tower', description: t('educational.supplyEditorPage.games.RadioSignal.desc') },
+    { id: 'SymmetryBreaker', name: t('educational.supplyEditorPage.games.SymmetryBreaker.name'), icon: 'mdi-target-variant', description: t('educational.supplyEditorPage.games.SymmetryBreaker.desc') },
   ])
 
   const selectedGame = ref(null)
   const showDialog = ref(false)
   const teacherFilter = ref('all')
   const targetOwner = ref(astroStore.user)
+  let editorItemId = 0
 
   // Editor State
   const exerciseName = ref('')
   const wordBank = ref([])
   const exerciseContent = ref([])
   const editingId = ref(null)
+  const importFile = ref(null)
 
   // Filtres de cerca
   const wordBankSearch = ref('')
   const exerciseSearch = ref('')
 
+  const gameSchemas = computed(() => ({
+    WordConstruction: {
+      contentType: 'object',
+      primaryKey: 'word',
+      fields: [
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.word', type: 'text', required: true },
+        { key: 'hint', labelKey: 'educational.supplyEditorPage.hintLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.hint', type: 'text', required: false },
+      ],
+    },
+    SyllableQuest: {
+      contentType: 'object',
+      primaryKey: 'text',
+      fields: [
+        { key: 'text', labelKey: 'educational.supplyEditorPage.fieldLabels.text', helpKey: 'educational.supplyEditorPage.fieldHelp.text', type: 'text', required: true },
+        { key: 'syllables', labelKey: 'educational.supplyEditorPage.fieldLabels.syllables', helpKey: 'educational.supplyEditorPage.fieldHelp.syllables', type: 'number', required: true },
+      ],
+    },
+    SpelledRosco: {
+      contentType: 'object',
+      primaryKey: 'answer',
+      fields: [
+        { key: 'char', labelKey: 'educational.supplyEditorPage.fieldLabels.char', helpKey: 'educational.supplyEditorPage.fieldHelp.char', type: 'text', required: true },
+        { key: 'question', labelKey: 'educational.supplyEditorPage.fieldLabels.question', helpKey: 'educational.supplyEditorPage.fieldHelp.question', type: 'text', required: true },
+        { key: 'answer', labelKey: 'educational.supplyEditorPage.fieldLabels.answer', helpKey: 'educational.supplyEditorPage.fieldHelp.answer', type: 'text', required: true },
+      ],
+    },
+    RhymeSquad: {
+      contentType: 'object',
+      primaryKey: 'word',
+      fields: [
+        { key: 'word', labelKey: 'educational.supplyEditorPage.wordLabel', helpKey: 'educational.supplyEditorPage.fieldHelp.word', type: 'text', required: true },
+        { key: 'ending', labelKey: 'educational.supplyEditorPage.fieldLabels.ending', helpKey: 'educational.supplyEditorPage.fieldHelp.ending', type: 'text', required: true },
+        { key: 'rhymes', labelKey: 'educational.supplyEditorPage.fieldLabels.rhymes', helpKey: 'educational.supplyEditorPage.fieldHelp.rhymes', type: 'list', required: true },
+        { key: 'fakes', labelKey: 'educational.supplyEditorPage.fieldLabels.fakes', helpKey: 'educational.supplyEditorPage.fieldHelp.fakes', type: 'list', required: true },
+      ],
+    },
+    RadarScan: {
+      contentType: 'object',
+      primaryKey: 'target',
+      fields: [
+        {
+          key: 'distractor',
+          labelKey: 'educational.supplyEditorPage.fieldLabels.distractor',
+          helpKey: 'educational.supplyEditorPage.fieldHelp.distractor',
+          type: 'text',
+          required: true,
+        },
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', helpKey: 'educational.supplyEditorPage.fieldHelp.target', type: 'text', required: true },
+        { key: 'grid', labelKey: 'educational.supplyEditorPage.fieldLabels.grid', helpKey: 'educational.supplyEditorPage.fieldHelp.grid', type: 'number', required: true },
+        { key: 'tunnel', labelKey: 'educational.supplyEditorPage.fieldLabels.tunnel', helpKey: 'educational.supplyEditorPage.fieldHelp.tunnel', type: 'number', required: true },
+      ],
+    },
+    RadioSignal: {
+      contentType: 'string',
+      primaryKey: 'phrase',
+      fields: [
+        { key: 'phrase', labelKey: 'educational.supplyEditorPage.fieldLabels.phrase', helpKey: 'educational.supplyEditorPage.fieldHelp.phrase', type: 'text', required: true },
+      ],
+    },
+    SymmetryBreaker: {
+      contentType: 'object',
+      primaryKey: 'target',
+      fields: [
+        { key: 'target', labelKey: 'educational.supplyEditorPage.fieldLabels.target', helpKey: 'educational.supplyEditorPage.fieldHelp.target', type: 'text', required: true },
+        { key: 'decoys', labelKey: 'educational.supplyEditorPage.fieldLabels.decoys', helpKey: 'educational.supplyEditorPage.fieldHelp.decoys', type: 'list', required: true },
+      ],
+    },
+  }))
+
+  const currentGameId = computed(() => selectedGame.value?.id || 'WordConstruction')
+  const currentGameSchema = computed(() => gameSchemas.value[currentGameId.value] || gameSchemas.value.WordConstruction)
+  const currentGameFields = computed(() => currentGameSchema.value.fields.map(field => ({
+    ...field,
+    label: field.labelKey ? t(field.labelKey) : field.key,
+    help: field.helpKey ? t(field.helpKey) : '',
+  })))
+
+  function parseCommaList (value) {
+    if (Array.isArray(value)) {
+      return value.map(v => String(v).trim()).filter(Boolean)
+    }
+    return String(value || '')
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean)
+  }
+
+  function toText (value) {
+    if (value === null || value === undefined) return ''
+    return String(value)
+  }
+
+  function createEditorItem (rawItem = null) {
+    const schema = currentGameSchema.value
+    let source = rawItem || {}
+    if (schema.contentType === 'string') {
+      const firstFieldKey = schema.fields[0].key
+      const scalarValue = (rawItem && typeof rawItem === 'object')
+        ? (rawItem[firstFieldKey] ?? rawItem.text ?? '')
+        : rawItem
+      source = { [firstFieldKey]: scalarValue }
+    }
+    const item = { __editorId: `editor-${editorItemId++}` }
+
+    for (const field of schema.fields) {
+      const rawValue = source[field.key]
+      if (field.type === 'list') {
+        item[field.key] = Array.isArray(rawValue) ? rawValue.join(', ') : toText(rawValue)
+      } else {
+        item[field.key] = rawValue ?? ''
+      }
+    }
+
+    return item
+  }
+
+  function cloneEditorItem (item) {
+    const copy = {}
+    for (const field of currentGameFields.value) {
+      copy[field.key] = item[field.key]
+    }
+    return createEditorItem(copy)
+  }
+
+  function toSaveValue (item, field) {
+    const rawValue = item[field.key]
+    if (field.type === 'list') return parseCommaList(rawValue)
+    if (field.type === 'number') {
+      const parsed = Number(rawValue)
+      return Number.isFinite(parsed) ? parsed : 0
+    }
+    return toText(rawValue).trim()
+  }
+
+  function toSaveItem (item) {
+    const schema = currentGameSchema.value
+    if (schema.contentType === 'string') {
+      return toText(item[schema.fields[0].key]).trim()
+    }
+    const payload = {}
+    for (const field of schema.fields) {
+      payload[field.key] = toSaveValue(item, field)
+    }
+    return payload
+  }
+
+  function fieldHasValue (item, field) {
+    const value = item[field.key]
+    if (field.type === 'list') return parseCommaList(value).length > 0
+    if (field.type === 'number') return Number.isFinite(Number(value))
+    return toText(value).trim().length > 0
+  }
+
+  function isItemValid (item) {
+    return currentGameFields.value.every(field => (field.required ? fieldHasValue(item, field) : true))
+  }
+
+  function getPrimaryValue (item) {
+    const primaryField = currentGameFields.value.find(field => field.key === currentGameSchema.value.primaryKey) || currentGameFields.value[0]
+    if (!primaryField) return ''
+    if (primaryField.type === 'list') return parseCommaList(item[primaryField.key]).join(',').toLowerCase()
+    return toText(item[primaryField.key]).trim().toLowerCase()
+  }
+
+  function getItemSearchText (item) {
+    return currentGameFields.value
+      .map(field => {
+        if (field.type === 'list') return parseCommaList(item[field.key]).join(' ')
+        return toText(item[field.key])
+      })
+      .join(' ')
+      .toLowerCase()
+  }
+
+  function formatItemTitle (item) {
+    const primaryField = currentGameFields.value.find(field => field.key === currentGameSchema.value.primaryKey) || currentGameFields.value[0]
+    if (!primaryField) return ''
+    if (primaryField.type === 'list') return parseCommaList(item[primaryField.key]).join(', ')
+    return toText(item[primaryField.key]).trim()
+  }
+
+  function formatItemSubtitle (item) {
+    const primaryKey = currentGameSchema.value.primaryKey
+    const parts = currentGameFields.value
+      .filter(field => field.key !== primaryKey)
+      .map(field => {
+        if (field.type === 'list') {
+          const values = parseCommaList(item[field.key])
+          return values.length > 0 ? `${field.label}: ${values.join(', ')}` : ''
+        }
+        const value = toText(item[field.key]).trim()
+        return value ? `${field.label}: ${value}` : ''
+      })
+      .filter(Boolean)
+    return parts.join(' • ')
+  }
+
+  function parseContentToEditorItems (content = []) {
+    return (Array.isArray(content) ? content : [])
+      .map(entry => createEditorItem(entry))
+  }
+
+  function exportExercise () {
+    const data = {
+      name: exerciseName.value,
+      content: exerciseContent.value
+        .filter(isItemValid)
+        .map(toSaveItem),
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${exerciseName.value || 'exercici'}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function triggerImport () {
+    importFile.value.click()
+  }
+
+  function handleImport (event) {
+    const file = event.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result)
+        if (data.name) exerciseName.value = data.name
+        if (Array.isArray(data.content)) {
+          const parsed = parseContentToEditorItems(data.content)
+          exerciseContent.value = [...parsed]
+          wordBank.value = [...parsed]
+        }
+      } catch (err) {
+        console.error('Error al llegir el fitxer JSON:', err)
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
+
   const filteredWordBank = computed(() => {
     if (!wordBankSearch.value.trim()) return wordBank.value
     const query = wordBankSearch.value.toLowerCase().trim()
-    return wordBank.value.filter(item =>
-      (item.word || '').toLowerCase().includes(query)
-      || (item.hint || '').toLowerCase().includes(query),
-    )
+    return wordBank.value.filter(item => getItemSearchText(item).includes(query))
   })
 
   const normalizedExerciseSearch = computed(() => exerciseSearch.value.trim().toLowerCase())
@@ -304,10 +580,7 @@
   const filteredExerciseContent = computed(() => {
     if (!isExerciseSearchActive.value) return exerciseContent.value
 
-    return exerciseContent.value.filter(item =>
-      (item.word || '').toLowerCase().includes(normalizedExerciseSearch.value)
-      || (item.hint || '').toLowerCase().includes(normalizedExerciseSearch.value),
-    )
+    return exerciseContent.value.filter(item => getItemSearchText(item).includes(normalizedExerciseSearch.value))
   })
 
   const teacherOptions = computed(() => {
@@ -345,7 +618,7 @@
   function openNewSetDialog () {
     editingId.value = null
     exerciseName.value = ''
-    wordBank.value = [{ word: '', hint: '' }]
+    wordBank.value = [createEditorItem()]
     exerciseContent.value = []
     targetOwner.value = teacherFilter.value === 'all' ? astroStore.user : teacherFilter.value
     showDialog.value = true
@@ -354,18 +627,21 @@
   function editSet (set) {
     editingId.value = set._id
     exerciseName.value = set.name
-    exerciseContent.value = [...set.content]
-    wordBank.value = [...set.content] // Opcional: carregar les mateixes al banc
+    const parsed = parseContentToEditorItems(set.content)
+    exerciseContent.value = [...parsed]
+    wordBank.value = [...parsed]
     showDialog.value = true
   }
 
   async function saveExercise () {
+    const normalizedContent = exerciseContent.value.map(toSaveItem)
+
     const payload = {
-      ownerId: editingId.value ? undefined : targetOwner.value, // El backend hauria de mantenir l'owner si s'edita
+      ownerId: targetOwner.value || astroStore.user,
       gameId: selectedGame.value.id,
       name: exerciseName.value,
       type: 'words',
-      content: exerciseContent.value,
+      content: normalizedContent,
     }
 
     // Si és edició, hauríem de tenir una ruta PUT o passar l'ID
@@ -374,6 +650,8 @@
     if (result.success) {
       showDialog.value = false
       refreshSupplies()
+    } else {
+      console.error('Error guardant set educatiu:', result)
     }
   }
 
@@ -399,7 +677,7 @@
     }
   }
 
-  const addWordToBank = () => wordBank.value.push({ word: '', hint: '' })
+  const addWordToBank = () => wordBank.value.push(createEditorItem())
 
   function removeFromBank (item) {
     const index = wordBank.value.indexOf(item)
@@ -407,13 +685,13 @@
   }
 
   function moveToExercise (item) {
-    if (item.word.trim() === '') return
+    if (!isItemValid(item)) return
 
-    // Comprovar si la paraula ja existeix a l'exercici
-    const exists = exerciseContent.value.some(e => e.word.toLowerCase() === item.word.toLowerCase())
+    const primary = getPrimaryValue(item)
+    const exists = primary && exerciseContent.value.some(e => getPrimaryValue(e) === primary)
     if (exists) return
 
-    exerciseContent.value.push({ ...item })
+    exerciseContent.value.push(cloneEditorItem(item))
   }
 
   function removeFromExercise (item) {

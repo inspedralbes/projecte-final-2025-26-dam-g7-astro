@@ -2,7 +2,7 @@
   <div
     ref="gameArea"
     class="game-container"
-    :class="{ 'hide-cursor': isPlaying }"
+    :class="{ 'hide-cursor': isPlaying, 'game-paused': props.isPaused }"
     @mousedown.left.prevent="beginFiring"
     @mouseleave="stopFiring"
     @mousemove="handlePointerMove"
@@ -102,11 +102,13 @@
   import { useI18n } from 'vue-i18n'
   import { symmetryBreakerData } from '@/data/symmetryBreakerData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const groupStore = useGroupStore()
 
   const props = defineProps({
     isMultiplayer: {
@@ -122,6 +124,10 @@
       default: false,
     },
     autoStart: {
+      type: Boolean,
+      default: false,
+    },
+    isPaused: {
       type: Boolean,
       default: false,
     },
@@ -148,8 +154,33 @@
   const shieldImmunityLeft = ref(0)
   const showShieldFeedback = ref(false)
 
-  const confusionSetsDynamic = computed(() => {
+  function normalizeConfusionSet (entry = {}) {
+    return {
+      target: String(entry.target || ''),
+      decoys: Array.isArray(entry.decoys) ? entry.decoys.map(decoy => String(decoy)) : [],
+    }
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'SymmetryBreaker' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    if (
+      astroStore.plan === 'GRUPAL'
+      && astroStore.role === 'STUDENT'
+      && groupStore.activeSupplySet?.gameId === 'SymmetryBreaker'
+      && groupStore.activeSupplySet?.content?.length > 0
+    ) {
+      return groupStore.activeSupplySet.content
+    }
     return symmetryBreakerData[locale.value] || symmetryBreakerData['es']
+  })
+
+  const confusionSetsDynamic = computed(() => {
+    const normalized = gameData.value
+      .map(normalizeConfusionSet)
+      .filter(item => item.target && item.decoys.length > 0)
+    return normalized.length > 0 ? normalized : (symmetryBreakerData[locale.value] || symmetryBreakerData['es']).map(normalizeConfusionSet)
   })
 
   const wordSets = computed(() => confusionSetsDynamic.value.filter(s => s.target.length > 1))
@@ -459,10 +490,14 @@
           type: 'TIME_PENALTY',
           amount: isSaboteurActive ? 10 : 5,
         })
+        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+        multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: score.value })
+      } else {
+        multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
       }
       
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(10)
+        multiplayerStore.rechargeFuel(15)
       }
       return
     }
@@ -586,6 +621,10 @@
   }
 
   function gameLoop (ts) {
+    if (props.isPaused) {
+      animationFrame = requestAnimationFrame(gameLoop)
+      return
+    }
     if (!isPlaying.value) return
     const dt = Math.min(0.1, (ts - lastFrameTs) / 1000)
     lastFrameTs = ts; update(dt); draw()
@@ -814,6 +853,12 @@
   padding-top: 80px;
   overflow: hidden;
   user-select: none;
+}
+
+.game-paused {
+  pointer-events: none !important;
+  filter: blur(4px) grayscale(0.5);
+  transition: all 0.3s ease;
 }
 
 canvas {

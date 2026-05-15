@@ -1,5 +1,5 @@
 <template>
-  <div class="radio-cabinet">
+  <div class="radio-cabinet" :class="{ 'game-paused': props.isPaused }">
     <div class="screw screw-tl" />
     <div class="screw screw-tr" />
     <div class="screw screw-bl" />
@@ -197,11 +197,13 @@
   import { useI18n } from 'vue-i18n'
   import { radioSignalData } from '@/data/radioSignalData'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useGroupStore } from '@/stores/groupStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
   const astroStore = useAstroStore()
   const multiplayerStore = useMultiplayerStore()
+  const groupStore = useGroupStore()
 
   const props = defineProps({
     isMultiplayer: { type: Boolean, default: false },
@@ -209,6 +211,8 @@
     isDuel: { type: Boolean, default: false },
     duration: { type: Number, default: 90 },
     autoStart: { type: Boolean, default: false },
+    isPaused: { type: Boolean, default: false },
+  })
   })
   const emit = defineEmits(['game-over'])
 
@@ -253,13 +257,39 @@
   const chatHistory = ref([])
   const chatBox = ref(null)
 
-  const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es'])
+  function normalizePhrase (entry) {
+    if (typeof entry === 'string') return entry
+    if (entry && typeof entry === 'object') {
+      return String(entry.phrase || entry.text || entry).trim()
+    }
+    return ''
+  }
+
+  const gameData = computed(() => {
+    if (!props.isMultiplayer && groupStore.trainingActiveSupplySet?.gameId === 'RadioSignal' && groupStore.trainingActiveSupplySet?.content?.length > 0) {
+      return groupStore.trainingActiveSupplySet.content
+    }
+    return radioSignalData[locale.value] || radioSignalData['es']
+  })
+
+  const phrases = computed(() => {
+    const normalized = gameData.value.map(normalizePhrase).filter(Boolean)
+    return normalized.length > 0 ? normalized : (radioSignalData[locale.value] || radioSignalData['es'])
+  })
   const shuffledPhrases = ref([])
   const currentPhraseIdx = ref(0)
 
   const currentPhrase = computed(() => {
     if (shuffledPhrases.value.length === 0) return { phrase: '...', hint: '' }
-    return shuffledPhrases.value[currentPhraseIdx.value % shuffledPhrases.value.length]
+    const p = shuffledPhrases.value[currentPhraseIdx.value % shuffledPhrases.value.length]
+    return typeof p === 'string' ? { phrase: p, hint: '' } : p
+  })
+
+  const myTeam = computed(() => {
+    return multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+  })
+
+  const subRole = computed(() => multiplayerStore.subRole)
   })
 
   // --- CANVAS & WAVEFORMS ---
@@ -269,7 +299,11 @@
   let time = 0
 
   function drawWaves () {
-    if (!isPlaying.value) return
+  function drawWaves () {
+    if (!isPlaying.value || props.isPaused) {
+      animationId = requestAnimationFrame(drawWaves)
+      return
+    }
 
     const tCtx = targetWaveCanvas.value?.getContext('2d')
     const cCtx = currentWaveCanvas.value?.getContext('2d')
@@ -290,6 +324,7 @@
     for (let i = 0; i < 260; i += 40) {
       tCtx.beginPath(); tCtx.moveTo(i, 0); tCtx.lineTo(i, 90); tCtx.stroke()
       cCtx.beginPath(); cCtx.moveTo(i, 0); cCtx.lineTo(i, 90); cCtx.stroke()
+    }
     }
 
     // Draw Target Wave
@@ -480,7 +515,7 @@
     if (timerInterval) clearInterval(timerInterval)
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
-      if (!isPlaying.value) return
+      if (!isPlaying.value || props.isPaused) return
       
       if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
         const now = Date.now()
@@ -544,6 +579,15 @@
       if (!isHost.value && !props.isDuel && !props.isRace) {
         multiplayerStore.sendGameAction({ type: 'REQUEST_RADIO_SYNC' })
       }
+      
+      // Aplicar boost de tiempo si el avatar lo permite
+      const boost = astroStore.equippedSkinBoost
+      const baseTime = props.isMultiplayer ? 90 : 60
+      if (boost && boost.type === 'time') {
+        timeLeft.value = Math.floor(baseTime * boost.multiplier)
+      } else {
+        timeLeft.value = baseTime
+      }
       setTimeout(() => {
         if (!isPlaying.value) startGame()
       }, 3000)
@@ -572,6 +616,15 @@
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
         if (props.isDuel || props.isRace || !props.isMultiplayer) {
           multiplayerStore.timeLeft = timeLeft.value
+        }
+      }
+
+      if (msg.action?.type === 'RADIO_PHRASE_SOLVED' && msg.action.teamId === myTeam.value) {
+        score.value += msg.action.pointsGained
+        targetFrequency.value = msg.action.newFreq
+        currentPhraseIdx.value++
+        isTuned.value = false
+        addChatMessage('SISTEMA', t('radioSignal.partnerCorrect'), 'success')
         }
         if (timeLeft.value <= 0) endGame()
       }
@@ -638,6 +691,12 @@
     border-radius: 12px;
     padding: 40px 30px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.1);
+}
+
+.game-paused {
+    pointer-events: none;
+    filter: blur(4px) grayscale(0.5);
+    transition: all 0.3s ease;
 }
 
 .screw {

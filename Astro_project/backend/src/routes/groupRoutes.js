@@ -136,12 +136,18 @@ function registerGroupRoutes(app, { groupService, statsService }) {
     app.post('/api/group/leave/reject', async (req, res) => {
         const { approverUsername, requestId } = req.body;
         try {
-            await groupService.rejectLeaveToIndividual(approverUsername, requestId);
+            const profile = await groupService.rejectLeaveToIndividual(approverUsername, requestId);
             const approver = await groupService.userRepo.findByUsername(approverUsername);
             roomManager.sendToUser(approverUsername, {
                 type: 'GROUP_APPROVAL_UPDATE',
                 groupApprovalRequests: approver?.groupApprovalRequests || []
             });
+            if (profile?.requester) {
+                roomManager.sendToUser(profile.requester, {
+                    type: 'GROUP_MEMBERSHIP_UPDATE',
+                    profile
+                });
+            }
             res.json({ success: true });
         } catch (error) {
             res.status(400).json({ success: false, message: error.message });
