@@ -45,6 +45,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     nextMoveAnomaly: null, // Para eventos globales (?)
     activeGameName: null, // Para ajustar consumos según el juego
     playerStates: {}, // { username: 'MAP' | 'IN_GAME' }
+    playerTimes: {}, // { username: seconds }
     isRaceImmortal: false, // Evita Game Over por vidas/tiempo
     lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
     currentGlobalAnomaly: null, // Anomalía que afecta a todos
@@ -187,6 +188,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         case 'MATCH_STARTING': {
           this.roundScores = {}
           this.remoteCursors = {}
+          this.playerTimes = {}
           this.partnerText = ''
           this.partnerEmojis = []
           this.lastMessage = null
@@ -232,8 +234,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'SCORE_UPDATE_LIVE': {
-          const oldScore = this.roundScores[data.user] || 0
-          this.roundScores[data.user] = data.score
+          this.roundScores = { ...this.roundScores, [data.user]: data.score }
           break
         }
         case 'GAME_ACTION': {
@@ -275,7 +276,19 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
 
           if (data.action?.type === 'TIME_SYNC') {
-            this.timeLeft = data.action.timeLeft
+            this.playerTimes[data.from] = data.action.timeLeft
+            // Solo sobrescribir el tiempo local si es cooperativo (no Duel ni Race)
+            const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE'
+            if (isShared) {
+              this.timeLeft = data.action.timeLeft
+            }
+          }
+
+          if (data.action?.type === 'TIME_PENALTY') {
+            if (data.from !== sessionStore.user) {
+              // El rival ha puntuado, yo pierdo tiempo
+              this.timeLeft = Math.max(0, this.timeLeft - (data.action.amount || 5))
+            }
           }
 
           if (data.action?.type === 'RACE_PROGRESS' || data.action?.type === 'RACE_PROGRESS_UPDATE') {

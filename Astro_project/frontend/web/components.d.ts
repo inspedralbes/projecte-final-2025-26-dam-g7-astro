@@ -38,6 +38,7 @@ declare module 'vue' {
     SupplyEditor: typeof import('./src/components/educational/SupplyEditor.vue')['default']
     SyllableQuest: typeof import('./src/components/games/SyllableQuest.vue')['default']
     SymmetryBreaker: typeof import('./src/components/games/SymmetryBreaker.vue')['default']
+    TournamentTree: typeof import('./src/components/multiplayer/TournamentTree.vue')['default']
     WordConstruction: typeof import('./src/components/games/WordConstruction.vue')['default']
   }
 }

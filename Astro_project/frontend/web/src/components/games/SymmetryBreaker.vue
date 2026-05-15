@@ -60,28 +60,6 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay
-      v-if="!isMultiplayer"
-      v-model="showGameOverOverlay"
-      class="align-center justify-center"
-      persistent
-      z-index="120"
-    >
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="400">
-        <v-icon class="mb-4" color="cyan-accent-3" icon="mdi-target-variant" size="70" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('symmetryBreaker.endMission') }}</h2>
-        <p class="text-h5 text-amber-accent-2 mb-6">{{ $t('symmetryBreaker.points', { score }) }}</p>
-        <v-btn
-          class="font-weight-black text-black px-8"
-          color="cyan-accent-3"
-          rounded="xl"
-          size="x-large"
-          @click="returnToMenu"
-        >
-          {{ $t('symmetryBreaker.returnMenu') }}
-        </v-btn>
-      </v-card>
-    </v-overlay>
 
     <v-snackbar v-model="showShieldFeedback" color="teal-accent-4" location="top" timeout="2000">
       <v-icon start>mdi-shield-star</v-icon> {{ $t('symmetryBreaker.shieldActive') || '¡INMUNIDAD TÁCTICA ACTIVADA!' }}
@@ -143,11 +121,26 @@
       type: Boolean,
       default: false,
     },
+    autoStart: {
+      type: Boolean,
+      default: false,
+    },
   })
+
+  const isMultiplayer = computed(() => props.isMultiplayer)
+  const isRace = computed(() => props.isRace)
+  const isDuel = computed(() => props.isDuel)
 
   const emit = defineEmits(['game-over'])
 
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
+  })
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
 
   // BOOSTERS
   const isSlowTimeActive = computed(() => (astroStore.activeBoosters?.slowTimeGamesLeft || 0) > 0)
@@ -166,7 +159,7 @@
   const gameCanvas = ref(null)
   let ctx = null
 
-  const showStartOverlay = ref(true)
+  const showStartOverlay = ref(!props.autoStart)
   const showGameOverOverlay = ref(false)
   const isPlaying = ref(false)
   const score = ref(0)
@@ -266,7 +259,7 @@
   function generateTargets () {
     if (!gameCanvas.value) return
 
-    if (props.isMultiplayer && !isHost.value) {
+    if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace) {
       targets.value = []
       return
     }
@@ -300,7 +293,7 @@
     targets.value = newTargets
     holdProgressMs.value = 0
 
-    if (props.isMultiplayer && isHost.value) {
+    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
       multiplayerStore.sendGameAction({
         type: 'SYMMETRY_SYNC_TARGETS',
         targets: newTargets,
@@ -333,19 +326,22 @@
     }
 
     const hasPenaltyShot = hasPenaltyShotRaw && shieldImmunityLeft.value <= 0
-    const timePenalty = (hasPenaltyShot && (!props.isRace || props.isDuel)) ? 2 : 1
+    const timePenalty = (hasPenaltyShot && (!props.isRace || props.isDuel)) ? 1.2 : 1
     isPenaltyActive.value = timePenalty > 1
+    
+    // Eliminada la penalización de score por 'tick' de disparo fallido as per user request
+
 
     const timeMultiplier = isSlowTimeActive.value ? 0.8 : 1
 
-    if (!props.isMultiplayer || isHost.value) {
+    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
       timeLeft.value -= dt * timePenalty * timeMultiplier
-      if (props.isMultiplayer && isHost.value) {
-        timeSyncCounter++
-        if (timeSyncCounter >= 60) {
+      if (props.isMultiplayer) {
+        if (isHost.value || props.isDuel || props.isRace) {
           multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-          timeSyncCounter = 0
         }
+      } else if (props.isDuel || props.isRace || !props.isMultiplayer) {
+        multiplayerStore.timeLeft = timeLeft.value
       }
     }
 
@@ -356,14 +352,15 @@
         }
         endGame(); return
       } else {
-        timeLeft.value = 30
+        // En modo Carrera (exploración), si se acaba el tiempo, forzamos el fin para volver al mapa
+        endGame()
       }
     }
 
     for (const t of targets.value) {
       t.x += t.vx * dt; t.y += t.vy * dt
 
-      if (!props.isMultiplayer || isHost.value) {
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
         if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
           t.vx *= -1; t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX)
         }
@@ -377,8 +374,11 @@
     const localIsPointing = isFiring.value && hoveredTarget && hoveredTarget.isTarget
 
     let bothPointing = localIsPointing
-    if (props.isMultiplayer) {
-      const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => uid !== astroStore.user)?.[1]
+    if (props.isMultiplayer && !props.isDuel) {
+      const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => {
+        const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+        return uid !== astroStore.user && (props.isDuel ? true : isSameTeam)
+      })?.[1]
       if (partner && partner.isFiring && target) {
         const rx = (partner.x / 1000) * gameCanvas.value.width
         const ry = (partner.y / 1000) * gameCanvas.value.height
@@ -400,7 +400,8 @@
       holdProgressMs.value = Math.max(0, holdProgressMs.value - (dt * PROGRESS_DECAY_ON_DECOY))
     }
 
-    if (props.isMultiplayer && isHost.value && isPlaying.value) {
+    const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
+    if (props.isMultiplayer && isHost.value && isPlaying.value && (!props.isDuel || isShared)) {
       posSyncCounter++
       if (posSyncCounter >= 3) {
         multiplayerStore.sendGameAction({
@@ -419,23 +420,45 @@
 
   function lockTarget () {
     if (props.isMultiplayer) {
-      if (isHost.value) {
-        score.value += 50 + (round.value * 10) + (successfulLocks.value * 5)
+      if (!isCompetitiveMode.value) {
+        if (isHost.value) {
+          score.value += 50 + (round.value * 10) + (successfulLocks.value * 5)
+          successfulLocks.value += 1
+          if (anyRivalAlive.value) {
+            timeLeft.value = Math.min(99, timeLeft.value + 3)
+          }
+          round.value++
+          generateTargets()
+          triggerFeedback('success')
+
+          const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+          multiplayerStore.sendGameAction({
+            type: 'SABOTAGE',
+            subtype: 'REDUCE_TIME',
+            amount: isSaboteurActive ? 4 : 2,
+          })
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+        } else {
+          multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
+        }
+      } else {
+        // Modo Duelo o 2vs2: puntuación independiente (20 base + bonus por tiempo)
+        const timeBonus = Math.floor(timeLeft.value / 2)
+        score.value += 20 + timeBonus
         successfulLocks.value += 1
-        timeLeft.value = Math.min(99, timeLeft.value + 3)
+        if (anyRivalAlive.value) {
+          timeLeft.value = Math.min(99, timeLeft.value + 3)
+        }
         round.value++
         generateTargets()
         triggerFeedback('success')
 
+        // Sabotear al rival en duelo
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({
-          type: 'SABOTAGE',
-          subtype: 'REDUCE_TIME',
-          amount: isSaboteurActive ? 4 : 2,
+          type: 'TIME_PENALTY',
+          amount: isSaboteurActive ? 10 : 5,
         })
-        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-      } else {
-        multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
       }
       
       if (props.isRace) {
@@ -446,7 +469,9 @@
 
     score.value += 100 + (round.value * 22) + (successfulLocks.value * 18)
     successfulLocks.value += 1
-    timeLeft.value = Math.min(99, timeLeft.value + 3)
+    if (anyRivalAlive.value) {
+      timeLeft.value = Math.min(99, timeLeft.value + 3)
+    }
     round.value++
     
     if (props.isRace) {
@@ -586,6 +611,21 @@
   function beginFiring () {
     if (isPlaying.value) {
       isFiring.value = true
+      
+      // Penalización por "clic" inicial fallido (miss-click)
+      const hitsTarget = targets.value.some(t => {
+        const dx = t.x - mouseX.value, dy = t.y - mouseY.value
+        return Math.sqrt(dx * dx + dy * dy) < (BASE_ENTITY_SIZE / 2 + 15)
+      })
+      if (!hitsTarget) {
+        // score.value = Math.max(0, score.value - 25) // Eliminada penalización por clic fallido
+        const penalty = (props.isDuel || props.isRace) ? 2 : 1 // Reducida penalización de tiempo
+        timeLeft.value = Math.max(0, timeLeft.value - penalty)
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+      }
+
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({
           type: 'MOUSE_MOVE',
@@ -623,7 +663,7 @@
 
     generateTargets()
 
-    if (props.isMultiplayer && !isHost.value && targets.value.length === 0) {
+    if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace && targets.value.length === 0) {
       multiplayerStore.sendGameAction({ type: 'SYMMETRY_REQUEST_SYNC' })
     }
 
@@ -649,10 +689,8 @@
     roundHintVisible.value = false
     cancelAnimationFrame(animationFrame)
 
-    if (props.isMultiplayer) {
+    if (!props.isMultiplayer || props.isRace) {
       emit('game-over', score.value)
-    } else {
-      showGameOverOverlay.value = true
     }
   }
 
@@ -661,9 +699,9 @@
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
 
-    if (props.isMultiplayer || props.isRace) {
+    if (props.isMultiplayer || props.isRace || props.autoStart) {
       setTimeout(() => {
-        startGame()
+        if (!isPlaying.value) startGame()
       }, 3000)
     } else {
       startGame()
@@ -679,14 +717,14 @@
       return
     }
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'SYMMETRY_SYNC_TARGETS' && !isHost.value) {
+      if (msg.action?.type === 'SYMMETRY_SYNC_TARGETS' && !isHost.value && !props.isDuel && !props.isRace) {
         targets.value = msg.action.targets
         currentChallenge.value = msg.action.challenge
         round.value = msg.action.round
         triggerRoundHint(currentChallenge.value.target)
         holdProgressMs.value = 0
       }
-      if (msg.action?.type === 'SYMMETRY_LOCK' && isHost.value) {
+      if (msg.action?.type === 'SYMMETRY_LOCK' && isHost.value && !props.isDuel && !props.isRace) {
         lockTarget()
       }
       if (msg.action?.type === 'SYMMETRY_REQUEST_SYNC' && isHost.value) {
@@ -697,7 +735,8 @@
           round: round.value,
         })
       }
-      if (msg.action?.type === 'SYMMETRY_POS_SYNC' && !isHost.value) {
+      const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
+      if (msg.action?.type === 'SYMMETRY_POS_SYNC' && !isHost.value && (!props.isDuel || isShared) && !props.isRace) {
         for (const [idx, st] of msg.action.targets.entries()) {
           if (targets.value[idx]) {
             const targetX = (st.x / 1000) * gameCanvas.value.width
@@ -719,14 +758,30 @@
           }
         }
       }
-      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
         if (timeLeft.value <= 0 && isPlaying.value) endGame()
       }
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+
+      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0 && isPlaying.value) endGame()
+      }
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         timeLeft.value = msg.action.timeLeft
         if (timeLeft.value <= 0 && isPlaying.value) endGame()
       }
+      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores[msg.from] = msg.action.score
+        return
+      }
+
       if (msg.action?.type === 'SYMMETRY_TIME_UP') {
         endGame()
       }
@@ -734,7 +789,12 @@
   }, { immediate: true })
 
   watch(score, newScore => {
-    if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores[astroStore.user] = newScore
+    }
   })
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeCanvas); cancelAnimationFrame(animationFrame); if (roundHintTimeout) clearTimeout(roundHintTimeout)

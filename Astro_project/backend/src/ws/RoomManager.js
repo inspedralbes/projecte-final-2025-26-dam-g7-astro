@@ -330,17 +330,18 @@ class RoomManager {
 
     async joinRoom(roomId, userInput) {
         const user = (typeof userInput === 'object' && userInput !== null) ? (userInput.username || userInput.user) : userInput;
-        if (this.userToRoom.has(user) && this.userToRoom.get(user) !== roomId) {
-            const oldRoomId = this.userToRoom.get(user);
-            console.log(`[RoomManager] Usuario ${user} ya está en la sala ${oldRoomId}. Forzando salida para unirse a ${roomId}.`);
-            await this.leaveRoom(oldRoomId, user);
-        }
 
         const room = this.rooms.get(roomId);
         if (!room) return { error: 'Sala no encontrada' };
 
         if (room.players.size >= room.maxPlayers && !room.players.has(user)) {
             return { error: 'La nave ya ha alcanzado su capacidad máxima' };
+        }
+
+        if (this.userToRoom.has(user) && this.userToRoom.get(user) !== roomId) {
+            const oldRoomId = this.userToRoom.get(user);
+            console.log(`[RoomManager] Usuario ${user} ya está en la sala ${oldRoomId}. Forzando salida para unirse a ${roomId}.`);
+            await this.leaveRoom(oldRoomId, user);
         }
 
         if (!user) {
@@ -502,7 +503,22 @@ class RoomManager {
         this.updateRoomActivity(roomId);
         
         const isRace = room.gameConfig.mode === 'RACE';
-        room.status = isRace ? 'PLAYING' : 'ROULETTE';
+        const isTournament = room.gameConfig.mode === 'TOURNAMENT';
+        
+        if (isTournament) {
+            room.status = 'TOURNAMENT_BRACKETS';
+            room.gameConfig.tournament = {
+                round: 1,
+                brackets: this.generateBrackets(Array.from(room.players))
+            };
+
+            // Inicio automático tras 15 segundos
+            setTimeout(() => {
+                this.launchTournamentRound(roomId);
+            }, 15000);
+        } else {
+            room.status = isRace ? 'PLAYING' : 'ROULETTE';
+        }
 
         if (room.idleTimer) {
             clearTimeout(room.idleTimer);
@@ -518,15 +534,17 @@ class RoomManager {
             room.gameConfig.scores[p] = 0;
         });
 
-        room.gameConfig.currentRound = 0;
-        room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
-        room.gameConfig.roundHistory = [];
-        this.playedGames.set(roomId, new Set());
+        if (!isTournament) {
+            room.gameConfig.currentRound = 0;
+            room.gameConfig.totalRounds = room.gameConfig.pointsToWin || 3;
+            room.gameConfig.roundHistory = [];
+            this.playedGames.set(roomId, new Set());
 
-        const firstGame = this.pickNextGame(roomId);
-        room.gameConfig.currentGame = firstGame;
+            const firstGame = this.pickNextGame(roomId);
+            room.gameConfig.currentGame = firstGame;
 
-        this.assignRoles(roomId, firstGame, false);
+            await this.assignRoles(roomId, firstGame, false);
+        }
 
         const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
@@ -537,17 +555,80 @@ class RoomManager {
         return { success: true };
     }
 
+    async launchTournamentRound(roomId) {
+        const room = this.rooms.get(roomId);
+        if (!room || room.status !== 'TOURNAMENT_BRACKETS') return;
+
+        console.log(`[TOURNAMENT] Intentando lanzar ronda para sala ${roomId}`);
+
+        const tournament = room.gameConfig.tournament;
+        // Buscamos la primera partida que esté WAITING
+        const nextMatch = tournament.brackets.find(m => m.status === 'WAITING');
+
+        if (nextMatch) {
+            console.log(`[TOURNAMENT] Lanzando duelo: ${nextMatch.p1} vs ${nextMatch.p2}`);
+            nextMatch.status = 'PLAYING';
+            const game = this.pickNextGame(roomId);
+            room.gameConfig.currentGame = game;
+            
+            // Forzamos roles de 1v1 para el torneo
+            room.gameConfig.teams = { [nextMatch.p1]: 'team-1', [nextMatch.p2]: 'team-2' };
+            room.gameConfig.subRoles = { [nextMatch.p1]: null, [nextMatch.p2]: null };
+            
+            this.setRoomStatus(roomId, 'PLAYING');
+            console.log(`[TOURNAMENT] Estado de la sala cambiado a PLAYING con juego: ${game}`);
+        } else {
+            console.log(`[TOURNAMENT] No hay partidas WAITING disponibles para lanzar.`);
+        }
+    }
+
+    generateBrackets(players) {
+        const shuffled = [...players].sort(() => Math.random() - 0.5);
+        const brackets = [];
+        // Generamos la primera ronda
+        for (let i = 0; i < shuffled.length; i += 2) {
+            if (i + 1 < shuffled.length) {
+                brackets.push({
+                    id: `round1-m${i / 2}`,
+                    p1: shuffled[i],
+                    p2: shuffled[i + 1],
+                    winner: null,
+                    status: 'WAITING'
+                });
+            } else {
+                // Bye (pasa directo si es impar)
+                brackets.push({
+                    id: `round1-m${i / 2}`,
+                    p1: shuffled[i],
+                    p2: null,
+                    winner: shuffled[i],
+                    status: 'FINISHED'
+                });
+            }
+        }
+        return brackets;
+    }
+
     pickNextGame(roomId) {
+        const room = this.rooms.get(roomId);
         const played = this.playedGames.get(roomId) || new Set();
-        const remaining = this.availableGames.filter(g => !played.has(g));
-        const pool = remaining.length > 0 ? remaining : this.availableGames;
+        let pool = this.availableGames.filter(g => !played.has(g));
+        if (pool.length === 0) pool = this.availableGames;
+
+        // Si es torneo, filtramos solo juegos competitivos 1v1
+        if (room && room.gameConfig.mode === 'TOURNAMENT') {
+            const competitiveGames = ['WordConstruction', 'ColorMatch', 'MemorySync', 'PatternPulse'];
+            pool = pool.filter(g => competitiveGames.includes(g));
+            if (pool.length === 0) pool = competitiveGames;
+        }
+
         const game = pool[Math.floor(Math.random() * pool.length)];
         played.add(game);
         this.playedGames.set(roomId, played);
         return game;
     }
 
-    assignRoles(roomId, gameName, rotate = false) {
+    async assignRoles(roomId, gameName, rotate = false) {
         const room = this.rooms.get(roomId);
         if (!room || !room.gameConfig) return;
 
@@ -713,7 +794,8 @@ class RoomManager {
         let tie = false;
 
         // Si hay equipos, calculamos el ganador por equipo
-        const hasTeams = room.gameConfig.teams && Object.keys(room.gameConfig.teams).length > 0;
+        const isCompetitive = ['1vs1', 'carrera', 'torneig', 'race', 'tournament', 'duel'].includes(room.gameConfig.modality);
+        const hasTeams = room.gameConfig.teams && Object.keys(room.gameConfig.teams).length > 0 && !isCompetitive;
         
         if (hasTeams) {
             const teamScores = {};
@@ -774,11 +856,21 @@ class RoomManager {
             round: room.gameConfig.currentRound + 1,
             winner: winner,
             tie: tie,
-            currentScores: { ...room.gameConfig.scores }
+            currentScores: { ...roundScores }
         });
 
-        // Si es la última ronda, saltamos directamente a MATCH_RESULTS
-        if (room.gameConfig.currentRound >= room.gameConfig.totalRounds - 1) {
+        // Si es modo TORNEO, actualizamos el bracket
+        if (room.gameConfig.mode === 'TOURNAMENT') {
+            const tournament = room.gameConfig.tournament;
+            const currentMatch = tournament.brackets.find(m => m.status === 'PLAYING');
+            if (currentMatch) {
+                currentMatch.winner = winner; // winner puede ser null si hay empate
+                currentMatch.status = 'FINISHED';
+            }
+            room.status = 'TOURNAMENT_BRACKETS';
+            
+            // Si era la final, podriamos poner MATCH_RESULTS pero por ahora volvemos al árbol
+        } else if (room.gameConfig.currentRound >= room.gameConfig.totalRounds - 1) {
             room.status = 'MATCH_RESULTS';
         } else {
             room.status = 'ROUND_RESULTS';
@@ -802,10 +894,20 @@ class RoomManager {
 
             if (winnerOfMatch || currentRoom.gameConfig.currentRound >= currentRoom.gameConfig.totalRounds) {
                 currentRoom.status = 'GAME_OVER';
+                
+                let finalWinner = winnerOfMatch ? winnerOfMatch[0] : null;
+                if (!finalWinner) {
+                    // Si nadie llegó a los puntos, el que tenga más victorias/puntos gana
+                    const sortedPlayers = Object.entries(currentRoom.gameConfig.scores).sort((a, b) => b[1] - a[1]);
+                    if (sortedPlayers.length > 1 && sortedPlayers[0][1] > sortedPlayers[1][1]) {
+                        finalWinner = sortedPlayers[0][0];
+                    }
+                }
+
                 const finalRoomUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, {
                     type: 'MATCH_FINISHED',
-                    winner: winnerOfMatch ? winnerOfMatch[0] : null,
+                    winner: finalWinner,
                     room: finalRoomUpdate
                 });
 
@@ -827,7 +929,7 @@ class RoomManager {
                 currentRoom.status = isRace ? 'PLAYING' : 'ROULETTE';
                 const nextGame = this.pickNextGame(roomId);
                 currentRoom.gameConfig.currentGame = nextGame;
-                this.assignRoles(roomId, nextGame, true);
+                await this.assignRoles(roomId, nextGame, true);
 
                 const nextRoomUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, {
@@ -839,7 +941,7 @@ class RoomManager {
         }, 2000);
     }
 
-    handleGameAction(roomId, user, action) {
+    async handleGameAction(roomId, user, action) {
         const room = this.rooms.get(roomId);
         if (!room) return;
 
@@ -881,7 +983,8 @@ class RoomManager {
             }
 
             const scores = this.roundGameScores.get(roomId) || {};
-            const teamId = room.gameConfig.teams ? room.gameConfig.teams[user] : null;
+            const isCompetitive = ['1vs1', 'carrera', 'torneig', 'race', 'tournament', 'duel'].includes(room.gameConfig.modality);
+            const teamId = (room.gameConfig.teams && !isCompetitive) ? room.gameConfig.teams[user] : null;
 
             if (teamId) {
                 room.players.forEach(p => {
@@ -898,11 +1001,24 @@ class RoomManager {
                 scores[user] = action.score;
                 this.broadcastToRoom(roomId, {
                     type: 'SCORE_UPDATE_LIVE',
-                    user,
+                    user: user,
                     score: action.score
                 });
             }
             this.roundGameScores.set(roomId, scores);
+
+            // Mecánica "Tug-of-War": En 1vs1 o Torneo, cada punto resta tiempo al rival
+            const isTugOfWar = room.gameConfig.mode === 'TOURNAMENT' || room.gameConfig.modality === '1vs1';
+            if (isTugOfWar && room.status === 'PLAYING') {
+                this.broadcastToRoom(roomId, {
+                    type: 'GAME_ACTION',
+                    from: user,
+                    action: {
+                        type: 'TIME_PENALTY',
+                        amount: 5 // Restar 5 segundos
+                    }
+                });
+            }
         }
 
         if (action.type === 'ROSCO_PROGRESS_UPDATE') {
@@ -915,6 +1031,64 @@ class RoomManager {
                 const progress = room.gameConfig.roscoProgress[teamId];
                 progress.letterIndex = action.letterIndex;
                 progress.errors = action.errors;
+            }
+        }
+
+        if (action.type === 'START_TOURNAMENT_MATCH') {
+            if (!room.gameConfig.tournament) return;
+            const match = room.gameConfig.tournament.brackets.find(m => m.id === action.matchId);
+            if (match && match.status === 'WAITING') {
+                match.status = 'PLAYING';
+                const game = this.pickNextGame(roomId);
+                room.gameConfig.currentGame = game;
+                
+                // Forzamos roles de 1v1 para el torneo
+                room.gameConfig.teams = { [match.p1]: 'team-1', [match.p2]: 'team-2' };
+                room.gameConfig.subRoles = { [match.p1]: null, [match.p2]: null };
+                
+                this.setRoomStatus(roomId, 'PLAYING');
+            }
+        }
+
+        if (action.type === 'START_TOURNAMENT_MATCH_MANUAL') {
+            this.launchTournamentRound(roomId);
+        }
+
+        if (action.type === 'NEXT_TOURNAMENT_ROUND') {
+            if (!room.gameConfig.tournament) return;
+            const tournament = room.gameConfig.tournament;
+            const winners = tournament.brackets.map(m => m.winner).filter(w => w !== null);
+            
+            if (winners.length > 1) {
+                tournament.round++;
+                tournament.brackets = this.generateBrackets(winners);
+                
+                // Inicio automático de la siguiente ronda tras 15s
+                setTimeout(() => {
+                    this.launchTournamentRound(roomId);
+                }, 15000);
+            } else if (winners.length === 1) {
+                // Ganador final del torneo
+                this.broadcastToRoom(roomId, {
+                    type: 'TOURNAMENT_FINISHED',
+                    winner: winners[0]
+                });
+                room.status = 'MATCH_RESULTS';
+                room.gameConfig.scores[winners[0]] = 999; // Placeholder para indicar ganador
+            }
+            
+            const roomUpdate = await this.getRoom(roomId);
+            this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: roomUpdate });
+        }
+
+        if (action.type === 'SCORE_UPDATE' && room.gameConfig.mode === 'TOURNAMENT') {
+            if (room.gameConfig.timer > 5) {
+                room.gameConfig.timer -= 3;
+                this.broadcastToRoom(roomId, { 
+                    type: 'TIME_ATTACK', 
+                    attacker: user,
+                    message: '-3s ATAQUE!' 
+                });
             }
         }
 

@@ -35,7 +35,7 @@
     />
 
     <!-- Cursors remots -->
-    <div v-if="props.isMultiplayer" class="remote-cursors-container">
+    <div v-if="props.isMultiplayer && !props.isRace && !props.isDuel" class="remote-cursors-container">
       <div
         v-for="(cursor, id) in multiplayerStore.remoteCursors"
         :key="'cursor-'+id"
@@ -71,28 +71,6 @@
       </v-card>
     </v-overlay>
 
-    <v-overlay
-      v-if="!isMultiplayer"
-      v-model="showGameOverOverlay"
-      class="align-center justify-center"
-      persistent
-      z-index="100"
-    >
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
-        <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="80" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radarScan.completed') }}</h2>
-        <p class="text-h6 text-cyan-accent-3 mb-8">{{ $t('radarScan.totalPoints', { score }) }}</p>
-        <v-btn
-          class="font-weight-black text-black px-8"
-          color="cyan-accent-3"
-          rounded="xl"
-          size="x-large"
-          @click="returnToMenu"
-        >
-          {{ $t('radarScan.returnMenu') }}
-        </v-btn>
-      </v-card>
-    </v-overlay>
 
     <!-- Feedback Visual Overlay -->
     <v-overlay
@@ -156,10 +134,14 @@
       type: Boolean,
       default: false,
     },
+    autoStart: {
+      type: Boolean,
+      default: false,
+    }
   })
 
   // --- VARIABLES D'ESTAT ---
-  const showStartOverlay = ref(true)
+  const showStartOverlay = ref(!props.autoStart)
   const showGameOverOverlay = ref(false)
   const isTransitioning = ref(false)
   const correctClicked = ref(false)
@@ -228,7 +210,14 @@
   const clickedIndices = ref(new Map())
   const completedTargets = ref(new Set())
 
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
+  })
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
 
   // --- CONFIGURACIÓ DE NIVELLS ---
   const levels = computed(() => radarScanData[locale.value] || radarScanData['es'])
@@ -245,25 +234,25 @@
     if (!gameArea.value) return {}
     const tunnelSize = (currentTunnelSize.value || 100) * 1.5
     const lightSpots = [
-      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 40%, rgba(11,17,32,0) 100%)`,
+      `radial-gradient(circle ${tunnelSize}px at ${mouseX.value}px ${mouseY.value}px, rgba(0, 229, 255, 0.8) 0%, rgba(0, 229, 255, 0.2) 50%, rgba(11, 17, 32, 0) 100%)`,
     ]
 
-    // Añadir focos de compañeros en multiplayer
-    if (props.isMultiplayer) {
+    // Añadir focos de compañeros en multiplayer (solo si es cooperativo)
+    const isCoop = props.isMultiplayer && !props.isRace && !props.isDuel;
+    if (isCoop) {
       for (const [id, cursor] of Object.entries(multiplayerStore.remoteCursors)) {
         if (id !== astroStore.user && gameArea.value) {
           const pxX = (cursor.x / 1000) * gameArea.value.clientWidth
           const pxY = (cursor.y / 1000) * gameArea.value.clientHeight
-          lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 40%, rgba(11,17,32,0) 100%)`)
+          lightSpots.push(`radial-gradient(circle ${tunnelSize}px at ${pxX}px ${pxY}px, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 50%, rgba(11, 17, 32, 0) 100%)`)
         }
       }
     }
 
     return {
-      'background-color': '#1a2235',
+      'background-color': '#05070d',
       'background-image': lightSpots.join(', '),
-      'background-blend-mode': 'lighten',
-      'mix-blend-mode': 'multiply',
+      'background-blend-mode': 'screen',
       'z-index': 5,
     }
   })
@@ -275,7 +264,7 @@
     mouseX.value = e.clientX - rect.left
     mouseY.value = e.clientY - rect.top
 
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer && !props.isRace && !props.isDuel) {
       sendMouseMove(mouseX.value, mouseY.value)
     }
   }
@@ -285,8 +274,10 @@
     const totalCells = config.grid * config.grid
     clickedIndices.value.clear()
     completedTargets.value.clear()
+    const isCoop = props.isMultiplayer && !props.isRace && !props.isDuel;
+    const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
 
-    if (props.isMultiplayer) {
+    if (isCoop && isShared) {
       if (isHost.value) {
         const newBoard = Array.from({ length: totalCells }, () => config.distractor)
         const t1 = Math.floor(Math.random() * totalCells)
@@ -306,6 +297,20 @@
           targetIndices: [t1, t2],
         })
       }
+    } else if (props.isDuel && isShared) {
+       if (isHost.value) {
+        const newBoard = Array.from({ length: totalCells }, () => config.distractor)
+        const target = Math.floor(Math.random() * totalCells)
+        newBoard[target] = config.target
+        targetIndices.value = [target]
+        board.value = newBoard
+        
+        multiplayerStore.sendGameAction({
+          type: 'BOARD_SYNC',
+          board: newBoard,
+          targetIndices: [target],
+        })
+      }
     } else {
       const newBoard = Array.from({ length: totalCells }, () => config.distractor)
       const target = Math.floor(Math.random() * totalCells)
@@ -316,8 +321,11 @@
   }
 
   function nextRound () {
-    score.value += (currentLevel.value * 10)
-    timeLeft.value = Math.min(60, timeLeft.value + 10)
+    const timeBonus = Math.floor(timeLeft.value / 2)
+    score.value += (currentLevel.value * 25) + timeBonus // Puntuación base mayor + bonus tiempo
+    if (anyRivalAlive.value) {
+      timeLeft.value = Math.min(60, timeLeft.value + 10)
+    }
     currentLevel.value++
     completedTargets.value.clear()
     generateBoard()
@@ -329,7 +337,9 @@
 
     const isCorrect = targetIndices.value.includes(index)
 
-    if (props.isMultiplayer) {
+    const isCoop = props.isMultiplayer && !props.isRace && !props.isDuel;
+
+    if (isCoop) {
       multiplayerStore.sendGameAction({
         type: 'RADAR_CLICK',
         index,
@@ -348,11 +358,22 @@
 
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
-      timeLeft.value = Math.min(60, timeLeft.value + 3)
+      if (anyRivalAlive.value) {
+        timeLeft.value = Math.min(60, timeLeft.value + 3)
+      }
       triggerFeedback('success')
+
+      if (props.isDuel) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({
+          type: 'TIME_PENALTY',
+          amount: isSaboteurActive ? 6 : 3,
+        })
+      }
 
       if (completedTargets.value.size >= targetIndices.value.length) {
         isTransitioning.value = true
+        
         if (isHost.value) {
           setTimeout(() => {
             multiplayerStore.sendGameAction({ type: 'RADAR_NEXT_ROUND' })
@@ -369,11 +390,28 @@
     if (isCorrect) {
       clickedIndices.value.set(index, 'correct')
       completedTargets.value.add(index)
-      timeLeft.value = Math.min(60, timeLeft.value + 3)
+      if (anyRivalAlive.value) {
+        timeLeft.value = Math.min(60, timeLeft.value + 3)
+      }
       triggerFeedback('success')
 
       if (completedTargets.value.size >= targetIndices.value.length) {
         isTransitioning.value = true
+
+        if (props.isMultiplayer) {
+          const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+          multiplayerStore.sendGameAction({
+            type: 'SABOTAGE',
+            subtype: 'REDUCE_TIME',
+            amount: isSaboteurActive ? 4 : 2,
+          })
+          if (props.isDuel) {
+            multiplayerStore.sendGameAction({
+              type: 'TIME_PENALTY',
+              amount: isSaboteurActive ? 8 : 4,
+            })
+          }
+        }
         setTimeout(() => {
           nextRound()
           setTimeout(() => {
@@ -388,6 +426,9 @@
     } else {
       clickedIndices.value.set(index, 'incorrect')
       timeLeft.value = Math.max(0, timeLeft.value - 5)
+      if (props.isDuel || props.isRace || !props.isMultiplayer) {
+        multiplayerStore.timeLeft = timeLeft.value
+      }
       score.value = Math.max(0, score.value - 5)
       triggerFeedback('error')
       if (timeLeft.value === 0) endGame()
@@ -407,7 +448,7 @@
     currentLevel.value = 1
     generateBoard()
 
-    if (props.isMultiplayer && isHost.value) {
+    if (props.isMultiplayer && isHost.value && !props.isRace && !props.isDuel) {
       multiplayerStore.sendGameAction({
         type: 'START_TIME_SYNC',
         startTime: startTime.value,
@@ -418,24 +459,31 @@
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (!isTransitioning.value && timeLeft.value > 0) {
-        const now = Date.now()
-        const delta = Math.floor((now - lastTick) / 1000)
-        if (delta >= 1) {
-          timeLeft.value = Math.max(0, timeLeft.value - delta)
-          lastTick += delta * 1000
+        if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+          const now = Date.now()
+          const delta = Math.floor((now - lastTick) / 1000)
+          if (delta >= 1) {
+            timeLeft.value = Math.max(0, timeLeft.value - delta)
+            lastTick += delta * 1000
 
-          if (props.isMultiplayer && isHost.value) {
-            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-          }
+            if (isHost.value || props.isDuel || props.isRace) {
+              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+            }
+            
+            if (props.isDuel || props.isRace || !props.isMultiplayer) {
+              multiplayerStore.timeLeft = timeLeft.value
+            }
 
-          if (timeLeft.value <= 0) {
-            if (!props.isRace || props.isDuel) {
-              if (props.isMultiplayer && isHost.value) {
-                multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+            if (timeLeft.value <= 0) {
+              if (!props.isRace || props.isDuel) {
+                if (props.isMultiplayer && isHost.value && !props.isRace && !props.isDuel) {
+                  multiplayerStore.sendGameAction({ type: 'RADAR_TIME_UP' })
+                }
+                endGame()
+              } else {
+                // En modo Carrera (exploración), si se acaba el tiempo, forzamos el fin para volver al mapa
+                endGame()
               }
-              endGame()
-            } else {
-              timeLeft.value = 60
             }
           }
         }
@@ -449,8 +497,9 @@
       multiplayerStore.submitRoundResult()
       return
     }
-    if (silent) emit('game-over', score.value)
-    else showGameOverOverlay.value = true
+    if (silent || props.isRace || !props.isMultiplayer) {
+      emit('game-over', score.value)
+    }
   }
 
   function returnToMenu () {
@@ -458,7 +507,7 @@
   }
 
   onMounted(() => {
-    if (props.isMultiplayer || props.isRace) {
+    if (props.isMultiplayer || props.isRace || props.autoStart) {
       // Delay para el briefing (Reducido a 3s)
       setTimeout(() => {
         startGame()
@@ -475,17 +524,25 @@
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         timeLeft.value = msg.action.timeLeft
         if (timeLeft.value <= 0) endGame()
       }
 
-      if (msg.action?.type === 'START_TIME_SYNC') {
+      if (msg.action?.type === 'START_TIME_SYNC' && !props.isDuel && !props.isRace) {
         startTime.value = msg.action.startTime
         totalDuration.value = msg.action.duration
       }
 
-      if (msg.action?.type === 'BOARD_SYNC' && !isHost.value) {
+      const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
+      const isCoop = props.isMultiplayer && !props.isRace && !props.isDuel;
+      
+      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores[msg.from] = msg.action.score
+        return
+      }
+
+      if (msg.action?.type === 'BOARD_SYNC' && !isHost.value && (isCoop || props.isDuel)) {
         board.value = msg.action.board
         targetIndices.value = msg.action.targetIndices
         isTransitioning.value = false
@@ -493,18 +550,34 @@
         completedTargets.value.clear()
       }
 
-      if (msg.action?.type === 'RADAR_NEXT_ROUND' && !isHost.value) {
+      if (msg.action?.type === 'RADAR_NEXT_ROUND' && !props.isDuel && !props.isRace) {
         nextRound()
         setTimeout(() => {
           isTransitioning.value = false
         }, 200)
       }
 
-      if (msg.action?.type === 'RADAR_TIME_UP') {
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'RADAR_TIME_UP' && !props.isDuel && !props.isRace) {
         endGame()
       }
 
-      if (msg.action?.type === 'RADAR_CLICK') {
+      if (msg.action?.type === 'RADAR_CLICK' && !props.isDuel && !props.isRace) {
         const { index, status } = msg.action
         if (status === 'incorrect') {
           clickedIndices.value.set(index, status)
@@ -527,14 +600,14 @@
         }
       }
     }
-  })
+  }, { immediate: true })
 
   watch(score, newScore => {
     if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'SCORE_UPDATE',
-        score: newScore,
-      })
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores[astroStore.user] = newScore
     }
   })
 
@@ -547,46 +620,81 @@
 .game-container {
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 600px;
-  background-color: #0f172a;
+  height: 100vh;
+  background-color: #05070d;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 80px;
-  overflow: hidden;
-  user-select: none;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.hud-pill {
+  background: rgba(11, 17, 32, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 12px 32px;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
 }
 
 .board {
-  max-width: 90%;
-  max-height: 90%;
-  z-index: 2;
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  position: relative;
+  z-index: 1;
+  gap: 8px;
+  padding: 40px;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
+  border: 2px solid rgba(0, 229, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.board::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    repeating-radial-gradient(circle, transparent 0, transparent 40px, rgba(0, 229, 255, 0.05) 41px, rgba(0, 229, 255, 0.05) 42px),
+    repeating-conic-gradient(from 0deg, transparent 0deg, transparent 44deg, rgba(0, 229, 255, 0.05) 45deg, rgba(0, 229, 255, 0.05) 46deg);
+  pointer-events: none;
+  border-radius: 50%;
 }
 
 .board-transitioning {
   opacity: 0;
-  transform: scale(0.95);
+  transform: scale(1.1) rotate(10deg);
 }
 
 .letter-cell {
-  color: #64748b;
-  transition: color 0.2s;
+  background: rgba(30, 41, 59, 0.2);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s;
+  user-select: none;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.letter-cell:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.4);
 }
 
 .letter-correct {
-  color: #00e5ff !important;
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
-  transform: scale(1.3);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: 10;
+  background: #00e676 !important;
+  color: #05070d !important;
+  box-shadow: 0 0 30px #00e676;
+  border-color: #00e676 !important;
+  transform: scale(1.2) rotate(360deg);
+  z-index: 2;
 }
 
 .letter-incorrect {
-  color: #ff5252 !important;
-  text-shadow: 0 0 10px rgba(255, 82, 82, 0.5);
-  transition: all 0.2s;
+  background: #ff5252 !important;
+  color: white !important;
+  box-shadow: 0 0 30px #ff5252;
+  border-color: #ff5252 !important;
+  animation: shake 0.4s;
 }
 
 .flashlight-overlay {
@@ -596,23 +704,27 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 5;
-  transition: opacity 0.4s ease-in-out;
+  transition: opacity 0.5s ease;
+}
+
+/* Efecto Escáner */
+.flashlight-overlay::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 50%; height: 2px;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.6), transparent);
+  transform-origin: left center;
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .flashlight-hidden {
-  opacity: 0 !important;
-}
-
-.bg-slate-900 { background-color: #0f172a; }
-.border-cyan { border: 1px solid #00e5ff; }
-
-.hud-pill {
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(0, 229, 255, 0.35);
-  border-radius: 999px;
-  padding: 10px 22px;
-  backdrop-filter: blur(4px);
+  opacity: 0;
 }
 
 .remote-cursors-container {
@@ -622,32 +734,36 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 15;
 }
 
 .remote-cursor {
   position: absolute;
-  pointer-events: none;
+  transition: all 0.1s linear;
   transform: translate(-50%, -50%);
-  will-change: left, top;
 }
 
 .cursor-pointer-visual {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
 }
 
 .cursor-label {
-  font-size: 0.75rem;
-  background: #00e5ff;
-  color: black;
+  font-size: 10px;
+  background: rgba(0, 229, 255, 0.9);
+  color: #000;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: bold;
-  white-space: nowrap;
+  border-radius: 4px;
+  font-weight: 900;
+  margin-top: 4px;
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
 
 /* Feedback Animations */
@@ -661,15 +777,13 @@
 
 @keyframes bounceIn {
   0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
   70% { transform: scale(0.9); }
   100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+.pointer-events-none {
+  pointer-events: none !important;
 }
 
 .feedback-container {

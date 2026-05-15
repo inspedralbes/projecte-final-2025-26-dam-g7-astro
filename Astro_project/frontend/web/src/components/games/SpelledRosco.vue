@@ -260,55 +260,6 @@
       </v-col>
     </v-row>
 
-    <!-- Pantalla Final -->
-    <v-card
-      v-else-if="gameFinished"
-      class="pa-8 text-center bg-grey-darken-4 border-cyan"
-      max-width="500"
-      rounded="xl"
-      width="100%"
-    >
-      <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-school" size="80" />
-      <h2 class="text-h4 text-white mb-2">{{ $t('spelledRosco.completedTitle') || 'MISSIÓ COMPLETADA' }}</h2>
-      <div class="d-flex justify-space-around my-6">
-        <div class="text-center">
-          <div class="text-h3 text-success font-weight-bold">{{ correctCount }}</div>
-          <div class="text-caption">{{ $t('spelledRosco.correctHits') }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-h3 text-error font-weight-bold">{{ incorrectCount }}</div>
-          <div class="text-caption">{{ $t('spelledRosco.incorrectHits') }}</div>
-        </div>
-      </div>
-      <p class="text-h5 text-white mb-2">{{ $t('spelledRosco.finalScore', { score: score }) }}</p>
-      
-      <template v-if="!isMultiplayer">
-        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('spelledRosco.timeRemaining', { time: timeLeft }) }}</p>
-        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('spelledRosco.reward', { reward: finalReward }) }}</p>
-        <v-btn
-          class="text-black font-weight-bold"
-          color="cyan-accent-3"
-          rounded="pill"
-          size="large"
-          variant="flat"
-          @click="emitExit"
-        >
-          {{ $t('spelledRosco.getReward') }}
-        </v-btn>
-      </template>
-      <template v-else>
-        <v-btn
-          class="text-black font-weight-bold"
-          color="cyan-accent-3"
-          rounded="pill"
-          size="large"
-          variant="flat"
-          @click="emitExit"
-        >
-          {{ $t('spelledRosco.getReward') }}
-        </v-btn>
-      </template>
-    </v-card>
 
     <v-overlay v-if="!isMultiplayer && !isRace" v-model="showStartOverlay" class="align-center justify-center" persistent>
     </v-overlay>
@@ -354,60 +305,47 @@
   import { getWordCategory, getWordType } from '@/utils/roscoHints'
 
   const props = defineProps({
-    isMultiplayer: {
-      type: Boolean,
-      default: false,
-    },
-    isRace: {
-      type: Boolean,
-      default: false,
-    },
-    duration: {
-      type: Number,
-      default: 60,
-    },
-    isDuel: {
-      type: Boolean,
-      default: false,
-    },
+    isMultiplayer: { type: Boolean, default: false },
+    isRace: { type: Boolean, default: false },
+    duration: { type: Number, default: 60 },
+    isDuel: { type: Boolean, default: false },
+    autoStart: { type: Boolean, default: false },
   })
 
   const emit = defineEmits(['game-over'])
-
   const { t, locale } = useI18n()
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
-  const textHint = ref('')
-  const currentHints = reactive({
-    category: '',
-    type: '',
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
   })
-  const showStartOverlay = ref(false)
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
+
+  const textHint = ref('')
+  const currentHints = reactive({ category: '', type: '' })
+  const showStartOverlay = ref(!props.autoStart)
 
   function throttle (func, limit) {
-    let lastRan
-    let lastFunc
+    let lastRan, lastFunc
     return function (...args) {
       if (lastRan) {
         clearTimeout(lastFunc)
-        lastFunc = setTimeout(function () {
+        lastFunc = setTimeout(() => {
           if ((Date.now() - lastRan) >= limit) {
-            func(...args)
-            lastRan = Date.now()
+            func(...args); lastRan = Date.now()
           }
         }, limit - (Date.now() - lastRan))
       } else {
-        func(...args)
-        lastRan = Date.now()
+        func(...args); lastRan = Date.now()
       }
     }
   }
 
-  const allLettersData = computed(() => {
-    return roscoData[locale.value] || roscoData['es']
-  })
-
+  const allLettersData = computed(() => roscoData[locale.value] || roscoData['es'])
   const STAR_CENTER = 200
   const STAR_RADIUS = 150
   const INNER_RADIUS = 60
@@ -419,7 +357,6 @@
   })
 
   const letterPositions = [0, 2, 4, 6, 8]
-
   const starSegments = computed(() => starPoints.map((point, i) => ({
     x1: point.x, y1: point.y,
     x2: starPoints[(i + 1) % 10].x, y2: starPoints[(i + 1) % 10].y,
@@ -430,7 +367,6 @@
     return `${pCenter.x},${pCenter.y} ${pPrev.x},${pPrev.y} ${pCurr.x},${pCurr.y} ${pNext.x},${pNext.y}`
   }))
 
-  // --- VARIABLES D'ESTAT ---
   const roscoLetters = ref([])
   const currentIndex = ref(0)
   const rawInput = ref('')
@@ -440,81 +376,91 @@
   const feedbackMessage = ref('')
   const feedbackColor = ref('info')
   const isChecking = ref(false)
-  const timeLeft = ref(60) // Inicialización neutra
+  const timeLeft = ref(60)
   const rocketAnimating = ref(false)
   const rocketPos = reactive({ x: 0, y: 0 })
   const trailParticles = ref([])
   const visitedSegments = ref(new Set())
-  
   let timerInterval = null
+  let currentSeed = 0
 
-  // --- REFORÇ VISUAL I SONOR ---
-  const sounds = {
-    success: '/assets/sounds/success.mp3',
-    error: '/assets/sounds/error.mp3',
+  function lcgRandom () {
+    currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296
+    return currentSeed / 4294967296
   }
 
+  function shuffleArray (array) {
+    const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge;
+    const useLCG = props.isMultiplayer && (!props.isDuel || isShared);
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const rnd = useLCG ? lcgRandom() : Math.random()
+      const j = Math.floor(rnd * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
+  const normalize = (text) => text ? text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim() : ""
+
+  const sounds = { success: '/assets/sounds/success.mp3', error: '/assets/sounds/error.mp3' }
   function playFeedbackSound (type) {
-    const audio = new Audio(sounds[type])
-    audio.volume = 0.4
-    audio.play().catch(e => console.warn('Audio play blocked:', e))
+    const audio = new Audio(sounds[type]); audio.volume = 0.4; audio.play().catch(() => {})
   }
 
   const subRole = computed(() => multiplayerStore.subRole)
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
-  const isTranslator = computed(() => props.isMultiplayer && subRole.value === 'translator')
-  const isSender = computed(() => props.isMultiplayer && subRole.value === 'sender')
-  const isGuesser = computed(() => props.isMultiplayer && subRole.value === 'guesser')
+  const isHost = computed(() => {
+    const host = multiplayerStore.room?.host
+    return (typeof host === 'object' ? host.username || host.user : host) === astroStore.user
+  })
+  const isTranslator = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'translator')
+  const isSender = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'sender')
+  const isGuesser = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'guesser')
 
   function sendTextHint () {
     const hint = textHint.value?.trim()
     if (!hint) return
-
     if (!isValidHint(hint, currentLetter.value.answer)) {
-      feedbackMessage.value = t('spelledRosco.msgCheatDetected')
-      feedbackColor.value = 'error'
-      showFeedback.value = true
-      textHint.value = ''
-      return
+      feedbackMessage.value = t('spelledRosco.msgCheatDetected'); feedbackColor.value = 'error'; showFeedback.value = true; textHint.value = ''; return
     }
-
-    multiplayerStore.sendGameAction({
-      type: 'PARTNER_EMOJI',
-      emoji: hint,
-    })
+    multiplayerStore.sendGameAction({ type: 'PARTNER_EMOJI', emoji: hint })
     textHint.value = ''
   }
 
-  const currentLetter = computed(() => roscoLetters.value.length > 0 ? roscoLetters.value[currentIndex.value] : { char: '?', question: '', hieroglyphs: [] })
-  watch(() => currentLetter.value, newLetter => {
-    if (newLetter?.answer) {
-      currentHints.category = getWordCategory(newLetter.answer); currentHints.type = getWordType(newLetter.answer)
+  const currentLetter = computed(() => roscoLetters.value.length > 0 ? roscoLetters.value[currentIndex.value] : { char: '?', question: '', answer: '' })
+
+  watch(currentLetter, (newVal) => {
+    if (newVal?.answer) {
+      currentHints.category = getWordCategory(newVal.answer)
+      currentHints.type = getWordType(newVal.answer)
     }
-  }, { immediate: true })
-  const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length), incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length), finalReward = computed(() => score.value + timeLeft.value)
-  function normalize (str) {
-    return str.toUpperCase().trim().replace(/\s/g, '').normalize('NFD').replace(/[\u0300-\u036F]/g, '')
-  }
+  })
 
   function initRosco (force = false) {
-    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData && !force) {
-      const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user], data = multiplayerStore.room?.gameConfig?.roscoData[teamId] || multiplayerStore.room?.gameConfig?.roscoData.default
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData && !force && !props.isDuel && !props.isRace) {
+      const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user]
+      const data = multiplayerStore.room?.gameConfig?.roscoData[teamId] || multiplayerStore.room?.gameConfig?.roscoData.default
       if (data && (roscoLetters.value.length === 0 || force)) {
         roscoLetters.value = data.map(l => ({ ...l, status: 'pending' }))
-        currentIndex.value = 0
-        rocketPos.x = starPoints[0].x
-        rocketPos.y = starPoints[0].y
+        currentIndex.value = 0; rocketPos.x = starPoints[0].x; rocketPos.y = starPoints[0].y
       }
     } else if (roscoLetters.value.length === 0 || force) {
-      if (!props.isMultiplayer || isHost.value) {
-        const shuffled = [...allLettersData.value].sort(() => Math.random() - 0.5), data = shuffled.slice(0, 5).map(l => ({ ...l, status: 'pending' }))
-        roscoLetters.value = data
-        currentIndex.value = 0
-        rocketPos.x = starPoints[0].x
-        rocketPos.y = starPoints[0].y
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+        const uniqueChars = []; const seenChars = new Set()
+        const shuffledPool = shuffleArray([...allLettersData.value])
+        for (const item of shuffledPool) {
+          if (!seenChars.has(item.char)) { uniqueChars.push(item); seenChars.add(item.char) }
+          if (uniqueChars.length >= 5) break
+        }
+        const data = uniqueChars.map(l => ({ ...l, status: 'pending' }))
+        roscoLetters.value = data; currentIndex.value = 0; rocketPos.x = starPoints[0].x; rocketPos.y = starPoints[0].y
         if (props.isMultiplayer) {
-          multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
-          multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
+          if (isHost.value && (props.isDuel || props.isRace)) {
+            multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+          } else if (!props.isDuel && !props.isRace) {
+            multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+            multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
+          }
         }
       } else {
         multiplayerStore.sendGameAction({ type: 'REQUEST_ROSCO_SYNC' })
@@ -524,62 +470,45 @@
 
   onMounted(() => {
     timeLeft.value = props.duration || 60
-    initRosco()
-    if (isMultiplayer || isRace) {
-      // Delay para el briefing (Reducido a 3s)
-      setTimeout(() => {
-        if (!gameFinished.value) startTimer()
-      }, 3000)
-    } else {
-      startTimer()
+    if (multiplayerStore.room?.gameConfig?.seed) {
+      const s = multiplayerStore.room.gameConfig.seed
+      currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
     }
+    initRosco()
+    setTimeout(() => { 
+      if (!gameFinished.value && !isPlaying.value) startGame() 
+    }, (props.isMultiplayer || props.isRace || props.autoStart) ? 3000 : 0)
   })
+
   watch(() => multiplayerStore.room, () => initRosco(), { deep: true })
   const emitTyping = throttle(text => {
-    if (props.isMultiplayer && !isTranslator.value && !isSender.value) multiplayerStore.sendGameAction({ type: 'TYPING_SYNC', text })
+    if (props.isMultiplayer && !isTranslator.value && !isSender.value && !props.isDuel) multiplayerStore.sendGameAction({ type: 'TYPING_SYNC', text })
   }, 150)
-  function onTyping () {
-    emitTyping(rawInput.value)
-  }
+  function onTyping () { emitTyping(rawInput.value) }
 
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      gameFinished.value = true; emitExit()
-    }
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ADVANCE_LETTER' && (isSender.value || isTranslator.value)) {
-      roscoLetters.value[msg.action.index].status = msg.action.status; score.value = msg.action.score
-      if (msg.action.status === 'correct') {
-        timeLeft.value = Math.min(timeLeft.value + 20, 999)
-      }
-      advanceTurn()
-    }
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ROSCO_SYNC' && !isHost.value) {
-      roscoLetters.value = msg.action.data
-      currentIndex.value = 0
-      rocketPos.x = starPoints[0].x
-      rocketPos.y = starPoints[0].y
-    }
-    if (msg.type === 'GAME_ROLES_SWAPPED') {
-      feedbackMessage.value = t('spelledRosco.rolesSwapped'); feedbackColor.value = 'warning'; showFeedback.value = true
-      setTimeout(() => showFeedback.value = false, 2000)
-    }
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') { gameFinished.value = true; emitExit() }
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
-        timeLeft.value = msg.action.timeLeft
-        if (timeLeft.value <= 0) {
-          if (props.isRace && !props.isDuel) {
-            timeLeft.value = 60 // No te echa en planeta normal
-          } else {
-            finishGame()
-          }
-        }
+      const a = msg.action
+      if (a.type === 'ADVANCE_LETTER' && (isSender.value || isTranslator.value) && !props.isDuel && !props.isRace) {
+        roscoLetters.value[a.index].status = a.status; score.value = a.score
+        if (a.status === 'correct') timeLeft.value = Math.min(timeLeft.value + 20, 999)
+        advanceTurn()
       }
-      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 15))
+      if (a.type === 'ROSCO_SYNC' && (props.isDuel || props.isRace || !isHost.value) && msg.from !== astroStore.user) {
+        roscoLetters.value = a.data; currentIndex.value = 0; rocketPos.x = starPoints[0].x; rocketPos.y = starPoints[0].y
       }
-      if (msg.action?.type === 'INDEX_SYNC' && !isHost.value) {
-        currentIndex.value = msg.action.index
+      if (a.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
+        timeLeft.value = a.timeLeft
+        if (timeLeft.value <= 0) finishGame()
+      }
+      if (a.type === 'INDEX_SYNC' && !isHost.value && !props.isDuel && !props.isRace) currentIndex.value = a.index
+      if (a.type === 'SABOTAGE' && a.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 5))
+      }
+      if (a.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 8))
       }
     }
   }, { immediate: true })
@@ -589,92 +518,63 @@
     isChecking.value = true
     const userAnswer = normalize(rawInput.value)
     const correctAnswer = normalize(currentLetter.value.answer)
-
-    if (userAnswer === correctAnswer) {
-      handleResult('correct')
-    } else {
-      handleResult('incorrect')
-    }
+    handleResult(userAnswer === correctAnswer ? 'correct' : 'incorrect')
   }
 
   function handleResult (status) {
     roscoLetters.value[currentIndex.value].status = status
     if (status === 'correct') {
-      score.value += 100
-      timeLeft.value = Math.min(timeLeft.value + 20, 999)
-      feedbackMessage.value = t('spelledRosco.msgCorrect')
-      feedbackColor.value = 'success'
-      playFeedbackSound('success')
-      if (props.isRace) {
-        multiplayerStore.rechargeFuel(25) // +25% por cada letra acertada
+      score.value += 100 + Math.floor(timeLeft.value / 2)
+      if (anyRivalAlive.value) {
+        timeLeft.value = Math.min(timeLeft.value + 20, 999)
       }
+      feedbackMessage.value = t('spelledRosco.msgCorrect'); feedbackColor.value = 'success'; playFeedbackSound('success')
+      if (props.isRace) multiplayerStore.rechargeFuel(25)
       if (props.isMultiplayer) {
-        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
-        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 30 : 15 })
+        const sabo = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: sabo ? 30 : 15 })
+        if (props.isDuel) multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: sabo ? 20 : 10 })
       }
     } else {
-      score.value = Math.max(0, score.value - 25)
-      feedbackMessage.value = t('spelledRosco.msgIncorrect')
-      feedbackColor.value = 'error'
-      playFeedbackSound('error')
+      score.value = Math.max(0, score.value - 25); timeLeft.value = Math.max(0, timeLeft.value - 10)
+      feedbackMessage.value = t('spelledRosco.msgIncorrect'); feedbackColor.value = 'error'; playFeedbackSound('error')
     }
     showFeedback.value = true
-
     if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
-      multiplayerStore.sendGameAction({ type: 'CLEAR_EMOJIS' })
-      if (isHost.value) multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+      if (!props.isDuel && !props.isRace) {
+        multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
+      }
+      if (isHost.value || props.isDuel || props.isRace) {
+        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+      }
     }
-
-    setTimeout(() => {
-      showFeedback.value = false
-      clearInput()
-      isChecking.value = false
-      advanceTurn()
-    }, 1000)
+    setTimeout(() => { showFeedback.value = false; clearInput(); isChecking.value = false; advanceTurn() }, 1000)
   }
 
   function pasapalabra () {
     if (isChecking.value || gameFinished.value) return
     advanceTurn()
-    if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: currentIndex.value })
-    }
+    if (props.isMultiplayer && !props.isDuel && !props.isRace) multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: currentIndex.value })
   }
 
   function advanceTurn () {
-    let next = (currentIndex.value + 1) % roscoLetters.value.length
-    let loops = 0
-    while (roscoLetters.value[next].status !== 'pending' && loops < roscoLetters.value.length) {
-      next = (next + 1) % roscoLetters.value.length
-      loops++
-    }
+    let next = (currentIndex.value + 1) % roscoLetters.value.length; let loops = 0
+    while (roscoLetters.value[next].status !== 'pending' && loops < roscoLetters.value.length) { next = (next + 1) % roscoLetters.value.length; loops++ }
     if (loops >= roscoLetters.value.length) {
       if (timeLeft.value > 5) {
-        feedbackMessage.value = t('spelledRosco.msgAllCorrectNext') || '¡COMPLETADO! Generando nuevo rosco...'
-        feedbackColor.value = 'success'
-        showFeedback.value = true
-        setTimeout(() => {
-          if (!gameFinished.value) initRosco(true)
-        }, 3000)
-      } else {
-        finishGame()
-      }
+        feedbackMessage.value = t('spelledRosco.msgAllCorrectNext') || 'COMPLETADO'; feedbackColor.value = 'success'; showFeedback.value = true
+        setTimeout(() => { if (!gameFinished.value) initRosco(true) }, 3000)
+      } else { finishGame() }
     } else {
-      animateRocket(currentIndex.value, next).then(() => {
-        currentIndex.value = next
-      })
+      animateRocket(currentIndex.value, next).then(() => { currentIndex.value = next })
     }
   }
 
   async function animateRocket (from, to) {
-    rocketAnimating.value = true
-    const start = letterPositions[from], end = letterPositions[to]
+    rocketAnimating.value = true; const start = letterPositions[from], end = letterPositions[to]
     let curr = start
     while (curr !== end) {
-      curr = (curr + 1) % 10
-      const p = starPoints[curr]
-      rocketPos.x = p.x; rocketPos.y = p.y
+      curr = (curr + 1) % 10; const p = starPoints[curr]; rocketPos.x = p.x; rocketPos.y = p.y
       await new Promise(r => setTimeout(r, 150))
     }
     rocketAnimating.value = false
@@ -683,73 +583,59 @@
   function startTimer () {
     timerInterval = setInterval(() => {
       if (gameFinished.value) return
-      if (!props.isMultiplayer || isHost.value) {
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
         timeLeft.value = Math.max(0, timeLeft.value - 1)
-        if (props.isMultiplayer && isHost.value) {
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-        }
-        if (timeLeft.value === 0) {
-          if (props.isRace) {
-            timeLeft.value = 60 // Reset en carrera
-          } else {
-            finishGame()
+        if (props.isMultiplayer) {
+          if (isHost.value || props.isDuel || props.isRace) {
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
           }
+          if (props.isDuel || props.isRace || !props.isMultiplayer) {
+            multiplayerStore.timeLeft = timeLeft.value
+          }
+        } else {
+          multiplayerStore.timeLeft = timeLeft.value
         }
+        if (timeLeft.value === 0) finishGame()
       }
     }, 1000)
   }
 
-  watch(score, (newScore) => {
-    if (props.isMultiplayer || props.isRace) {
-      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
-    }
-  })
-
-  function finishGame () {
+  function finishGame () { 
+    if (gameFinished.value) return
     gameFinished.value = true
     if (timerInterval) clearInterval(timerInterval)
-    if (props.isMultiplayer) multiplayerStore.submitRoundResult()
-  }
 
-  function emitExit () {
-    emit('game-over', finalReward.value)
-  }
-
-  function getChipColor (letter) {
-    if (letter.status === 'correct') return 'success'
-    if (letter.status === 'incorrect') return 'error'
-    return 'grey'
-  }
-
-  function getBubbleClass (letter, index) {
-    return {
-      'node-correct': letter.status === 'correct',
-      'node-incorrect': letter.status === 'incorrect',
-      'node-active': index === currentIndex.value && !gameFinished.value,
+    // En multijugador enviamos resultado
+    if (props.isMultiplayer && !props.isDuel && !props.isRace) {
+      multiplayerStore.submitRoundResult()
+    }
+    
+    // En individual, carrera o duelo salimos para que el padre gestione
+    if (!props.isMultiplayer || props.isRace || props.isDuel) {
+      setTimeout(() => emitExit(), 1000)
     }
   }
 
-  function getStarNodeStyle (index) {
-    const p = starPoints[letterPositions[index]]
-    return { left: p.x + 'px', top: p.y + 'px' }
-  }
-
-  function isTipGlowing (tipIdx) {
-    const pos = letterPositions[tipIdx]
-    return tipIdx === currentIndex.value || visitedSegments.value.has(pos)
-  }
-
-  function isSegmentGlowing (segIdx) {
-    return visitedSegments.value.has(segIdx)
-  }
-
-  function clearInput () {
-    rawInput.value = ''
-  }
-
-  onUnmounted(() => {
-    if (timerInterval) clearInterval(timerInterval)
+  watch(score, (newScore) => {
+    if (props.isMultiplayer) multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores = { ...multiplayerStore.roundScores, [astroStore.user]: newScore }
+    }
   })
+
+  const correctCount = computed(() => roscoLetters.value.filter(l => l.status === 'correct').length)
+  const incorrectCount = computed(() => roscoLetters.value.filter(l => l.status === 'incorrect').length)
+  const finalReward = computed(() => Math.floor(score.value / 10))
+
+  function emitExit () { emit('game-over', finalReward.value) }
+
+  function getChipColor (l) { return l.status === 'correct' ? 'success' : (l.status === 'incorrect' ? 'error' : 'grey') }
+  function getBubbleClass (l, i) { return { 'node-correct': l.status === 'correct', 'node-incorrect': l.status === 'incorrect', 'node-active': i === currentIndex.value && !gameFinished.value } }
+  function getStarNodeStyle (i) { const p = starPoints[letterPositions[i]]; return { left: p.x + 'px', top: p.y + 'px' } }
+  function isTipGlowing (i) { return i === currentIndex.value || visitedSegments.value.has(letterPositions[i]) }
+  function isSegmentGlowing (i) { return visitedSegments.value.has(i) }
+  function clearInput () { rawInput.value = '' }
+  onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
 </script>
 
 <style scoped>

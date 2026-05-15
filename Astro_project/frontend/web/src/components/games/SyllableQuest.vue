@@ -9,7 +9,7 @@
       </div>
 
       <template v-if="!gameFinished">
-        <div v-if="!isMultiplayer">
+        <div v-if="!isMultiplayer || props.isDuel">
           <div class="text-h4 mb-2">{{ currentWord.text }}</div>
           <div class="text-caption text-grey-lighten-1 mb-6">{{ $t('syllableQuest.missionProgress', { current: currentWordIndex + 1, total: words.length }) }}</div>
 
@@ -114,73 +114,41 @@
         </v-overlay>
       </template>
 
-      <template v-else>
-        <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="70" />
-        <h2 class="text-h4 mb-3">{{ $t('syllableQuest.completedTitle') }}</h2>
-        <p class="text-h6 mb-1">{{ $t('syllableQuest.finalScore', { score: score }) }}</p>
-        <p class="text-subtitle-1 text-grey-lighten-1 mb-1">{{ $t('syllableQuest.timeRemaining', { time: timeLeft }) }}</p>
-        <p class="text-h6 text-cyan-accent-2 mb-6">{{ $t('syllableQuest.reward', { reward: finalReward }) }}</p>
-
-        <v-btn
-          class="text-black font-weight-bold"
-          color="amber-accent-3"
-          rounded="pill"
-          size="large"
-          @click="emitExit"
-        >
-          {{ $t('syllableQuest.getReward') }}
-        </v-btn>
-      </template>
     </v-card>
-
   </v-container>
 </template>
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { syllableData } from '@/data/syllableGamesData'
+  import { syllableData as syllableQuestData } from '@/data/syllableGamesData'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
-  const { locale, t } = useI18n()
-  const multiplayerStore = useMultiplayerStore()
+  const { t, locale } = useI18n()
   const astroStore = useAstroStore()
+  const multiplayerStore = useMultiplayerStore()
 
-  const emit = defineEmits(['game-over'])
   const props = defineProps({
-    isMultiplayer: {
-      type: Boolean,
-      default: false,
-    },
-    isRace: {
-      type: Boolean,
-      default: false,
-    },
-    duration: {
-      type: Number,
-      default: 60,
-    },
+    isMultiplayer: { type: Boolean, default: false },
+    isRace: { type: Boolean, default: false },
+    isDuel: { type: Boolean, default: false },
+    duration: { type: Number, default: 60 },
   })
+  const emit = defineEmits(['game-over'])
 
-  // --- LÒGICA SINGLEPLAYER (SÍL·LABES) ---
-  const words = computed(() => syllableData[locale.value] || syllableData['es'])
-
-  const currentWordIndex = ref(0)
-  const currentWord = computed(() => words.value[currentWordIndex.value])
-  const userSyllables = ref(0)
-  const score = ref(0)
-  const timeLeft = ref(props.duration)
-  const gameFinished = ref(false)
-  const message = ref('')
-  const messageType = ref('info')
-  const finalReward = computed(() => score.value + timeLeft.value)
-  let timerInterval = null
+  const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
+  })
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
 
   // --- REFORÇ VISUAL I SONOR ---
   const showFeedback = ref(false)
-  const feedbackType = ref('success') // 'success' o 'error'
-
+  const feedbackType = ref('success')
   const sounds = {
     success: '/assets/sounds/success.mp3',
     error: '/assets/sounds/error.mp3',
@@ -189,219 +157,209 @@
   function triggerFeedback (type) {
     feedbackType.value = type
     showFeedback.value = true
-
     const audio = new Audio(sounds[type])
     audio.volume = 0.4
     audio.play().catch(e => console.warn('Audio play blocked:', e))
-
-    setTimeout(() => {
-      showFeedback.value = false
-    }, 800)
+    setTimeout(() => { showFeedback.value = false }, 800)
   }
 
-  // --- LÒGICA MULTIPLAYER (ORDENAR FRASES) ---
-  const multiplayerPhrases = [
-    'LA INTEL·LIGÈNCIA ARTIFICIAL ENS AJUDA A PROGRAMAR MILLOR',
-    'L\'ESPAI ÉS UN LLOC IMMENS I PLE DE MISTERIS',
-    'EL SISTEMA SOLAR TÉ VUIT PLANETES I UN SOL',
-    'LA LLUNA ÉS EL NOSTRE SATÈL·LIT NATURAL',
-    'LES ESTRELLES BRILLEN EN LA NIT FOSCA',
+  // LCG Random
+  let currentSeed = 0
+  function lcgRandom () {
+    currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296
+    return currentSeed / 4294967296
+  }
+
+  const words = computed(() => syllableQuestData[locale.value] || syllableQuestData['es'])
+  const currentWordIndex = ref(0)
+  const userSyllables = ref(0)
+  const score = ref(0)
+  const timeLeft = ref(props.duration)
+  const message = ref('')
+  const messageType = ref('success')
+  const gameFinished = ref(false)
+  let timerInterval = null
+
+  // Multiplayer Phrase logic
+  const phrases = [
+    'Aquest és un joc de paraules',
+    'Ens agrada molt programar amb vue',
+    'La missió espacial ja ha començat',
+    'Avui fa un dia molt bonic',
+    'Astro és l’assistent del futur',
+    'Agafa el comandament de la nau',
   ]
   const currentPhraseIndex = ref(0)
-  const currentPhrase = computed(() => multiplayerPhrases[currentPhraseIndex.value])
-  const originalWords = computed(() => currentPhrase.value.split(' '))
   const shuffledWords = ref([])
-  const usedWordIndices = ref(new Set())
   const correctWordsInOrder = ref([])
+  const usedWordIndices = ref(new Set())
 
-  function shuffleArray (array) {
-    const shuffled = [...array]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    return shuffled
-  }
-
-  function handleWordClick (index) {
-    if (gameFinished.value) return
-    const clickedWord = shuffledWords.value[index]
-    const nextCorrectWord = originalWords.value[correctWordsInOrder.value.length]
-
-    if (clickedWord === nextCorrectWord) {
-      if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-          type: 'PHRASE_CLICK',
-          index: index,
-          word: clickedWord,
-          correct: true,
-        })
-      } else {
-        processCorrectClick(index, clickedWord)
-      }
-    } else {
-      if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-          type: 'PHRASE_CLICK',
-          index: index,
-          word: clickedWord,
-          correct: false,
-        })
-      } else {
-        processIncorrectClick()
-      }
-    }
-  }
-
-  function processCorrectClick (index, word) {
-    usedWordIndices.value.add(index)
-    correctWordsInOrder.value.push(word)
-
-    if (correctWordsInOrder.value.length === originalWords.value.length) {
-      score.value += 100
-      message.value = 'Frase completada!'
-      messageType.value = 'success'
-      triggerFeedback('success')
-
-      setTimeout(() => {
-        if (currentPhraseIndex.value < multiplayerPhrases.length - 1) {
-          currentPhraseIndex.value++
-          if (!props.isMultiplayer || isHost.value) syncPhrase()
-        } else if (props.isRace) {
-          currentPhraseIndex.value = 0 // Reiniciar bucle en carrera
-          if (!props.isMultiplayer || isHost.value) syncPhrase()
-        } else {
-          finishGame()
-        }
-      }, 1500)
-      
-      if (props.isRace) {
-        multiplayerStore.rechargeFuel(5) // 5% fuel por frase en carrera
-      }
-    }
-  }
-
-  function processIncorrectClick () {
-    message.value = 'Ordre incorrecte! Reiniciant frase...'
-    messageType.value = 'error'
-    timeLeft.value = Math.max(0, timeLeft.value - 3)
-    triggerFeedback('error')
-
-    setTimeout(() => {
-      usedWordIndices.value.clear()
-      correctWordsInOrder.value = []
-      message.value = ''
-    }, 1000)
-  }
-
-  function syncPhrase () {
-    const shuffled = shuffleArray(originalWords.value)
-    shuffledWords.value = shuffled
-    usedWordIndices.value.clear()
-    correctWordsInOrder.value = []
-
-    if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'PHRASE_SYNC',
-        shuffled: shuffled,
-        phraseIndex: currentPhraseIndex.value,
-      })
-    }
-  }
-
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
+  const currentWord = computed(() => words.value[currentWordIndex.value % words.value.length])
+  const finalReward = computed(() => Math.floor(score.value / 10))
 
   function addSyllable () {
-    if (gameFinished.value) return
-    if (userSyllables.value < 8) userSyllables.value++
-  }
-
-  function finishGame (silent = false) {
-    if (gameFinished.value) return
-
-    if (props.isMultiplayer && !silent) {
-      gameFinished.value = true
-      if (timerInterval) clearInterval(timerInterval)
-      multiplayerStore.submitRoundResult()
-      return
-    }
-
-    gameFinished.value = true
-    if (timerInterval) {
-      clearInterval(timerInterval)
-      timerInterval = null
+    if (userSyllables.value < currentWord.value.syllables) {
+      userSyllables.value++
     }
   }
 
   function checkSyllables () {
-    if (gameFinished.value) return
-
-    const currentGoal = currentWord.value.syllables
-
-    if (userSyllables.value === currentGoal) {
-      score.value += 60
-      message.value = t('syllableQuest.msgCorrect')
+    if (userSyllables.value === currentWord.value.syllables) {
+      score.value += 20 + (currentWord.value.syllables * 5)
+      if (anyRivalAlive.value) {
+        timeLeft.value = Math.min(90, timeLeft.value + 5)
+      }
+      message.value = t('syllableQuest.correct')
       messageType.value = 'success'
       triggerFeedback('success')
-
-      if (currentWordIndex.value >= words.value.length - 1) {
-        if (props.isRace) {
-          currentWordIndex.value = 0 // Reiniciar en carrera
-          userSyllables.value = 0
-          return
-        }
-        finishGame()
-        return
-      }
-
-      currentWordIndex.value++
-      userSyllables.value = 0
       
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(2) // 2% fuel por palabra (es más corto)
+        multiplayerStore.rechargeFuel(10)
       }
+
+      if (props.isMultiplayer) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 6 : 3 })
+        if (props.isDuel) {
+          multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: isSaboteurActive ? 10 : 5 })
+        }
+      }
+
+      setTimeout(() => {
+        message.value = ''
+        userSyllables.value = 0
+        currentWordIndex.value++
+      }, 1000)
     } else {
-      score.value = Math.max(0, score.value - 10)
-      message.value = t('syllableQuest.msgIncorrect')
+      timeLeft.value = Math.max(0, timeLeft.value - 5)
+      if (props.isDuel || props.isRace || !props.isMultiplayer) {
+        multiplayerStore.timeLeft = timeLeft.value
+      }
+      message.value = t('syllableQuest.incorrect')
       messageType.value = 'error'
-      userSyllables.value = 0
       triggerFeedback('error')
+      setTimeout(() => { message.value = '' }, 1000)
+    }
+  }
+
+  // Logic per multiplayer COOP
+  function syncPhrase () {
+    const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
+    const rnd = (props.isMultiplayer && (!props.isDuel || isShared)) ? lcgRandom() : Math.random()
+    const idx = Math.floor(rnd * phrases.length)
+    const phrase = phrases[idx]
+    const wordsArr = phrase.split(' ')
+    const shuffled = [...wordsArr].sort(() => lcgRandom() - 0.5)
+
+    currentPhraseIndex.value = idx
+    shuffledWords.value = shuffled
+    usedWordIndices.value.clear()
+    correctWordsInOrder.value = []
+
+    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+      multiplayerStore.sendGameAction({ type: 'PHRASE_SYNC', phraseIndex: idx, shuffled })
+    }
+  }
+
+  function handleWordClick (idx) {
+    const clickedWord = shuffledWords.value[idx]
+    const phraseWords = phrases[currentPhraseIndex.value].split(' ')
+    const nextRequiredWord = phraseWords[correctWordsInOrder.value.length]
+
+    const isCorrect = clickedWord === nextRequiredWord
+    
+    if (props.isMultiplayer && !props.isDuel && !props.isRace) {
+      multiplayerStore.sendGameAction({ type: 'PHRASE_CLICK', index: idx, word: clickedWord, correct: isCorrect })
+    }
+
+    if (isCorrect) {
+      processCorrectClick(idx, clickedWord)
+    } else {
+      processIncorrectClick()
+    }
+  }
+
+  function processCorrectClick (idx, word) {
+    usedWordIndices.value.add(idx)
+    correctWordsInOrder.value.push(word)
+    score.value += 15
+    triggerFeedback('success')
+
+    const phraseWords = phrases[currentPhraseIndex.value].split(' ')
+    if (correctWordsInOrder.value.length === phraseWords.length) {
+      message.value = 'Frase completada!'
+      messageType.value = 'success'
+      setTimeout(() => {
+        message.value = ''
+        syncPhrase()
+      }, 1500)
+    }
+  }
+
+  function processIncorrectClick () {
+    timeLeft.value = Math.max(0, timeLeft.value - 8)
+    if (props.isDuel || props.isRace || !props.isMultiplayer) {
+      multiplayerStore.timeLeft = timeLeft.value
+    }
+    triggerFeedback('error')
+    message.value = 'Ordre incorrecte!'
+    messageType.value = 'error'
+    setTimeout(() => { message.value = '' }, 1000)
+  }
+
+  function finishGame () {
+    if (gameFinished.value) return
+    gameFinished.value = true
+    if (timerInterval) clearInterval(timerInterval)
+
+    if (props.isMultiplayer && !props.isDuel && !props.isRace) {
+      multiplayerStore.submitRoundResult()
+    }
+    
+    if (!props.isMultiplayer || props.isRace || props.isDuel) {
+      emitExit()
     }
   }
 
   function startTimer () {
-    if (timerInterval) {
-      clearInterval(timerInterval)
-    }
-
+    if (timerInterval) clearInterval(timerInterval)
+    let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (gameFinished.value) return
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+        const now = Date.now()
+        const delta = Math.floor((now - lastTick) / 1000)
+        if (delta >= 1) {
+          timeLeft.value = Math.max(0, timeLeft.value - delta)
+          lastTick += delta * 1000
 
-      if (!props.isMultiplayer || isHost.value) {
-        timeLeft.value = Math.max(0, timeLeft.value - 1)
-
-        if (props.isMultiplayer && isHost.value) {
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-        }
-
-        if (timeLeft.value === 0) {
-          if (props.isRace) {
-            timeLeft.value = 60 // Reset en carrera
+          if (props.isMultiplayer) {
+            if (isHost.value || props.isDuel || props.isRace) {
+              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+            }
+            if (props.isDuel || props.isRace || !props.isMultiplayer) {
+              multiplayerStore.timeLeft = timeLeft.value
+            }
           } else {
-            finishGame()
+            multiplayerStore.timeLeft = timeLeft.value
           }
         }
+        if (timeLeft.value <= 0) finishGame()
       }
-    }, 1000)
+    }, 500)
   }
 
   function emitExit () {
-    emit('game-over', finalReward.value)
+    emit('game-over', score.value)
   }
 
   onMounted(() => {
     startTimer()
-    if (!props.isMultiplayer || isHost.value) {
+    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+      if (multiplayerStore.room?.gameConfig?.seed) {
+        const s = multiplayerStore.room.gameConfig.seed
+        currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
+      }
       syncPhrase()
     }
   })
@@ -411,18 +369,24 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      finishGame(true)
+      finishGame()
+      return
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'PHRASE_SYNC') {
+      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores[msg.from] = msg.action.score
+        return
+      }
+
+      if (msg.action?.type === 'PHRASE_SYNC' && !props.isDuel && !props.isRace) {
         shuffledWords.value = msg.action.shuffled
         currentPhraseIndex.value = msg.action.phraseIndex
         usedWordIndices.value.clear()
         correctWordsInOrder.value = []
       }
 
-      if (msg.action?.type === 'PHRASE_CLICK') {
+      if (msg.action?.type === 'PHRASE_CLICK' && !props.isDuel && !props.isRace) {
         if (msg.action.correct) {
           processCorrectClick(msg.action.index, msg.action.word)
         } else {
@@ -430,50 +394,71 @@
         }
       }
 
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         timeLeft.value = msg.action.timeLeft
         if (timeLeft.value <= 0) finishGame()
       }
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) finishGame()
+      }
+
+      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) finishGame()
+      }
     }
-  })
+  }, { immediate: true })
 
   // Notificar puntuación al servidor en modo multijugador
   watch(score, newScore => {
     if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'SCORE_UPDATE',
-        score: newScore,
-      })
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores[astroStore.user] = newScore
     }
   })
 
   onUnmounted(() => {
-    if (timerInterval) {
-      clearInterval(timerInterval)
-    }
+    if (timerInterval) clearInterval(timerInterval)
   })
 </script>
 
 <style scoped>
 .game-shell {
-  border: 1px solid rgba(255, 193, 7, 0.45);
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 }
 
 .hud-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
 }
 
-.bg-slate-900 {
-  background-color: #0f172a;
+.gap-4 { gap: 1rem; }
+.ga-2 { gap: 0.5rem; }
+.ga-3 { gap: 0.75rem; }
+
+.min-height-100 { min-height: 100px; }
+
+.border-dashed {
+  border: 2px dashed rgba(255, 255, 255, 0.1);
 }
 
-.border-amber {
-  border: 1px solid rgba(255, 193, 7, 0.35);
+.pointer-events-none {
+  pointer-events: none !important;
 }
 
-/* Animacions de Feedback */
 .feedback-container {
   display: flex;
   align-items: center;
@@ -481,6 +466,7 @@
   pointer-events: none;
 }
 
+/* Feedback Animations */
 .animate-success {
   animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
@@ -500,9 +486,5 @@
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-10px); }
   75% { transform: translateX(10px); }
-}
-
-.pointer-events-none {
-  pointer-events: none !important;
 }
 </style>

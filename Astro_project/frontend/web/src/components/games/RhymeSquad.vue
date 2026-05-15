@@ -12,8 +12,8 @@
       <h1 class="text-h2 font-weight-black text-white mb-6">{{ $t('rhymeSquad.title') }}</h1>
       <p class="text-h5 text-grey-lighten-1 mb-10" v-html="$t('rhymeSquad.desc')" />
 
-      <!-- AVISOS DE ROLES MULTIJUGADOR -->
-      <div v-if="isMultiplayer" class="mb-8">
+      <!-- AVISOS DE ROLES MULTIJUGADOR (Solo COOP) -->
+      <div v-if="isMultiplayer && !props.isDuel && !props.isRace" class="mb-8">
         <v-row>
           <v-col cols="12" md="6">
             <div
@@ -38,12 +38,19 @@
             </div>
           </v-col>
         </v-row>
+      </div>
 
-        <div v-if="!isHost" class="mt-4 text-center">
+      <!-- AVISO DE DUELO -->
+      <div v-if="props.isDuel || props.isRace" class="mb-8 pa-6 rounded-xl bg-orange-darken-4 border-orange border-2 d-flex flex-column align-center justify-center">
+        <v-icon color="orange-accent-3" size="80" class="mb-4 animate-pulse">mdi-sword-cross</v-icon>
+        <h2 class="text-h3 font-weight-black text-orange-accent-1 mb-2">{{ props.isRace ? 'MISSIÓ PLANETÀRIA' : '¡DUELO COMPETITIVO!' }}</h2>
+        <p class="text-h6 text-white text-center">Atrapa todas las rimas posibles. Tus aciertos restarán tiempo a tu rival.</p>
+      </div>
+
+        <div v-if="isMultiplayer && !isHost && !props.isDuel && !props.isRace" class="mt-4 text-center">
           <v-progress-circular color="cyan-accent-3" indeterminate size="32" />
           <p class="text-h6 text-cyan-accent-3 mt-4">{{ $t('rhymeSquad.waitingForHost') || 'Esperant que el Comandant iniciï la missió...' }}</p>
         </div>
-      </div>
 
       <v-btn
         v-if="!isMultiplayer"
@@ -57,7 +64,7 @@
       >
         {{ $t('rhymeSquad.startMission') }}
       </v-btn>
-      <div v-else-if="isHost" class="text-h6 text-cyan-accent-2 animate-pulse mt-4">
+      <div v-else-if="isHost || props.isDuel || props.isRace" class="text-h6 text-cyan-accent-2 animate-pulse mt-4">
         {{ $t('multiplayerLobby.autoStarting') || 'LA MISIÓN COMENZARÁ TRAS EL BRIEFING...' }}
       </div>
     </v-card>
@@ -158,44 +165,6 @@
       </div>
     </template>
 
-    <v-card
-      v-else-if="isGameOver && !isMultiplayer"
-      class="pa-10 text-center bg-grey-darken-4 border-cyan"
-      max-width="600"
-      rounded="xl"
-      width="100%"
-    >
-      <v-icon class="mb-4" :color="lives > 0 ? 'cyan-accent-2' : 'red-accent-2'" :icon="lives > 0 ? 'mdi-flag-checkered' : 'mdi-skull-crossbones'" size="100" />
-      <h2 class="text-h3 text-white mb-2">{{ lives > 0 ? $t('rhymeSquad.timeOut') : $t('rhymeSquad.missionFailed') }}</h2>
-
-      <div class="d-flex justify-space-around my-8">
-        <div class="text-center">
-          <div class="text-h2 text-success font-weight-bold">{{ correctHits }}</div>
-          <div class="text-subtitle-1">{{ $t('rhymeSquad.rhymesCaught') }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-h2 text-error font-weight-bold">{{ incorrectHits }}</div>
-          <div class="text-subtitle-1">{{ $t('rhymeSquad.errors') }}</div>
-        </div>
-      </div>
-
-      <p class="text-h4 text-white mb-2">{{ $t('rhymeSquad.finalScore', { score: score }) }}</p>
-      <p class="text-h6 text-grey-lighten-1 mb-8">{{ $t('rhymeSquad.maxCombo', { combo: maxCombo }) }}</p>
-
-      <v-btn
-        color="cyan-accent-3"
-        height="60"
-        size="x-large"
-        rounded="pill"
-        variant="flat"
-        class="text-black font-weight-bold text-h6 block w-100"
-        @click="emitExit"
-      >
-        {{ $t('rhymeSquad.getReward') }}
-      </v-btn>
-    </v-card>
-
-
 
   </v-container>
 </template>
@@ -211,30 +180,37 @@
   const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
 
+  // --- LCG RANDOM FOR SYNC ---
+  let currentSeed = 0
+  function lcgRandom () {
+    currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296
+    return currentSeed / 4294967296
+  }
+
   const props = defineProps({
-    isMultiplayer: {
-      type: Boolean,
-      default: false,
-    },
-    isRace: {
-      type: Boolean,
-      default: false,
-    },
-    isDuel: {
-      type: Boolean,
-      default: false,
-    },
-    duration: {
-      type: Number,
-      default: 60,
-    },
+    isMultiplayer: { type: Boolean, default: false },
+    isRace: { type: Boolean, default: false },
+    isDuel: { type: Boolean, default: false },
+    duration: { type: Number, default: 60 },
   })
 
   const emit = defineEmits(['game-over'])
 
-  const subRole = computed(() => multiplayerStore.subRole)
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
-  const isWaitingForOthers = ref(false)
+  const subRole = computed(() => {
+    if (props.isDuel || props.isRace) return 'catcher'
+    return multiplayerStore.subRole || 'catcher'
+  })
+  const isHost = computed(() => {
+    const host = multiplayerStore.room?.host
+    return (typeof host === 'object' ? host.username || host.user : host) === astroStore.user
+  })
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
+  })
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
 
   const currentDictionary = computed(() => {
     return rhymeData[locale.value] || rhymeData['es']
@@ -251,8 +227,6 @@
   const incorrectHits = ref(0)
   const isTurbo = ref(false)
   const showTimeBonus = ref(false)
-
-  // --- REFORÇ VISUAL I SONOR ---
   const showFeedback = ref(false)
   const feedbackType = ref('success')
 
@@ -264,19 +238,14 @@
   function triggerFeedback (type) {
     feedbackType.value = type
     showFeedback.value = true
-
     const audio = new Audio(sounds[type])
     audio.volume = 0.3
     audio.play().catch(e => console.warn('Audio blocked:', e))
-
-    setTimeout(() => {
-      showFeedback.value = false
-    }, 600)
+    setTimeout(() => { showFeedback.value = false }, 600)
   }
 
   const currentTarget = ref(null)
   const activeWords = ref([])
-
   let gameLoopInterval = null
   let timerInterval = null
   let wordIdCounter = 0
@@ -285,7 +254,7 @@
   let bonusTimeout = null
 
   function handleStartClick () {
-    if (props.isMultiplayer && isHost.value) {
+    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
       multiplayerStore.sendGameAction({ type: 'RHYME_START' })
     }
     startGame()
@@ -294,84 +263,82 @@
   function startGame () {
     score.value = 0
     lives.value = props.isMultiplayer ? 10 : 3
-    timeLeft.value = 60
+    timeLeft.value = props.duration
     combo.value = 0
     maxCombo.value = 0
     correctHits.value = 0
     incorrectHits.value = 0
     isTurbo.value = false
     activeWords.value = []
-
     isPlaying.value = true
     isGameOver.value = false
     currentSpawnRate = 1200
     currentSpeed = 5
 
-    if (!props.isMultiplayer || isHost.value) {
-      pickNewTarget()
-      if (props.isMultiplayer) {
+    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+      if (!currentTarget.value) pickNewTarget()
+      if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
         multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
-        multiplayerStore.sendGameAction({ type: 'RHYME_START' })
       }
+      if (gameLoopInterval) clearInterval(gameLoopInterval)
       gameLoopInterval = setInterval(spawnWord, currentSpawnRate)
     }
 
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (!isPlaying.value) return
-
-      if (!props.isMultiplayer || isHost.value) {
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
         if (delta >= 1) {
           timeLeft.value = Math.max(0, timeLeft.value - delta)
           lastTick += delta * 1000
-
           if (props.isMultiplayer) {
-            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-          }
-
-          if (timeLeft.value <= 0) {
-            // En modo carrera (planeta normal) el tiempo no te echa
-            if (props.isRace && !props.isDuel) {
-              timeLeft.value = 60 // Reset para que siga jugando
-            } else {
-              timeLeft.value = 0
-              if (props.isMultiplayer && isHost.value) {
-                multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
-              }
-              endGame()
+            if (isHost.value || props.isDuel || props.isRace) {
+              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
             }
+            if (props.isDuel || props.isRace || !props.isMultiplayer) {
+              multiplayerStore.timeLeft = timeLeft.value
+            }
+          } else {
+            multiplayerStore.timeLeft = timeLeft.value
           }
+        }
+        if (timeLeft.value <= 0) {
+          timeLeft.value = 0
+          if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+            multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
+          }
+          endGame()
         }
       }
     }, 500)
   }
 
   function pickNewTarget () {
-    const randomIndex = Math.floor(Math.random() * currentDictionary.value.length)
+    const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
+    const rnd = (props.isMultiplayer && (!props.isDuel || isShared)) ? lcgRandom() : Math.random()
+    const randomIndex = Math.floor(rnd * currentDictionary.value.length)
     currentTarget.value = currentDictionary.value[randomIndex]
   }
 
   function spawnWord () {
     if (!isPlaying.value) return
-    if (props.isMultiplayer && !isHost.value) return
-
+    if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace) return
+    
     let wordsToSpawn = 1
     if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2
     if (isTurbo.value && Math.random() < 0.25) wordsToSpawn = 3
-
+    
     const zones = [{ min: 5, max: 25 }, { min: 35, max: 55 }, { min: 65, max: 85 }]
     zones.sort(() => Math.random() - 0.5)
-
+    
     for (let i = 0; i < wordsToSpawn; i++) {
       const isRhyme = Math.random() < 0.35
       const wordList = isRhyme ? currentTarget.value.rhymes : currentTarget.value.fakes
       const wordText = wordList[Math.floor(Math.random() * wordList.length)]
-
       const targetZone = zones[i % zones.length]
       const posX = Math.random() * (targetZone.max - targetZone.min) + targetZone.min
-
       const newWord = {
         id: wordIdCounter++,
         text: wordText,
@@ -381,12 +348,11 @@
         speed: isTurbo.value ? currentSpeed * 0.75 : currentSpeed,
       }
       activeWords.value.push(newWord)
-
-      if (props.isMultiplayer && isHost.value) {
+      if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
         multiplayerStore.sendGameAction({ type: 'RHYME_SPAWN_WORD', word: newWord })
       }
     }
-
+    
     if (currentSpawnRate > 500) {
       clearInterval(gameLoopInterval)
       currentSpawnRate -= 20
@@ -395,12 +361,20 @@
     }
   }
 
+  function triggerTimeBonusVisual () {
+    showTimeBonus.value = true
+    if (bonusTimeout) clearTimeout(bonusTimeout)
+    bonusTimeout = setTimeout(() => {
+      showTimeBonus.value = false
+    }, 500)
+  }
+
   function catchWord (word) {
-    if (!isPlaying.value || word.status !== 'falling') return
+    if (!isPlaying.value || word.status !== 'falling' || lives.value <= 0) return
 
     let isActionCorrect = false
 
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer && !props.isDuel && !props.isRace) {
       if (subRole.value === 'catcher') {
         isActionCorrect = word.isRhyme
       } else if (subRole.value === 'sniper') {
@@ -413,16 +387,38 @@
     if (isActionCorrect) {
       word.status = 'correct'
       correctHits.value++
-      timeLeft.value += 1
-      triggerTimeBonusVisual()
-      score.value += isTurbo.value ? 20 : 10
+      if (lives.value > 0 && anyRivalAlive.value) {
+        timeLeft.value += 1
+        triggerTimeBonusVisual()
+      }
+      const timeBonus = Math.floor(timeLeft.value / 5)
+      score.value += (isTurbo.value ? 20 : 10) + timeBonus
       combo.value++
       if (combo.value > maxCombo.value) maxCombo.value = combo.value
       if (combo.value >= 10) isTurbo.value = true
-      if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value)) pickNewTarget()
+      if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace)) pickNewTarget()
       triggerFeedback('success')
       if (props.isRace) {
-        multiplayerStore.rechargeFuel(15) // +15% de gasolina por rima acertada en carrera
+        multiplayerStore.rechargeFuel(2)
+      }
+
+      if (props.isMultiplayer) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({
+          type: 'SABOTAGE',
+          subtype: 'REDUCE_TIME',
+          amount: isSaboteurActive ? 6 : 3,
+        })
+
+        if (props.isDuel) {
+          multiplayerStore.sendGameAction({
+            type: 'TIME_PENALTY',
+            amount: isSaboteurActive ? 8 : 4,
+          })
+          if (lives.value > 0 && anyRivalAlive.value) {
+            timeLeft.value = Math.min(60, timeLeft.value + 2)
+          }
+        }
       }
     } else {
       word.status = 'incorrect'
@@ -438,14 +434,6 @@
     setTimeout(() => {
       removeWord(word.id, true)
     }, 350)
-  }
-
-  function triggerTimeBonusVisual () {
-    showTimeBonus.value = true
-    if (bonusTimeout) clearTimeout(bonusTimeout)
-    bonusTimeout = setTimeout(() => {
-      showTimeBonus.value = false
-    }, 500)
   }
 
   function removeWord (id, clicked) {
@@ -469,7 +457,9 @@
 
   function takeDamage () {
     if (props.isMultiplayer) {
-      if (isHost.value) {
+      if (props.isDuel || props.isRace) {
+        lives.value = Math.max(0, lives.value - 1)
+      } else if (isHost.value) {
         lives.value = Math.max(0, lives.value - 1)
         multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
       } else {
@@ -484,48 +474,26 @@
     isTurbo.value = false
 
     if (lives.value <= 0) {
-      // En modo carrera (planeta normal) las vidas no te echan
-      if (props.isRace && !props.isDuel) {
-        lives.value = 10 // Reset vidas
-      } else {
-        endGame()
-      }
+      endGame()
     }
-  }
-
-  function forceEndGame () {
-    endGame()
   }
 
   function endGame (silent = false) {
-    if (props.isMultiplayer && !silent && timeLeft.value > 0 && lives.value > 0) {
-      return
-    }
-
-    if (props.isMultiplayer && !silent) {
-      if (isHost.value) {
-        isPlaying.value = false
-        isGameOver.value = true
-        clearInterval(gameLoopInterval)
-        clearInterval(timerInterval)
-        activeWords.value = []
-        multiplayerStore.submitRoundResult()
-      } else if (lives.value <= 0 || timeLeft.value <= 0) {
-        isPlaying.value = false
-        isGameOver.value = true
-        clearInterval(gameLoopInterval)
-        clearInterval(timerInterval)
-        activeWords.value = []
-        multiplayerStore.submitRoundResult()
-      }
-      return
-    }
+    if (!isPlaying.value) return
 
     isPlaying.value = false
     isGameOver.value = true
     clearInterval(gameLoopInterval)
     clearInterval(timerInterval)
     activeWords.value = []
+
+    if (props.isMultiplayer && !silent) {
+      multiplayerStore.submitRoundResult()
+    }
+
+    if (props.isRace || silent || !props.isMultiplayer) {
+      emitExit()
+    }
   }
 
   function emitExit () {
@@ -536,43 +504,64 @@
     if (!msg) return
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER' && !isGameOver.value && isPlaying.value) {
-      isPlaying.value = false
-      isGameOver.value = true
+      endGame(true)
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores[msg.from] = msg.action.score
+        return
+      }
+
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         timeLeft.value = msg.action.timeLeft
         if (timeLeft.value <= 0) endGame()
       }
-      if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         currentTarget.value = msg.action.target
         if (!isPlaying.value && !isGameOver.value) startGame()
       }
-      if (msg.action?.type === 'RHYME_START' && !isHost.value) startGame()
-      if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value) activeWords.value.push(msg.action.word)
-      if (msg.action?.type === 'RHYME_CATCH') {
+      if (msg.action?.type === 'RHYME_START' && !isHost.value && !props.isDuel && !props.isRace) startGame()
+      if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value && !props.isDuel && !props.isRace) activeWords.value.push(msg.action.word)
+      if (msg.action?.type === 'RHYME_CATCH' && !props.isDuel && !props.isRace) {
         const id = msg.action.id
         const index = activeWords.value.findIndex(w => w.id === id)
         if (index !== -1) {
           activeWords.value[index].status = msg.action.status
-          if (msg.action.status === 'correct' && isHost.value) {
-            score.value += isTurbo.value ? 20 : 10
+          if (msg.action.status === 'correct' && isHost.value && !props.isDuel && !props.isRace) {
+            const timeBonus = Math.floor(timeLeft.value / 5)
+            score.value += (isTurbo.value ? 20 : 10) + timeBonus
           }
           setTimeout(() => {
             removeWord(id, true)
           }, 350)
         }
       }
-      if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value) takeDamage()
-      if (msg.action?.type === 'LIVES_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value && !props.isDuel && !props.isRace) takeDamage()
+      if (msg.action?.type === 'LIVES_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         lives.value = msg.action.lives
         if (lives.value <= 0) endGame()
       }
-      if (msg.action?.type === 'RHYME_TIME_UP') {
+      if (msg.action?.type === 'RHYME_TIME_UP' && !props.isDuel && !props.isRace) {
         endGame()
       }
-      if (msg.action?.type === 'REQUEST_RHYME_SYNC' && isHost.value) {
+      if (msg.action?.type === 'REQUEST_RHYME_SYNC' && isHost.value && !props.isDuel && !props.isRace) {
         multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
         multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
       }
@@ -580,8 +569,11 @@
   }, { immediate: true })
 
   watch(score, newScore => {
-    if ((props.isMultiplayer && isHost.value) || props.isRace) {
+    if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores[astroStore.user] = newScore
     }
   })
 
@@ -597,13 +589,16 @@
         multiplayerStore.sendGameAction({ type: 'REQUEST_RHYME_SYNC' })
       }
       
-      // Cargamos el primer target de inmediato
-      if (isHost.value) pickNewTarget()
+      const s = multiplayerStore.room?.gameConfig?.seed
+      if (s) {
+        currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
+      }
 
-      // Pero no empezamos el spawn de palabras ni el tiempo hasta que pase el briefing (Reducido a 1.5s)
+      if (isHost.value || props.isDuel || props.isRace) pickNewTarget()
+
       setTimeout(() => {
         if (!isPlaying.value) {
-          if (isHost.value) handleStartClick()
+          if (isHost.value || props.isDuel || props.isRace) handleStartClick()
           else startGame()
         }
       }, 1500)

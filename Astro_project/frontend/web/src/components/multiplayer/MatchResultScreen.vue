@@ -196,7 +196,7 @@
                   variant="tonal"
                 >{{ $t('multiplayerResult.tie') }}</v-chip>
               </div>
-                {{ (h.scores && h.scores[myName]) || 0 }} - {{ (h.scores && h.scores[opponentName]) || 0 }}
+                {{ (h.currentScores && h.currentScores[myName]) || 0 }} - {{ (h.currentScores && h.currentScores[opponentName]) || 0 }}
             </div>
           </v-card>
         </v-col>
@@ -263,8 +263,10 @@
     const teams = multiplayerStore.room?.gameConfig?.teams || {}
     const players = multiplayerStore.room?.players || []
     
-    // Si hay equipos, mostramos por equipo
-    if (Object.keys(teams).length > 0) {
+    const isIndividual = ['individual', 'tournament', 'race', '1vs1', 'carrera', 'torneig', 'duel'].includes(multiplayerStore.room?.gameConfig?.modality)
+    
+    // Si hay equipos Y no es modo individual, mostramos por equipo
+    if (Object.keys(teams).length > 0 && !isIndividual) {
       const uniqueTeams = [...new Set(Object.values(teams))].sort()
       return uniqueTeams.map(tId => ({
         id: tId,
@@ -274,7 +276,7 @@
       }))
     }
     
-    // Si no hay equipos, mostramos por jugador
+    // Si no hay equipos o es modo individual, mostramos por jugador
     return players.map(p => {
       const pName = typeof p === 'string' ? p : (p.username || p.user)
       return {

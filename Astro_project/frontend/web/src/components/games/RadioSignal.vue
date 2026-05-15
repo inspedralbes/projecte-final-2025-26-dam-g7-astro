@@ -78,11 +78,18 @@
     <div class="input-housing">
       <div v-if="isTuned" class="input-active">
         <div class="input-header">
-          <button class="replay-btn" @click="speakPhrase(1.0)">
+          <button class="replay-btn" @click="speakPhrase(1.0)" :title="$t('radioSignal.replay')">
             <v-icon size="18">mdi-volume-high</v-icon>
           </button>
           <span class="input-label">{{ $t('radioSignal.incomingTransmission') }}</span>
         </div>
+        
+        <!-- MOSTRAR FRASE AL RECEPTOR EN COOP -->
+        <div v-if="props.isMultiplayer && !isHost && !props.isDuel && !props.isRace" class="phrase-display-coop mb-2">
+          <div class="text-caption text-grey-lighten-1">{{ $t('radioSignal.transmitThis') || 'TRANSMET AQUESTA FRASE:' }}</div>
+          <div class="text-h6 text-amber-accent-2 font-weight-bold">{{ currentPhrase.phrase }}</div>
+        </div>
+
         <div class="input-row">
           <input
             v-model="userGuess"
@@ -103,43 +110,12 @@
         </transition>
       </div>
       <div v-else class="input-placeholder">
-        <v-icon color="#444" size="18">mdi-antenna</v-icon>
-        <span>{{ $t('radioSignal.waiting') }}</span>
+        <v-icon color="grey-darken-3" size="24">mdi-radio-off</v-icon>
+        <div>{{ $t('radioSignal.noSignal') }}</div>
       </div>
     </div>
 
-    <!-- INTERFAZ COOPERATIVA: TRANSMISIÓN BIDIRECCIONAL -->
-    <div v-if="isMultiplayer" class="coop-status-bar">
-      <div class="coop-panel">
-        <div class="coop-label">{{ $t('radioSignal.partnerComms') || 'COMUNICACIÓ AMB EL COMPANY' }}</div>
-
-        <!-- Historial de mensajes -->
-        <div ref="chatHistoryRef" class="chat-history mb-2">
-          <div v-for="(msg, i) in multiplayerStore.coopChatMessages" :key="i" class="chat-msg">
-            <span class="chat-user">{{ msg.from === astroStore.user ? t('radioSignal.you') : t('radioSignal.partner') }}:</span>
-            <span class="chat-text">{{ msg.text }}</span>
-          </div>
-          <div v-if="multiplayerStore.partnerText" class="chat-msg typing">
-            <span class="chat-user">{{ $t('radioSignal.partner') }}:</span>
-            <span class="chat-text italic">{{ multiplayerStore.partnerText }}...</span>
-          </div>
-        </div>
-
-        <div class="partner-signal-box mb-2">
-          <span class="signal-label">{{ $t('radioSignal.youHear') || 'SENTS:' }}</span>
-          <span class="signal-text">{{ multiplayerStore.partnerText || '---' }}</span>
-        </div>
-        <input
-          v-model="localTransmitText"
-          class="transmit-input"
-          :placeholder="$t('radioSignal.typeAndEnter') || 'Escriu un missatge i prem Enter...'"
-          @input="sendTransmission"
-          @keyup.enter="sendChatMessage"
-        >
-      </div>
-    </div>
-
-    <!-- Feedback Visual Overlay (Unificat) -->
+    <!-- Feedback Visual Overlay -->
     <v-overlay
       v-model="showFeedback"
       contained
@@ -169,30 +145,50 @@
       </div>
     </v-overlay>
 
+    <!-- COOP STATUS BAR -->
+    <div v-if="props.isMultiplayer && !props.isRace && !props.isDuel" class="coop-status-bar">
+      <div class="coop-label">XARXA DE TRANSMISSIÓ COMPARTIDA</div>
+      <div ref="chatBox" class="chat-history">
+        <div v-for="(msg, idx) in chatHistory" :key="idx" class="chat-msg">
+          <span class="chat-user">[{{ msg.user }}]:</span>
+          <span class="chat-text" :class="msg.type">{{ msg.text }}</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Overlay de Resultados Finales -->
-    <v-overlay
-      v-model="showGameOverOverlay"
-      class="align-center justify-center"
-      persistent
-      z-index="120"
-    >
-      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl elevation-24" max-width="450">
-        <v-icon class="mb-4" color="amber-accent-3" icon="mdi-trophy" size="80" />
-        <h2 class="text-h4 font-weight-bold text-white mb-2">{{ $t('radioSignal.title') }}</h2>
-        <p class="text-h5 text-cyan-accent-3 mb-2">{{ $t('radioSignal.points', { score }) }}</p>
-        <p class="text-body-1 text-grey-lighten-1 mb-8">{{ $t('radioSignal.successDesc') }}</p>
+    <!-- START OVERLAY -->
+    <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
+      <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
+        <v-icon class="mb-4" color="cyan-accent-3" icon="mdi-radio-tower" size="64" />
+        <h2 class="text-h4 font-weight-bold text-white mb-4">{{ $t('radioSignal.title') }}</h2>
+        <p class="text-body-1 text-grey-lighten-1 mb-6">{{ $t('radioSignal.desc') }}</p>
+        
+        <div v-if="isMultiplayer && !props.isRace && !props.isDuel" class="mb-6 pa-4 rounded-lg bg-deep-purple-darken-4 border-cyan">
+          <div v-if="isHost" class="text-cyan-accent-2 font-weight-bold">
+            <v-icon start>mdi-ear-hearing</v-icon> ETS L'OIENT: Escolta la frase i escriu-la!
+          </div>
+          <div v-else class="text-amber-accent-2 font-weight-bold">
+            <v-icon start>mdi-eye</v-icon> ETS EL RECEPTOR: Mira la frase i comunica-la al teu company!
+          </div>
+        </div>
+
         <v-btn
-          class="font-weight-black text-black px-8"
+          v-if="!isMultiplayer"
+          block
+          class="font-weight-black text-black"
           color="cyan-accent-3"
           rounded="xl"
           size="x-large"
-          @click="emitExit"
+          @click="startGame"
         >
-          {{ $t('radioSignal.send') }}
+          {{ $t('radioSignal.startBtn') }}
         </v-btn>
+        <div v-else class="text-h6 text-cyan-accent-2 animate-pulse mt-4">
+          {{ $t('multiplayerLobby.autoStarting') || 'LA MISIÓN COMENZARÁ TRAS EL BRIEFING...' }}
+        </div>
       </v-card>
     </v-overlay>
+
   </div>
 </template>
 
@@ -204,49 +200,17 @@
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
   const { t, locale } = useI18n()
-  const multiplayerStore = useMultiplayerStore()
   const astroStore = useAstroStore()
+  const multiplayerStore = useMultiplayerStore()
 
   const props = defineProps({
-    isMultiplayer: {
-      type: Boolean,
-      default: false,
-    },
-    isRace: {
-      type: Boolean,
-      default: false,
-    },
-    isDuel: {
-      type: Boolean,
-      default: false,
-    },
-    duration: {
-      type: Number,
-      default: 90,
-    },
+    isMultiplayer: { type: Boolean, default: false },
+    isRace: { type: Boolean, default: false },
+    isDuel: { type: Boolean, default: false },
+    duration: { type: Number, default: 90 },
+    autoStart: { type: Boolean, default: false },
   })
-
   const emit = defineEmits(['game-over'])
-
-  const subRole = computed(() => multiplayerStore.subRole)
-  const myTeam = computed(() => multiplayerStore.room?.gameConfig?.teams?.[astroStore.user])
-  const isHost = computed(() => multiplayerStore.room?.host === astroStore.user)
-  const localTransmitText = ref('')
-
-  // Frecuencia objetivo
-  const targetFrequency = ref(Math.random() * 90 + 5)
-  const currentFrequency = ref(Math.random() * 20)
-  const tuningThreshold = 2
-  const userGuess = ref('')
-  const isTuned = ref(false)
-  const showError = ref(false)
-  const showSuccess = ref(false)
-  const showGameOverOverlay = ref(false)
-  const score = ref(0)
-  const timeLeft = ref(props.duration)
-  const gameFinished = ref(false)
-  const errorTip = ref('')
-  let roundTimer = null
 
   // --- REFORÇ VISUAL I SONOR ---
   const showFeedback = ref(false)
@@ -265,571 +229,455 @@
     setTimeout(() => { showFeedback.value = false }, 800)
   }
 
+  const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const anyRivalAlive = computed(() => {
+    if (!props.isMultiplayer) return true
+    const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
+    if (rivals.length === 0) return true 
+    return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
+  })
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
+
+  // --- GAME STATE ---
+  const score = ref(0)
+  const timeLeft = ref(props.duration)
+  const currentFrequency = ref(50.0)
+  const targetFrequency = ref(75.5)
+  const isTuned = ref(false)
+  const currentLevel = ref(1)
+  const userGuess = ref('')
+  const errorTip = ref('')
+  const showStartOverlay = ref(!props.autoStart)
+  const showGameOverOverlay = ref(false)
+  const isPlaying = ref(false)
+  const chatHistory = ref([])
+  const chatBox = ref(null)
+
   const phrases = computed(() => radioSignalData[locale.value] || radioSignalData['es'])
   const shuffledPhrases = ref([])
-  const phraseIndex = ref(0)
-  const phraseToSolve = ref('')
-  const phraseToHear = ref('')
+  const currentPhraseIdx = ref(0)
 
-  let speechRepeatTimer = null
-
-  // Initialize phrases
-  onMounted(() => {
-    shuffledPhrases.value = [...phrases.value].sort(() => Math.random() - 0.5).slice(0, 8)
-    phraseToSolve.value = shuffledPhrases.value[0]
-    phraseToHear.value = shuffledPhrases.value[0]
-
-    // SINCRONIZACIÓN DE ESTADO ASIMÉTRICO (Desde el Server)
-    if (props.isMultiplayer) {
-      const room = multiplayerStore.room
-      if (room?.gameConfig?.radioData && myTeam.value) {
-        const teamData = room.gameConfig.radioData[myTeam.value]
-        if (teamData) {
-          targetFrequency.value = teamData.frequency
-          // Asimetría: uno resuelve una parte y el otro la otra
-          if (subRole.value === 'listener') {
-            phraseToSolve.value = teamData.phrase
-            phraseToHear.value = teamData.partnerPhrase || phrases.value[1]
-          } else {
-            phraseToSolve.value = teamData.partnerPhrase || phrases.value[1]
-            phraseToHear.value = teamData.phrase
-          }
-        }
-      }
-    }
+  const currentPhrase = computed(() => {
+    if (shuffledPhrases.value.length === 0) return { phrase: '...', hint: '' }
+    return shuffledPhrases.value[currentPhraseIdx.value % shuffledPhrases.value.length]
   })
 
-  // ---- DIAL ----
-  const knobRotation = ref(0)
-  let isDragging = false
-  let startAngle = 0
-  let currentKnobRotation = 0
-
-  function removeDragListeners () {
-    window.removeEventListener('mousemove', onRotating)
-    window.removeEventListener('mouseup', stopRotating)
-    window.removeEventListener('touchmove', onRotating)
-    window.removeEventListener('touchend', stopRotating)
-  }
-
-  onMounted(() => {
-    knobRotation.value = (currentFrequency.value / 100) * 360
-    currentKnobRotation = knobRotation.value
-  })
-
-  function startRotating (e) {
-    if (gameFinished.value) return
-    isDragging = true
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
-    const knob = e.currentTarget.getBoundingClientRect()
-    const cx = knob.left + knob.width / 2
-    const cy = knob.top + knob.height / 2
-    startAngle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) - currentKnobRotation
-    window.addEventListener('mousemove', onRotating)
-    window.addEventListener('mouseup', stopRotating)
-    window.addEventListener('touchmove', onRotating, { passive: false })
-    window.addEventListener('touchend', stopRotating)
-    initAudio()
-  }
-
-  function onRotating (e) {
-    if (!isDragging || gameFinished.value) return
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0)
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0)
-    const knobEl = document.querySelector('.knob-container')
-    if (!knobEl) return
-    const knob = knobEl.getBoundingClientRect()
-    const cx = knob.left + knob.width / 2
-    const cy = knob.top + knob.height / 2
-    const angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI)
-    let rotation = angle - startAngle
-    while (rotation < 0) rotation += 360
-    while (rotation >= 360) rotation -= 360
-    currentKnobRotation = rotation
-    knobRotation.value = rotation
-    currentFrequency.value = (rotation / 360) * 100
-    updateNoise()
-    if (isTuned.value) {
-      isTuned.value = false; stopSpeechLoop()
-    }
-  }
-
-  function stopRotating () {
-    if (gameFinished.value) return
-    isDragging = false
-    removeDragListeners()
-    const distance = Math.abs(currentFrequency.value - targetFrequency.value)
-    if (distance < tuningThreshold) {
-      isTuned.value = true
-      if (gainNode && audioCtx) gainNode.gain.setTargetAtTime(0.005, audioCtx.currentTime, 0.1)
-      startSpeechLoop()
-    } else {
-      isTuned.value = false
-      stopSpeechLoop()
-    }
-  }
-
-  // ---- AUDIO ----
-  let audioCtx = null
-  let noiseNode = null
-  let gainNode = null
-  let filterNode = null
-
-  async function initAudio () {
-    if (audioCtx) {
-      if (audioCtx.state === 'suspended') await audioCtx.resume(); return
-    }
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-      const buf = audioCtx.createBuffer(1, 2 * audioCtx.sampleRate, audioCtx.sampleRate)
-      const d = buf.getChannelData(0)
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
-      noiseNode = audioCtx.createBufferSource()
-      noiseNode.buffer = buf; noiseNode.loop = true
-      filterNode = audioCtx.createBiquadFilter()
-      filterNode.type = 'bandpass'; filterNode.frequency.value = 800; filterNode.Q.value = 1.2
-      gainNode = audioCtx.createGain(); gainNode.gain.value = 0.15
-      noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination)
-      noiseNode.start()
-    } catch {
-      console.warn('Audio error')
-    }
-  }
-
-  function updateNoise () {
-    if (!gainNode || !audioCtx) return
-    const dist = Math.abs(currentFrequency.value - targetFrequency.value)
-    gainNode.gain.setTargetAtTime(Math.max(0.01, Math.min(dist / 15, 0.2)), audioCtx.currentTime, 0.1)
-  }
-
-  // ---- ONDAS ----
+  // --- CANVAS & WAVEFORMS ---
   const targetWaveCanvas = ref(null)
   const currentWaveCanvas = ref(null)
-  let animationFrame = null
+  let animationId = null
   let time = 0
 
   function drawWaves () {
-    time += 0.04
-    if (targetWaveCanvas.value && currentWaveCanvas.value) {
-      renderWave(targetWaveCanvas.value, true)
-      renderWave(currentWaveCanvas.value, false)
+    if (!isPlaying.value) return
+
+    const tCtx = targetWaveCanvas.value?.getContext('2d')
+    const cCtx = currentWaveCanvas.value?.getContext('2d')
+    if (!tCtx || !cCtx) return
+
+    tCtx.clearRect(0, 0, 260, 90)
+    cCtx.clearRect(0, 0, 260, 90)
+
+    time += 0.05
+    const targetFreqVal = 0.1 + (targetFrequency.value / 100) * 0.4
+    const currentFreqVal = 0.1 + (currentFrequency.value / 100) * 0.4
+    const diff = Math.abs(targetFrequency.value - currentFrequency.value)
+    const noise = diff > 2 ? (diff / 20) : 0
+
+    // Draw Background Grid
+    tCtx.strokeStyle = 'rgba(0, 229, 255, 0.1)'
+    cCtx.strokeStyle = 'rgba(0, 229, 255, 0.1)'
+    for (let i = 0; i < 260; i += 40) {
+      tCtx.beginPath(); tCtx.moveTo(i, 0); tCtx.lineTo(i, 90); tCtx.stroke()
+      cCtx.beginPath(); cCtx.moveTo(i, 0); cCtx.lineTo(i, 90); cCtx.stroke()
     }
-    animationFrame = requestAnimationFrame(drawWaves)
+
+    // Draw Target Wave
+    tCtx.beginPath()
+    tCtx.strokeStyle = '#00E5FF'
+    tCtx.lineWidth = 2
+    tCtx.shadowBlur = 5
+    tCtx.shadowColor = '#00E5FF'
+    for (let x = 0; x < 260; x++) {
+      const y = 45 + Math.sin(x * targetFreqVal + time) * 30
+      if (x === 0) tCtx.moveTo(x, y); else tCtx.lineTo(x, y)
+    }
+    tCtx.stroke()
+
+    // Draw Current Wave
+    cCtx.beginPath()
+    cCtx.strokeStyle = isTuned.value ? '#00E676' : '#FF5252'
+    cCtx.lineWidth = 2
+    cCtx.shadowBlur = 5
+    cCtx.shadowColor = cCtx.strokeStyle
+    for (let x = 0; x < 260; x++) {
+      const n = (Math.random() - 0.5) * noise * 30
+      const y = 45 + Math.sin(x * currentFreqVal + time) * 30 + n
+      if (x === 0) cCtx.moveTo(x, y); else cCtx.lineTo(x, y)
+    }
+    cCtx.stroke()
+
+    animationId = requestAnimationFrame(drawWaves)
   }
 
-  function renderWave (canvas, isTarget) {
-    const ctxWave = canvas.getContext('2d')
-    const w = canvas.width, h = canvas.height
-    ctxWave.clearRect(0, 0, w, h)
+  // --- KNOB INTERACTION ---
+  const knobRotation = ref(0)
+  let isDraggingKnob = false
 
-    ctxWave.strokeStyle = '#0d1117'; ctxWave.lineWidth = 0.5
-    for (let i = 0; i < w; i += 18) {
-      ctxWave.beginPath(); ctxWave.moveTo(i, 0); ctxWave.lineTo(i, h); ctxWave.stroke()
-    }
-    for (let i = 0; i < h; i += 18) {
-      ctxWave.beginPath(); ctxWave.moveTo(0, i); ctxWave.lineTo(w, i); ctxWave.stroke()
-    }
-    ctxWave.strokeStyle = '#1a2030'; ctxWave.lineWidth = 1
-    ctxWave.beginPath(); ctxWave.moveTo(0, h / 2); ctxWave.lineTo(w, h / 2); ctxWave.stroke()
+  function startRotating (e) {
+    isDraggingKnob = true
+    window.addEventListener('mousemove', handleRotate)
+    window.addEventListener('mouseup', stopRotating)
+    window.addEventListener('touchmove', handleRotate)
+    window.addEventListener('touchend', stopRotating)
+  }
 
-    const cleanAmp = 22, cleanFreq = 0.08, cleanPhase = time
+  function handleRotate (e) {
+    if (!isDraggingKnob) return
+    const rect = document.querySelector('.knob-container').getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    
+    const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI)
+    knobRotation.value = angle
+    
+    // Map rotation to frequency (0-100)
+    const normAngle = (angle + 180) % 360 // 0 to 360
+    currentFrequency.value = (normAngle / 360) * 100
+    checkTuning()
+  }
 
-    if (isTarget) {
-      ctxWave.beginPath(); ctxWave.lineWidth = 2.5; ctxWave.strokeStyle = '#FF9800'; ctxWave.setLineDash([])
-      for (let x = 0; x < w; x++) {
-        const y = h / 2 + Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
-        x === 0 ? ctxWave.moveTo(x, y) : ctxWave.lineTo(x, y)
-      }
-      ctxWave.stroke()
-      if (isTuned.value) {
-        ctxWave.shadowBlur = 15; ctxWave.shadowColor = '#FF9800'; ctxWave.stroke(); ctxWave.shadowBlur = 0
+  function stopRotating () {
+    isDraggingKnob = false
+    window.removeEventListener('mousemove', handleRotate)
+    window.removeEventListener('mouseup', stopRotating)
+    window.removeEventListener('touchmove', handleRotate)
+    window.removeEventListener('touchend', stopRotating)
+  }
+
+  function checkTuning () {
+    const diff = Math.abs(currentFrequency.value - targetFrequency.value)
+    if (diff < 1.5) {
+      if (!isTuned.value) {
+        isTuned.value = true
+        speakPhrase(0.8)
       }
     } else {
-      const dist = Math.abs(currentFrequency.value - targetFrequency.value)
-      const prox = Math.max(0, 1 - (dist / 50))
-      ctxWave.beginPath(); ctxWave.lineWidth = 2; ctxWave.strokeStyle = `hsl(${180 + prox * 10}, 100%, ${50 + prox * 20}%)`
-      for (let x = 0; x < w; x++) {
-        const clean = Math.sin(x * cleanFreq + cleanPhase) * cleanAmp
-        const c1 = Math.sin(x * 0.23 + time * 1.5) * 18
-        const c2 = Math.sin(x * 0.07 + time * 0.7) * 12
-        const c3 = Math.sin(x * 0.35 + time * 2.3) * 8
-        const noise = (Math.random() - 0.5) * 10 * (1 - prox)
-        const y = h / 2 + clean * prox + (c1 + c2 * 0.5 + c3 * 0.3 + noise) * (1 - prox)
-        x === 0 ? ctxWave.moveTo(x, y) : ctxWave.lineTo(x, y)
-      }
-      ctxWave.stroke()
-      if (prox > 0.8) {
-        ctxWave.shadowBlur = 10 * prox; ctxWave.shadowColor = '#00E5FF'; ctxWave.stroke(); ctxWave.shadowBlur = 0
-      }
+      isTuned.value = false
     }
   }
 
-  // ---- VOZ ----
-  function startSpeechLoop () {
-    if (!isTuned.value || gameFinished.value) return
-    speakPhrase(1)
+  // --- AUDIO FIX ---
+  const voices = ref([])
+  function loadVoices() {
+    voices.value = window.speechSynthesis.getVoices()
   }
+  window.speechSynthesis.onvoiceschanged = loadVoices
+  loadVoices()
 
-  function stopSpeechLoop () {
-    if (speechRepeatTimer) {
-      clearTimeout(speechRepeatTimer)
-      speechRepeatTimer = null
-    }
-    window.speechSynthesis.cancel()
-  }
-
-  function speakPhrase (volume = 1) {
-    if (!window.speechSynthesis || gameFinished.value) return
+  function speakPhrase (volume = 1.0) {
+    if (!isTuned.value) return
+    
+    // Solo habla si es el host (oyente) o modo individual o duelo/carrera
+    const shouldSpeak = !props.isMultiplayer || isHost.value || props.isDuel || props.isRace
+    if (!shouldSpeak) return
 
     window.speechSynthesis.cancel()
-
-    setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(phraseToHear.value)
-
-      const setupVoice = () => {
-        const voices = window.speechSynthesis.getVoices()
-        const targetLang = locale.value === 'ca' ? 'ca' : 'es'
-        const v = voices.find(v => v.lang.includes(targetLang))
-          || voices.find(v => v.lang.includes('es') && v.name.includes('Google'))
-          || voices.find(v => v.lang.includes('es')) || voices[0]
-        if (v) u.voice = v
-      }
-
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          setupVoice()
-          window.speechSynthesis.speak(u)
-        }
-      } else {
-        setupVoice()
-        window.speechSynthesis.speak(u)
-      }
-
-      u.lang = locale.value === 'ca' ? 'ca-ES' : 'es-ES'
-      u.rate = 0.9
-      u.pitch = 1
-      u.volume = volume
-    }, 50)
-  }
-
-  // ---- TRANSMISIÓN COOPERATIVA ----
-  function sendTransmission () {
-    if (props.isMultiplayer) {
-      multiplayerStore.sendGameAction({
-        type: 'PARTNER_TYPING',
-        text: localTransmitText.value,
-      })
-    }
-  }
-
-  function sendChatMessage () {
-    if (props.isMultiplayer && localTransmitText.value.trim()) {
-      multiplayerStore.sendGameAction({
-        type: 'COOP_CHAT',
-        text: localTransmitText.value.trim(),
-      })
-      localTransmitText.value = ''
-      multiplayerStore.sendGameAction({
-        type: 'PARTNER_TYPING',
-        text: '',
-      })
-    }
+    const utter = new SpeechSynthesisUtterance(currentPhrase.value.phrase)
+    
+    // Detectar mejor el idioma y forzar voz si es posible
+    const lang = locale.value === 'ca' ? 'ca-ES' : 'es-ES'
+    utter.lang = lang
+    
+    const targetVoice = voices.value.find(v => v.lang.startsWith(lang))
+    if (targetVoice) utter.voice = targetVoice
+    
+    utter.rate = 0.85
+    utter.pitch = 1.0
+    utter.volume = volume
+    window.speechSynthesis.speak(utter)
   }
 
   function checkPhrase () {
-    if (gameFinished.value) return
-    const norm = s => s.toUpperCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+    if (!isTuned.value || !userGuess.value.trim()) return
 
-    if (norm(userGuess.value) === norm(phraseToSolve.value)) {
-      score.value += 150
-      timeLeft.value += 15
+    const normalizedGuess = userGuess.value.trim().toLowerCase().replace(/[.,!?;:]/g, '')
+    const normalizedTarget = currentPhrase.value.phrase.toLowerCase().replace(/[.,!?;:]/g, '')
+
+    if (normalizedGuess === normalizedTarget) {
+      score.value += 100 + (currentLevel.value * 20)
+      
+      // SOLO SUMAR TIEMPO SI EL RIVAL ESTÁ VIVO
+      if (anyRivalAlive.value) {
+        timeLeft.value = Math.min(120, timeLeft.value + 15)
+      }
+
+      currentLevel.value++
+      currentPhraseIdx.value++
+      targetFrequency.value = Math.random() * 100
       userGuess.value = ''
+      isTuned.value = false
+      errorTip.value = ''
       triggerFeedback('success')
 
-      targetFrequency.value = Math.random() * 90 + 5
+      if (props.isRace) {
+        multiplayerStore.rechargeFuel(20)
+      }
 
       if (props.isMultiplayer) {
-        multiplayerStore.sendGameAction({
-          type: 'RADIO_PHRASE_SOLVED',
-          teamId: myTeam.value,
-          pointsGained: 150,
-          newFreq: targetFrequency.value
-        })
-      } else {
-        phraseIndex.value++
-        const nextPhrase = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
-        phraseToSolve.value = nextPhrase
-        phraseToHear.value = nextPhrase
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
+        multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 15 : 8 })
+        
+        if (!props.isDuel && !props.isRace) {
+          multiplayerStore.sendGameAction({ type: 'RADIO_PHRASE_CORRECT', score: score.value, nextIdx: currentPhraseIdx.value, nextFreq: targetFrequency.value })
+          addChatMessage('SISTEMA', t('radioSignal.correctPhrase'), 'success')
+        } else if (props.isDuel) {
+          multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: isSaboteurActive ? 15 : 10 })
+        }
       }
-
-      if (props.isRace) {
-        multiplayerStore.rechargeFuel(25) // +25% por cada frase sintonizada
-      }
-
-      isTuned.value = false
-      stopSpeechLoop()
-      updateNoise()
     } else {
-      triggerFeedback('error')
-      // Lógica de "cuántas letras te has equivocado"
-      const target = norm(phraseToSolve.value)
-      const guess = norm(userGuess.value)
-      
-      let diff = 0
-      const maxLen = Math.max(target.length, guess.length)
-      for (let i = 0; i < maxLen; i++) {
-        if (target[i] !== guess[i]) diff++
+      timeLeft.value = Math.max(0, timeLeft.value - 10)
+      if (props.isDuel || props.isRace || !props.isMultiplayer) {
+        multiplayerStore.timeLeft = timeLeft.value
       }
-      
-      errorTip.value = t('radioSignal.errorCount', { count: diff }) || `Tens ${diff} lletres incorrectes!`
+      errorTip.value = t('radioSignal.wrongPhrase')
+      triggerFeedback('error')
       setTimeout(() => { errorTip.value = '' }, 3000)
-      // NO borramos userGuess para que pueda corregirlo
     }
   }
 
+  function addChatMessage (user, text, type = 'info') {
+    chatHistory.value.push({ user, text, type })
+    setTimeout(() => {
+      if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight
+    }, 50)
+  }
+
+  function startGame () {
+    showStartOverlay.value = false
+    isPlaying.value = true
+    score.value = 0
+    timeLeft.value = props.duration
+    currentFrequency.value = 50
+    targetFrequency.value = Math.random() * 100
+    
+    if (shuffledPhrases.value.length === 0) {
+      shuffledPhrases.value = [...phrases.value].sort(() => Math.random() - 0.5)
+    }
+
+    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+      multiplayerStore.sendGameAction({ type: 'RADIO_SYNC_PHRASES', phrases: shuffledPhrases.value })
+    }
+
+    drawWaves()
+    startTimer()
+  }
+
+  let timerInterval = null
   function startTimer () {
-    if (roundTimer) clearInterval(roundTimer)
-
-    if (!props.isMultiplayer || isHost.value) {
-      roundTimer = setInterval(() => {
-        if (gameFinished.value) return
-        timeLeft.value = Math.max(0, timeLeft.value - 1)
-
-        if (props.isMultiplayer && isHost.value) {
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-        }
-
-        if (timeLeft.value === 0) {
-          if (props.isRace && !props.isDuel) {
-            timeLeft.value = 60 // No te echa en planeta normal
+    if (timerInterval) clearInterval(timerInterval)
+    let lastTick = Date.now()
+    timerInterval = setInterval(() => {
+      if (!isPlaying.value) return
+      
+      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+        const now = Date.now()
+        const delta = Math.floor((now - lastTick) / 1000)
+        if (delta >= 1) {
+          timeLeft.value = Math.max(0, timeLeft.value - delta)
+          lastTick += delta * 1000
+          
+          if (props.isMultiplayer) {
+            // En duelo/race TODOS envían su tiempo para que el rival sepa si estamos vivos
+            if (isHost.value || props.isDuel || props.isRace) {
+              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+            }
+            
+            if (props.isDuel || props.isRace || !props.isMultiplayer) {
+              multiplayerStore.timeLeft = timeLeft.value
+            }
           } else {
-            finishGame()
+            multiplayerStore.timeLeft = timeLeft.value
           }
         }
-      }, 1000)
+
+        if (timeLeft.value <= 0) {
+          if (props.isRace && !props.isDuel) {
+             endGame()
+          } else {
+            if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+              multiplayerStore.sendGameAction({ type: 'RADIO_TIME_UP' })
+            }
+            endGame()
+          }
+        }
+      }
+    }, 500)
+  }
+
+  function endGame () {
+    isPlaying.value = false
+    if (timerInterval) clearInterval(timerInterval)
+    cancelAnimationFrame(animationId)
+
+    if (props.isMultiplayer) {
+      multiplayerStore.submitRoundResult()
+    }
+    
+    if (props.isRace || !props.isMultiplayer) {
+      emitExit()
     }
   }
 
-  function finishGame (silent = false) {
-    if (gameFinished.value) return
-
-    gameFinished.value = true
-    isDragging = false
-    removeDragListeners()
-    stopSpeechLoop()
-    stopAudio()
-
-    if (roundTimer) {
-      clearInterval(roundTimer)
-      roundTimer = null
-    }
-
-    if (props.isMultiplayer && !silent) {
-      multiplayerStore.submitRoundResult()
-      return
-    }
-
-    if (silent) {
-      emitExit()
-    } else {
-      showGameOverOverlay.value = true
-    }
+  function returnToMenu () {
+    emit('game-over', score.value)
   }
 
   function emitExit () {
-    const reward = score.value + timeLeft.value
-    emit('game-over', reward)
-  }
-
-  function stopAudio () {
-    stopSpeechLoop()
-    if (noiseNode) try {
-      noiseNode.stop()
-    } catch {}
-    if (audioCtx) audioCtx.close()
-    noiseNode = null
-    filterNode = null
-    gainNode = null
-    audioCtx = null
+    emit('game-over', score.value)
   }
 
   onMounted(() => {
-    drawWaves()
     if (props.isMultiplayer || props.isRace) {
-      // Delay para el briefing (Reducido a 3s)
+      if (!isHost.value && !props.isDuel && !props.isRace) {
+        multiplayerStore.sendGameAction({ type: 'REQUEST_RADIO_SYNC' })
+      }
       setTimeout(() => {
-        startTimer()
+        if (!isPlaying.value) startGame()
       }, 3000)
-    } else {
-      startTimer()
     }
   })
 
-  // Listener para eventos multijugador
+  onUnmounted(() => {
+    if (timerInterval) clearInterval(timerInterval)
+    cancelAnimationFrame(animationId)
+  })
+
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
-
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      if (!gameFinished.value) {
-        finishGame(true)
-      }
+    if (msg.type === 'ROUND_ENDED_BY_WINNER' && isPlaying.value) {
+      endGame()
       return
     }
 
     if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'RADIO_INIT_ASYNC' && !isHost.value) {
-        targetFrequency.value = msg.action.newFreq
-        phraseToSolve.value = msg.action.guestSolve
-        phraseToHear.value = msg.action.hostSolve
+      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores[msg.from] = msg.action.score
+        return
       }
 
-      if (msg.action?.type === 'RADIO_PHRASE_SOLVED' && msg.action.teamId === myTeam.value) {
-        score.value += msg.action.pointsGained
-        targetFrequency.value = msg.action.newFreq
-        
-        // Rotamos frases para el equipo
-        phraseIndex.value++
-        const p1 = shuffledPhrases.value[phraseIndex.value] || phrases.value[0]
-        const p2 = shuffledPhrases.value[phraseIndex.value + 1] || phrases.value[1]
-
-        if (subRole.value === 'listener') {
-          phraseToSolve.value = p1
-          phraseToHear.value = p2
-        } else {
-          phraseToSolve.value = p2
-          phraseToHear.value = p1
+      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
         }
+        if (timeLeft.value <= 0) endGame()
       }
 
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value) {
+      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
+        if (props.isDuel || props.isRace || !props.isMultiplayer) {
+          multiplayerStore.timeLeft = timeLeft.value
+        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
         timeLeft.value = msg.action.timeLeft
-        if (timeLeft.value <= 0) {
-          if (props.isRace && !props.isDuel) {
-            timeLeft.value = 60 // No te echa en planeta normal
-          } else {
-            finishGame()
-          }
-        }
+        if (timeLeft.value <= 0) endGame()
+      }
+
+      if (msg.action?.type === 'RADIO_SYNC_PHRASES' && !props.isDuel && !props.isRace) {
+        shuffledPhrases.value = msg.action.phrases
+        if (!isPlaying.value) startGame()
+      }
+
+      if (msg.action?.type === 'RADIO_PHRASE_CORRECT' && !props.isDuel && !props.isRace) {
+        score.value = msg.action.score
+        currentPhraseIdx.value = msg.action.nextIdx
+        targetFrequency.value = msg.action.nextFreq
+        isTuned.value = false
+        addChatMessage('SISTEMA', t('radioSignal.partnerCorrect'), 'success')
+      }
+
+      if (msg.action?.type === 'RADIO_TIME_UP' && !props.isDuel && !props.isRace) {
+        endGame()
+      }
+      if (msg.action?.type === 'REQUEST_RADIO_SYNC' && isHost.value && !props.isDuel && !props.isRace) {
+        multiplayerStore.sendGameAction({ type: 'RADIO_SYNC_PHRASES', phrases: shuffledPhrases.value })
       }
     }
   }, { immediate: true })
 
   watch(score, newScore => {
-    if (props.isMultiplayer || props.isRace) {
-      multiplayerStore.sendGameAction({
-        type: 'SCORE_UPDATE',
-        score: newScore,
-      })
+    if (props.isMultiplayer) {
+      multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: newScore })
+    }
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.roundScores[astroStore.user] = newScore
     }
   })
 
-  onUnmounted(() => {
-    isDragging = false
-    removeDragListeners()
-    if (roundTimer) clearInterval(roundTimer)
-    stopSpeechLoop()
-    stopAudio()
-    if (animationFrame) cancelAnimationFrame(animationFrame)
-  })
+  // Iniciar automáticamente si se solicita
+  if (props.isMultiplayer || props.isRace || props.autoStart) {
+    setTimeout(() => {
+      if (!isPlaying.value) startGame()
+    }, 3000)
+  }
 </script>
 
 <style scoped>
 .radio-cabinet {
-    max-width: 460px;
-    width: 95vw;
-    background: linear-gradient(145deg, #2c2f36 0%, #1e2028 50%, #282b33 100%);
-    border: 3px solid #3d424d;
-    border-radius: 14px;
-    padding: 16px;
     position: relative;
-    box-shadow:
-        0 8px 30px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        inset 0 -1px 0 rgba(0,0,0,0.3);
+    width: 600px;
+    height: 650px;
+    background: #2a2e36;
+    border: 12px solid #1a1e26;
+    border-radius: 12px;
+    padding: 40px 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.1);
 }
 
 .screw {
-    position: absolute;
-    width: 12px; height: 12px;
-    background: radial-gradient(circle at 40% 35%, #888 0%, #444 100%);
-    border-radius: 50%;
-    border: 1px solid #333;
-    z-index: 2;
+    position: absolute; width: 14px; height: 14px; background: #444; border-radius: 50%;
+    border: 1px solid #222; box-shadow: inset 0 1px 3px rgba(255,255,255,0.2);
 }
 .screw::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 8px; height: 1.5px;
-    background: #333;
-    transform: translate(-50%, -50%) rotate(45deg);
+    content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 1.5px;
+    background: #333; transform: translate(-50%, -50%) rotate(45deg);
 }
 .screw-tl { top: 8px; left: 8px; }
 .screw-tr { top: 8px; right: 8px; }
 .screw-bl { bottom: 8px; left: 8px; }
 .screw-br { bottom: 8px; right: 8px; }
 
-.radio-brand { text-align: center; margin-bottom: 10px; padding: 4px 0; }
-.brand-text {
-    font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
-    color: #ccc; letter-spacing: 6px; text-shadow: 0 0 8px rgba(200,200,200,0.15);
-}
-.brand-model { color: #00E5FF; font-size: 12px; letter-spacing: 2px; }
-.brand-subtitle { font-size: 8px; color: #555; letter-spacing: 4px; margin-top: 2px; }
+.radio-brand { margin-bottom: 20px; border-bottom: 1px solid #3a3e46; padding-bottom: 10px; }
+.brand-text { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #555; }
+.brand-model { color: #f44336; font-size: 16px; margin-left: 8px; }
+.brand-subtitle { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 4px; }
 
-.session-hud {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
+.session-hud { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .hud-pill {
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 999px;
-    color: #d3d7e0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    padding: 6px 12px;
+    background: #000; border: 1px solid #333; border-radius: 4px;
+    padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 12px; color: #00E5FF;
 }
-
-.hud-pill-alert {
-    color: #ff6e6e;
-    border-color: #8b2d2d;
-}
+.hud-pill-alert { color: #f44336; animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 .screen-housing {
-    background: #111;
-    border: 2px solid #3a3f4b;
-    border-radius: 8px;
-    padding: 6px;
-    margin-bottom: 10px;
+    background: #1a1e26; border: 2px solid #3a3e46; border-radius: 8px; padding: 6px; margin-bottom: 10px;
 }
-.screen-bezel {
-    background: #080a0e;
-    border: 1px solid #222;
-    border-radius: 4px;
-    padding: 4px;
-    overflow: hidden;
-}
+.screen-bezel { background: #080a0e; border: 1px solid #222; border-radius: 4px; padding: 4px; overflow: hidden; }
 .wave-panels { display: flex; gap: 6px; }
 .wave-screen {
-    flex: 1;
-    background: #040608;
-    border: 1px solid #1a1e26;
-    border-radius: 3px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.4s, box-shadow 0.4s;
+    flex: 1; background: #040608; border: 1px solid #1a1e26; border-radius: 3px;
+    position: relative; overflow: hidden; transition: border-color 0.4s, box-shadow 0.4s;
 }
 .screen-synced { border-color: #00E5FF !important; box-shadow: inset 0 0 15px rgba(0,229,255,0.1); }
 .screen-label {
-    position: absolute; top: 3px; left: 6px;
-    font-size: 7px; color: #334; font-weight: bold; letter-spacing: 2px; z-index: 1;
+    position: absolute; top: 3px; left: 6px; font-size: 7px; color: #334; font-weight: bold; letter-spacing: 2px; z-index: 1;
 }
 canvas { display: block; width: 100%; height: auto; }
 .scanline {
@@ -840,11 +688,7 @@ canvas { display: block; width: 100%; height: auto; }
 
 .indicator-strip {
     display: flex; align-items: center; justify-content: space-between;
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 6px 12px;
-    margin-bottom: 10px;
+    background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 6px 12px; margin-bottom: 10px;
 }
 .freq-display { display: flex; align-items: baseline; gap: 4px; }
 .freq-value {
@@ -862,12 +706,73 @@ canvas { display: block; width: 100%; height: auto; }
 .status-lost { color: #666; }
 
 .dial-housing {
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 10px 14px 14px;
-    margin-bottom: 10px;
+    background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 10px 14px 14px; margin-bottom: 10px;
 }
+.dial-markings { position: relative; height: 14px; margin-bottom: 4px; }
+.dial-mark {
+    position: absolute; transform: translateX(-50%); font-size: 8px; color: #444; font-family: 'Courier New', monospace;
+}
+.dial-track {
+    position: relative; height: 6px; background: #222; border-radius: 3px; margin-bottom: 12px; border: 1px solid #333;
+}
+.dial-indicator {
+    position: absolute; top: -3px; width: 4px; height: 12px; background: #f44336;
+    border-radius: 2px; transform: translateX(-50%); transition: left 0.05s linear; box-shadow: 0 0 6px rgba(244,67,54,0.4);
+}
+.knob-row { display: flex; justify-content: center; }
+.knob-container { width: 80px; height: 80px; cursor: pointer; user-select: none; position: relative; }
+.knob-body {
+    width: 100%; height: 100%;
+    background: radial-gradient(circle at 38% 32%, #d0d0d0 0%, #8a8a8a 60%, #666 100%);
+    border-radius: 50%; border: 3px solid #444; box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+    transition: transform 0.05s linear; position: relative;
+}
+.knob-line {
+    position: absolute; top: 6px; left: 50%; width: 3px; height: 14px; background: #222; border-radius: 2px; transform: translateX(-50%);
+}
+
+.input-housing {
+    min-height: 90px; background: #15171c; border: 1px solid #2a2e36; border-radius: 6px; padding: 10px;
+}
+.input-active { animation: fadeUp 0.3s ease-out; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.input-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.replay-btn {
+    background: none; border: 1px solid #00E5FF; border-radius: 4px; padding: 4px 6px; cursor: pointer; color: #00E5FF; transition: all 0.2s;
+}
+.replay-btn:hover { background: rgba(0,229,255,0.1); }
+.input-label { font-size: 10px; color: #00E5FF; letter-spacing: 2px; font-weight: bold; font-family: 'Courier New', monospace; }
+.input-row { display: flex; gap: 6px; }
+.radio-input {
+    flex: 1; background: #0a0c10; border: 1px solid #2d3139; border-radius: 4px; padding: 8px 10px;
+    color: #00E5FF; font-family: 'Courier New', monospace; font-size: 13px; outline: none; transition: border-color 0.3s;
+}
+.radio-input:focus { border-color: #00E5FF; }
+.send-btn {
+    background: #00E5FF; color: #080a0e; border: none; border-radius: 4px; padding: 0 16px;
+    font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 11px;
+}
+.send-btn:hover { background: #fff; box-shadow: 0 0 12px #00E5FF; }
+
+.input-placeholder {
+    height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: #444; font-size: 10px; font-family: 'Courier New', monospace; letter-spacing: 2px;
+}
+
+.coop-status-bar {
+    margin-top: 15px; background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; padding: 10px;
+}
+.coop-label { font-size: 10px; color: #00E5FF; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; text-align: center; }
+.chat-history {
+    height: 80px; overflow-y: auto; background: rgba(0, 0, 0, 0.3); border-radius: 4px; padding: 5px; font-family: 'Courier New', monospace;
+}
+.chat-msg { font-size: 10px; margin-bottom: 4px; }
+.chat-user { color: #999; margin-right: 6px; }
+.chat-text.success { color: #4caf50; }
+.chat-text.error { color: #f44336; }
+.chat-text.info { color: #00E5FF; }
+
+.error-tip-msg { font-size: 10px; color: #f44336; font-family: 'Courier New', monospace; }
 
 /* Feedback Animations */
 .animate-success {
@@ -901,203 +806,7 @@ canvas { display: block; width: 100%; height: auto; }
 .pointer-events-none {
   pointer-events: none !important;
 }
-.dial-markings {
-    position: relative; height: 14px; margin-bottom: 4px;
-}
-.dial-mark {
-    position: absolute; transform: translateX(-50%);
-    font-size: 8px; color: #444; font-family: 'Courier New', monospace;
-}
-.dial-track {
-    position: relative; height: 6px;
-    background: #222; border-radius: 3px;
-    margin-bottom: 12px; border: 1px solid #333;
-}
-.dial-indicator {
-    position: absolute; top: -3px;
-    width: 4px; height: 12px;
-    background: #f44336;
-    border-radius: 2px;
-    transform: translateX(-50%);
-    transition: left 0.05s linear;
-    box-shadow: 0 0 6px rgba(244,67,54,0.4);
-}
-.knob-row { display: flex; justify-content: center; }
-.knob-container {
-    width: 80px; height: 80px;
-    cursor: pointer; user-select: none;
-    position: relative;
-}
-.knob-body {
-    width: 100%; height: 100%;
-    background: radial-gradient(circle at 38% 32%, #d0d0d0 0%, #8a8a8a 60%, #666 100%);
-    border-radius: 50%;
-    border: 3px solid #444;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
-    transition: transform 0.05s linear;
-    position: relative;
-}
-.knob-line {
-    position: absolute; top: 6px; left: 50%;
-    width: 3px; height: 14px;
-    background: #222;
-    border-radius: 2px;
-    transform: translateX(-50%);
-}
 
-.input-housing {
-    min-height: 90px;
-    background: #15171c;
-    border: 1px solid #2a2e36;
-    border-radius: 6px;
-    padding: 10px;
-}
-.input-active { animation: fadeUp 0.3s ease-out; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.input-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.replay-btn {
-    background: none; border: 1px solid #00E5FF; border-radius: 4px;
-    padding: 4px 6px; cursor: pointer; color: #00E5FF;
-    transition: all 0.2s;
-}
-.replay-btn:hover { background: rgba(0,229,255,0.1); }
-.input-label { font-size: 10px; color: #00E5FF; letter-spacing: 2px; font-weight: bold; font-family: 'Courier New', monospace; }
-.input-row { display: flex; gap: 6px; }
-.radio-input {
-    flex: 1; background: #0a0c10; border: 1px solid #2d3139;
-    border-radius: 4px; padding: 8px 10px;
-    color: #00E5FF; font-family: 'Courier New', monospace; font-size: 13px;
-    outline: none; transition: border-color 0.3s;
-}
-.radio-input:focus { border-color: #00E5FF; }
-.send-btn {
-    background: #00E5FF; color: #080a0e; border: none; border-radius: 4px;
-    padding: 0 16px; font-family: 'Courier New', monospace; font-weight: bold;
-    cursor: pointer; transition: all 0.2s; font-size: 11px;
-}
-.send-btn:hover { background: #fff; box-shadow: 0 0 12px #00E5FF; }
-
-.input-placeholder {
-    height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 8px; color: #444; font-size: 10px; font-family: 'Courier New', monospace; letter-spacing: 2px;
-}
-
-.coop-status-bar {
-    margin-top: 15px;
-    background: rgba(0, 229, 255, 0.05);
-    border: 1px solid rgba(0, 229, 255, 0.2);
-    border-radius: 8px;
-    padding: 10px;
-}
-
-.coop-label {
-    font-size: 10px;
-    color: #00E5FF;
-    font-weight: bold;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.chat-history {
-    height: 80px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    padding: 5px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-}
-
-.chat-msg {
-    margin-bottom: 4px;
-    line-height: 1.2;
-}
-
-.chat-user {
-    color: #00E5FF;
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.chat-text {
-    color: #fff;
-}
-
-.typing .chat-text {
-    color: #aaa;
-}
-
-.partner-signal-box {
-    background: rgba(255, 152, 0, 0.1);
-    border: 1px dashed rgba(255, 152, 0, 0.3);
-    border-radius: 4px;
-    padding: 6px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.signal-label {
-    font-size: 9px;
-    color: #FF9800;
-    font-weight: bold;
-}
-
-.signal-text {
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: #fff;
-    letter-spacing: 1px;
-}
-
-.transmit-input {
-    width: 100%;
-    background: #0a0c10;
-    border: 1px solid #2d3139;
-    border-radius: 4px;
-    padding: 6px 10px;
-    color: #00E5FF;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    outline: none;
-}
-
-.transmit-input:focus {
-    border-color: #00E5FF;
-}
-
-.italic {
-    font-style: italic;
-}
-
-.error-tip-msg {
-    color: #ff5252;
-    font-size: 13px;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
-    font-family: 'Roboto', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ÉXITO FEEDBACK */
-.glow-text-success {
-    text-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 40px rgba(76, 175, 80, 0.4);
-}
-
-.success-icon-anim {
-    animation: success-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes success-pop {
-    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-    70% { transform: scale(1.2) rotate(10deg); }
-    100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-
-.success-flash-container {
-    background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, transparent 70%);
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

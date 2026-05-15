@@ -8,9 +8,8 @@
       @finished="onRouletteFinished"
     />
 
-    <!-- Overlay de Juego Activo -->
     <transition name="fade-zoom">
-      <div v-if="activeGameComponent || isTransitioning || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
+      <div v-if="activeGameComponent || isTransitioning || multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
         <!-- MODO CARRERA HUD -->
         <RaceHUD
           v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
@@ -20,12 +19,12 @@
         <GlobalAnomalyManager v-if="multiplayerStore.room?.status === 'PLAYING' && activeGameComponent" :forced-anomaly="currentAnomaly" />
 
         <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1" class="hud-score-coop-modern">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1 && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-coop-modern">
           <CoopScoreBar :max-score="5000" :score="totalCoopScore" />
         </div>
 
         <!-- Puntuación por Equipos (VS por Parejas) -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && teamsList.length > 1" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && teamsList.length > 1 && !isDuel && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
           <CoopScoreBar
             v-for="team in teamsList"
             :key="team.id"
@@ -38,7 +37,7 @@
           />
         </div>
 
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE'" class="game-hud-container d-flex justify-center align-center">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
             <!-- Jugador local -->
             <div class="hud-item d-flex align-center gap-3">
@@ -107,7 +106,7 @@
             @click="handleAbort"
           >
             <v-icon icon="mdi-power" start />
-            {{ $t('auth.abortCmd') || 'ABANDONAR PARTIDA' }}
+            {{ (activeGameComponent || showRoundResults) ? 'ABORTAR / VOLVER A BASE' : 'ABANDONAR SALA' }}
           </v-btn>
         </div>
 
@@ -267,13 +266,22 @@
             :is="activeGameComponent"
             v-if="activeGameComponent && !isTransitioning"
             :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
-            :is-multiplayer="multiplayerStore.room?.gameConfig?.mode === 'RACE' ? false : true"
+            :is-multiplayer="true"
             :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
             :is-duel="isDuel"
             :duration="isDuel ? 60 : (multiplayerStore.room?.gameConfig?.duration || 60)"
+            :auto-start="true"
             :anomaly="currentAnomaly"
             @game-over="onGameFinished"
           />
+
+          <!-- ÁRBOL DEL TORNEO -->
+          <transition name="fade">
+            <TournamentTree
+              v-if="multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' && !activeGameComponent && !isTransitioning"
+              :is-host="isHost"
+            />
+          </transition>
 
           <!-- Pantalla de Transición -->
           <div v-if="isTransitioning" class="transition-screen d-flex flex-column align-center justify-center">
@@ -504,8 +512,8 @@
                       {{ $t('multiplayerLobby.crewmate') }}
                     </v-chip>
 
-                    <!-- Selector de Equipo con Flechas (Oculto en Carrera) -->
-                    <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
+                    <!-- Selector de Equipo con Flechas (Oculto en Carrera, 1vs1 y Torneo) -->
+                    <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
                       <v-btn
                         icon="mdi-chevron-left"
                         variant="text"
@@ -552,7 +560,11 @@
               </v-row>
 
               <div class="mt-12 d-flex flex-column align-center">
-                <div v-if="isHost && selectedModality !== '1vs1' && selectedModality !== 'carrera'" class="team-actions mb-4 d-flex gap-3">
+                <div v-if="selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2" class="mb-4 text-orange-accent-2 font-weight-bold d-flex align-center gap-2">
+                  <v-icon icon="mdi-alert-circle-outline" />
+                  <span>EL MODO DUELO REQUIERE EXACTAMENTE 2 PILOTOS</span>
+                </div>
+                <div v-if="isHost && selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="team-actions mb-4 d-flex gap-3">
                   <v-btn
                     color="cyan-accent-2"
                     prepend-icon="mdi-dice-5"
@@ -568,7 +580,7 @@
                   v-if="isHost"
                   class="start-mission-btn rounded-pill px-12 font-weight-black"
                   color="orange-accent-3"
-                  :disabled="(multiplayerStore.room?.players?.length || 0) < 2 || !allPlayersHaveTeam"
+                  :disabled="((multiplayerStore.room?.players?.length || 0) < 2) || (selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2) || !allPlayersHaveTeam"
                   elevation="12"
                   size="x-large"
                   @click="startMatch"
@@ -699,7 +711,7 @@
                 <v-select
                   v-model="pointsToWin"
                   bg-color="rgba(255,255,255,0.05)"
-                  class="points-limit-select-mini"
+                  class="points-limit-select-mini mb-4"
                   density="compact"
                   hide-details
                   :items="[1, 2, 3, 4, 5]"
@@ -712,18 +724,48 @@
                   </template>
                 </v-select>
               </div>
+
+              <div v-if="selectedModality === '1vs1' || selectedModality === 'torneig'" class="mt-4">
+                <v-switch
+                  v-model="sharedChallenge"
+                  color="cyan-accent-2"
+                  density="compact"
+                  hide-details
+                  :label="sharedChallenge ? 'MISMOS RETOS' : 'RETOS ALEATORIOS'"
+                  class="shared-challenge-switch"
+                  @change="updateRoomConfig"
+                >
+                  <template #label>
+                    <span class="text-caption font-weight-bold" :class="sharedChallenge ? 'text-cyan-accent-2' : 'text-grey-lighten-1'">
+                      {{ sharedChallenge ? 'RETO IDÉNTICO' : 'RETO ALEATORIO' }}
+                    </span>
+                  </template>
+                </v-switch>
+              </div>
             </div>
 
             <v-row dense>
               <v-col v-for="mode in modalities" :key="mode.id" cols="6">
                 <v-card
-                  class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg cursor-pointer"
-                  :class="{ 'active-mode': selectedModality === mode.id, 'disabled-mode': !mode.active }"
+                  v-ripple="mode.active && isHost"
+                  class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg cursor-pointer transition-all"
+                  :class="{ 
+                    'active-mode': selectedModality === mode.id, 
+                    'disabled-mode': !mode.active,
+                    'is-host': isHost,
+                    'mode-selected-anim': selectedModality === mode.id
+                  }"
                   variant="flat"
-                  @click="mode.active ? selectedModality = mode.id : null"
+                  @click="mode.active ? selectModality(mode.id) : null"
                 >
-                  <v-icon class="mb-2" :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-darken-1'" :icon="mode.icon" size="28" />
-                  <div class="text-caption font-weight-black line-height-1" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-darken-1'">
+                  <v-icon 
+                    class="mb-2 mode-icon" 
+                    :class="{ 'icon-pop': selectedModality === mode.id }"
+                    :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-lighten-1'" 
+                    :icon="mode.icon" 
+                    size="32" 
+                  />
+                  <div class="text-caption font-weight-black line-height-1" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-lighten-1'">
                     {{ $te('multiplayerLobby.modalities.' + mode.id) ? $t('multiplayerLobby.modalities.' + mode.id) : mode.name }}
                   </div>
                   <v-chip
@@ -1084,6 +1126,7 @@
   import RaceHUD from '@/components/multiplayer/RaceHUD.vue'
   import RaceMap from '@/components/multiplayer/RaceMap.vue'
   import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue'
+  import TournamentTree from '@/components/multiplayer/TournamentTree.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
 
@@ -1093,7 +1136,22 @@
   const multiplayerStore = useMultiplayerStore()
 
   const isHost = computed(() => {
-    return multiplayerStore.room?.host === astroStore.user
+    const currentHost = multiplayerStore.room?.host
+    const currentUser = astroStore.user
+    
+    if (!currentHost || !currentUser) return false
+    
+    // Extraer el nombre si es un objeto {username: '...'} o un string
+    const hostName = (typeof currentHost === 'object' ? currentHost.username || currentHost.user : currentHost) || ''
+    const myName = (typeof currentUser === 'object' ? currentUser.username || currentUser.user : currentUser) || ''
+    
+    const result = hostName.toLowerCase() === myName.toLowerCase()
+    
+    if (!result && hostName) {
+      console.debug('--- DEBUG HOST ---', { hostName, myName, match: result })
+    }
+    
+    return result
   })
 
   const gameComponents = {
@@ -1120,6 +1178,7 @@
   const isPublic = ref(true)
   const maxPlayers = ref(Number(localStorage.getItem('astro_mp_maxPlayers')) || 4)
   const pointsToWin = ref(Number(localStorage.getItem('astro_mp_pointsToWin')) || 3)
+  const sharedChallenge = ref(localStorage.getItem('astro_mp_sharedChallenge') === 'true')
   const roomCode = ref('')
   const showRoulette = ref(false)
   const showBriefing = ref(false)
@@ -1159,6 +1218,7 @@
     // 2. El ATACANTE entra al juego con Briefing
     multiplayerStore.activeGameName = randomGame
     currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
+    isDuelInternal.value = true
     
     startBriefing(randomGame)
   }
@@ -1181,10 +1241,17 @@
   }
 
   const spectatedGameComponent = computed(() => {
-    // Solo permitimos observar si el jugador local no tiene combustible
-    if (multiplayerStore.raceFuel > 0) return null
-    
+    const isRaceMode = multiplayerStore.room?.gameConfig?.mode === 'RACE'
+    const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
+
+    if (isRaceMode && multiplayerStore.raceFuel > 0) return null
     if (!spectatedPlayer.value) return null
+
+    if (isTournament) {
+      const gameName = multiplayerStore.room?.gameConfig?.currentGame
+      return gameName ? gameComponents[gameName] : null
+    }
+
     const nodeId = multiplayerStore.playersProgress[spectatedPlayer.value]
     if (!nodeId || !fullMapNodes.value[nodeId]) return null
     const node = fullMapNodes.value[nodeId]
@@ -1196,7 +1263,10 @@
   const showRoundResults = ref(false)
   const showSpectatorAlert = ref(false)
   const showMatchResult = ref(false)
-  const isDuel = ref(false)
+  const isDuelInternal = ref(false)
+  const isDuel = computed(() => {
+    return isDuelInternal.value || multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
+  })
   const duelResult = ref(null) // { winner: string, loser: string, myScore: number, partnerScore: number }
   const showDuelResultOverlay = ref(false)
   const canAbortMission = ref(false)
@@ -1278,7 +1348,7 @@
     { id: '2vs2', name: 'Mode 2vs2', icon: 'mdi-account-group', active: true },
     { id: 'boss', name: 'Mode Boss', icon: 'mdi-skull', active: false },
     { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true },
-    { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: false },
+    { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: true },
   ]
 
   const ALL_TITLES = [
@@ -1294,6 +1364,43 @@
     return title ? title.key : ''
   }
 
+  function selectModality (mId) {
+    if (!isHost.value) {
+      console.warn('--- INTENTO DE SELECCIÓN SIN SER HOST ---', mId)
+      return
+    }
+    
+    if (selectedModality.value === mId) return // Ya seleccionado
+
+    console.log('--- CAMBIANDO MODALIDAD A ---', mId)
+    selectedModality.value = mId
+    localStorage.setItem('astro_mp_modality', mId)
+    
+    // Forzar actualización en el store
+    if (multiplayerStore.room) {
+      const modeMapping = {
+        'carrera': 'RACE',
+        'torneig': 'TOURNAMENT',
+        '1vs1': 'NORMAL',
+        '2vs2': 'NORMAL',
+        'boss': 'NORMAL'
+      }
+
+      multiplayerStore.updateGameConfig({ 
+        modality: mId, 
+        mode: modeMapping[mId] || 'NORMAL'
+      })
+    }
+  }
+
+  // Sincronizar modalidad desde el room (para guests y confirmar host)
+  watch(() => multiplayerStore.room?.gameConfig?.modality, (newModality) => {
+    if (newModality && newModality !== selectedModality.value) {
+      console.log('--- MODALIDAD RECIBIDA DEL SERVIDOR ---', newModality)
+      selectedModality.value = newModality
+    }
+  }, { immediate: true })
+
   function getRankName (level) {
     const index = Math.min(Math.floor(((level || 1) - 1) / 10), 14)
     return t(`ranks.${index}`)
@@ -1302,14 +1409,29 @@
   // Vigilante para cambios de juego (Solo para modo Cooperativo/Normal, el modo Carrera lo gestiona por Duelos)
   watch(() => multiplayerStore.room?.gameConfig?.currentGame, (newGame) => {
     const isRaceMode = multiplayerStore.room?.gameConfig?.mode === 'RACE'
+    const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
     const status = multiplayerStore.room?.status
     
     // Solo saltar al juego si el estado es PLAYING o MATCH_STARTING y NO es modo Carrera
     if (!isRaceMode && (status === 'PLAYING' || status === 'MATCH_STARTING') && newGame && gameComponents[newGame] && !activeGameComponent.value) {
+      
+      // En modo TORNEO, solo entramos si somos participantes del match activo
+      if (isTournament) {
+        const currentMatch = multiplayerStore.room?.gameConfig?.tournament?.brackets?.find(m => m.status === 'PLAYING')
+        if (currentMatch) {
+          const isParticipant = currentMatch.p1 === astroStore.user || currentMatch.p2 === astroStore.user
+          if (!isParticipant) {
+            console.log('👀 Ets espectador d\'aquest duel del torneig.')
+            activeGameComponent.value = null
+            return
+          }
+        }
+      }
+
       // Reset de seguridad para abortar
       canAbortMission.value = false
       if (abortInterval) clearInterval(abortInterval)
-      
+
       if (!isDuel.value) {
         abortTimerSeconds.value = 45
         abortInterval = setInterval(() => {
@@ -1344,7 +1466,7 @@
       multiplayerStore.activeGameName = event.game
       currentDuelNodeId.value = event.nodeId
       currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
-      isDuel.value = true
+      isDuelInternal.value = true
       
       startBriefing(event.game)
     }
@@ -1356,6 +1478,12 @@
     if (newStatus === 'PLAYING' || newStatus === 'MATCH_STARTING') {
       showRoulette.value = false
       roundWinner.value = null
+      
+      if (newStatus === 'PLAYING' && isHost.value) {
+        // El Host inicia el cronómetro global inmediatamente
+        multiplayerStore.timeLeft = multiplayerStore.room?.gameConfig?.duration || 60
+        console.log('--- CRONÓMETRO GLOBAL INICIADO POR EL HOST ---')
+      }
       showRoundResults.value = false
 
       if (multiplayerStore.room?.gameConfig?.mode !== 'RACE') {
@@ -1375,15 +1503,24 @@
         activeGameComponent.value = null
         break
       }
+      case 'TOURNAMENT_BRACKETS': {
+        showRoulette.value = false
+        showRoundResults.value = false
+        activeGameComponent.value = null
+        break
+      }
       case 'ROUND_RESULTS': {
-        showRoundResults.value = true
+        const isCompetitive = ['1vs1', 'carrera', 'torneig'].includes(selectedModality.value)
+        showRoundResults.value = !isCompetitive 
+        activeGameComponent.value = null
         if (isHost.value) {
-          // Salto a la siguiente ronda mucho más rápido (3s en lugar de 8s)
+          // En modo competitivo saltamos casi instantáneamente (300ms)
+          const delay = isCompetitive ? 300 : 1500
           setTimeout(() => {
             if (multiplayerStore.room?.status === 'ROUND_RESULTS') {
               multiplayerStore.nextRound()
             }
-          }, 1500)
+          }, delay)
         }
         break
       }
@@ -1401,6 +1538,7 @@
         showMatchResult.value = false
         matchWinnerName.value = null
         finalScores.value = {}
+        isDuelInternal.value = false // Reset de duelo al volver al lobby
         break
       }
     }
@@ -1430,7 +1568,8 @@
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
       roundWinner.value = msg.winner
       isRoundTie.value = msg.tie || false
-      showRoundResults.value = true
+      // Solo mostrar resultados de ronda en modo Cooperativo o por Equipos, no en Duelo/Carrera
+      showRoundResults.value = !isDuel.value && multiplayerStore.room?.gameConfig?.mode !== 'RACE'
       
       // En modo carrera, ocultar automáticamente después de 4 segundos
       if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
@@ -1450,6 +1589,25 @@
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE') {
       handleSabotageNotification(msg)
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'TIME_PENALTY') {
+      // Simular notificación de sabotaje para TIME_PENALTY también
+      handleSabotageNotification({
+        from: msg.from,
+        action: { subtype: 'REDUCE_TIME', amount: msg.action.amount || 5 }
+      })
+    }
+
+    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SCORE_UPDATE') {
+      if (msg.from && msg.from !== astroStore.user) {
+        multiplayerStore.roundScores = { ...multiplayerStore.roundScores, [msg.from]: msg.action.score }
+      }
+    }
+
+    if (isHost.value && msg.type === 'GAME_ACTION' && msg.action?.type === 'REQUEST_ABORT_MATCH') {
+      console.log('--- RECIBIDA PETICIÓN DE ABORTO DE INVITADO ---')
+      multiplayerStore.setRoomStatus('LOBBY')
     }
   })
 
@@ -1492,7 +1650,7 @@
   watch(() => multiplayerStore.lastDuelEvent, (newDuel) => {
     if (newDuel && (newDuel.attacker === astroStore.user || newDuel.rival === astroStore.user)) {
       console.log("🔥 DUELO DETECTADO Y SINCRONIZADO EN LOBBY:", newDuel)
-      isDuel.value = true
+      isDuelInternal.value = true
       currentDuelNodeId.value = newDuel.nodeId
       
       // Si soy el rival, debo prepararme para entrar al juego cuando el host lo lance
@@ -1536,9 +1694,12 @@
   const isTeammate = computed(() => {
     if (!multiplayerStore.room) return false
 
-    // Juegos que usan el marcador unificado estilo Just Dance
+    // Juegos que usan el marcador unificado estilo Just Dance (SOLO EN COOP)
     const COOP_GAMES = ['RadioSignal', 'SymmetryBreaker', 'WordConstruction', 'SyllableQuest', 'RadarScan', 'SpelledRosco']
-    if (COOP_GAMES.includes(multiplayerStore.room?.gameConfig?.currentGame)) return true
+    const isCoopGame = COOP_GAMES.includes(multiplayerStore.room?.gameConfig?.currentGame)
+    
+    if (isDuel.value) return false
+    if (isCoopGame) return true
 
     if (!multiplayerStore.room?.gameConfig?.teams) return false
     const myTeam = multiplayerStore.room?.gameConfig.teams[astroStore.user]
@@ -1548,7 +1709,7 @@
 
   const allPlayersHaveTeam = computed(() => {
     if (!multiplayerStore.room) return false
-    if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera') return true
+    if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera' || selectedModality.value === 'torneig') return true
     const teams = multiplayerStore.room.gameConfig?.teams || {}
     return multiplayerStore.room.players.every(p => teams[getPlayerName(p)])
   })
@@ -1568,6 +1729,14 @@
   })
 
   const teamsList = computed(() => {
+    if (isDuel.value && !multiplayerStore.room?.gameConfig?.teams) {
+      // En duelos sin equipos definidos (ej: vs SISTEMA), forzamos 2 "equipos" para el HUD
+      return [
+        { id: astroStore.user, name: astroStore.user, theme: 'red' },
+        { id: opponentName.value, name: opponentName.value, theme: 'amber' }
+      ]
+    }
+    
     if (!multiplayerStore.room?.gameConfig?.teams) return []
     const seed = (multiplayerStore.room?.id || 'BASE') + (multiplayerStore.room?.gameConfig?.seed || '')
     const seedSum = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
@@ -1585,6 +1754,11 @@
     const teams = multiplayerStore.room.gameConfig.teams || {}
     const roundScores = multiplayerStore.roundScores || {}
     const matchScores = multiplayerStore.room.gameConfig.scores || {}
+
+    // Caso especial de duelos sin equipos (teamId es el nombre del usuario)
+    if (isDuel.value && !multiplayerStore.room?.gameConfig?.teams) {
+      return (matchScores[teamId] || 0) + (roundScores[teamId] || 0)
+    }
 
     let total = 0
     for (const [user, tId] of Object.entries(teams)) {
@@ -1667,9 +1841,17 @@
     multiplayerStore.updateGameConfig({ teams: newTeams })
   }
 
+  watch(maxPlayers, newVal => {
+    if (isHost.value && multiplayerStore.room) {
+      multiplayerStore.updateGameConfig({ maxPlayers: newVal })
+      localStorage.setItem('astro_mp_maxPlayers', newVal)
+    }
+  })
+
   watch(pointsToWin, newVal => {
     if (isHost.value && multiplayerStore.room) {
       multiplayerStore.updateGameConfig({ pointsToWin: newVal })
+      localStorage.setItem('astro_mp_pointsToWin', newVal)
     }
   })
 
@@ -1726,9 +1908,9 @@
 
   function createRoom () {
     const initialConfig = {
-      pointsToWin: selectedModality.value === 'carrera' ? 1 : pointsToWin.value,
+      pointsToWin: (selectedModality.value === 'carrera' || selectedModality.value === 'torneig') ? 1 : pointsToWin.value,
       modality: selectedModality.value,
-      mode: selectedModality.value === 'carrera' ? 'RACE' : 'NORMAL',
+      mode: selectedModality.value === 'carrera' ? 'RACE' : (selectedModality.value === 'torneig' ? 'TOURNAMENT' : 'NORMAL'),
       numGoldMines: numGoldMines.value,
       numBattles: numBattles.value,
       numFuelStations: numFuelStations.value,
@@ -1751,7 +1933,8 @@
       numGoldMines: numGoldMines.value,
       numBattles: numBattles.value,
       numFuelStations: numFuelStations.value,
-      numMysteryNodes: numMysteryNodes.value
+      numMysteryNodes: numMysteryNodes.value,
+      sharedChallenge: sharedChallenge.value
     })
     
     // Limpiar cualquier juego previo antes de lanzar modo Carrera
@@ -1768,8 +1951,11 @@
       numGoldMines: numGoldMines.value,
       numBattles: numBattles.value,
       numFuelStations: numFuelStations.value,
-      numMysteryNodes: numMysteryNodes.value
+      numMysteryNodes: numMysteryNodes.value,
+      sharedChallenge: sharedChallenge.value
     })
+    localStorage.setItem('astro_mp_sharedChallenge', String(sharedChallenge.value))
+
   }
 
   function joinByCode () {
@@ -1853,7 +2039,7 @@
       multiplayerStore.updateRaceProgress(completedPlanetId, true)
       
       activeGameComponent.value = null
-      isDuel.value = false
+      isDuelInternal.value = false
     }, 4000)
   }
 
@@ -1899,14 +2085,14 @@
         
         multiplayerStore.activeGameName = randomGame
         currentDuelNodeId.value = id
-        isDuel.value = true
+        isDuelInternal.value = true
         
         startBriefing(randomGame)
       } else {
         console.log("ARENA DUEL: Rivales encontrados, abriendo selector. Rivales:", otherPlayers.value.length)
         // Si hay rivales, mostrar el selector
         showDuelSelector.value = true
-        isDuel.value = true
+        isDuelInternal.value = true
         currentDuelNodeId.value = id
       }
       return 
@@ -1916,7 +2102,7 @@
     if (node.game && gameComponents[node.game]) {
       // Informar al store del juego activo para ajustar consumos
       multiplayerStore.activeGameName = node.game
-      isDuel.value = false
+      isDuelInternal.value = false
       
       // Actualizar posición antes de entrar al juego
       multiplayerStore.updateRaceProgress(id, false)
@@ -1972,12 +2158,24 @@
       return
     }
 
-    // Prioridad 2: Lógica de salida de sala
+    // Prioridad 2: Si hay juego activo o estamos en resultados, abortar y volver al LOBBY (Sala)
+    if (activeGameComponent.value || multiplayerStore.room?.status === 'ROUND_RESULTS') {
+      if (isHost.value) {
+        console.log('Host cerrando partida a LOBBY...')
+        multiplayerStore.setRoomStatus('LOBBY')
+      } else {
+        console.log('Invitado solicitando abortar partida al Host...')
+        multiplayerStore.sendGameAction({ type: 'REQUEST_ABORT_MATCH' })
+      }
+      return
+    }
+
+    // Prioridad 3: Salida definitiva si no hay partida en curso
     if (isHost.value) {
-      console.log('Host cerrando partida a LOBBY...')
+      console.log('Host cerrando sala...')
       multiplayerStore.setRoomStatus('LOBBY')
     } else {
-      console.log('Invitado abandonando sala...')
+      console.log('Invitado abandonando sala definitivamente...')
       multiplayerStore.leaveRoom()
       setTimeout(() => {
         if (router.currentRoute.value.path !== '/multiplayer') {
@@ -2267,17 +2465,44 @@
 .modality-card {
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.modality-card.is-host:hover:not(.disabled-mode):not(.active-mode) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-4px);
 }
 
 .active-mode {
   border-color: #00e5ff !important;
-  background: rgba(0, 229, 255, 0.1) !important;
+  background: rgba(0, 229, 255, 0.15) !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+  animation: mode-pulse 2s infinite ease-in-out;
+}
+
+@keyframes mode-pulse {
+  0% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(0, 229, 255, 0.4); }
+  100% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+}
+
+.icon-pop {
+  animation: icon-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 }
 
 .disabled-mode {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+  filter: grayscale(0.8);
 }
 
 .mission-card-v3 {
@@ -2442,8 +2667,9 @@
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: stretch; /* Cambiado de center a stretch */
   justify-content: center;
+  width: 100%; /* Asegurar ancho total */
 }
 
 .round-result-overlay {

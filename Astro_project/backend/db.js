@@ -14,20 +14,24 @@ let database = null;
 * @returns {Promise<Db>}
 */
 
-async function connectDB() {
-    try {
-        const isAtlas = uri.includes('mongodb.net');
-        console.log(`🔌 Conectando a MongoDB (${isAtlas ? 'Atlas' : 'Local'})...`);
-        
-        await client.connect();
-        console.log(`✅ Conectado con éxito a: ${isAtlas ? 'MongoDB Atlas' : 'Instancia Local'}`);
-        
-        database = client.db('Astro');
-        return database;
-    } catch (error) {
-        console.error('❌ Error crítico al conectar a MongoDB:', error.message);
-        console.error('   Asegúrate de que la URI es correcta y que tienes acceso de red.');
-        throw error;
+async function connectDB(retries = 5) {
+    while (retries > 0) {
+        try {
+            const isAtlas = uri.includes('mongodb.net');
+            console.log(`🔌 Conectando a MongoDB (${isAtlas ? 'Atlas' : 'Local'})... (Intentos restantes: ${retries})`);
+            
+            await client.connect();
+            console.log(`✅ Conectado con éxito a: ${isAtlas ? 'MongoDB Atlas' : 'Instancia Local'}`);
+            
+            database = client.db('Astro');
+            return database;
+        } catch (error) {
+            retries--;
+            console.error(`❌ Error al conectar a MongoDB: ${error.message}`);
+            if (retries === 0) throw error;
+            console.log('🔄 Reintentando en 3 segundos...');
+            await new Promise(res => setTimeout(res, 3000));
+        }
     }
 }
 
