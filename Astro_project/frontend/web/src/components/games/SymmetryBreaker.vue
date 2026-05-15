@@ -349,7 +349,7 @@
     if (hasPenaltyShotRaw && isShieldActive.value) {
       isShieldActive.value = false
       shieldImmunityLeft.value = 2
-      showShieldFeedback = true
+      showShieldFeedback.value = true
     }
 
     if (shieldImmunityLeft.value > 0) {
@@ -473,7 +473,7 @@
           multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
         }
       } else {
-        // Modo Duelo o 2vs2: puntuación independiente (20 base + bonus por tiempo)
+        // Modo Duelo o 2vs2: puntuación independiente
         const timeBonus = Math.floor(timeLeft.value / 2)
         score.value += 20 + timeBonus
         successfulLocks.value += 1
@@ -484,16 +484,9 @@
         generateTargets()
         triggerFeedback('success')
 
-        // Sabotear al rival en duelo
-        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
-        multiplayerStore.sendGameAction({
-          type: 'TIME_PENALTY',
-          amount: isSaboteurActive ? 10 : 5,
-        })
+        multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0 ? 10 : 5 })
         multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: score.value })
-      } else {
-        multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
       }
       
       if (props.isRace) {

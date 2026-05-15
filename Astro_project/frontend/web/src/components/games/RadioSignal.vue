@@ -213,7 +213,6 @@
     autoStart: { type: Boolean, default: false },
     isPaused: { type: Boolean, default: false },
   })
-  })
   const emit = defineEmits(['game-over'])
 
   // --- REFORÇ VISUAL I SONOR ---
@@ -290,7 +289,6 @@
   })
 
   const subRole = computed(() => multiplayerStore.subRole)
-  })
 
   // --- CANVAS & WAVEFORMS ---
   const targetWaveCanvas = ref(null)
@@ -298,7 +296,6 @@
   let animationId = null
   let time = 0
 
-  function drawWaves () {
   function drawWaves () {
     if (!isPlaying.value || props.isPaused) {
       animationId = requestAnimationFrame(drawWaves)
@@ -324,7 +321,6 @@
     for (let i = 0; i < 260; i += 40) {
       tCtx.beginPath(); tCtx.moveTo(i, 0); tCtx.lineTo(i, 90); tCtx.stroke()
       cCtx.beginPath(); cCtx.moveTo(i, 0); cCtx.lineTo(i, 90); cCtx.stroke()
-    }
     }
 
     // Draw Target Wave
@@ -625,8 +621,6 @@
         currentPhraseIdx.value++
         isTuned.value = false
         addChatMessage('SISTEMA', t('radioSignal.partnerCorrect'), 'success')
-        }
-        if (timeLeft.value <= 0) endGame()
       }
 
       if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
