@@ -9,7 +9,7 @@
       </div>
 
       <template v-if="!gameFinished">
-        <div v-if="!isMultiplayer || props.isDuel">
+        <div v-if="!isMultiplayer || props.isDuel || (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT')">
           <div class="text-h4 mb-2">{{ currentWord.text.replace(/-/g, '') }}</div>
           <div class="text-caption text-grey-lighten-1 mb-6">{{ $t('syllableQuest.missionProgress', { current: currentWordIndex + 1, total: words.length }) }}</div>
 
@@ -461,6 +461,11 @@ function applySpectatorSync(data) {
 watch(() => multiplayerStore.lastMessage, msg => {
   if (!msg) return
 
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+    finishGame()
+    return
+  }
+
   // LÓGICA ESPECTADOR
   if (props.isSpectator) {
     if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
@@ -494,10 +499,6 @@ watch(() => multiplayerStore.lastMessage, msg => {
     return
   }
 
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-    finishGame()
-    return
-  }
 
   if (msg.type === 'GAME_ACTION') {
     if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {

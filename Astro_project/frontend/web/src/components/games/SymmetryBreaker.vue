@@ -157,7 +157,7 @@
     if (rivals.length === 0) return true 
     return rivals.some(u => multiplayerStore.playerTimes[u] > 0)
   })
-  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '2vs2')
+  const isCompetitiveMode = computed(() => props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' || multiplayerStore.room?.gameConfig?.modality === '2vs2')
 
   // BOOSTERS
   const isSlowTimeActive = computed(() => (astroStore.activeBoosters?.slowTimeGamesLeft || 0) > 0)
@@ -680,7 +680,7 @@
     ctx.beginPath(); ctx.arc(drawMouseX, drawMouseY, 18, 0, Math.PI * 2)
     ctx.strokeStyle = actualIsFiring ? '#00e5ff' : '#ffffff'; ctx.lineWidth = 2; ctx.stroke()
 
-    if (props.isMultiplayer) {
+    if (props.isMultiplayer && !isCompetitiveMode.value) {
       for (const [uid, cursor] of Object.entries(multiplayerStore.remoteCursors)) {
         if (uid !== astroStore.user && gameArea.value) {
           const rx = (cursor.x / 1000) * gameCanvas.value.width
@@ -881,6 +881,16 @@
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+      if (isPlaying.value) {
+        isPlaying.value = false
+        isFiring.value = false
+        cancelAnimationFrame(animationFrame)
+        showGameOverOverlay.value = true
+      }
+      return
+    }
+
     if (props.isSpectator) {
       if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
         if (msg.action?.type === 'SPECTATOR_SYNC' || msg.action?.type === 'SYMMETRY_SYNC_TARGETS') {
@@ -900,16 +910,6 @@
         if (msg.action?.type === 'SYMMETRY_TIME_UP') {
           endGame()
         }
-      }
-      return
-    }
-
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      if (isPlaying.value) {
-        isPlaying.value = false
-        isFiring.value = false
-        cancelAnimationFrame(animationFrame)
-        showGameOverOverlay.value = true
       }
       return
     }

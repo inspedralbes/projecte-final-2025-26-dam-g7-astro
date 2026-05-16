@@ -9,7 +9,7 @@
     />
 
     <transition name="fade-zoom">
-      <div v-if="activeGameComponent || isTransitioning || multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING') || (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
+      <div v-if="activeGameComponent || isTransitioning || ['TOURNAMENT_BRACKETS', 'MATCH_RESULTS', 'ROUND_RESULTS'].includes(multiplayerStore.room?.status) || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING') || (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay" :key="'game-overlay-' + (multiplayerStore.room?.id || 'none')">
         <!-- MODO CARRERA HUD -->
         <RaceHUD
           v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
@@ -37,6 +37,29 @@
           />
         </div>
 
+        <!-- HUD DE MODO JEFE -->
+        <div v-if="multiplayerStore.room?.gameConfig?.mode === 'BOSS'" class="boss-mode-hud pa-6 d-flex flex-column align-center">
+          <BossHealthBar />
+          
+          <!-- Panel de Arsenal exclusivo para el Jefe -->
+          <div v-if="multiplayerStore.room?.gameConfig?.boss === astroStore.user" class="mt-4 w-100">
+            <BossArsenalPanel />
+          </div>
+
+          <ActionFeed class="mt-4" />
+        </div>
+
+        <!-- ALERTA DE MUERTE SÚBITA (SUDDEN DEATH) -->
+        <v-fade-transition>
+          <div v-if="multiplayerStore.room?.status === 'SUDDEN_DEATH'" class="sudden-death-overlay">
+            <div class="sudden-death-content">
+              <v-icon icon="mdi-skull-crossbones" size="80" color="red-accent-4" class="mb-4 animate-pulse" />
+              <h2 class="text-h2 font-weight-black text-red-accent-2 italic glow-text">MUERTE SÚBITA</h2>
+              <p class="text-h5 text-white font-weight-bold mt-4 tracking-widest text-uppercase">¡EL PRÓXIMO PUNTO GANA EL DUELO!</p>
+            </div>
+          </div>
+        </v-fade-transition>
+
         <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
             <!-- Jugador 1 (Participante 1 o Local) -->
@@ -62,9 +85,13 @@
               <div class="round-text">{{ $t('multiplayerLobby.round', { current: (multiplayerStore.room?.gameConfig?.currentRound || 0) + 1, total: multiplayerStore.room?.gameConfig?.totalRounds || '?' }) }}</div>
 
               <!-- Temporizador Global -->
-              <div class="global-timer" :class="{ 'timer-low': multiplayerStore.timeLeft <= 10 }">
+              <div v-if="multiplayerStore.room?.status !== 'SUDDEN_DEATH'" class="global-timer" :class="{ 'timer-low': multiplayerStore.timeLeft <= 10 }">
                 <v-icon class="mr-1" :icon="multiplayerStore.timeLeft <= 10 ? 'mdi-timer-alert' : 'mdi-timer-outline'" size="small" />
                 {{ Math.ceil(multiplayerStore.timeLeft) }}s
+              </div>
+              <div v-else class="sudden-death-timer-alt animate-pulse">
+                <v-icon class="mr-1" icon="mdi-skull" color="red-accent-4" size="small" />
+                SUDDEN DEATH
               </div>
             </div>
 
@@ -222,6 +249,7 @@
                   :spectated-player="spectatedPlayer"
                   :players-config="multiplayerStore.room?.gameConfig?.teams || []"
                   :room-id="multiplayerStore.room?.id"
+                  @game-over="onGameFinished"
                 />
                 
                 <!-- Cursores para espectadores (ven al jugador observado) -->
@@ -516,6 +544,26 @@
                   </div>
                 </div>
 
+                <!-- SECCIÓN DE INSCRIPCIÓN AL TORNEO -->
+                <div v-if="selectedModality === 'torneig' && multiplayerStore.room?.status === 'LOBBY'" class="tournament-enrollment-box mb-8 pa-6 rounded-xl border-amber d-flex align-center justify-space-between" style="background: rgba(255, 202, 40, 0.05);">
+                  <div>
+                    <div class="text-h6 font-weight-black text-amber-accent-2 mb-1">INSCRIPCIÓ AL TORNEIG</div>
+                    <div class="text-body-2 text-white">Cost d'entrada: <span class="text-cyan-accent-2 font-weight-black">{{ tournamentBuyIn }} Astrocions</span></div>
+                  </div>
+                  <v-btn
+                    v-if="!isEnrolled"
+                    color="amber-accent-4"
+                    class="px-8 font-weight-black rounded-pill"
+                    :loading="loadingEnrollment"
+                    @click="handleTournamentEnrollment"
+                  >
+                    INSCRIURE'S ARA
+                  </v-btn>
+                  <v-chip v-else color="success" class="font-weight-black" prepend-icon="mdi-check-decagram">
+                    INSCRIT
+                  </v-chip>
+                </div>
+
                 <v-row class="mb-4">
                   <v-col
                     v-for="player in multiplayerStore.room.players"
@@ -530,6 +578,11 @@
                       :class="'team-' + (getPlayerTeam(getPlayerName(player)) || 1)"
                       variant="outlined"
                     >
+                      <!-- Barra de Vida para Héroes en Modo BOSS -->
+                      <div v-if="multiplayerStore.room?.gameConfig?.mode === 'BOSS' && getPlayerName(player) !== multiplayerStore.room?.gameConfig?.boss" class="hero-health-overlay mb-2">
+                        <HeroHearts :health="multiplayerStore.room?.gameConfig?.heroHealth?.[getPlayerName(player)] || 0" :size="18" />
+                      </div>
+
                       <v-badge
                         v-if="getPlayerName(player) === multiplayerStore.room.host"
                         color="amber-accent-2"
@@ -1041,6 +1094,9 @@
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
       {{ snackbar.text }}
     </v-snackbar>
+
+    <!-- Overlay de Congelación (Modo Jefe) -->
+    <FreezeOverlay />
     </v-container>
 
     <!-- SELECTOR DE DUEL (Forzado a Z-INDEX ultra alto) -->
@@ -1126,7 +1182,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, shallowRef, watch, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   // Importar juegos
@@ -1140,6 +1196,12 @@
   import SymmetryBreaker from '@/components/games/SymmetryBreaker.vue'
   import WordConstruction from '@/components/games/WordConstruction.vue'
   import CoopScoreBar from '@/components/multiplayer/CoopScoreBar.vue'
+  import BossHealthBar from '@/components/multiplayer/BossHealthBar.vue'
+  import BossArsenalPanel from '@/components/multiplayer/BossArsenalPanel.vue'
+  import HeroHearts from '@/components/multiplayer/HeroHearts.vue'
+  import ActionFeed from '@/components/multiplayer/ActionFeed.vue'
+  import FreezeOverlay from '@/components/multiplayer/FreezeOverlay.vue'
+  import EliminatedOverlay from '@/components/multiplayer/EliminatedOverlay.vue'
   import RaceHUD from '@/components/multiplayer/RaceHUD.vue'
   import RaceMap from '@/components/multiplayer/RaceMap.vue'
   import MatchResultScreen from '@/components/multiplayer/MatchResultScreen.vue'
@@ -1210,13 +1272,43 @@
   const tournamentBuyIn = ref(Number(localStorage.getItem('astro_mp_tournamentBuyIn')) || 500)
   const sharedChallenge = ref(localStorage.getItem('astro_mp_sharedChallenge') === 'true')
   const roomCode = ref('')
+  
+  // Estado de inscripción al torneo
+  const isEnrolled = ref(false)
+  const loadingEnrollment = ref(false)
+  
   const showRoulette = ref(false)
   const showBriefing = ref(false)
   const briefingCountdown = ref(10)
   let briefingTimer = null
   const selectedGameForRule = ref('WordConstruction')
   const activeGameComponent = shallowRef(null)
+  const serverGameName = ref(null) // Para sincronización exacta de espectador
   const spectatedPlayer = ref(null)
+
+  async function handleTournamentEnrollment() {
+    if (!multiplayerStore.room) return
+    
+    loadingEnrollment.value = true
+    try {
+      const cost = tournamentBuyIn.value
+      const tournamentId = multiplayerStore.room.id
+      
+      const result = await astroStore.joinTournament(tournamentId, cost)
+      
+      if (result.success) {
+        isEnrolled.value = true
+        showMessage('¡T\'has inscrit correctament al torneig!', 'success')
+      } else {
+        showMessage(result.message || 'Error en la inscripció', 'error')
+      }
+    } catch (err) {
+      showMessage(err.message || 'Error al connectar amb el servidor', 'error')
+    } finally {
+      loadingEnrollment.value = false
+    }
+  }
+
   const currentTournamentMatch = computed(() => {
     if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
       return multiplayerStore.room?.gameConfig?.tournament?.brackets?.find(m => m.status === 'PLAYING')
@@ -1237,8 +1329,8 @@
     if (brackets.length === 0) return false
     // La final es el último match generado en el bracket
     const finalMatch = brackets[brackets.length - 1]
-    // El torneo acaba cuando la final está marcada como FINISHED
-    return finalMatch && finalMatch.status === 'FINISHED'
+    // El torneo acaba cuando el estado de la sala es GAME_OVER (enviado por el servidor al finalizar la gran final)
+    return multiplayerStore.room?.status === 'GAME_OVER' || multiplayerStore.room?.status === 'TOURNAMENT_FINISHED'
   })
   const showDuelSelector = ref(false)
   const currentDuelNodeId = ref(null)
@@ -1309,7 +1401,7 @@
     if (!spectatedPlayer.value) return null
 
     if (isTournament) {
-      const gameName = multiplayerStore.room?.gameConfig?.currentGame
+      const gameName = serverGameName.value || multiplayerStore.room?.gameConfig?.currentGame
       return gameName ? gameComponents[gameName] : null
     }
 
@@ -1548,7 +1640,7 @@
 
   watch(() => multiplayerStore.room?.status, (newStatus, oldStatus) => {
     if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
-      if (isTournamentFinished.value) {
+      if (isTournamentFinished.value || newStatus === 'GAME_OVER') {
         console.log('🏆 Torneig finalitzat! Mostrant podi i premis...')
         showMatchResult.value = true
         activeGameComponent.value = null
@@ -1680,6 +1772,10 @@
       showRoulette.value = false
       isTransitioning.value = true
       
+      // Sincronización exacta del minijuego desde el servidor
+      const gameName = msg.currentGame || multiplayerStore.room?.gameConfig?.currentGame
+      serverGameName.value = gameName
+      
       // Gestión de Astrocions: Comisión de Torneo
       if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
         const fee = multiplayerStore.room.gameConfig.buyIn || 0
@@ -1690,7 +1786,6 @@
         }
       }
 
-      const gameName = multiplayerStore.room?.gameConfig?.currentGame
       const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
 
       if (gameName && gameComponents[gameName] && multiplayerStore.room?.gameConfig?.mode !== 'RACE') {
@@ -1700,7 +1795,7 @@
             if (currentMatch) {
               const isParticipant = currentMatch.p1 === astroStore.user || currentMatch.p2 === astroStore.user
               if (!isParticipant) {
-                console.log('👀 Ets espectador d\'aquest duel del torneig.')
+                console.log('👀 Ets espectador d\'aquest duel del torneig. Component:', gameName)
                 isTransitioning.value = false
                 spectatedPlayer.value = currentMatch.p1
                 isDuelInternal.value = true
@@ -1710,13 +1805,7 @@
               }
             }
             // En torneos, inicio instantáneo para los participantes
-            activeGameComponent.value = gameComponents[gameName]
-            isTransitioning.value = false
-            showBriefing.value = false
-            multiplayerStore.roundScores = {}
-            multiplayerStore.returnedPlayers = []
             spectatedPlayer.value = null
-            // REPARACIÓN: Limpieza total antes de cargar el siguiente juego
             activeGameComponent.value = null
             multiplayerStore.lastSpectatorSync = null
             multiplayerStore.roundScores = {}
@@ -1727,6 +1816,11 @@
               isTransitioning.value = false
               startBriefing(gameName, null, 10)
             }, 50)
+          } else {
+            // MODO NORMAL / COOP / VS
+            activeGameComponent.value = gameComponents[gameName]
+            isTransitioning.value = false
+            startBriefing(gameName)
           }
         }
 
@@ -1736,8 +1830,15 @@
           setTimeout(launch, 300)
         }
       } else {
+        // En modo carrera u otros, quitamos la transición si ya estamos en el mapa o no hay juego
         isTransitioning.value = false
       }
+    }
+
+    if (msg.type === 'SUDDEN_DEATH_START') {
+      console.log('⚡ ¡MUERTE SÚBITA! El primer acierto gana.')
+      showMessage('¡EMPATE! MUERTE SÚBITA: El primer acierto gana.', 'error')
+      // No hacemos nada más, dejamos que los jugadores sigan en el minijuego activo
     }
 
     if (msg.type === 'ROUND_ENDED_BY_WINNER') {
@@ -1773,10 +1874,11 @@
 
         if (!isFinalMatch && !isTournamentFinished.value) {
           console.log('🔄 Combate finalitzat. Tornant a l\'arbre automàticament...')
-          setTimeout(() => {
+          setTimeout(async () => {
             if (showMatchResult.value) {
-              multiplayerStore.returnToLobby()
               showMatchResult.value = false
+              await nextTick()
+              multiplayerStore.returnToLobby()
             }
           }, 500)
         } else {
@@ -1900,7 +2002,8 @@
 
   const opponentName = computed(() => {
     if (!multiplayerStore.room) return t('multiplayerLobby.opponent')
-    const op = multiplayerStore.room.players.find(p => (p.username || p) !== astroStore.user)
+    const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+    const op = players.find(p => (p.username || p) !== astroStore.user)
     return op?.username || op || t('multiplayerLobby.opponent')
   })
 
@@ -1931,7 +2034,8 @@
     if (!multiplayerStore.room) return false
     if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera' || selectedModality.value === 'torneig') return true
     const teams = multiplayerStore.room.gameConfig?.teams || {}
-    return multiplayerStore.room.players.every(p => teams[getPlayerName(p)])
+    const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+    return players.every(p => teams[getPlayerName(p)])
   })
 
   const totalCoopScore = computed(() => {
@@ -2046,7 +2150,8 @@
 
   function randomizeTeams () {
     if (!isHost.value) return
-    const players = multiplayerStore.room.players.map(p => getPlayerName(p))
+    const playersArr = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+    const players = playersArr.map(p => getPlayerName(p))
     const shuffled = [...players].sort(() => Math.random() - 0.5)
     const newTeams = {}
 
@@ -2110,7 +2215,8 @@
 
   function getPlayerAvatar (username) {
     if (!username) return '/Astronauta_blanc.jpg'
-    const player = multiplayerStore.room?.players?.find(p => (p.username || p) === username)
+    const players = Array.isArray(multiplayerStore.room?.players) ? multiplayerStore.room.players : []
+    const player = players.find(p => (p.username || p) === username)
     if (player?.avatar) return player.avatar
     if (username === astroStore.user) {
       return getAvatarUrl(astroStore.avatar, username)
@@ -2208,10 +2314,20 @@
   async function onGameFinished (scoreValue) {
     if (abortInterval) clearInterval(abortInterval)
     
-    // Registrar la partida para ganar Astrocions y XP
-    if (astroStore.registerCompletedGame) {
+    // Registrar la partida para ganar Astrocions y XP (Solo si no somos espectadores)
+    if (astroStore.registerCompletedGame && !spectatedPlayer.value) {
       console.log('💰 REGISTRANDO PARTIDA PARA ASTROCIONS:', multiplayerStore.activeGameName, 'Puntos:', scoreValue)
       await astroStore.registerCompletedGame(multiplayerStore.activeGameName || 'MultiplayerGame', scoreValue)
+    }
+
+    if (spectatedPlayer.value) {
+      console.log('👀 Fin de observación de partida para:', spectatedPlayer.value)
+      isTransitioning.value = true
+      setTimeout(() => {
+        spectatedPlayer.value = null
+        isTransitioning.value = false
+      }, 1000)
+      return
     }
 
     if (multiplayerStore.room?.gameConfig?.mode === 'RACE') {
@@ -2874,6 +2990,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.boss-mode-hud {
+  position: absolute;
+  top: 140px;
+  right: 20px;
+  width: 400px;
+  z-index: 220;
+  pointer-events: none;
 }
 
 .game-hud-container {
@@ -3553,5 +3678,39 @@
 @keyframes mode-pulse {
   0%, 100% { border-color: #00e5ff; }
   50% { border-color: rgba(0, 229, 255, 0.4); }
+}
+.sudden-death-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(20, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sudden-death-content {
+  text-align: center;
+  animation: sudden-death-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes sudden-death-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.glow-text {
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+}
+
+.sudden-death-timer-alt {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ff5252;
+  text-shadow: 0 0 15px rgba(255, 82, 82, 0.6);
+  letter-spacing: 1px;
 }
 </style>

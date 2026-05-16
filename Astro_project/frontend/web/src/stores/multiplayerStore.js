@@ -52,6 +52,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
     currentGlobalAnomaly: null, // Anomalía que afecta a todos
     lastSpectatorSync: {}, // Caché del último estado de cada jugador: { username: { type, ...data } }
+    heartbeatInterval: null,
   }),
 
   getters: {
@@ -95,6 +96,14 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           user: sessionStore.user,
           token: sessionStore.token,
         }))
+
+        // Heartbeat para evitar timeouts de inactividad
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval)
+        this.heartbeatInterval = setInterval(() => {
+          if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({ type: 'PING' }))
+          }
+        }, 30000)
       })
 
       ws.addEventListener('message', event => {
@@ -109,11 +118,15 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         }
       })
 
-      ws.addEventListener('close', () => {
+      ws.addEventListener('close', (event) => {
         this.isConnected = false
         this.socket = null
         this.room = null
-        console.warn('⚠️ Conexión Multijugador cerrada')
+        if (this.heartbeatInterval) {
+          clearInterval(this.heartbeatInterval)
+          this.heartbeatInterval = null
+        }
+        console.warn(`⚠️ Conexión Multijugador cerrada. Código: ${event.code}, Razón: ${event.reason || 'Desconocida'}`)
 
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++
@@ -137,6 +150,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       this.room = null
       this.invitations = []
       this.challengeRequests = []
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval)
+        this.heartbeatInterval = null
+      }
     },
 
     handleMessage (data) {
@@ -176,11 +193,19 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'JOIN_SUCCESS': {
-          this.room = { ...data.room }
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
           break
         }
         case 'ROOM_UPDATE': {
           if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
             // Reset de puntos local si pasamos a estado de juego para evitar arrastrar puntos anteriores
             if (data.room.status === 'PLAYING' && this.room?.status !== 'PLAYING') {
               this.roundScores = {}
@@ -200,15 +225,21 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.partnerText = ''
           this.partnerEmojis = []
           this.lastMessage = null
-          this.room = { ...data.room }
+          
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
 
           // En modo carrera, el estado real de juego es PLAYING para activar el mapa inmediatamente
           if (this.room?.gameConfig?.mode === 'RACE') {
             this.room.status = 'PLAYING'
           }
 
-          if (data.room.gameConfig?.subRoles) {
-            this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
+          if (this.room?.gameConfig?.subRoles) {
+            this.subRole = this.room.gameConfig.subRoles[sessionStore.user]
           }
           this.timeLeft = data.room?.gameConfig?.mode === 'RACE' ? 999 : 60
           this.isRaceImmortal = data.room?.gameConfig?.mode === 'RACE'
@@ -371,11 +402,18 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.remoteCursors = {}
           this.partnerText = ''
           this.partnerEmojis = []
-          this.room = { ...data.room }
+          
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
+          
           this.lastMessage = null // Limpiamos para la nueva ronda
 
-          if (data.room.gameConfig?.subRoles) {
-            this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
+          if (this.room?.gameConfig?.subRoles) {
+            this.subRole = this.room.gameConfig.subRoles[sessionStore.user]
           }
           this.timeLeft = 60
           break
@@ -383,6 +421,9 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         case 'MATCH_FINISHED': {
           this.returnedPlayers = []
           if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
             this.room = { ...data.room }
           }
           this.lastMessage = data

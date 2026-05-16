@@ -375,7 +375,7 @@
 
   function checkTuning () {
     const diff = Math.abs(currentFrequency.value - targetFrequency.value)
-    if (diff < 1.5) {
+    if (diff < 0.6) {
       if (!isTuned.value) {
         isTuned.value = true
         speakPhrase(0.8)
@@ -566,6 +566,11 @@
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
 
+    if (msg.type === 'ROUND_ENDED_BY_WINNER' && isPlaying.value) {
+      endGame()
+      return
+    }
+
     // LÓGICA ESPECTADOR
     if (props.isSpectator) {
         if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
@@ -590,9 +595,6 @@
         return
     }
 
-    if (msg.type === 'ROUND_ENDED_BY_WINNER' && isPlaying.value) {
-      endGame()
-    }
 
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'REQUEST_SYNC' && !props.isSpectator && isAuthority.value) {

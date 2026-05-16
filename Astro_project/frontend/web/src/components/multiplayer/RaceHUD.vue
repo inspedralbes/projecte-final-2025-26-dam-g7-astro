@@ -84,7 +84,8 @@
 
   const opponentName = computed(() => {
     if (!multiplayerStore.room) return 'Rival'
-    const op = multiplayerStore.room.players.find(p => (p.username || p) !== astroStore.user)
+    const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+    const op = players.find(p => (p.username || p) !== astroStore.user)
     return op?.username || op || 'Rival'
   })
 

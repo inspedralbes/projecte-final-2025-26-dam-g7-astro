@@ -113,6 +113,47 @@ class GameService {
             newRank: user.rank
         };
     }
+
+    /**
+     * Inscribe a un usuario en un torneo descontando el coste de su saldo.
+     * Ejemplo de lógica SQL equivalente:
+     * BEGIN TRANSACTION;
+     * SELECT coins FROM users WHERE username = ? FOR UPDATE;
+     * IF coins >= cost THEN
+     *   UPDATE users SET coins = coins - cost WHERE username = ?;
+     *   INSERT INTO tournament_participants ...;
+     *   COMMIT;
+     * ELSE
+     *   ROLLBACK;
+     * END IF;
+     */
+    async joinTournament(username, tournamentId, cost) {
+        const user = await this.userRepo.findByUsername(username);
+        if (!user) throw new Error('Usuari no trobat');
+
+        // Validar si tiene saldo suficiente
+        if (!user.canAfford(cost)) {
+            throw new Error('Saldo insuficiente');
+        }
+
+        // Restar saldo
+        user.subtractCoins(cost);
+
+        // En un sistema SQL real, aquí haríamos el INSERT en la tabla de participantes
+        // Para este proyecto, registraremos la actividad en el usuario o simplemente actualizaremos su saldo
+        user.lastActivity = new Date();
+        
+        // Guardar cambios
+        await this.userRepo.update(user);
+
+        console.log(`🏆 Usuario ${username} inscrito en torneo ${tournamentId}. Coste: ${cost}. Nuevo saldo: ${user.coins}`);
+
+        return {
+            success: true,
+            message: 'Inscripción completada',
+            newBalance: user.coins
+        };
+    }
 }
 
 module.exports = GameService;

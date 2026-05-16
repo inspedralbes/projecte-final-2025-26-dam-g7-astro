@@ -71,7 +71,10 @@
             "boosts": "Boosts",
             "titles": "Titles",
             "pins": "Pins"
-        }
+        },
+        "spinError": "Error while spinning",
+        "unknownPrize": "The server returned an unknown prize.",
+        "commError": "Communication error"
     },
     "friends": {
         "title": "CREW NETWORK",
@@ -633,11 +636,6 @@
         "team": "TEAM",
         "tieQuote": "A perfect balance of forces.",
         "winQuote": "You have dominated the galaxy with honor!"
-    },
-    "shop": {
-        "spinError": "Error while spinning",
-        "unknownPrize": "The server returned an unknown prize.",
-        "commError": "Communication error"
     },
     "languages": {
         "es": "Spanish",

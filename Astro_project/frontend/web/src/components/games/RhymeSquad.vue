@@ -240,6 +240,10 @@ const subRole = computed(() => {
   if (props.isDuel || props.isRace) return 'catcher'
   return multiplayerStore.subRole || 'catcher'
 })
+const isHost = computed(() => {
+  const host = multiplayerStore.room?.host
+  return (typeof host === 'object' ? host.username || host.user : host) === astroStore.user
+})
 const isAuthority = computed(() => {
   if (props.isSpectator) return false
   if (!props.isMultiplayer) return true
@@ -281,7 +285,12 @@ let lastMouseSync = 0
 const gameArea = ref(null)
 function handleMouseMove(e) {
   if (!isPlaying.value || props.isSpectator || !gameArea.value) return
-  const rect = gameArea.value.getBoundingClientRect()
+  
+  // En Vuetify 3, ref en componentes devuelve la instancia del componente, no el elemento DOM.
+  const el = gameArea.value.$el || gameArea.value
+  if (!el.getBoundingClientRect) return
+  
+  const rect = el.getBoundingClientRect()
   const x = ((e.clientX - rect.left) / rect.width) * 100
   const y = ((e.clientY - rect.top) / rect.height) * 100
 

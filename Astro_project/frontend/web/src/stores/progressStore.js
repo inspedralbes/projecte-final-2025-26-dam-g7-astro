@@ -409,6 +409,40 @@ export const useProgressStore = defineStore('progress', {
       }
     },
 
+    async joinTournament(tournamentId, cost) {
+      this.error = null
+      const user = this.resolveUser()
+      if (!user) {
+        return { success: false, message: i18n.global.t('errors.noSession') }
+      }
+
+      try {
+        const { response, data } = await requestJson('/api/tournament/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user,
+            tournamentId,
+            cost,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al inscribirse al torneo.')
+        }
+
+        if (data.newBalance !== undefined) {
+          this.setCoins(data.newBalance)
+        }
+
+        return { success: true, data }
+      } catch (error) {
+        console.error('❌ Error inscribiéndose al torneo:', error)
+        this.error = error.message
+        return { success: false, message: this.error }
+      }
+    },
+
     clearProgress () {
       this.coins = 0
       this.partides = 0

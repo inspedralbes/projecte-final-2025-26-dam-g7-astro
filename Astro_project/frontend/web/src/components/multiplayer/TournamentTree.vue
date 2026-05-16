@@ -276,7 +276,8 @@ function getMatchStatusClass(match) {
 
 function getPlayerAvatar(username) {
   if (!username) return null
-  const player = multiplayerStore.room?.players?.find(p => (p.username || p) === username)
+  const players = Array.isArray(multiplayerStore.room?.players) ? multiplayerStore.room.players : []
+  const player = players.find(p => (p.username || p) === username)
   return player?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`
 }
 
@@ -313,7 +314,16 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
   font-family: 'Outfit', sans-serif;
 }
 
-.stars-container { position: absolute; inset: 0; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.1; }
+.stars-container { 
+  position: absolute; 
+  inset: 0; 
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px, 200px 200px;
+  opacity: 0.3; 
+}
 
 .countdown-global-overlay {
   position: fixed; top: 80px; right: 40px; z-index: 99999;

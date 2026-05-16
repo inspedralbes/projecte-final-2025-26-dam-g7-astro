@@ -474,6 +474,8 @@ function onTyping() { emitTyping(rawInput.value) }
   watch(() => multiplayerStore.lastMessage, msg => {
   if (!msg) return
 
+  if (msg.type === 'ROUND_ENDED_BY_WINNER') { gameFinished.value = true; emitExit(); return }
+
   // LÓGICA ESPECTADOR
   if (props.isSpectator) {
     if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
@@ -486,8 +488,6 @@ function onTyping() { emitTyping(rawInput.value) }
     }
     return
   }
-
-  if (msg.type === 'ROUND_ENDED_BY_WINNER') { gameFinished.value = true; emitExit() }
   if (msg.type === 'GAME_ACTION') {
     const a = msg.action
     if (a.type === 'ADVANCE_LETTER' && (isSender.value || isTranslator.value) && !props.isDuel && !props.isRace) {

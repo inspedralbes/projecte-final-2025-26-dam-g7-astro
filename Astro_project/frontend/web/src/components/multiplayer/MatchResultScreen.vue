@@ -440,7 +440,7 @@
     const finalMatch = allMatches.length > 0 ? allMatches[allMatches.length - 1] : null
     let first = null, second = null
     
-    if (finalMatch && (finalMatch.status === 'FINISHED' || multiplayerStore.room.status === 'MATCH_FINISHED')) {
+    if (finalMatch && (finalMatch.status === 'FINISHED' || multiplayerStore.room.status === 'MATCH_FINISHED' || multiplayerStore.room.status === 'GAME_OVER')) {
       first = finalMatch.winner
       if (first) {
         second = (finalMatch.winner === finalMatch.p1) ? finalMatch.p2 : finalMatch.p1

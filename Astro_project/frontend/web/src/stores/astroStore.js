@@ -224,6 +224,10 @@ export const useAstroStore = defineStore('astro', () => {
     return progressStore.claimMissionReward(missionId, type)
   }
 
+  async function joinTournament (tournamentId, cost) {
+    return progressStore.joinTournament(tournamentId, cost)
+  }
+
   async function fetchUserInventory () {
     const result = await inventoryStore.fetchUserInventory()
     if (result.success && result.data?.activeBoosters !== undefined) {
