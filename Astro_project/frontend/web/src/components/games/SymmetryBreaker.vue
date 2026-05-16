@@ -138,7 +138,7 @@
   const isRace = computed(() => props.isRace)
   const isDuel = computed(() => props.isDuel)
 
-  const emit = defineEmits(['game-over'])
+  const emit = defineEmits(['game-over', 'action'])
 
   const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
   const isAuthority = computed(() => {
@@ -540,14 +540,14 @@
   }
 
   function lockTarget () {
+    if (props.spectatedPlayer) return; // BLOQUEO OBSERVADOR
+
     if (props.isMultiplayer) {
       if (!isCompetitiveMode.value) {
         if (isAuthority.value) {
           score.value += 50 + (round.value * 10) + (successfulLocks.value * 5)
+          timeLeft.value += 2 // +2s por acierto
           successfulLocks.value += 1
-          if (anyRivalAlive.value) {
-            timeLeft.value = Math.min(99, timeLeft.value + 3)
-          }
           round.value++
           generateTargets()
           triggerFeedback('success')
@@ -558,24 +558,21 @@
             subtype: 'REDUCE_TIME',
             amount: isSaboteurActive ? 4 : 2,
           })
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
         } else {
           multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
         }
       } else {
         const timeBonus = Math.floor(timeLeft.value / 2)
         score.value += 20 + timeBonus
+        timeLeft.value += 2 // +2s por acierto
         successfulLocks.value += 1
-        if (anyRivalAlive.value) {
-          timeLeft.value = Math.min(99, timeLeft.value + 3)
-        }
         round.value++
         generateTargets()
         triggerFeedback('success')
 
         multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0 ? 10 : 5 })
-        multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-        multiplayerStore.sendGameAction({ type: 'SCORE_UPDATE', score: score.value })
+        emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
       }
       
       if (props.isRace) {
@@ -585,10 +582,8 @@
     }
 
     score.value += 100 + (round.value * 22) + (successfulLocks.value * 18)
+    timeLeft.value += 2 // +2s por acierto
     successfulLocks.value += 1
-    if (anyRivalAlive.value) {
-      timeLeft.value = Math.min(99, timeLeft.value + 3)
-    }
     round.value++
     
     if (props.isRace) {

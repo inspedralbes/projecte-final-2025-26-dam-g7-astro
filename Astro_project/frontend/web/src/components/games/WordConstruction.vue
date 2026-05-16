@@ -2,16 +2,17 @@
   <div ref="gameArea" class="v-container v-container--fluid fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;" @mousemove="handleMouseMove">
 
     <!-- Cursors remots -->
-    <div v-if="props.isMultiplayer && !isCompetitiveMode" class="remote-cursors-container">
-      <div
-        v-for="(pos, username) in multiplayerStore.remoteCursors"
-        :key="username"
-        class="remote-cursor"
-        :style="{ left: pos.x + '%', top: pos.y + '%' }"
-      >
-        <div class="cursor-pointer" />
-        <div class="cursor-label">{{ username }}</div>
-      </div>
+    <div v-if="props.isMultiplayer && (!isCompetitiveMode || props.isSpectator)" class="remote-cursors-container">
+      <template v-for="(pos, username) in multiplayerStore.remoteCursors" :key="username">
+        <div
+          v-if="!props.isSpectator || username === props.spectatedPlayer"
+          class="remote-cursor"
+          :style="{ left: pos.x + '%', top: pos.y + '%' }"
+        >
+          <div class="cursor-pointer" />
+          <div class="cursor-label">{{ username }}</div>
+        </div>
+      </template>
     </div>
 
     <!-- Capçalera del joc -->
@@ -141,7 +142,7 @@
     spectatedPlayer: { type: String, default: null }
   })
 
-  const emit = defineEmits(['game-over'])
+  const emit = defineEmits(['game-over', 'action'])
 
   const isAuthority = computed(() => {
     if (props.isSpectator) return false
@@ -254,12 +255,13 @@
   }
 
   function checkAnswer (fromSync = false) {
-    if (state.value.isRoundLocked) return
+    if (state.value.isRoundLocked || props.spectatedPlayer) return
 
     if (orderedGuess.value.toUpperCase() === state.value.currentWordObj.word.toUpperCase()) {
       state.value.currentStep++
       const timeBonus = Math.floor(state.value.timeLeft / 4)
       state.value.score += (state.value.level * 20) + timeBonus
+      state.value.timeLeft += 2 // +2s por acierto
       state.value.message = t('wordConstruction.correctBlock')
       state.value.messageType = 'success'
       state.value.isRoundLocked = true
@@ -269,6 +271,8 @@
       }
 
       if (props.isMultiplayer && !fromSync) {
+        emit('action', { type: 'SCORE_UPDATE', score: state.value.score, timeLeft: state.value.timeLeft })
+        
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 10 : 5 })
 

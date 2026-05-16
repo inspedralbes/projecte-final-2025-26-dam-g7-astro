@@ -191,7 +191,18 @@
     >
       <div class="text-center font-weight-black">{{ feedbackMessage }}</div>
     </v-snackbar>
-
+      <!-- Cursor de Espectador -->
+      <div 
+        v-if="props.isSpectator && props.spectatedPlayer && multiplayerStore.remoteCursors[props.spectatedPlayer]" 
+        class="spectator-cursor"
+        :style="{
+          left: multiplayerStore.remoteCursors[props.spectatedPlayer].x + '%',
+          top: multiplayerStore.remoteCursors[props.spectatedPlayer].y + 'px'
+        }"
+      >
+        <div class="cursor-dot"></div>
+        <div class="cursor-label">{{ props.spectatedPlayer }}</div>
+      </div>
   </v-container>
 </template>
 
@@ -208,7 +219,7 @@ const { t, locale } = useI18n()
 const multiplayerStore = useMultiplayerStore()
 const astroStore = useAstroStore()
 
-const emit = defineEmits(['game-over'])
+const emit = defineEmits(['game-over', 'action'])
 const props = defineProps({
   isMultiplayer: { type: Boolean, default: false },
   isRace: { type: Boolean, default: false },
@@ -526,7 +537,7 @@ function onTyping() { emitTyping(rawInput.value) }
 }, { immediate: true })
 
 function checkAnswer() {
-  if (isChecking.value || gameFinished.value || isTranslator.value || isSender.value) return
+  if (isChecking.value || gameFinished.value || isTranslator.value || isSender.value || props.spectatedPlayer) return
   isChecking.value = true
   const userAnswer = normalize(rawInput.value)
   const correctAnswer = normalize(currentLetter.value.answer)
@@ -537,12 +548,12 @@ function handleResult(status) {
   roscoLetters.value[currentIndex.value].status = status
   if (status === 'correct') {
     score.value += 100 + Math.floor(timeLeft.value / 2)
-    if (anyRivalAlive.value) {
-      timeLeft.value = Math.min(timeLeft.value + 20, 999)
-    }
+    timeLeft.value += 5 // +5s por acierto
+    
     feedbackMessage.value = t('spelledRosco.msgCorrect'); feedbackColor.value = 'success'; playFeedbackSound('success')
     if (props.isRace) multiplayerStore.rechargeFuel(25)
     if (props.isMultiplayer) {
+      emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
       const sabo = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
       multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: sabo ? 30 : 15 })
       if (props.isDuel) multiplayerStore.sendGameAction({ type: 'TIME_PENALTY', amount: sabo ? 20 : 10 })
@@ -853,8 +864,39 @@ watch(score, (newScore) => {
   50% { transform: translate(-50%, -40%); }
 }
 
-.hint-label { font-size: 10px; font-weight: bold; opacity: 0.7; }
-.hint-content { font-size: 24px; font-weight: 900; }
+.partner-hint-bubble .hint-label { font-size: 10px; color: #aaa; margin-bottom: 2px; }
+.partner-hint-bubble .hint-content { font-size: 24px; }
+
+.spectator-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: left 0.1s linear, top 0.1s linear;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot {
+  width: 12px;
+  height: 12px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00e5ff;
+}
+
+.cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
 
 .bg-slate-900 { background-color: #0f172a; }
 .border-cyan { border: 2px solid rgba(0, 229, 255, 0.3); }

@@ -162,6 +162,19 @@
                 </div>
             </v-card>
         </v-overlay>
+
+        <!-- Cursor de Espectador -->
+        <div 
+            v-if="props.isSpectator && props.spectatedPlayer && multiplayerStore.remoteCursors[props.spectatedPlayer]" 
+            class="spectator-cursor"
+            :style="{
+                left: multiplayerStore.remoteCursors[props.spectatedPlayer].x + '%',
+                top: multiplayerStore.remoteCursors[props.spectatedPlayer].y + '%'
+            }"
+        >
+            <div class="cursor-dot"></div>
+            <div class="cursor-label">{{ props.spectatedPlayer }}</div>
+        </div>
     </div>
 </template>
 
@@ -187,7 +200,7 @@
     spectatedPlayer: { type: String, default: null },
   })
 
-  const emit = defineEmits(['game-over'])
+  const emit = defineEmits(['game-over', 'action'])
 
   // --- REFORÇ VISUAL I SONOR ---
   const showFeedback = ref(false)
@@ -412,16 +425,15 @@
   }
 
   function checkPhrase () {
-    if (!isTuned.value || !userGuess.value.trim()) return
+    if (!isTuned.value || !userGuess.value.trim() || props.spectatedPlayer) return
 
     const normalizedGuess = userGuess.value.trim().toLowerCase().replace(/[.,!?;:]/g, '')
     const normalizedTarget = currentPhrase.value.phrase.toLowerCase().replace(/[.,!?;:]/g, '')
 
     if (normalizedGuess === normalizedTarget) {
       score.value += 100 + (currentLevel.value * 20)
-      if (anyRivalAlive.value) {
-        timeLeft.value = Math.min(120, timeLeft.value + 15)
-      }
+      timeLeft.value += 5 // +5s por acierto
+      
       currentLevel.value++
       currentPhraseIdx.value++
       targetFrequency.value = Math.random() * 100
@@ -435,6 +447,7 @@
       }
 
       if (props.isMultiplayer) {
+        emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 15 : 8 })
         
@@ -840,7 +853,42 @@ canvas { display: block; width: 100%; height: auto; }
     border-radius: 6px;
     padding: 10px;
 }
-.input-active { animation: fadeUp 0.3s ease-out; }
+
+.input-active {
+    animation: slideIn 0.3s ease-out;
+}
+
+.spectator-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: left 0.1s linear, top 0.1s linear;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot {
+  width: 12px;
+  height: 12px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00e5ff;
+}
+
+.cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
 @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .input-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .replay-btn {

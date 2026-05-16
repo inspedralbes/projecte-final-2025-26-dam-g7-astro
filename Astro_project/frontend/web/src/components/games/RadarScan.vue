@@ -68,7 +68,7 @@ import { useAstroStore } from '@/stores/astroStore';
 const multiplayerStore = useMultiplayerStore();
 const astroStore = useAstroStore();
 
-const emit = defineEmits(['game-over']);
+const emit = defineEmits(['game-over', 'action']);
 const props = defineProps({
   isMultiplayer: { type: Boolean, default: false },
   isRace: { type: Boolean, default: false },
@@ -222,13 +222,18 @@ const generateBoard = () => {
 
 const nextRound = () => {
   score.value += (currentLevel.value * 10);
-  timeLeft.value = Math.min(60, timeLeft.value + 1);
+  timeLeft.value += 5; // +5s por acierto
   currentLevel.value++;
+  
+  if (props.isMultiplayer) {
+    emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value });
+  }
+  
   generateBoard();
 };
 
 const checkLetter = (index) => {
-  if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value) return;
+  if (showStartOverlay.value || showGameOverOverlay.value || timeLeft.value <= 0 || isTransitioning.value || props.spectatedPlayer) return;
 
   if (index === targetIndex.value) {
     isTransitioning.value = true;

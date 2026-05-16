@@ -106,6 +106,19 @@
         </v-overlay>
       </template>
 
+
+      <!-- Cursor de Espectador -->
+      <div 
+        v-if="props.isSpectator && props.spectatedPlayer && multiplayerStore.remoteCursors[props.spectatedPlayer]" 
+        class="spectator-cursor"
+        :style="{
+          left: multiplayerStore.remoteCursors[props.spectatedPlayer].x + '%',
+          top: multiplayerStore.remoteCursors[props.spectatedPlayer].y + '%'
+        }"
+      >
+        <div class="cursor-dot"></div>
+        <div class="cursor-label">{{ props.spectatedPlayer }}</div>
+      </div>
     </v-card>
   </v-container>
 </template>
@@ -132,7 +145,7 @@ const props = defineProps({
   isSpectator: { type: Boolean, default: false },
   spectatedPlayer: { type: String, default: null },
 })
-const emit = defineEmits(['game-over'])
+const emit = defineEmits(['game-over', 'action'])
 
 const isPlaying = ref(true)
 const level = ref(1)
@@ -267,9 +280,10 @@ function addSyllable() {
 }
 
 function checkSyllables() {
-  if (gameFinished.value || props.isPaused) return
+  if (gameFinished.value || props.isPaused || props.spectatedPlayer) return
   if (userSyllables.value === currentWord.value.syllables) {
     score.value += 20 + (currentWord.value.syllables * 5)
+    timeLeft.value += 2 // +2s por acierto
     successfulDetections.value++
     message.value = t('syllableQuest.correct')
     messageType.value = 'success'
@@ -280,6 +294,8 @@ function checkSyllables() {
     }
 
     if (props.isMultiplayer) {
+      emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
+      
       const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
       multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 6 : 3 })
       if (props.isDuel) {
@@ -622,9 +638,41 @@ onUnmounted(() => {
   100% { transform: scale(1); opacity: 1; }
 }
 
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-10px); }
   75% { transform: translateX(10px); }
+}
+
+.spectator-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: left 0.1s linear, top 0.1s linear;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot {
+  width: 12px;
+  height: 12px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00e5ff;
+}
+
+.cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 </style>

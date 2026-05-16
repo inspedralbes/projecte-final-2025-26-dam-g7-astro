@@ -585,20 +585,24 @@ class RoomManager {
 
     async launchTournamentRound(roomId) {
         const room = this.rooms.get(roomId);
-        if (!room || room.status !== 'TOURNAMENT_BRACKETS') return;
+        if (!room || !room.gameConfig.tournament) return;
 
         console.log(`[TOURNAMENT] Intentando lanzar ronda para sala ${roomId}`);
 
         const tournament = room.gameConfig.tournament;
-        // Buscamos la primera partida que esté WAITING
-        const nextMatch = tournament.brackets.find(m => m.status === 'WAITING');
+        // Buscamos la primera partida que esté WAITING en la ronda actual
+        const nextMatch = tournament.brackets.find(m => m.status === 'WAITING' && m.round === tournament.round);
 
         if (nextMatch) {
             console.log(`[TOURNAMENT] Lanzando duelo: ${nextMatch.p1} vs ${nextMatch.p2}`);
             nextMatch.status = 'PLAYING';
+            
             // Pasamos los participantes para elegir un juego que no hayan jugado
             const game = this.pickNextGame(roomId, [nextMatch.p1, nextMatch.p2]);
             room.gameConfig.currentGame = game;
+            room.lastPlayedGame = game;
+            room.gameConfig.seed = Math.floor(Math.random() * 1000000);
+            room.gameConfig.sharedChallenge = true;
 
             // Marcar el juego como jugado para cada uno de los participantes
             [nextMatch.p1, nextMatch.p2].forEach(p => {
@@ -615,10 +619,11 @@ class RoomManager {
             room.gameConfig.teams = { [nextMatch.p1]: 'team-1', [nextMatch.p2]: 'team-2' };
             room.gameConfig.subRoles = { [nextMatch.p1]: null, [nextMatch.p2]: null };
 
-            this.roundGameScores.set(roomId, {});
-            this.roundFinishedPlayers.set(roomId, new Set());
-            room.status = 'PLAYING';
+            // Usamos setRoomStatus para inicializar el juego (scores, timers, datos específicos)
+            // Esto también enviará un ROOM_UPDATE
+            await this.setRoomStatus(roomId, 'PLAYING');
             
+            // Enviamos MATCH_STARTING para que el frontend inicie el componente de juego o espectador
             const roomUpdate = await this.getRoom(roomId);
             this.broadcastToRoom(roomId, {
                 type: 'MATCH_STARTING',
@@ -626,9 +631,10 @@ class RoomManager {
                 currentGame: game
             });
             
-            console.log(`[TOURNAMENT] Estado de la sala cambiado a PLAYING con juego: ${game} y seed: ${room.gameConfig.seed}. Puntuaciones de ronda reseteadas.`);
+            console.log(`[TOURNAMENT] Combate lanzado: ${game} (Seed: ${room.gameConfig.seed})`);
         } else {
-            console.log(`[TOURNAMENT] No hay partidas WAITING disponibles para lanzar.`);
+            console.log(`[TOURNAMENT] No hay partidas WAITING en ronda ${tournament.round}. Avanzando ronda.`);
+            this.handleTournamentRoundEnd(roomId);
         }
     }
 
@@ -671,6 +677,9 @@ class RoomManager {
         const playedInRoom = this.playedGames.get(roomId) || new Set();
 
         let pool = this.availableGames;
+        if (room.lastPlayedGame) {
+            pool = pool.filter(g => g !== room.lastPlayedGame);
+        }
 
         // Si pasamos jugadores (Torneo), buscamos un juego que NINGUNO de ellos haya jugado
         if (players.length > 0) {
@@ -680,7 +689,7 @@ class RoomManager {
                 pGames.forEach(g => forbiddenGames.add(g));
             });
 
-            let filteredPool = this.availableGames.filter(g => !forbiddenGames.has(g));
+            let filteredPool = pool.filter(g => !forbiddenGames.has(g));
 
             // Si todos los juegos han sido jugados por alguno, usamos la lista de la sala
             if (filteredPool.length === 0) {
@@ -700,7 +709,8 @@ class RoomManager {
                 'SyllableQuest',
                 'RadarScan',
                 'RadioSignal',
-                'RhymeSquad'
+                'RhymeSquad',
+                'SpelledRosco'
             ];
             pool = pool.filter(g => competitiveGames.includes(g));
             if (pool.length === 0) pool = competitiveGames;
@@ -828,15 +838,43 @@ class RoomManager {
         if (!room) return;
 
         if (this.roundTimers.has(roomId)) {
-            clearTimeout(this.roundTimers.get(roomId));
+            clearInterval(this.roundTimers.get(roomId));
+            this.roundTimers.delete(roomId);
         }
 
         const currentGame = room.gameConfig.currentGame || 'default';
-        const duration = this.gameDurations[currentGame] || 60000;
-        const timer = setTimeout(() => {
-            console.log(`[Room ${roomId}] Tiempo agotado para la ronda.`);
-            this.finishRound(roomId);
-        }, duration);
+        const durationSeconds = (this.gameDurations[currentGame] || 60000) / 1000;
+        
+        room.gameConfig.timeLeft = durationSeconds;
+        room.roundEndTime = Date.now() + (durationSeconds * 1000);
+
+        const timer = setInterval(() => {
+            const r = this.rooms.get(roomId);
+            if (!r || r.status !== 'PLAYING') {
+                clearInterval(timer);
+                this.roundTimers.delete(roomId);
+                return;
+            }
+
+            const now = Date.now();
+            const remaining = Math.ceil((r.roundEndTime - now) / 1000);
+            r.gameConfig.timeLeft = Math.max(0, remaining);
+
+            // Sync cada 3 segundos o si queda poco tiempo para que el frontend no de saltos
+            if (remaining % 3 === 0 || remaining <= 5) {
+                this.broadcastToRoom(roomId, {
+                    type: 'TIME_UPDATE',
+                    timeLeft: r.gameConfig.timeLeft
+                });
+            }
+
+            if (remaining <= 0) {
+                clearInterval(timer);
+                this.roundTimers.delete(roomId);
+                console.log(`[Room ${roomId}] Tiempo agotado para la ronda.`);
+                this.finishRound(roomId);
+            }
+        }, 1000);
 
         this.roundTimers.set(roomId, timer);
     }
@@ -970,43 +1008,45 @@ class RoomManager {
             currentScores: Object.fromEntries(roundScores)
         });
 
-        // Si es modo TORNEO, actualizamos el bracket
+            // Si es modo TORNEO, actualizamos el bracket
         if (room.gameConfig.mode === 'TOURNAMENT') {
             const tournament = room.gameConfig.tournament;
             const currentMatch = tournament.brackets.find(m => m.status === 'PLAYING');
             if (currentMatch) {
-                currentMatch.winner = winner; // winner puede ser null si hay empate (aunque SUDDEN_DEATH debería evitarlo)
+                currentMatch.winner = winner; 
                 currentMatch.status = 'FINISHED';
             }
             
             // 3.1 Transición automática a resultados y luego al árbol
             room.status = 'MATCH_RESULTS'; 
+            room.gameConfig.currentGame = null; // LIMPIAR JUEGO PARA VOLVER AL ARBOL
             console.log(`[TOURNAMENT] Combate finalizado. Mostrando resultados por 3s.`);
             
-            const roomUpdate = await this.getRoom(roomId);
+            const resultsUpdate = await this.getRoom(roomId);
+            const tournamentWinner = currentMatch ? currentMatch.winner : null;
+
             this.broadcastToRoom(roomId, {
-                type: 'ROUND_ENDED_BY_WINNER',
-                winner: tie ? null : winner,
-                tie,
-                room: roomUpdate
+                type: 'MATCH_FINISHED',
+                winner: tournamentWinner,
+                room: resultsUpdate
             });
 
             setTimeout(async () => {
                 const r = this.rooms.get(roomId);
                 if (!r) return;
 
-                console.log(`[TOURNAMENT] Volviendo a la vista de Árbol.`);
+                // 2. Mostrar el árbol del torneo por 7 segundos
                 r.status = 'TOURNAMENT_BRACKETS';
+                r.gameConfig.tournament.nextMatchStartTime = Date.now() + 7000;
                 const treeUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: treeUpdate });
 
-                // 3.2 Programar el temporizador de 7 segundos para el siguiente combate
                 setTimeout(() => {
                     const roomStillExists = this.rooms.get(roomId);
                     if (!roomStillExists || roomStillExists.status !== 'TOURNAMENT_BRACKETS') return;
 
                     const tournament = roomStillExists.gameConfig.tournament;
-                    const nextMatch = tournament.brackets.find(m => m.status === 'WAITING');
+                    const nextMatch = tournament.brackets.find(m => m.status === 'WAITING' && m.round === tournament.round);
 
                     if (nextMatch) {
                         console.log(`[TOURNAMENT] Lanzando automáticamente el siguiente duelo.`);
@@ -1018,7 +1058,7 @@ class RoomManager {
                 }, 7000);
             }, 3000);
 
-            return; // Salir de finishRound, el resto es para modos normales
+            return; // Importante para no ejecutar la lógica de modo normal
         }
 
         // Lógica para modos normales (No Torneo)
@@ -1055,7 +1095,7 @@ class RoomManager {
         
         // Detener cualquier timer de Sudden Death si existiera
         if (this.roundTimers.has(roomId)) {
-            clearTimeout(this.roundTimers.get(roomId));
+            clearInterval(this.roundTimers.get(roomId));
             this.roundTimers.delete(roomId);
         }
 
@@ -1071,23 +1111,52 @@ class RoomManager {
                 match.winner = winner;
                 match.endTime = Date.now();
 
+                // 1. Mostrar resultados del duelo por 3 segundos
+                room.status = 'MATCH_RESULTS';
                 const roomUpdate = await this.getRoom(roomId);
                 this.broadcastToRoom(roomId, {
-                    type: 'ROUND_ENDED_BY_WINNER',
+                    type: 'MATCH_FINISHED',
                     winner: winner,
-                    scores: room.gameConfig.scores,
                     room: roomUpdate
                 });
 
-                this.setRoomStatus(roomId, 'TOURNAMENT_BRACKETS');
+                setTimeout(async () => {
+                    const r = this.rooms.get(roomId);
+                    if (!r) return;
 
-                setTimeout(() => {
-                    const nextMatch = tournament.brackets.find(m => m.status === 'WAITING' && m.round === tournament.round);
-                    if (nextMatch) {
-                        this.launchTournamentRound(roomId);
-                    } else {
-                        this.handleTournamentRoundEnd(roomId);
+                    const tournament = r.gameConfig.tournament;
+                    const playersCount = r.players.size;
+                    const totalRounds = Math.ceil(Math.log2(playersCount));
+                    
+                    // ¿Es este el último match de la última ronda (La Final)?
+                    const currentMatch = tournament.brackets.find(m => m.winner === winner && m.status === 'FINISHED' && m.round === totalRounds);
+                    const isGrandFinal = !!currentMatch;
+
+                    if (isGrandFinal) {
+                        console.log(`[TOURNAMENT] ¡GRAN FINAL TERMINADA! Pasando a GAME_OVER.`);
+                        this.handleTournamentRoundEnd(roomId); // Esto pondrá status = GAME_OVER y dará los premios
+                        return;
                     }
+
+                    // 2. Si NO es la final, mostrar el árbol del torneo por 7 segundos
+                    r.status = 'TOURNAMENT_BRACKETS';
+                    r.gameConfig.tournament.nextMatchStartTime = Date.now() + 7000;
+                    const treeUpdate = await this.getRoom(roomId);
+                    this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: treeUpdate });
+
+                    setTimeout(() => {
+                        const roomStillExists = this.rooms.get(roomId);
+                        if (!roomStillExists || roomStillExists.status !== 'TOURNAMENT_BRACKETS') return;
+
+                        const nextMatch = tournament.brackets.find(m => m.status === 'WAITING' && m.round === tournament.round);
+                        if (nextMatch) {
+                            console.log(`[TOURNAMENT] Lanzando automáticamente el siguiente duelo.`);
+                            this.launchTournamentRound(roomId);
+                        } else {
+                            console.log(`[TOURNAMENT] No hay más duelos en esta ronda. Avanzando ronda.`);
+                            this.handleTournamentRoundEnd(roomId);
+                        }
+                    }, 7000);
                 }, 3000);
             }
         } else {
@@ -1112,10 +1181,32 @@ class RoomManager {
             }
         }
 
+        if (action.type === 'SABOTAGE' && room.gameConfig.mode === 'TOURNAMENT') {
+            return; // No permitimos sabotaje de tiempo en torneos para no liar
+        }
+
         if (action.type === 'SCORE_UPDATE') {
             if (!this.roundGameScores.has(roomId)) this.roundGameScores.set(roomId, new Map());
             const scores = this.roundGameScores.get(roomId);
+            
+            // Si es torneo o duelo, extendemos el tiempo del servidor si el cliente nos lo pide (o por defecto 2s)
+            if (room.gameConfig.mode === 'TOURNAMENT' || room.gameConfig.mode === 'DUEL') {
+                const extension = (action.timeLeftExtension || 2) * 1000;
+                if (room.roundEndTime) {
+                    room.roundEndTime += extension;
+                    // Capamos a un máximo de 99 segundos para que no sea infinito
+                    const maxEndTime = Date.now() + 99000;
+                    if (room.roundEndTime > maxEndTime) room.roundEndTime = maxEndTime;
+                }
+            }
+
             scores.set(user, action.score);
+            
+            // Notificar a todos de la extensión de tiempo
+            this.broadcastToRoom(roomId, {
+                type: 'TIME_UPDATE',
+                timeLeft: Math.ceil((room.roundEndTime - Date.now()) / 1000)
+            });
         }
 
         if (action.type === 'ROSCO_PROGRESS_UPDATE') {
@@ -1218,10 +1309,10 @@ class RoomManager {
             // Reemplazamos los brackets para que solo queden los nuevos y el historial de terminados sea limpio
             tournament.brackets = [...tournament.brackets, ...nextBrackets];
 
-            // Inicio automático del primer combate de la nueva ronda tras 3s
+            // Inicio automático del primer combate de la nueva ronda tras 10s (3s resultados + 7s árbol)
             setTimeout(() => {
                 this.launchTournamentRound(roomId);
-            }, 3000);
+            }, 10000);
         } else if (winners.length === 1) {
             console.log(`[TOURNAMENT] Torneo finalizado. Ganador: ${winners[0]}`);
             room.status = 'GAME_OVER'; // Cambiamos a GAME_OVER para que salte el Kahoot
@@ -1241,39 +1332,6 @@ class RoomManager {
         this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: roomUpdate });
     }
 
-    async launchTournamentRound(roomId) {
-        const room = this.rooms.get(roomId);
-        if (!room || !room.gameConfig.tournament) return;
-
-        const tournament = room.gameConfig.tournament;
-        const nextMatch = tournament.brackets.find(m => m.status === 'WAITING' && m.round === tournament.round);
-
-        if (!nextMatch) {
-            console.log(`[TOURNAMENT] No hay más combates en la ronda ${tournament.round}.`);
-            this.handleTournamentRoundEnd(roomId);
-            return;
-        }
-
-        console.log(`[TOURNAMENT] Iniciando combate: ${nextMatch.p1} vs ${nextMatch.p2}`);
-        nextMatch.status = 'PLAYING';
-        
-        const game = this.pickNextGame(roomId);
-        room.gameConfig.currentGame = game;
-        room.gameConfig.seed = Math.floor(Math.random() * 1000000);
-        room.gameConfig.sharedChallenge = true;
-        
-        room.gameConfig.teams = {
-            [nextMatch.p1]: 'team-1',
-            [nextMatch.p2]: 'team-2'
-        };
-        
-        room.gameConfig.subRoles = {
-            [nextMatch.p1]: null,
-            [nextMatch.p2]: null
-        };
-
-        this.setRoomStatus(roomId, 'PLAYING');
-    }
 
     swapTeamRoles(roomId, teamId) {
         const room = this.rooms.get(roomId);

@@ -4,10 +4,11 @@
     <div class="stars-container"><div class="stars"></div><div class="nebula"></div></div>
 
     <!-- Timer Flotante -->
-    <div v-if="countdown > 0" class="countdown-global-overlay">
-      <v-progress-circular :model-value="(countdown / 15) * 100" color="cyan-accent-2" size="90" width="8">
+    <div v-if="countdown > 0" class="countdown-global-overlay" :class="{ 'is-critical': countdown <= 3 }">
+      <v-progress-circular :model-value="(countdown / 7) * 100" :color="countdown <= 3 ? 'red-accent-2' : 'cyan-accent-2'" size="90" width="8">
         <span class="timer-number">{{ countdown }}</span>
       </v-progress-circular>
+      <div class="timer-label text-center text-caption font-weight-bold text-white mt-1">PROPER DUEL</div>
     </div>
 
     <!-- Recompensas Flotantes (Top Left) -->
@@ -192,7 +193,7 @@ const emit = defineEmits(['spectate-match'])
 const multiplayerStore = useMultiplayerStore()
 const astroStore = useAstroStore()
 
-const countdown = ref(15)
+const countdown = ref(0)
 let timer = null
 
 const tournament = computed(() => multiplayerStore.room?.gameConfig?.tournament)
@@ -287,18 +288,21 @@ const manualStart = () => {
   multiplayerStore.sendGameAction({ type: 'START_TOURNAMENT_MATCH_MANUAL' })
 }
 
+function updateCountdown() {
+  if (!tournament.value?.nextMatchStartTime) {
+    countdown.value = 0
+    return
+  }
+  const now = Date.now()
+  const diff = Math.max(0, Math.ceil((tournament.value.nextMatchStartTime - now) / 1000))
+  countdown.value = diff
+}
+
 watch(() => multiplayerStore.room?.status, (s) => { if (s === 'PLAYING') countdown.value = 0 })
 
 onMounted(() => {
-  timer = setInterval(() => { 
-    if (countdown.value > 0) {
-      countdown.value-- 
-      if (countdown.value === 0 && props.isHost && anyMatchWaiting.value) {
-        console.log('🚀 LLANÇAMENT AUTOMÀTIC DEL DUEL...')
-        manualStart()
-      }
-    }
-  }, 1000)
+  updateCountdown()
+  timer = setInterval(updateCountdown, 1000)
 })
 onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>

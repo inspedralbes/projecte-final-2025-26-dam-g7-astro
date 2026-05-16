@@ -250,6 +250,7 @@
                   :players-config="multiplayerStore.room?.gameConfig?.teams || []"
                   :room-id="multiplayerStore.room?.id"
                   @game-over="onGameFinished"
+                  @action="multiplayerStore.sendGameAction($event)"
                 />
                 
                 <!-- Cursores para espectadores (ven al jugador observado) -->
@@ -346,6 +347,7 @@
               :auto-start="true"
               :anomaly="currentAnomaly"
               @game-over="onGameFinished"
+              @action="multiplayerStore.sendGameAction($event)"
             />
             
             <!-- Cursores remotos eliminados para jugadores activos por petición del usuario (solo los ve el observador) -->
@@ -1458,13 +1460,6 @@
 
   const globalTimeLeft = computed(() => multiplayerStore.timeLeft)
 
-  watch(globalTimeLeft, (newVal) => {
-    if (newVal <= 0 && multiplayerStore.room?.status === 'PLAYING' && isHost.value) {
-      console.log('TIEMPO AGOTADO: El host fuerza el fin de la ronda')
-      multiplayerStore.submitRoundResult()
-    }
-  })
-
   watch(() => multiplayerStore.raceFuel, (newFuel) => {
     if (newFuel <= 0 && multiplayerStore.room?.gameConfig?.mode === 'RACE') {
       showSpectatorAlert.value = true
@@ -1634,7 +1629,14 @@
       }
       
       console.log('--- CAMBIO DE JUEGO DETECTADO ---', newGame)
-      activeGameComponent.value = gameComponents[newGame]
+      const status = multiplayerStore.room?.status;
+      // Solo cargamos el componente si estamos realmente jugando.
+      // Si estamos en resultados o viendo el árbol, mantenemos null para ver el mapa.
+      if (status === 'PLAYING' || status === 'SUDDEN_DEATH') {
+        activeGameComponent.value = gameComponents[newGame]
+      } else {
+        activeGameComponent.value = null;
+      }
     }
   })
 
@@ -1647,10 +1649,20 @@
         return
       }
 
-      if (oldStatus === 'PLAYING' && newStatus === 'TOURNAMENT_BRACKETS') {
-        console.log('🏆 Duel finalitzat, tornant al bracket...')
+      if (newStatus === 'TOURNAMENT_BRACKETS') {
+        console.log('🏆 Entrant a la vista de bracket. Netejant estats de joc...')
         spectatedPlayer.value = null
         activeGameComponent.value = null
+        showMatchResult.value = false
+        showRoundResults.value = false
+        isTransitioning.value = false
+      }
+
+      if (newStatus === 'PLAYING' || newStatus === 'SUDDEN_DEATH') {
+        const gameName = multiplayerStore.activeGameName;
+        if (gameName && gameComponents[gameName]) {
+          activeGameComponent.value = gameComponents[gameName];
+        }
       }
     }
   })
@@ -1667,7 +1679,7 @@
       console.log("⚔️ ¡HAS SIDO RETADO POR " + event.attacker + "! Entrando en " + event.game)
       
       // Limpiar estados previos para "reparar" el siguiente juego
-      multiplayerStore.lastSpectatorSync = null
+      multiplayerStore.lastSpectatorSync = {}
       spectatedPlayer.value = null
       activeGameComponent.value = null
       
@@ -1797,17 +1809,23 @@
               if (!isParticipant) {
                 console.log('👀 Ets espectador d\'aquest duel del torneig. Component:', gameName)
                 isTransitioning.value = false
-                spectatedPlayer.value = currentMatch.p1
                 isDuelInternal.value = true
                 multiplayerStore.roundScores = {}
                 showBriefing.value = false
+                
+                // Retraso para que el usuario pueda ver el árbol antes de entrar a observar
+                setTimeout(() => {
+                  if (multiplayerStore.room?.status === 'PLAYING' && !activeGameComponent.value) {
+                    spectatedPlayer.value = currentMatch.p1
+                  }
+                }, 1500)
                 return
               }
             }
             // En torneos, inicio instantáneo para los participantes
             spectatedPlayer.value = null
             activeGameComponent.value = null
-            multiplayerStore.lastSpectatorSync = null
+            multiplayerStore.lastSpectatorSync = {}
             multiplayerStore.roundScores = {}
             multiplayerStore.returnedPlayers = []
             
@@ -1859,7 +1877,11 @@
       matchWinnerName.value = msg.winner ?? null
       finalScores.value = msg.room?.gameConfig?.scores || {}
       showMatchResult.value = true
+      
+      // LIMPIEZA INMEDIATA: Expulsar a todos (jugadores y observadores) del componente de juego
       activeGameComponent.value = null
+      spectatedPlayer.value = null
+      multiplayerStore.lastSpectatorSync = {}
       showRoundResults.value = false
 
       // Entrega de premios y automatización de retorno en Torneos
@@ -1877,10 +1899,11 @@
           setTimeout(async () => {
             if (showMatchResult.value) {
               showMatchResult.value = false
+              spectatedPlayer.value = null // Limpiar espectador si lo había
               await nextTick()
-              multiplayerStore.returnToLobby()
+              // NO llamamos a returnToLobby() para no forzar el estado LOBBY localmente
             }
-          }, 500)
+          }, 3000)
         } else {
           console.log('🏆 TORNEIG FINALITZAT DEFINITIVAMENT.')
         }

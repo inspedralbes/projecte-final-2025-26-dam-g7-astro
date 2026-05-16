@@ -218,6 +218,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           }
           break
         }
+        case 'TIME_UPDATE': {
+          this.timeLeft = data.timeLeft
+          if (this.room && this.room.gameConfig) {
+            this.room.gameConfig.timeLeft = data.timeLeft
+          }
+          break
+        }
         case 'MATCH_STARTING': {
           this.roundScores = {}
           this.remoteCursors = {}
@@ -282,10 +289,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
 
           // Cachear sincronización para futuros observadores
           if (action.type === 'SPECTATOR_SYNC' && data.from) {
+            if (!this.lastSpectatorSync) this.lastSpectatorSync = {}
             this.lastSpectatorSync[data.from] = action
           }
 
           if (action.type === 'MOUSE_MOVE') {
+            if (!this.remoteCursors) this.remoteCursors = {}
             this.remoteCursors[data.from] = {
               x: data.action.x,
               y: data.action.y,

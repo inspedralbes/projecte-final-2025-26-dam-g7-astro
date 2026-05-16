@@ -169,6 +169,18 @@
             </v-icon>
           </div>
         </v-overlay>
+        <!-- Cursor de Espectador -->
+        <div 
+          v-if="props.isSpectator && props.spectatedPlayer && multiplayerStore.remoteCursors[props.spectatedPlayer]" 
+          class="spectator-cursor"
+          :style="{
+            left: multiplayerStore.remoteCursors[props.spectatedPlayer].x + '%',
+            top: multiplayerStore.remoteCursors[props.spectatedPlayer].y + 'px'
+          }"
+        >
+          <div class="cursor-dot"></div>
+          <div class="cursor-label">{{ props.spectatedPlayer }}</div>
+        </div>
       </div>
     </template>
 
@@ -225,7 +237,7 @@ function lcgRandom() {
   return currentSeed / 4294967296
 }
 
-const emit = defineEmits(['game-over'])
+const emit = defineEmits(['game-over', 'action'])
 const props = defineProps({
   isMultiplayer: { type: Boolean, default: false },
   isRace: { type: Boolean, default: false },
@@ -967,4 +979,34 @@ watch(score, newScore => {
 .stat-value { font-size: 2.5rem; font-weight: 900; }
 
 .pointer-events-none { pointer-events: none !important; }
+
+.spectator-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  transition: left 0.1s linear, top 0.1s linear;
+}
+
+.cursor-dot {
+  width: 12px;
+  height: 12px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00e5ff;
+}
+
+.cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 229, 255, 0.8);
+  color: black;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
 </style>
