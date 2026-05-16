@@ -547,24 +547,7 @@
                 </div>
 
                 <!-- SECCIÓN DE INSCRIPCIÓN AL TORNEO -->
-                <div v-if="selectedModality === 'torneig' && multiplayerStore.room?.status === 'LOBBY'" class="tournament-enrollment-box mb-8 pa-6 rounded-xl border-amber d-flex align-center justify-space-between" style="background: rgba(255, 202, 40, 0.05);">
-                  <div>
-                    <div class="text-h6 font-weight-black text-amber-accent-2 mb-1">INSCRIPCIÓ AL TORNEIG</div>
-                    <div class="text-body-2 text-white">Cost d'entrada: <span class="text-cyan-accent-2 font-weight-black">{{ tournamentBuyIn }} Astrocions</span></div>
-                  </div>
-                  <v-btn
-                    v-if="!isEnrolled"
-                    color="amber-accent-4"
-                    class="px-8 font-weight-black rounded-pill"
-                    :loading="loadingEnrollment"
-                    @click="handleTournamentEnrollment"
-                  >
-                    INSCRIURE'S ARA
-                  </v-btn>
-                  <v-chip v-else color="success" class="font-weight-black" prepend-icon="mdi-check-decagram">
-                    INSCRIT
-                  </v-chip>
-                </div>
+                <!-- La inscripció ara és automàtica al llançar el torneig -->
 
                 <v-row class="mb-4">
                   <v-col
@@ -1731,6 +1714,12 @@
         showRoundResults.value = false
         activeGameComponent.value = null
         spectatedPlayer.value = null
+
+        // Notificar cobro de buy-in si existe
+        const buyIn = multiplayerStore.room?.gameConfig?.buyIn || 0
+        if (buyIn > 0) {
+          showMessage(`S'ha cobrat una inscripció de ${buyIn} Astrocions pel torneig`, 'warning')
+        }
         break
       }
       case 'ROUND_RESULTS': {
@@ -1788,15 +1777,7 @@
       const gameName = msg.currentGame || multiplayerStore.room?.gameConfig?.currentGame
       serverGameName.value = gameName
       
-      // Gestión de Astrocions: Comisión de Torneo
-      if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
-        const fee = multiplayerStore.room.gameConfig.buyIn || 0
-        if (fee > 0) {
-          console.log(`💸 COBRANT COMISIÓ DE TORNEIG: ${fee}`)
-          astroStore.setCoins(Math.max(0, astroStore.coins - fee))
-          showMessage(`S'ha cobrat una comisió de ${fee} Astrocions`, 'warning')
-        }
-      }
+      // La gestión de Astrocions ahora es automática desde el servidor al inicio del torneo
 
       const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
 

@@ -511,6 +511,45 @@ class RoomManager {
         const isBossMode = room.gameConfig.mode === 'BOSS' || room.gameConfig.modality === 'boss';
 
         if (isTournament) {
+            const buyIn = room.gameConfig.buyIn || 0;
+            
+            // 1. Validar que TODOS tengan saldo suficiente
+            if (buyIn > 0 && this.userRepo) {
+                const poorPlayers = [];
+                for (const username of room.players) {
+                    try {
+                        const user = await this.userRepo.findByUsername(username);
+                        if (!user || (user.coins || 0) < buyIn) {
+                            poorPlayers.push(username);
+                        }
+                    } catch (e) {
+                        poorPlayers.push(username);
+                    }
+                }
+
+                if (poorPlayers.length > 0) {
+                    const names = poorPlayers.join(', ');
+                    return { error: `Missió avortada: ${names} no tenen prous Astrocions per la quota de ${buyIn}. Reduïu el cost d'entrada!` };
+                }
+
+                // 2. Si todos tienen saldo, procedemos a cobrar
+                for (const username of room.players) {
+                    try {
+                        const user = await this.userRepo.findByUsername(username);
+                        if (user) {
+                            user.coins -= buyIn;
+                            await this.userRepo.save(user);
+                            this.sendToUser(username, {
+                                type: 'PROFILE_UPDATE',
+                                coins: user.coins
+                            });
+                        }
+                    } catch (e) {
+                        console.error(`Error cobrando a ${username}:`, e);
+                    }
+                }
+            }
+
             room.status = 'TOURNAMENT_BRACKETS';
             room.gameConfig.tournament = {
                 round: 1,
@@ -1323,6 +1362,30 @@ class RoomManager {
                 room: roomUpdate
             });
             room.gameConfig.scores[winners[0]] = (room.gameConfig.scores[winners[0]] || 0) + 1000; // Bonus por ganar el torneo
+
+            // --- ENTREGA DE PREMIO (BOTE) ---
+            const buyIn = room.gameConfig.buyIn || 0;
+            if (buyIn > 0 && this.userRepo) {
+                const totalPrize = buyIn * room.players.size;
+                const winnerName = winners[0];
+                try {
+                    const winnerUser = await this.userRepo.findByUsername(winnerName);
+                    if (winnerUser) {
+                        const oldCoins = winnerUser.coins || 0;
+                        winnerUser.coins = oldCoins + totalPrize;
+                        await this.userRepo.save(winnerUser);
+                        console.log(`[TOURNAMENT] ¡PREMIO ENTREGADO! ${winnerName} recibe ${totalPrize} Astrocions. (${oldCoins} -> ${winnerUser.coins})`);
+                        
+                        // Notificar al ganador de su premio
+                        this.sendToUser(winnerName, {
+                            type: 'PROFILE_UPDATE',
+                            coins: winnerUser.coins
+                        });
+                    }
+                } catch (e) {
+                    console.error(`❌ Error entregando premio a ${winnerName}:`, e);
+                }
+            }
 
             // Limpiar el historial de juegos de jugadores al acabar el torneo
             room.players.forEach(p => this.playerPlayedGames.delete(p));

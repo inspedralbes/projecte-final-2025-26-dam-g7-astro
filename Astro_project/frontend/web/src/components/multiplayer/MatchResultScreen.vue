@@ -104,7 +104,7 @@
             <div class="rank-number">1</div>
             <div class="podium-score">{{ tournamentRankings[0]?.score || 0 }} pts</div>
             <div v-if="tournamentRankings[0]?.prize" class="podium-prize text-amber-accent-2 font-weight-black mt-1">
-               +{{ tournamentRankings[0].prize }} <v-icon icon="mdi-star" size="14" />
+               +{{ tournamentRankings[0].prize }} <v-icon icon="mdi-database-outline" size="14" /> <span class="text-caption">Astrocions</span>
             </div>
           </div>
         </div>
@@ -464,9 +464,9 @@
     const totalPool = buyIn * (multiplayerStore.room?.players?.length || 0)
 
     const ranks = []
-    if (first) ranks.push({ name: first, score: scores[first] || 0, prize: Math.floor(totalPool * 0.6) })
-    if (second) ranks.push({ name: second, score: scores[second] || 0, prize: Math.floor(totalPool * 0.3) })
-    if (third) ranks.push({ name: third, score: scores[third] || 0, prize: Math.floor(totalPool * 0.1) })
+    if (first) ranks.push({ name: first, score: scores[first] || 0, prize: totalPool })
+    if (second) ranks.push({ name: second, score: scores[second] || 0, prize: 0 })
+    if (third) ranks.push({ name: third, score: scores[third] || 0, prize: 0 })
     
     return ranks
   })

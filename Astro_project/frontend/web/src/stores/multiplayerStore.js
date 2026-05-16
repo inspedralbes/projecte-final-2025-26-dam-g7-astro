@@ -164,6 +164,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.invitations.push({ from: data.from, roomId: data.roomId })
           break
         }
+        case 'ERROR': {
+          this.error = data.message || 'S\'ha produït un error en la comunicació'
+          console.error('❌ Error rebut del servidor:', data.message)
+          break
+        }
         case 'CHALLENGE_RECEIVED': {
           if (!this.challengeRequests.some(r => r.from === data.from)) {
             this.challengeRequests.push({ from: data.from })
