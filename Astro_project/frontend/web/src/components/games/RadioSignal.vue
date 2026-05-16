@@ -10,7 +10,7 @@
             <div class="brand-subtitle">{{ $t('radioSignal.commsReceiver') }}</div>
         </div>
 
-        <div class="session-hud">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'BOSS'" class="session-hud">
             <div class="hud-pill">Punts: {{ score }}</div>
             <div v-if="!isMultiplayer" class="hud-pill" :class="{ 'hud-pill-alert': timeLeft <= 10 }">Temps: {{ timeLeft }}s</div>
         </div>
@@ -235,6 +235,7 @@
   const score = ref(0)
   const timeLeft = ref(props.duration)
   const currentFrequency = ref(50.0)
+  const targetCurrentFrequency = ref(50.0)
   const targetFrequency = ref(75.5)
   const isTuned = ref(false)
   const currentLevel = ref(1)
@@ -374,8 +375,22 @@
     
     // Map rotation to frequency (0-100)
     const normAngle = (angle + 180) % 360 // 0 to 360
-    currentFrequency.value = (normAngle / 360) * 100
+    targetCurrentFrequency.value = (normAngle / 360) * 100
+
+    if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+      currentFrequency.value = targetCurrentFrequency.value
+    }
     checkTuning()
+  }
+
+  // Loop de suavizado para el efecto de congelación (mecanismo congelado)
+  function tickFreezeEffect() {
+    if (multiplayerStore.activeBossEffect === 'FREEZE') {
+      const damping = 0.05 // Muy pesado
+      currentFrequency.value += (targetCurrentFrequency.value - currentFrequency.value) * damping
+      checkTuning()
+    }
+    requestAnimationFrame(tickFreezeEffect)
   }
 
   function stopRotating () {
@@ -450,6 +465,14 @@
         emit('action', { type: 'SCORE_UPDATE', score: score.value, timeLeft: timeLeft.value })
         const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({ type: 'SABOTAGE', subtype: 'REDUCE_TIME', amount: isSaboteurActive ? 15 : 8 })
+
+        // LÓGICA MODO JEFE
+        if (multiplayerStore.room?.gameConfig?.mode === 'BOSS') {
+          const isBoss = multiplayerStore.room.gameConfig.boss === astroStore.user
+          if (!isBoss) {
+            multiplayerStore.sendGameAction({ type: 'HERO_ATTACK' })
+          }
+        }
         
         if (!props.isDuel && !props.isRace) {
           multiplayerStore.sendGameAction({ type: 'RADIO_PHRASE_CORRECT', score: score.value, nextIdx: currentPhraseIdx.value, nextFreq: targetFrequency.value })
@@ -552,6 +575,7 @@
     } else if (props.isMultiplayer || props.isRace || props.autoStart) {
       setTimeout(() => {
         if (!isPlaying.value) startGame()
+        requestAnimationFrame(tickFreezeEffect)
       }, 3000)
     }
   })

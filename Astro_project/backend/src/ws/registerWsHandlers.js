@@ -103,6 +103,11 @@ function registerWsHandlers(wss, getDB) {
                         await roomManager.handlePlayerReturnToLobby(msg.roomId, msg.user);
                         break;
 
+                    case 'UPDATE_BOSS_STAKES':
+                        // { type: 'UPDATE_BOSS_STAKES', roomId, user, lives }
+                        await roomManager.updateBossStakes(msg.roomId, msg.user, msg.lives);
+                        break;
+
                     // ──────────────────────────────────────────────────────────
                     // CHAT EN TIEMPO REAL
                     // ──────────────────────────────────────────────────────────

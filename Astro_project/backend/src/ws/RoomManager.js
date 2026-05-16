@@ -46,12 +46,13 @@ class RoomManager {
         }
     }
 
-    init(roomRepository, userRepository, wss, gameService) {
+    init(roomRepository, userRepository, wss, gameService, inventoryService) {
         this.roomRepo = roomRepository;
         this.userRepo = userRepository;
         this.wss = wss;
         this.gameService = gameService;
-        console.log("🛠️ RoomManager inicializado con Repositorios, WSS y GameService");
+        this.inventoryService = inventoryService;
+        console.log("🛠️ RoomManager inicializado con Repositorios, WSS, GameService e InventoryService");
 
         // Garbage Collector: Limpieza de salas inactivas cada 5 minutos
         if (this.gcInterval) clearInterval(this.gcInterval);
@@ -460,7 +461,8 @@ class RoomManager {
                             username: user.username || username || 'Jugador',
                             level: user.level || 1,
                             rank: user.rank || 'Cadete',
-                            avatar: user.avatar || 'Astronauta_blanc.jpg'
+                            avatar: user.avatar || 'Astronauta_blanc.jpg',
+                            lives: this.inventoryService ? this.inventoryService.getInventoryQuantity(user.inventory, 1) : 0
                         };
                     }
                 } catch (e) {
@@ -492,6 +494,21 @@ class RoomManager {
         }
 
         room.gameConfig = { ...room.gameConfig, ...config };
+
+        const roomUpdate = await this.getRoom(roomId);
+        this.broadcastToRoom(roomId, {
+            type: 'ROOM_UPDATE',
+            room: roomUpdate
+        });
+    }
+
+    async updateBossStakes(roomId, user, lives) {
+        const room = this.rooms.get(roomId);
+        if (!room) return;
+        this.updateRoomActivity(roomId);
+
+        if (!room.gameConfig.bossStakes) room.gameConfig.bossStakes = {};
+        room.gameConfig.bossStakes[user] = lives;
 
         const roomUpdate = await this.getRoom(roomId);
         this.broadcastToRoom(roomId, {
@@ -572,27 +589,73 @@ class RoomManager {
         if (!room.gameConfig.scores) room.gameConfig.scores = {};
         if (!room.gameConfig.teams) room.gameConfig.teams = {};
         if (!room.gameConfig.subRoles) room.gameConfig.subRoles = {};
-
-        // Inicialización Modo Jefe
+ 
+        // Inicialización Modo Jefe con validación de Inventario (Vidas)
         if (isBossMode) {
             const players = Array.from(room.players);
-            // El jefe se elige de forma totalmente aleatoria entre todos los jugadores
+            
+            // EL JEFE SE ELIGE PRIMERO PARA EXIMIRLO DEL PAGO/VIDAS
             const boss = players[Math.floor(Math.random() * players.length)];
             room.gameConfig.boss = boss;
             room.gameConfig.bossHP = 100;
-            room.gameConfig.mode = 'BOSS'; // Asegurar que el modo es BOSS
-            room.gameConfig.heroHealth = {}; // Inicializar salud de héroes
-            room.gameConfig.lastBossAttack = 0; // Cooldown global
+            room.gameConfig.mode = 'BOSS';
+            room.gameConfig.heroHealth = {};
+            room.gameConfig.lastBossAttack = 0;
             
-            players.forEach(p => {
+            const stakes = room.gameConfig.bossStakes || {};
+            
+            // Validar que los HÉROES tengan suficientes vidas para su apuesta
+            for (const p of players) {
+                if (p === boss) continue; // El jefe no necesita vidas
+
+                const userObj = await this.userRepo.findByUsername(p);
+                const numPacks = Math.max(1, stakes[p] || 1);
+                const available = this.inventoryService ? this.inventoryService.getInventoryQuantity(userObj.inventory, 1) : 0;
+                
+                if (available < numPacks) {
+                    console.error(`❌ [RoomManager] El jugador ${p} no tiene suficientes Packs de Vidas (${available}/${numPacks}).`);
+                    this.broadcastToRoom(roomId, {
+                        type: 'ERROR',
+                        message: `La partida no pot començar. L'explorador ${p} no té prous Packs de Vidas per la seva aposta (${numPacks}).`
+                    });
+                    return { error: 'Vidas insuficientes' };
+                }
+            }
+
+            // Consumir Packs de Vidas solo de los HÉROES
+            for (const p of players) {
+                room.gameConfig.scores[p] = 0;
+                
                 if (p === boss) {
                     room.gameConfig.teams[p] = 'BOSS';
-                } else {
-                    room.gameConfig.teams[p] = 'HEROES';
-                    room.gameConfig.heroHealth[p] = 12; // 3 corazones * 4 cuartos
+                    continue;
                 }
-                room.gameConfig.scores[p] = 0;
-            });
+
+                room.gameConfig.teams[p] = 'HEROES';
+                const numPacks = Math.max(1, stakes[p] || 1);
+                room.gameConfig.heroHealth[p] = 12 * numPacks;
+
+                try {
+                    const userObj = await this.userRepo.findByUsername(p);
+                    let normalized = this.inventoryService.normalizeInventoryEntries(userObj.inventory);
+                    const idx = normalized.findIndex(item => item.id === 1);
+                    if (idx !== -1) {
+                        normalized[idx].quantity -= numPacks;
+                        if (normalized[idx].quantity <= 0) normalized.splice(idx, 1);
+                        
+                        userObj.inventory = this.inventoryService.serializeInventory(normalized);
+                        await this.userRepo.update(userObj);
+                        console.log(`📉 [RoomManager] Consumidos ${numPacks} Packs de Vidas de ${p} (HÉROE)`);
+                        
+                        this.sendToUser(p, {
+                            type: 'PROFILE_UPDATE',
+                            inventory: this.inventoryService.enrichInventory(userObj.inventory)
+                        });
+                    }
+                } catch (err) {
+                    console.error(`❌ Error consumiendo vidas de hero ${p}:`, err);
+                }
+            }
         } else {
             // Reset scores for a new match but keep teams if they exist
             room.players.forEach(p => {
@@ -882,8 +945,13 @@ class RoomManager {
         }
 
         const currentGame = room.gameConfig.currentGame || 'default';
-        const durationSeconds = (this.gameDurations[currentGame] || 60000) / 1000;
+        let durationSeconds = (this.gameDurations[currentGame] || 60000) / 1000;
         
+        // En Modo Boss el tiempo es virtualmente infinito (se decide por salud)
+        if (room.gameConfig.mode === 'BOSS') {
+            durationSeconds = 3600; 
+        }
+
         room.gameConfig.timeLeft = durationSeconds;
         room.roundEndTime = Date.now() + (durationSeconds * 1000);
 
@@ -955,6 +1023,21 @@ class RoomManager {
     async finishRound(roomId) {
         const room = this.rooms.get(roomId);
         if (!room || room.status !== 'PLAYING') return;
+
+        // LÓGICA MODO JEFE: Devolver vida a los supervivientes
+        if (room.gameConfig.mode === 'BOSS') {
+            const heroesWon = room.gameConfig.bossHP <= 0;
+            if (heroesWon) {
+                console.log(`[Room ${roomId}] ¡HÉROES HAN GANADO! Devolviendo tickets a supervivientes...`);
+                for (const p of room.players) {
+                    if (room.gameConfig.boss !== p && (room.gameConfig.heroHealth[p] || 0) > 0) {
+                        const stake = room.gameConfig.bossStakes?.[p] || 1;
+                        await this.refundLifePack(p, stake);
+                    }
+                }
+            }
+        }
+
         this.updateRoomActivity(roomId);
 
         if (this.roundTimers.has(roomId)) {
@@ -1286,9 +1369,13 @@ class RoomManager {
         if (room.gameConfig.mode === 'BOSS') {
             if (action.type === 'HERO_ATTACK') {
                 if ((room.gameConfig.heroHealth[user] || 0) <= 0) return;
-                room.gameConfig.bossHP = Math.max(0, room.gameConfig.bossHP - 2);
+                
+                const numHeroes = Object.keys(room.gameConfig.heroHealth).length || 1;
+                const damage = 0.5 / numHeroes;
+                
+                room.gameConfig.bossHP = Math.max(0, room.gameConfig.bossHP - damage);
                 this.broadcastToRoom(roomId, { type: 'BOSS_HP_UPDATE', hp: room.gameConfig.bossHP, attacker: user });
-                this.broadcastToRoom(roomId, { type: 'ACTION_FEED_UPDATE', message: `¡${user} ha atacado al Jefe! (-2% HP)` });
+                this.broadcastToRoom(roomId, { type: 'ACTION_FEED_UPDATE', message: `¡${user} ha atacado al Jefe! (-${damage.toFixed(3)}% HP)` });
                 if (room.gameConfig.bossHP <= 0) this.finishRound(roomId);
             }
 
@@ -1300,24 +1387,54 @@ class RoomManager {
                 const attackType = action.attackType;
                 let feedMsg = "";
                 if (attackType === 'BLACK_HOLE') {
-                    Object.keys(room.gameConfig.heroHealth).forEach(hero => {
-                        if (room.gameConfig.heroHealth[hero] > 0) {
-                            room.gameConfig.heroHealth[hero] -= 1;
-                            if (room.gameConfig.heroHealth[hero] <= 0) this.broadcastToRoom(roomId, { type: 'HERO_ELIMINATED', user: hero });
-                        }
-                    });
-                    feedMsg = "¡EL JEFE HA LANZADO UN AGUJERO NEGRO! (-1/4 ❤️)";
+                    // Restar una vida a ALGUIEN aleatorio (o a todos si se prefiere, pero el usuario dijo "a algu")
+                    const heroes = Object.keys(room.gameConfig.heroHealth).filter(h => room.gameConfig.heroHealth[h] > 0);
+                    if (heroes.length > 0) {
+                        const target = heroes[Math.floor(Math.random() * heroes.length)];
+                        room.gameConfig.heroHealth[target] -= 1;
+                        if (room.gameConfig.heroHealth[target] <= 0) this.broadcastToRoom(roomId, { type: 'HERO_ELIMINATED', user: target });
+                        feedMsg = `¡EL JEFE HA LANZADO UN AGUJERO NEGRO A ${target}! (-1 ❤️)`;
+                    } else {
+                        feedMsg = "¡EL JEFE HA LANZADO UN AGUJERO NEGRO!";
+                    }
                     this.broadcastToRoom(roomId, { type: 'BOSS_ACTION_RESULT', attackType, heroHealth: room.gameConfig.heroHealth });
                 } else if (attackType === 'LIGHTNING_STORM') {
-                    this.broadcastToRoom(roomId, { type: 'TRIGGER_ANOMALY', anomalyType: 'raig-tempesta' });
-                    feedMsg = "¡EL JEFE HA INVOCADO UNA LLUVIA DE RELÁMPAGOS!";
+                    const heroes = Object.keys(room.gameConfig.heroHealth).filter(h => room.gameConfig.heroHealth[h] > 0);
+                    if (heroes.length > 0) {
+                        const target = heroes[Math.floor(Math.random() * heroes.length)];
+                        room.gameConfig.heroHealth[target] -= 1;
+                        this.broadcastToRoom(roomId, { type: 'TRIGGER_ANOMALY', anomalyType: 'raig-tempesta' });
+                        feedMsg = `¡EL JEFE HA INVOCADO UNA LLUVIA DE RELÁMPAGOS SOBRE ${target}! (-1 ❤️)`;
+                    } else {
+                        feedMsg = "¡EL JEFE HA INVOCADO UNA LLUVIA DE RELÁMPAGOS!";
+                    }
                 } else if (attackType === 'FREEZE') {
-                    this.broadcastToRoom(roomId, { type: 'APPLY_INTERFERENCE', actionType: 'FREEZE' });
-                    feedMsg = "¡EL JEFE HA CONGELADO A LOS HÉROES!";
+                    const heroes = Object.keys(room.gameConfig.heroHealth).filter(h => room.gameConfig.heroHealth[h] > 0);
+                    if (heroes.length > 0) {
+                        const target = heroes[Math.floor(Math.random() * heroes.length)];
+                        room.gameConfig.heroHealth[target] -= 1;
+                        this.broadcastToRoom(roomId, { type: 'APPLY_INTERFERENCE', actionType: 'FREEZE' });
+                        feedMsg = `¡EL JEFE HA CONGELADO A ${target}! (-1 ❤️)`;
+                    } else {
+                        feedMsg = "¡EL JEFE HA CONGELADO A LOS HÉROES!";
+                    }
                 } else if (attackType === 'ZERO_GRAVITY') {
-                    this.broadcastToRoom(roomId, { type: 'APPLY_INTERFERENCE', actionType: 'SCRAMBLE' });
-                    feedMsg = "¡EL JEFE HA ALTERADO LA GRAVEDAD!";
+                    const heroes = Object.keys(room.gameConfig.heroHealth).filter(h => room.gameConfig.heroHealth[h] > 0);
+                    if (heroes.length > 0) {
+                        const target = heroes[Math.floor(Math.random() * heroes.length)];
+                        room.gameConfig.heroHealth[target] -= 1;
+                        this.broadcastToRoom(roomId, { type: 'APPLY_INTERFERENCE', actionType: 'SCRAMBLE' });
+                        feedMsg = `¡EL JEFE HA ALTERADO LA GRAVEDAD DE ${target}! (-1 ❤️)`;
+                    } else {
+                        feedMsg = "¡EL JEFE HA ALTERADO LA GRAVEDAD!";
+                    }
+                } else if (attackType === 'CHANGE_GAME') {
+                    const nextGame = this.pickNextGame(roomId);
+                    room.gameConfig.currentGame = nextGame;
+                    feedMsg = `¡EL JEFE HA CAMBIADO EL MINIJUEGO A ${nextGame}!`;
+                    this.broadcastToRoom(roomId, { type: 'MATCH_STARTING', currentGame: nextGame });
                 }
+                this.broadcastToRoom(roomId, { type: 'BOSS_ACTION_RESULT', attackType, heroHealth: room.gameConfig.heroHealth });
                 this.broadcastToRoom(roomId, { type: 'ACTION_FEED_UPDATE', message: feedMsg });
                 this.sendToUser(user, { type: 'BOSS_COOLDOWN_SYNC', lastAttack: now, cooldown: COOLDOWN });
             }
@@ -1473,6 +1590,33 @@ class RoomManager {
             } catch (err) {
                 console.error(`❌ [RoomManager] Error registrando partida multijugador para ${username}:`, err);
             }
+        }
+    }
+
+    async refundLifePack(username, amount = 1) {
+        try {
+            const userObj = await this.userRepo.findByUsername(username);
+            if (!userObj) return;
+
+            let normalized = this.inventoryService.normalizeInventoryEntries(userObj.inventory);
+            const idx = normalized.findIndex(item => item.id === 1);
+            
+            if (idx !== -1) {
+                normalized[idx].quantity = Math.min(10, normalized[idx].quantity + amount);
+            } else {
+                normalized.push({ id: 1, quantity: Math.min(10, amount), equipped: false });
+            }
+
+            userObj.inventory = this.inventoryService.serializeInventory(normalized);
+            await this.userRepo.update(userObj);
+            
+            this.sendToUser(username, {
+                type: 'PROFILE_UPDATE',
+                inventory: this.inventoryService.enrichInventory(userObj.inventory)
+            });
+            console.log(`🚀 [RoomManager] Reembolsadas ${amount} vidas a ${username} por sobrevivir.`);
+        } catch (err) {
+            console.error(`❌ Error reembolsando vida a ${username}:`, err);
         }
     }
 }

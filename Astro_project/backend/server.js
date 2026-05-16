@@ -141,7 +141,7 @@ const gameService = new GameService({
     inventoryService: inventoryServiceInstance
 });
 
-roomManager.init(roomRepository, userRepository, wss, gameService);
+roomManager.init(roomRepository, userRepository, wss, gameService, inventoryServiceInstance);
 
 registerStatsRoutes(app, { getUserStats });
 registerGameRoutes(app, { gameService });

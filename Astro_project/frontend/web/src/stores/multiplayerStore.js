@@ -53,6 +53,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     currentGlobalAnomaly: null, // Anomalía que afecta a todos
     lastSpectatorSync: {}, // Caché del último estado de cada jugador: { username: { type, ...data } }
     heartbeatInterval: null,
+    activeBossEffect: null,
+    bossEffectTimeout: null,
   }),
 
   getters: {
@@ -160,6 +162,14 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       const sessionStore = this.getSession()
 
       switch (data.type) {
+        case 'BOSS_ACTION_RESULT': {
+          this.activeBossEffect = data.attackType
+          if (this.bossEffectTimeout) clearTimeout(this.bossEffectTimeout)
+          this.bossEffectTimeout = setTimeout(() => {
+            this.activeBossEffect = null
+          }, 4000) // Un poco más de tiempo para que se note
+          break
+        }
         case 'INVITATION_RECEIVED': {
           this.invitations.push({ from: data.from, roomId: data.roomId })
           break
@@ -237,6 +247,8 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           this.partnerText = ''
           this.partnerEmojis = []
           this.lastMessage = null
+          this.activeBossEffect = null
+          if (this.bossEffectTimeout) clearTimeout(this.bossEffectTimeout)
           
           if (data.room) {
             if (data.room.players && !Array.isArray(data.room.players)) {
@@ -438,8 +450,10 @@ export const useMultiplayerStore = defineStore('multiplayer', {
             if (data.room.players && !Array.isArray(data.room.players)) {
               data.room.players = Object.values(data.room.players)
             }
-            this.room = { ...data.room }
+             this.room = { ...data.room }
           }
+          this.activeBossEffect = null
+          if (this.bossEffectTimeout) clearTimeout(this.bossBossEffectTimeout)
           this.lastMessage = data
           this.stopFuelTimer()
 
@@ -578,6 +592,19 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         type: 'SET_ROOM_STATUS',
         roomId: this.room.id,
         status,
+      }))
+    },
+
+    updateBossStakes (lives) {
+      const sessionStore = useSessionStore()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'UPDATE_BOSS_STAKES',
+        roomId: this.room.id,
+        user: sessionStore.user,
+        lives,
       }))
     },
 

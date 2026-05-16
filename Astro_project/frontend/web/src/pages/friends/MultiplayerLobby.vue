@@ -19,12 +19,12 @@
         <GlobalAnomalyManager v-if="multiplayerStore.room?.status === 'PLAYING' && activeGameComponent" :forced-anomaly="currentAnomaly" />
 
         <!-- Puntuación Unificada en COOP (Estilo Just Dance) -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && isTeammate && teamsList.length <= 1 && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-coop-modern">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.gameConfig?.mode !== 'BOSS' && isTeammate && teamsList.length <= 1 && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-coop-modern">
           <CoopScoreBar :max-score="5000" :score="totalCoopScore" />
         </div>
 
         <!-- Puntuación por Equipos (VS por Parejas) -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && teamsList.length > 1 && !isDuel && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.gameConfig?.mode !== 'BOSS' && teamsList.length > 1 && !isDuel && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="hud-score-teams-modern d-flex flex-column gap-2 align-center">
           <CoopScoreBar
             v-for="team in teamsList"
             :key="team.id"
@@ -37,16 +37,50 @@
           />
         </div>
 
-        <!-- HUD DE MODO JEFE -->
-        <div v-if="multiplayerStore.room?.gameConfig?.mode === 'BOSS'" class="boss-mode-hud pa-6 d-flex flex-column align-center">
-          <BossHealthBar />
+        <!-- HUD DE MODO JEFE (Overlay sobre el juego) -->
+        <div v-if="multiplayerStore.room?.gameConfig?.mode === 'BOSS'" class="boss-mode-hud-container">
+          <div class="boss-header-center">
+            <BossHealthBar />
+          </div>
           
-          <!-- Panel de Arsenal exclusivo para el Jefe -->
-          <div v-if="multiplayerStore.room?.gameConfig?.boss === astroStore.user" class="mt-4 w-100">
-            <BossArsenalPanel />
+          <!-- Vidas de los Héroes (Flotante a la Izquierda) -->
+          <div class="heroes-status-side d-flex flex-column ga-2 pa-4">
+            <div v-for="hero in heroesList" :key="hero" class="hero-status-compact d-flex align-center ga-3 pa-2 rounded-xl">
+              <v-avatar size="32" class="border-hero">
+                <v-img :src="getPlayerAvatar(hero)" />
+              </v-avatar>
+              <div class="d-flex flex-column">
+                <span class="text-7px font-weight-black text-white text-uppercase">{{ hero }}</span>
+                <HeroHearts :health="multiplayerStore.room?.gameConfig?.heroHealth?.[hero] || 0" :size="12" />
+              </div>
+            </div>
+          </div>
+          
+          <!-- Panel de Arsenal exclusivo para el Jefe (Desplegable con SPACE) -->
+          <transition name="slide-x">
+            <div v-if="multiplayerStore.room?.gameConfig?.boss === astroStore.user && showBossArsenal" class="boss-arsenal-fixed-right">
+              <BossArsenalPanel />
+            </div>
+          </transition>
+
+          <!-- Hint para el jefe -->
+          <v-fade-transition>
+            <div v-if="multiplayerStore.room?.gameConfig?.boss === astroStore.user && !showBossArsenal" class="boss-space-hint">
+              PRESIONA <v-chip class="mx-2 font-weight-black" color="red-accent-2" size="small" variant="flat">SPACE</v-chip> PARA EL ARSENAL
+            </div>
+          </v-fade-transition>
+
+          <!-- Feed de Acciones (Flotante Abajo Izquierda) -->
+          <div class="action-feed-floating" v-if="!showBossArsenal">
+            <ActionFeed />
           </div>
 
-          <ActionFeed class="mt-4" />
+          <!-- Efectos Visuales de Ataque del Jefe -->
+          <div v-if="multiplayerStore.activeBossEffect" :class="['boss-effect-overlay', 'effect-' + multiplayerStore.activeBossEffect.toLowerCase()]">
+            <div v-if="multiplayerStore.activeBossEffect === 'FREEZE'" class="frost-overlay"></div>
+            <div v-if="multiplayerStore.activeBossEffect === 'LIGHTNING_STORM'" class="lightning-flash"></div>
+            <div v-if="multiplayerStore.activeBossEffect === 'BLACK_HOLE'" class="vortex-effect"></div>
+          </div>
         </div>
 
         <!-- ALERTA DE MUERTE SÚBITA (SUDDEN DEATH) -->
@@ -60,7 +94,7 @@
           </div>
         </v-fade-transition>
 
-        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="game-hud-container d-flex justify-center align-center">
+        <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.gameConfig?.mode !== 'BOSS' && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
             <!-- Jugador 1 (Participante 1 o Local) -->
             <div class="hud-item d-flex align-center gap-3">
@@ -80,12 +114,14 @@
             <!-- Centro: VS + ronda + Indicador Tiempo -->
             <div class="hud-center-unit mx-8 text-center position-relative">
               <div v-if="!isTeammate" class="vs-text">VS</div>
-              <div v-else class="vs-text text-cyan-accent-2">COOP</div>
+              <div v-else class="vs-text" :class="multiplayerStore.room?.gameConfig?.mode === 'BOSS' ? 'text-red-accent-2' : 'text-cyan-accent-2'">
+                {{ multiplayerStore.room?.gameConfig?.mode === 'BOSS' ? 'BOSS' : 'COOP' }}
+              </div>
 
               <div class="round-text">{{ $t('multiplayerLobby.round', { current: (multiplayerStore.room?.gameConfig?.currentRound || 0) + 1, total: multiplayerStore.room?.gameConfig?.totalRounds || '?' }) }}</div>
 
-              <!-- Temporizador Global -->
-              <div v-if="multiplayerStore.room?.status !== 'SUDDEN_DEATH'" class="global-timer" :class="{ 'timer-low': multiplayerStore.timeLeft <= 10 }">
+              <!-- Temporizador Global (No se muestra en BOSS) -->
+              <div v-if="multiplayerStore.room?.status !== 'SUDDEN_DEATH' && multiplayerStore.room?.gameConfig?.mode !== 'BOSS'" class="global-timer" :class="{ 'timer-low': multiplayerStore.timeLeft <= 10 }">
                 <v-icon class="mr-1" :icon="multiplayerStore.timeLeft <= 10 ? 'mdi-timer-alert' : 'mdi-timer-outline'" size="small" />
                 {{ Math.ceil(multiplayerStore.timeLeft) }}s
               </div>
@@ -339,12 +375,19 @@
           <div class="game-wrapper-mp" v-if="activeGameComponent && !isTransitioning">
             <component
               :is="activeGameComponent"
-              :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
+              v-if="activeGameComponent"
+              :key="multiplayerStore.room?.gameConfig?.modality + '-' + multiplayerStore.room?.status"
+              :auto-start="true"
+              class="minigame-component"
+              :class="[
+                multiplayerStore.activeBossEffect ? 'boss-effect-active-' + multiplayerStore.activeBossEffect.toLowerCase() : ''
+              ]"
+              :duration="multiplayerStore.room?.gameConfig?.timeLeft || 60"
+              :is-duel="multiplayerStore.room?.gameConfig?.mode === 'DUEL'"
               :is-multiplayer="true"
               :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
-              :is-duel="isDuel"
-              :duration="isDuel ? 60 : (multiplayerStore.room?.gameConfig?.duration || 60)"
-              :auto-start="true"
+              :is-spectator="!isPlayerInMatch"
+              :spectated-player="spectatedPlayer"
               :anomaly="currentAnomaly"
               @game-over="onGameFinished"
               @action="multiplayerStore.sendGameAction($event)"
@@ -587,6 +630,29 @@
 
                       <div class="text-h6 font-weight-bold text-white mb-1">{{ getPlayerName(player) }}</div>
 
+                      <!-- INFO DE VIDAS Y APUESTA (Modo Boss) -->
+                      <div v-if="selectedModality === 'boss' && (multiplayerStore.room?.status === 'LOBBY' || multiplayerStore.room?.status === 'ROULETTE')" class="inventory-lives mb-3">
+                        <div class="d-flex align-center justify-center mb-1">
+                          <v-icon color="red-accent-2" icon="mdi-heart-multiple" size="14" class="mr-1" />
+                          <span class="text-caption font-weight-bold text-grey-lighten-1">{{ player.lives || 0 }} Packs</span>
+                        </div>
+                        
+                        <!-- Selector de Apuesta para el usuario local -->
+                        <div v-if="getPlayerName(player) === astroStore.user" class="stake-selector d-flex align-center justify-center gap-2 mt-1">
+                          <v-btn icon="mdi-minus" density="compact" size="x-small" variant="tonal" color="red-accent-2" @click="updateStake(-1)" :disabled="currentStake <= 1" />
+                          <div class="stake-value px-2 rounded bg-black border-light">
+                            <span class="text-caption font-weight-black text-white">{{ currentStake }}</span>
+                          </div>
+                          <v-btn icon="mdi-plus" density="compact" size="x-small" variant="tonal" color="cyan-accent-2" @click="updateStake(1)" :disabled="currentStake >= (player.lives || 1)" />
+                        </div>
+                        <!-- Visualización de apuesta para otros jugadores -->
+                        <div v-else-if="(multiplayerStore.room?.gameConfig?.bossStakes?.[getPlayerName(player)] || 1) > 1" class="mt-1">
+                           <v-chip size="x-small" color="cyan-accent-2" variant="flat" class="text-black font-weight-black">
+                             {{ multiplayerStore.room?.gameConfig?.bossStakes?.[getPlayerName(player)] }} Packs
+                           </v-chip>
+                        </div>
+                      </div>
+
                       <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
                         {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ getRankName(player.level) }}
                       </div>
@@ -611,7 +677,7 @@
                       </v-chip>
 
                       <!-- Selector de Equipo -->
-                      <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
+                      <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig' && selectedModality !== 'boss'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
                         <v-btn
                           icon="mdi-chevron-left"
                           variant="text"
@@ -1193,11 +1259,29 @@
   import TournamentTree from '@/components/multiplayer/TournamentTree.vue'
   import { useAstroStore } from '@/stores/astroStore'
   import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { useInventoryStore } from '@/stores/inventoryStore'
 
   const { t } = useI18n()
   const router = useRouter()
   const astroStore = useAstroStore()
   const multiplayerStore = useMultiplayerStore()
+  const inventoryStore = useInventoryStore()
+
+  onMounted(() => {
+    window.addEventListener('keydown', handleGlobalKeydown)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleGlobalKeydown)
+  })
+
+  const modalities = [
+    { id: '1vs1', name: 'Modo 1vs1', icon: 'mdi-sword-cross', active: true, desc: 'Enfréntate a un rival en duelo directo. El piloto con mejor puntuación al finalizar el tiempo se lleva la victoria.', tip: 'Sé rápido y preciso para no darle ventaja al oponente.' },
+    { id: '2vs2', name: 'Modo 2vs2', icon: 'mdi-account-group', active: true, desc: 'Forma escuadrones de dos y compite sumando la puntuación total del equipo. La coordinación es clave.', tip: 'Divide las tareas para ser más eficientes.' },
+    { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: true, desc: 'Toda la tripulación se enfrenta a un enemigo colosal. Requiere tener Packs de Vidas para participar.', tip: 'Prepara tus mejores tácticas, el trabajo en equipo lo es todo.' },
+    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true, desc: 'Avanza por un mapa de nodos recogiendo minerales, sobreviviendo a anomalías y enfrentándote en duelos antes de que se acabe tu combustible.', tip: 'Controla siempre tus reservas de gas y evita quedarte varado.' },
+    { id: 'torneig', name: 'Torneo', icon: 'mdi-trophy-variant', active: true, desc: 'Competición de eliminación directa. Paga tu inscripción con Astrocions y avanza en el bracket para ganar el premio final.', tip: 'No hay margen de error, una derrota y quedarás eliminado.' },
+  ]
 
   const isHost = computed(() => {
     const currentHost = multiplayerStore.room?.host
@@ -1319,6 +1403,19 @@
   })
   const showDuelSelector = ref(false)
   const currentDuelNodeId = ref(null)
+  const showBossArsenal = ref(false)
+
+  function handleGlobalKeydown(e) {
+    // Solo si el usuario no está escribiendo en un input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+    if (e.code === 'Space') {
+      if (multiplayerStore.room?.gameConfig?.mode === 'BOSS' && multiplayerStore.room?.gameConfig?.boss === astroStore.user) {
+        e.preventDefault()
+        showBossArsenal.value = !showBossArsenal.value
+      }
+    }
+  }
 
   const otherPlayers = computed(() => {
     return multiplayerStore.room?.players.filter(p => (p.username || p) !== astroStore.user) || []
@@ -1474,13 +1571,6 @@
     }
   })
 
-  const modalities = [
-    { id: '1vs1', name: 'Modo 1vs1', icon: 'mdi-sword-cross', active: true, desc: 'Enfréntate a un rival en duelo directo. El piloto con mejor puntuación al finalizar el tiempo se lleva la victoria.', tip: 'Sé rápido y preciso para no darle ventaja al oponente.' },
-    { id: '2vs2', name: 'Modo 2vs2', icon: 'mdi-account-group', active: true, desc: 'Forma escuadrones de dos y compite sumando la puntuación total del equipo. La coordinación es clave.', tip: 'Divide las tareas para ser más eficientes.' },
-    { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: false, desc: 'Toda la tripulación se enfrenta a un enemigo colosal. ¡Próximamente disponible en nuevas misiones!', tip: 'Prepara tus mejores tácticas, el trabajo en equipo lo es todo.' },
-    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true, desc: 'Avanza por un mapa de nodos recogiendo minerales, sobreviviendo a anomalías y enfrentándote en duelos antes de que se acabe tu combustible.', tip: 'Controla siempre tus reservas de gas y evita quedarte varado.' },
-    { id: 'torneig', name: 'Torneo', icon: 'mdi-trophy-variant', active: true, desc: 'Competición de eliminación directa. Paga tu inscripción con Astrocions y avanza en el bracket para ganar el premio final.', tip: 'No hay margen de error, una derrota y quedarás eliminado.' },
-  ]
 
   function isModality(id) {
     return modalities.some(m => m.id === id)
@@ -1511,6 +1601,15 @@
     
     if (selectedModality.value === mId) return // Ya seleccionado
 
+    // Validación de Vidas para el Modo Boss
+    if (mId === 'boss') {
+      const lifePack = inventoryStore.inventory.find(item => item.id === 1)
+      if (!lifePack || lifePack.quantity <= 0) {
+        showMessage('Necessites almenys un Pack de Vidas (ID 1) per activar el Modo Boss. Pots comprar-lo a la botiga.', 'error')
+        return
+      }
+    }
+
     console.log('--- CAMBIANDO MODALIDAD A ---', mId)
     selectedModality.value = mId
     localStorage.setItem('astro_mp_modality', mId)
@@ -1522,7 +1621,7 @@
         'torneig': 'TOURNAMENT',
         '1vs1': 'NORMAL',
         '2vs2': 'NORMAL',
-        'boss': 'NORMAL'
+        'boss': 'BOSS'
       }
 
       multiplayerStore.updateGameConfig({ 
@@ -2018,6 +2117,23 @@
     return explorer?.selectedTitle || null
   })
 
+  const heroesList = computed(() => {
+    if (!multiplayerStore.room?.gameConfig?.heroHealth) return []
+    return Object.keys(multiplayerStore.room.gameConfig.heroHealth)
+  })
+
+  const currentStake = computed(() => {
+    return multiplayerStore.room?.gameConfig?.bossStakes?.[astroStore.user] || 1
+  })
+
+  const updateStake = (delta) => {
+    const players = Array.isArray(multiplayerStore.room?.players) ? multiplayerStore.room.players : []
+    const playerObj = players.find(p => getPlayerName(p) === astroStore.user)
+    const maxAvailable = playerObj?.lives || 0
+    const newStake = Math.max(1, Math.min(maxAvailable, currentStake.value + delta))
+    multiplayerStore.updateBossStakes(newStake)
+  }
+
   const isTeammate = computed(() => {
     if (!multiplayerStore.room) return false
 
@@ -2036,7 +2152,7 @@
 
   const allPlayersHaveTeam = computed(() => {
     if (!multiplayerStore.room) return false
-    if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera' || selectedModality.value === 'torneig') return true
+    if (selectedModality.value === '1vs1' || selectedModality.value === 'carrera' || selectedModality.value === 'torneig' || selectedModality.value === 'boss') return true
     const teams = multiplayerStore.room.gameConfig?.teams || {}
     const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
     return players.every(p => teams[getPlayerName(p)])
@@ -2252,6 +2368,15 @@
 
   function startMatch () {
     if (!isHost.value) return
+
+    // Doble verificación de vidas para el Modo Boss al iniciar
+    if (selectedModality.value === 'boss') {
+      const lifePack = inventoryStore.inventory.find(item => item.id === 1)
+      if (!lifePack || lifePack.quantity <= 0) {
+        showMessage('No pots iniciar el Modo Boss sense Packs de Vidas al teu inventari.', 'error')
+        return
+      }
+    }
     
     // Generar una semilla aleatoria nueva para que el mapa sea distinto en cada lanzamiento
     const newSeed = Math.random().toString(36).substring(7)
@@ -2996,13 +3121,146 @@
   overflow: hidden;
 }
 
-.boss-mode-hud {
+.boss-mode-hud-container {
   position: absolute;
-  top: 140px;
-  right: 20px;
-  width: 400px;
-  z-index: 220;
+  inset: 0;
   pointer-events: none;
+  z-index: 1000;
+}
+
+.boss-header-center {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  min-width: 500px;
+  pointer-events: auto;
+}
+
+.heroes-status-side {
+  position: absolute;
+  top: 100px;
+  left: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.hero-status-compact {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  backdrop-filter: blur(10px);
+  min-width: 130px;
+  transition: all 0.2s ease;
+}
+
+.hero-status-compact:hover {
+  border-color: #00e5ff;
+  transform: translateX(5px);
+}
+
+.action-feed-floating {
+  position: absolute;
+  bottom: 120px;
+  left: 20px;
+  width: 300px;
+  pointer-events: auto;
+}
+
+.boss-arsenal-fixed-right {
+  position: fixed;
+  top: 50%;
+  right: 40px;
+  transform: translateY(-50%);
+  width: 380px;
+  z-index: 3000;
+  pointer-events: auto;
+  animation: arsenal-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.boss-space-hint {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 12px 24px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 82, 82, 0.6);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  z-index: 2500;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px rgba(255, 82, 82, 0.3);
+  animation: hint-float 3s infinite ease-in-out;
+}
+
+/* ==== EFECTOS DE ATAQUE DEL JEFE ==== */
+.boss-effect-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  pointer-events: none;
+}
+
+.boss-effect-active-black_hole {
+  animation: intense-shake 0.5s infinite;
+}
+
+.boss-effect-active-lightning_storm {
+  animation: lightning-glitch 0.4s infinite;
+}
+
+.boss-effect-active-freeze {
+  filter: saturate(0.2) contrast(1.1);
+  transition: filter 0.5s ease;
+}
+
+@keyframes intense-shake {
+  0% { transform: translate(0,0) rotate(0deg); }
+  25% { transform: translate(8px, 8px) rotate(1deg); }
+  50% { transform: translate(-8px, -8px) rotate(-1deg); }
+  75% { transform: translate(8px, -8px) rotate(1deg); }
+  100% { transform: translate(0,0) rotate(0deg); }
+}
+
+@keyframes lightning-glitch {
+  0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  10% { opacity: 0.8; transform: scale(1.01); filter: brightness(2); }
+  20% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  30% { opacity: 0.9; transform: translate(5px, 0); }
+  40% { opacity: 1; transform: translate(0, 0); }
+}
+
+@keyframes screen-shake {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(5px, 5px); }
+  50% { transform: translate(-5px, -5px); }
+  75% { transform: translate(5px, -5px); }
+  100% { transform: translate(0,0); }
+}
+
+@keyframes vortex-pull {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes lightning-strobe {
+  0%, 10%, 20%, 100% { background: transparent; }
+  5%, 15% { background: rgba(255,255,255,0.2); }
+}
+
+@keyframes arsenal-slide-in {
+  from { transform: translateX(100%) scale(0.9); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes hint-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); box-shadow: 0 5px 25px rgba(255, 82, 82, 0.4); }
 }
 
 .game-hud-container {
@@ -3310,6 +3568,16 @@
   width: 12px;
   height: 2px;
   background: rgba(0, 229, 255, 0.3);
+}
+
+.game-content {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .game-wrapper-mp {
@@ -3698,6 +3966,37 @@
 .sudden-death-content {
   text-align: center;
   animation: sudden-death-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ==== BOSS MODE HUD STYLES ==== */
+.boss-mode-hud {
+  width: 100%;
+  max-width: 900px;
+  position: relative;
+  z-index: 10;
+}
+
+.hero-status-pill {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  min-width: 140px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.border-hero {
+  border: 2px solid #00e5ff;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+.hero-status-pill:hover {
+  transform: translateY(-2px);
+  border-color: #00e5ff;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.line-height-1 {
+  line-height: 1;
 }
 
 @keyframes sudden-death-pop {

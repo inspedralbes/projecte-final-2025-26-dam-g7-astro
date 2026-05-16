@@ -1,5 +1,5 @@
 <template>
-  <div ref="gameArea" class="v-container v-container--fluid fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;" @mousemove="handleMouseMove">
+  <div ref="gameArea" class="v-container v-container--fluid fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused, 'freeze-cursor-hide': multiplayerStore.activeBossEffect === 'FREEZE' }" style="position: relative;" @mousemove="handleMouseMove" @click="handlePlayAreaClick">
 
     <!-- Cursors remots -->
     <div v-if="props.isMultiplayer && (!isCompetitiveMode || props.isSpectator)" class="remote-cursors-container">
@@ -13,6 +13,18 @@
           <div class="cursor-label">{{ username }}</div>
         </div>
       </template>
+    </div>
+
+    <!-- Cursor Local Virtual (Hielo) -->
+    <div 
+      v-if="multiplayerStore.activeBossEffect === 'FREEZE' && !state.gameFinished" 
+      class="local-virtual-cursor"
+      :style="{
+        left: virtualMouseX + '%',
+        top: virtualMouseY + '%'
+      }"
+    >
+      <div class="cursor-dot-freeze"></div>
     </div>
 
     <!-- Capçalera del joc -->
@@ -130,6 +142,10 @@
 
   const { t, locale } = useI18n()
   const astroStore = useAstroStore()
+const virtualMouseX = ref(50)
+const virtualMouseY = ref(50)
+const targetX = ref(50)
+const targetY = ref(50)
   const multiplayerStore = useMultiplayerStore()
 
   const props = defineProps({
@@ -381,21 +397,49 @@
 
   let lastMouseSync = 0
   const gameArea = ref(null)
-  function handleMouseMove (e) {
-    if (!isLocalPlayerActive.value || !gameArea.value) return
-    const rect = gameArea.value.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+  function handleMouseMove(e) {
+  if (state.gameFinished || props.isSpectator || !gameArea.value) return
+  const rect = gameArea.value.getBoundingClientRect()
+  targetX.value = ((e.clientX - rect.left) / rect.width) * 100
+  targetY.value = ((e.clientY - rect.top) / rect.height) * 100
 
-    const now = Date.now()
-    if (props.isMultiplayer && now - lastMouseSync > 50) {
-      lastMouseSync = now
-      multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
-    }
+  if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+    virtualMouseX.value = targetX.value
+    virtualMouseY.value = targetY.value
   }
+
+  const now = Date.now()
+  if (props.isMultiplayer && now - lastMouseSync > 50) {
+    lastMouseSync = now
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x: virtualMouseX.value, y: virtualMouseY.value })
+  }
+}
+
+function tickFreezeEffect() {
+  if (multiplayerStore.activeBossEffect === 'FREEZE') {
+    const damping = 0.07
+    virtualMouseX.value += (targetX.value - virtualMouseX.value) * damping
+    virtualMouseY.value += (targetY.value - virtualMouseY.value) * damping
+  }
+  requestAnimationFrame(tickFreezeEffect)
+}
+
+function handlePlayAreaClick(e) {
+  if (state.gameFinished || props.isSpectator || multiplayerStore.activeBossEffect !== 'FREEZE') return
+
+  const el = document.elementFromPoint(
+    (virtualMouseX.value / 100) * window.innerWidth,
+    (virtualMouseY.value / 100) * window.innerHeight
+  )
+  if (el) {
+    const btn = el.closest('button') || el.closest('.v-btn')
+    if (btn) btn.click()
+  }
+}
 
   onMounted(async () => {
     window.addEventListener('mousemove', handleMouseMove)
+    tickFreezeEffect()
 
     if (props.isMultiplayer) {
       if (multiplayerStore.room?.gameConfig?.seed) {
@@ -532,7 +576,41 @@
 .remote-cursors-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 .remote-cursor { position: absolute; transition: all 0.1s linear; transform: translate(-50%, -50%); }
 .cursor-pointer { width: 12px; height: 12px; background: #00e5ff; border-radius: 50%; box-shadow: 0 0 10px #00e5ff; }
-.cursor-label { font-size: 10px; background: rgba(0, 229, 255, 0.8); color: #000; padding: 1px 4px; border-radius: 4px; font-weight: bold; margin-top: 4px; white-space: nowrap; }
+.cursor-label {
+  background: rgba(103, 58, 183, 0.9);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.freeze-cursor-hide {
+  cursor: none !important;
+}
+
+.freeze-cursor-hide * {
+  cursor: none !important;
+}
+
+.local-virtual-cursor {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  z-index: 5000;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot-freeze {
+  width: 14px;
+  height: 14px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00e5ff, 0 0 5px rgba(255,255,255,0.8);
+}
 .word-construction-container { background: radial-gradient(circle at center, #0d0221 0%, #020617 100%); }
 .game-paused { pointer-events: none !important; filter: blur(4px) grayscale(0.5); transition: all 0.3s ease; }
 </style>

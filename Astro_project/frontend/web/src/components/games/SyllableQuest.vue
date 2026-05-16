@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center justify-center syllable-quest-container pa-4" style="position: relative;" @mousemove="handleMouseMove" :class="{ 'game-paused': props.isPaused }" fluid>
+  <v-container class="fill-height d-flex flex-column align-center justify-center syllable-quest-container pa-4" style="position: relative;" @mousemove="handleMouseMove" @click="handlePlayAreaClick" :class="{ 'game-paused': props.isPaused, 'freeze-cursor-hide': multiplayerStore.activeBossEffect === 'FREEZE' }" fluid>
     <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10 game-board" max-width="560" rounded="xl" width="100%">
       <div class="hud-row mb-6">
         <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
@@ -119,6 +119,18 @@
         <div class="cursor-dot"></div>
         <div class="cursor-label">{{ props.spectatedPlayer }}</div>
       </div>
+
+      <!-- Cursor Local Virtual (Hielo) -->
+      <div 
+        v-if="multiplayerStore.activeBossEffect === 'FREEZE' && isPlaying" 
+        class="local-virtual-cursor"
+        :style="{
+          left: virtualMouseX + '%',
+          top: virtualMouseY + '%'
+        }"
+      >
+        <div class="cursor-dot-freeze"></div>
+      </div>
     </v-card>
   </v-container>
 </template>
@@ -171,31 +183,31 @@ const sounds = {
   error: '/assets/sounds/error.mp3',
 }
 
-function triggerFeedback(type) {
-  feedbackType.value = type
-  showFeedback.value = true
-  const audio = new Audio(sounds[type])
-  audio.volume = 0.4
-  audio.play().catch(e => console.warn('Audio play blocked:', e))
-  setTimeout(() => { showFeedback.value = false }, 800)
-}
+const virtualMouseX = ref(50)
+const virtualMouseY = ref(50)
+const targetX = ref(50)
+const targetY = ref(50)
 
 // --- MULTIJUGADOR: SEGUIMIENTO DE RATÓN Y SYNC ---
 let lastMouseSync = 0
 function handleMouseMove(e) {
   if (!isPlaying.value || props.isSpectator) return
-  const container = document.querySelector('.game-board')
+  const container = document.querySelector('.syllable-quest-container')
   if (!container) return
   const rect = container.getBoundingClientRect()
-  const x = ((e.clientX - rect.left) / rect.width) * 100
-  const y = ((e.clientY - rect.top) / rect.height) * 100
+  targetX.value = ((e.clientX - rect.left) / rect.width) * 100
+  targetY.value = ((e.clientY - rect.top) / rect.height) * 100
+
+  if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+    virtualMouseX.value = targetX.value
+    virtualMouseY.value = targetY.value
+  }
 
   const now = Date.now()
   if (props.isMultiplayer && now - lastMouseSync > 50) {
     lastMouseSync = now
-    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x: virtualMouseX.value, y: virtualMouseY.value })
     
-    // Sync periódico para espectadores
     if (isAuthority.value) {
       multiplayerStore.sendGameAction({
         type: 'SPECTATOR_SYNC',
@@ -209,6 +221,30 @@ function handleMouseMove(e) {
         correctWordsInOrder: correctWordsInOrder.value
       })
     }
+  }
+}
+
+function tickFreezeEffect() {
+  if (multiplayerStore.activeBossEffect === 'FREEZE') {
+    const damping = 0.07
+    virtualMouseX.value += (targetX.value - virtualMouseX.value) * damping
+    virtualMouseY.value += (targetY.value - virtualMouseY.value) * damping
+  }
+  requestAnimationFrame(tickFreezeEffect)
+}
+
+function handlePlayAreaClick(e) {
+  if (!isPlaying.value || props.isSpectator || multiplayerStore.activeBossEffect !== 'FREEZE') return
+
+  // Simular clic en el elemento que está bajo el cursor virtual
+  const el = document.elementFromPoint(
+    (virtualMouseX.value / 100) * window.innerWidth,
+    (virtualMouseY.value / 100) * window.innerHeight
+  )
+  if (el) {
+    // Si es un botón o parte de uno, lanzamos el evento click
+    const btn = el.closest('button') || el.closest('.v-btn')
+    if (btn) btn.click()
   }
 }
 
@@ -392,7 +428,10 @@ function processIncorrectClick() {
   setTimeout(() => { message.value = '' }, 1000)
 }
 
-function startGame() { isPlaying.value = true }
+function startGame() { 
+  isPlaying.value = true 
+  requestAnimationFrame(tickFreezeEffect)
+}
 
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval)
@@ -674,5 +713,31 @@ onUnmounted(() => {
   font-size: 10px;
   font-weight: bold;
   white-space: nowrap;
+}
+
+.freeze-cursor-hide {
+  cursor: none !important;
+}
+
+.freeze-cursor-hide * {
+  cursor: none !important;
+}
+
+.local-virtual-cursor {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  z-index: 5000;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot-freeze {
+  width: 14px;
+  height: 14px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00e5ff, 0 0 5px rgba(255,255,255,0.8);
 }
 </style>

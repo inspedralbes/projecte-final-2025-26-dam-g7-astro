@@ -234,6 +234,8 @@
   const targets = ref([])
   const mouseX = ref(0)
   const mouseY = ref(0)
+  const targetMouseX = ref(0)
+  const targetMouseY = ref(0)
   const isFiring = ref(false)
   const holdProgressMs = ref(0)
   const holdRequiredMs = ref(1000)
@@ -725,8 +727,14 @@
   function handlePointerMove (e) {
     if (!gameArea.value || props.isSpectator) return
     const rect = gameArea.value.getBoundingClientRect()
-    mouseX.value = e.clientX - rect.left
-    mouseY.value = e.clientY - rect.top
+    targetMouseX.value = e.clientX - rect.left
+    targetMouseY.value = e.clientY - rect.top
+
+    // Si no hay efecto de congelación, el cursor es instantáneo
+    if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+      mouseX.value = targetMouseX.value
+      mouseY.value = targetMouseY.value
+    }
 
     const now = Date.now()
     if (props.isMultiplayer && now - lastMouseSync > 33) {
@@ -738,6 +746,16 @@
         isFiring: isFiring.value,
       })
     }
+  }
+
+  // Loop para suavizado del ratón (Hielo)
+  function tickFreezeEffect() {
+    if (multiplayerStore.activeBossEffect === 'FREEZE') {
+      const damping = 0.08
+      mouseX.value += (targetMouseX.value - mouseX.value) * damping
+      mouseY.value += (targetMouseY.value - mouseY.value) * damping
+    }
+    requestAnimationFrame(tickFreezeEffect)
   }
 
   function beginFiring () {
@@ -792,6 +810,7 @@
     mouseY.value = gameCanvas.value.height * 0.75
 
     generateTargets()
+    requestAnimationFrame(tickFreezeEffect)
 
     if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace && targets.value.length === 0) {
       multiplayerStore.sendGameAction({ type: 'SYMMETRY_REQUEST_SYNC' })

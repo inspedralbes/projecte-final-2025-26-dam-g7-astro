@@ -51,7 +51,8 @@ const attacks = [
   { id: 'BLACK_HOLE', name: 'AGUJERO NEGRO', icon: 'mdi-vortex', color: 'deep-purple-darken-4' },
   { id: 'LIGHTNING_STORM', name: 'RELÁMPAGOS', icon: 'mdi-weather-lightning', color: 'blue-darken-4' },
   { id: 'FREEZE', name: 'CONGELACIÓN', icon: 'mdi-snowflake', color: 'cyan-darken-4' },
-  { id: 'ZERO_GRAVITY', name: 'GRAVEDAD 0', icon: 'mdi-axis-z-rotate-clockwise', color: 'orange-darken-4' }
+  { id: 'ZERO_GRAVITY', name: 'GRAVEDAD 0', icon: 'mdi-axis-z-rotate-clockwise', color: 'orange-darken-4' },
+  { id: 'CHANGE_GAME', name: 'CAMBIAR JUEGO', icon: 'mdi-refresh', color: 'green-darken-4' }
 ]
 
 const lastAttackTime = ref(0)

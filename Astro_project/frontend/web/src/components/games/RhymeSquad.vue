@@ -1,5 +1,5 @@
 <template>
-  <v-container ref="gameArea" class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" :class="{ 'game-paused': props.isPaused }" fluid style="min-height: 800px" @mousemove="handleMouseMove">
+  <v-container ref="gameArea" class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" :class="{ 'game-paused': props.isPaused, 'freeze-cursor-hide': multiplayerStore.activeBossEffect === 'FREEZE' }" fluid style="min-height: 800px" @mousemove="handleMouseMove" @click="handlePlayAreaClick">
 
     <v-card
       v-if="!isPlaying && !isGameOver && !isWaitingForOthers"
@@ -79,7 +79,7 @@
 
     <template v-else-if="isPlaying">
       <!-- Header Arcade Persistente -->
-      <div class="arcade-hud w-100 pa-4 d-flex justify-space-between align-center">
+      <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'BOSS'" class="arcade-hud w-100 pa-4 d-flex justify-space-between align-center">
         <div class="hud-left d-flex gap-4">
           <div class="arcade-stat score">
             <span class="label">SCORE</span>
@@ -180,6 +180,18 @@
         >
           <div class="cursor-dot"></div>
           <div class="cursor-label">{{ props.spectatedPlayer }}</div>
+        </div>
+
+        <!-- Cursor Local Virtual (Hielo) -->
+        <div 
+          v-if="multiplayerStore.activeBossEffect === 'FREEZE' && isPlaying" 
+          class="local-virtual-cursor"
+          :style="{
+            left: virtualMouseX + '%',
+            top: virtualMouseY + '%'
+          }"
+        >
+          <div class="cursor-dot-freeze"></div>
         </div>
       </div>
     </template>
@@ -291,6 +303,10 @@ const isTurbo = ref(false)
 const showTimeBonus = ref(false)
 const showFeedback = ref(false)
 const feedbackType = ref('success')
+const virtualMouseX = ref(50)
+const virtualMouseY = ref(50)
+const targetX = ref(50)
+const targetY = ref(50)
 
 // --- MULTIJUGADOR: SEGUIMIENTO DE RATÓN Y SYNC ---
 let lastMouseSync = 0
@@ -298,20 +314,23 @@ const gameArea = ref(null)
 function handleMouseMove(e) {
   if (!isPlaying.value || props.isSpectator || !gameArea.value) return
   
-  // En Vuetify 3, ref en componentes devuelve la instancia del componente, no el elemento DOM.
   const el = gameArea.value.$el || gameArea.value
   if (!el.getBoundingClientRect) return
   
   const rect = el.getBoundingClientRect()
-  const x = ((e.clientX - rect.left) / rect.width) * 100
-  const y = ((e.clientY - rect.top) / rect.height) * 100
+  targetX.value = ((e.clientX - rect.left) / rect.width) * 100
+  targetY.value = ((e.clientY - rect.top) / rect.height) * 100
+
+  if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+    virtualMouseX.value = targetX.value
+    virtualMouseY.value = targetY.value
+  }
 
   const now = Date.now()
   if (props.isMultiplayer && now - lastMouseSync > 50) {
     lastMouseSync = now
-    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x: virtualMouseX.value, y: virtualMouseY.value })
     
-    // Sync periódico para espectadores
     if (isAuthority.value) {
       multiplayerStore.sendGameAction({
         type: 'SPECTATOR_SYNC',
@@ -321,6 +340,38 @@ function handleMouseMove(e) {
         target: currentTarget.value
       })
     }
+  }
+}
+
+function tickFreezeEffect() {
+  if (multiplayerStore.activeBossEffect === 'FREEZE') {
+    const damping = 0.07
+    virtualMouseX.value += (targetX.value - virtualMouseX.value) * damping
+    virtualMouseY.value += (targetY.value - virtualMouseY.value) * damping
+  }
+  requestAnimationFrame(tickFreezeEffect)
+}
+
+function handlePlayAreaClick(e) {
+  if (!isPlaying.value || props.isSpectator || multiplayerStore.activeBossEffect !== 'FREEZE') return
+
+  // Cuando está congelado, el clic se procesa en la posición virtual
+  const words = activeWords.value.filter(w => w.status === 'falling')
+  const foundWord = words.find(w => {
+    // Aproximación de colisión (RhymeSquad usa % para X y px para Y... espera, yo lo cambié a % arriba?)
+    // Mirando el template, line 127: left: word.x + '%', top: word.y + 'px'
+    // Tengo que convertir virtualMouseY (%) a PX para comparar con word.y
+    const el = gameArea.value.$el || gameArea.value
+    const rect = el.getBoundingClientRect()
+    const vy_px = (virtualMouseY.value / 100) * rect.height
+    
+    const dx = Math.abs(w.x - virtualMouseX.value)
+    const dy = Math.abs(w.y - vy_px)
+    return dx < 8 && dy < 40 // Ajuste fino de la caja de colisión
+  })
+
+  if (foundWord) {
+    checkWord(foundWord)
   }
 }
 
@@ -357,6 +408,7 @@ function handleStartClick() {
     multiplayerStore.sendGameAction({ type: 'RHYME_START' })
   }
   startGame()
+  requestAnimationFrame(tickFreezeEffect)
   
   if (props.isMultiplayer && isAuthority.value && (props.isDuel || props.isRace)) {
     multiplayerStore.sendGameAction({
@@ -541,21 +593,29 @@ function checkWord(word) {
       multiplayerStore.rechargeFuel(2)
     }
 
-    if (props.isMultiplayer) {
-      const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
-      multiplayerStore.sendGameAction({
-        type: 'SABOTAGE',
-        subtype: 'REDUCE_TIME',
-        amount: isSaboteurActive ? 6 : 3,
-      })
-
-      if (props.isDuel) {
+      if (props.isMultiplayer) {
+        const isSaboteurActive = (astroStore.activeBoosters?.sabotageGamesLeft || 0) > 0
         multiplayerStore.sendGameAction({
-          type: 'TIME_PENALTY',
-          amount: isSaboteurActive ? 8 : 4,
+          type: 'SABOTAGE',
+          subtype: 'REDUCE_TIME',
+          amount: isSaboteurActive ? 6 : 3,
         })
+
+        // LÓGICA MODO JEFE
+        if (multiplayerStore.room?.gameConfig?.mode === 'BOSS') {
+          const isBoss = multiplayerStore.room.gameConfig.boss === astroStore.user
+          if (!isBoss) {
+            multiplayerStore.sendGameAction({ type: 'HERO_ATTACK' })
+          }
+        }
+
+        if (props.isDuel) {
+          multiplayerStore.sendGameAction({
+            type: 'TIME_PENALTY',
+            amount: isSaboteurActive ? 8 : 4,
+          })
+        }
       }
-    }
   } else {
     word.status = 'incorrect'
     incorrectHits.value++
@@ -1008,5 +1068,32 @@ watch(score, newScore => {
   font-size: 10px;
   font-weight: bold;
   white-space: nowrap;
+  z-index: 1001;
+}
+
+.freeze-cursor-hide {
+  cursor: none !important;
+}
+
+.freeze-cursor-hide * {
+  cursor: none !important;
+}
+
+.local-virtual-cursor {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  z-index: 5000;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-dot-freeze {
+  width: 14px;
+  height: 14px;
+  background: #00e5ff;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00e5ff, 0 0 5px rgba(255,255,255,0.8);
 }
 </style>

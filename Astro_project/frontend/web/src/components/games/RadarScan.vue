@@ -1,6 +1,6 @@
 <template>
   <div class="game-container" @mousemove="updateFlashlight" ref="gameArea">
-    <div class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
+    <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'BOSS'" class="hud d-flex justify-center align-center pa-4 w-100 position-absolute" style="top: 0; z-index: 10;">
       <div class="hud-pill d-flex align-center ga-8">
         <div class="text-h5 font-weight-bold text-amber-accent-3">Punts: {{ score }}</div>
         <div v-if="!isMultiplayer" class="text-h5 font-weight-bold text-cyan-accent-3">Temps: <span :class="{'text-red': timeLeft <= 10}">{{ timeLeft }}s</span></div>
@@ -103,6 +103,8 @@ let timerInterval = null;
 // --- SISTEMA DE VISIÓ ---
 const mouseX = ref(0);
 const mouseY = ref(0);
+const targetMouseX = ref(0);
+const targetMouseY = ref(0);
 const gameArea = ref(null);
 
 // Computada para saber qué ratón mostrar (el local o el del jugador observado)
@@ -165,8 +167,14 @@ let lastMouseSync = 0;
 const updateFlashlight = (e) => {
   if (!gameArea.value || props.isSpectator) return;
   const rect = gameArea.value.getBoundingClientRect();
-  mouseX.value = e.clientX - rect.left;
-  mouseY.value = e.clientY - rect.top;
+  targetMouseX.value = e.clientX - rect.left;
+  targetMouseY.value = e.clientY - rect.top;
+
+  // Si no está congelado, la linterna sigue al ratón instantáneamente
+  if (multiplayerStore.activeBossEffect !== 'FREEZE') {
+    mouseX.value = targetMouseX.value;
+    mouseY.value = targetMouseY.value;
+  }
 
   const now = Date.now();
   if (props.isMultiplayer && now - lastMouseSync > 33) { // 30 FPS sync
@@ -178,6 +186,20 @@ const updateFlashlight = (e) => {
     });
   }
 };
+
+// Loop de suavizado para el efecto de congelación (fricción de hielo)
+const tickFreezeEffect = () => {
+  if (multiplayerStore.activeBossEffect === 'FREEZE') {
+    const damping = 0.08; // Factor de lentitud
+    mouseX.value += (targetMouseX.value - mouseX.value) * damping;
+    mouseY.value += (targetMouseY.value - mouseY.value) * damping;
+  }
+  requestAnimationFrame(tickFreezeEffect);
+};
+
+onMounted(() => {
+  requestAnimationFrame(tickFreezeEffect);
+});
 
 const generateBoard = () => {
   // Eliminamos el return de espectador para que ellos también lo generen con el seed
@@ -248,6 +270,15 @@ const checkLetter = (index) => {
           subtype: 'REDUCE_TIME',
           amount: 1
         });
+
+        // LÓGICA MODO JEFE
+        if (multiplayerStore.room?.gameConfig?.mode === 'BOSS') {
+          const isBoss = multiplayerStore.room.gameConfig.boss === astroStore.user
+          if (!isBoss) {
+            // El Héroe ataca al Jefe al acertar
+            multiplayerStore.sendGameAction({ type: 'HERO_ATTACK' })
+          }
+        }
       }
 
       nextRound(); 
