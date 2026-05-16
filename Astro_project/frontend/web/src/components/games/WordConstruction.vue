@@ -1,8 +1,8 @@
 <template>
-  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;">
+  <v-container ref="gameArea" class="fill-height d-flex flex-column align-center justify-center word-construction-container" :class="{ 'game-paused': props.isPaused }" style="position: relative;" @mousemove="handleMouseMove">
 
     <!-- Cursors remots -->
-    <div v-if="props.isMultiplayer && !props.isRace && !props.isDuel" class="remote-cursors-container">
+    <div v-if="props.isMultiplayer" class="remote-cursors-container">
       <div
         v-for="(pos, username) in multiplayerStore.remoteCursors"
         :key="username"
@@ -19,11 +19,14 @@
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">{{ $t('wordConstruction.level', { level: level }) }}</h2>
-          <div class="text-caption text-grey-lighten-2">
-            <span>{{ $t('wordConstruction.score', { score: score }) }}</span>
-            <span class="mx-2">|</span>
-            <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">{{ $t('wordConstruction.time', { time: timeLeft }) }}</span>
-          </div>
+        <div v-if="!isMultiplayer" class="text-caption text-grey-lighten-2">
+          <span>{{ $t('wordConstruction.score', { score: score }) }}</span>
+          <span class="mx-2">|</span>
+          <span :class="{ 'text-red-accent-2': timeLeft <= 15 }">{{ $t('wordConstruction.time', { time: timeLeft }) }}</span>
+        </div>
+        <div v-else class="text-caption text-grey-lighten-2">
+          <span>{{ $t('wordConstruction.score', { score: score }) }}</span>
+        </div>
         </div>
         <!-- Barra de progrés "Construcció" -->
         <div class="d-flex flex-column align-end">
@@ -58,7 +61,7 @@
         :animation="180"
         chosen-class="chosen-chip"
         class="d-flex justify-center flex-wrap gap-2 mb-6"
-        :disabled="isRoundLocked || props.isPaused"
+        :disabled="isRoundLocked || props.isPaused || props.isSpectator"
         ghost-class="ghost-chip"
         item-key="id"
         tag="div"
@@ -83,7 +86,7 @@
         block
         class="font-weight-bold text-black mb-3"
         color="cyan-accent-3"
-        :disabled="isRoundLocked"
+        :disabled="isRoundLocked || props.isSpectator"
         rounded="lg"
         size="x-large"
         @click="checkAnswer"
@@ -94,7 +97,7 @@
       <v-btn
         block
         color="grey-lighten-1"
-        :disabled="isRoundLocked"
+        :disabled="isRoundLocked || props.isSpectator"
         rounded="lg"
         variant="outlined"
         @click="shuffleCurrentLetters"
@@ -134,11 +137,26 @@
     isDuel: { type: Boolean, default: false },
     duration: { type: Number, default: 60 },
     isPaused: { type: Boolean, default: false },
+    isSpectator: { type: Boolean, default: false },
+    spectatedPlayer: { type: String, default: null }
   })
 
   const emit = defineEmits(['game-over'])
 
-  const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const isAuthority = computed(() => {
+    if (props.isSpectator) return false
+    if (!props.isMultiplayer) return true
+    const hostName = multiplayerStore.room?.host?.username || multiplayerStore.room?.host
+    if (hostName === astroStore.user) return true
+    // En duelos, torneos o carreras cada jugador es autoridad de su propio minijuego
+    const modality = multiplayerStore.room?.gameConfig?.modality
+    const mode = multiplayerStore.room?.gameConfig?.mode
+    if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
+    return false
+  })
+  
+  // En modo espectador, no somos nosotros los que jugamos
+  const isLocalPlayerActive = computed(() => !props.isSpectator)
   const anyRivalAlive = computed(() => {
     if (!props.isMultiplayer) return true
     const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
@@ -195,7 +213,9 @@
 
   function loadNextWord () {
     const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
-    const rnd = (props.isMultiplayer && (!props.isDuel || isShared)) ? lcgRandom() : Math.random()
+    // En multijugador, torneos o duelos, usamos siempre el generador por semilla para que coincidan
+    const useLCG = props.isMultiplayer || props.isDuel || props.isRace || isShared
+    const rnd = useLCG ? lcgRandom() : Math.random()
     const randomIndex = Math.floor(rnd * wordPool.value.length)
     const wordObj = wordPool.value[randomIndex]
 
@@ -212,11 +232,17 @@
     scrambledLetters.value = letters
     isRoundLocked.value = false
 
-    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+    // Sync for spectators in Tournament/Duel
+    if (props.isMultiplayer && isAuthority.value) {
       multiplayerStore.sendGameAction({
-        type: 'BOARD_SYNC',
-        wordObj: wordObj,
-        letters: letters,
+        type: 'SPECTATOR_SYNC',
+        level: level.value,
+        score: score.value,
+        currentStep: currentStep.value,
+        totalSteps: totalSteps.value,
+        scrambledLetters: scrambledLetters.value,
+        currentWordObj: wordObj,
+        timeLeft: timeLeft.value
       })
     }
   }
@@ -293,10 +319,7 @@
       multiplayerStore.submitRoundResult()
     }
     
-    // En individual o carrera salimos directamente (el componente padre muestra resultados)
-    if (!props.isMultiplayer || props.isRace) {
-      emitExit()
-    }
+    emitExit()
   }
 
   function emitExit () {
@@ -308,7 +331,7 @@
     let lastTick = Date.now()
     timerInterval = setInterval(() => {
       if (gameFinished.value || props.isPaused) return
-      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+      if (isAuthority.value) {
         const now = Date.now()
         const delta = Math.floor((now - lastTick) / 1000)
         if (delta >= 1) {
@@ -316,21 +339,29 @@
           lastTick += delta * 1000
           
           if (props.isMultiplayer) {
-            if (isHost.value || props.isDuel || props.isRace) {
-              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-            }
-            if (props.isDuel || props.isRace || !props.isMultiplayer) {
+            if (isAuthority.value) {
               multiplayerStore.timeLeft = timeLeft.value
+              multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+              
+              // Sync de espectador cada segundo
+              multiplayerStore.sendGameAction({
+                type: 'SPECTATOR_SYNC',
+                level: level.value,
+                score: score.value,
+                currentStep: currentStep.value,
+                totalSteps: totalSteps.value,
+                scrambledLetters: scrambledLetters.value,
+                currentWordObj: currentWordObj.value,
+                timeLeft: timeLeft.value
+              })
             }
-          } else {
-            multiplayerStore.timeLeft = timeLeft.value
           }
 
           if (timeLeft.value <= 0) {
             if (props.isRace && !props.isDuel) {
               finishGame()
             } else {
-              if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+              if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
                 multiplayerStore.sendGameAction({ type: 'WC_TIME_UP' })
               }
               finishGame()
@@ -341,17 +372,40 @@
     }, 500)
   }
 
-  // ---- MULTIJUGADOR: SEGUIMIENTO DE RATÓN ----
-  function handleMouseMove (e) {
-    if (!props.isMultiplayer || props.isRace || props.isDuel || gameFinished.value) return
-    const container = document.querySelector('.word-construction-container')
-    if (!container) return
+  function triggerFeedback (type) {
+    messageType.value = type
+    message.value = type === 'success' ? t('wordConstruction.correctBlock') : t('wordConstruction.wrongBlock')
+    setTimeout(() => { message.value = '' }, 1500)
+  }
 
-    const rect = container.getBoundingClientRect()
+  // ---- MULTIJUGADOR: SEGUIMIENTO DE RATÓN ----
+  let lastMouseSync = 0
+  const gameArea = ref(null)
+  function handleMouseMove (e) {
+    if (!isLocalPlayerActive.value || !gameArea.value) return
+    const rect = gameArea.value.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
 
-    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    const now = Date.now()
+    if (props.isMultiplayer && now - lastMouseSync > 50) {
+      lastMouseSync = now
+      multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+      
+      // Sincronización periódica de estado para espectadores
+      if (isAuthority.value) {
+        multiplayerStore.sendGameAction({
+            type: 'SPECTATOR_SYNC',
+            level: level.value,
+            score: score.value,
+            currentStep: currentStep.value,
+            totalSteps: totalSteps.value,
+            scrambledLetters: scrambledLetters.value,
+            currentWordObj: currentWordObj.value,
+            timeLeft: timeLeft.value
+        })
+      }
+    }
   }
 
   onMounted(async () => {
@@ -373,102 +427,130 @@
   })
 
   watch(() => multiplayerStore.lastMessage, msg => {
-    if (!msg) return
+  if (!msg) return
 
-    if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value) {
-      finishGame()
-      return
-    }
-
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
-      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
-      if (timeLeft.value <= 0 && !gameFinished.value) {
-        finishGame()
+  // LÓGICA DE ESPECTADOR
+  if (props.isSpectator) {
+    if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
+      const a = msg.action
+      if (a.type === 'BOARD_SYNC' || a.type === 'SPECTATOR_SYNC') {
+        applySpectatorSync(a)
+      }
+      if (a.type === 'ORDER_SYNC') {
+        isUpdatingFromSync = true
+        scrambledLetters.value = normalizeLetters(a.letters)
+      }
+      if (a.type === 'WORD_SUCCESS') {
+        currentStep.value = a.currentStep
+        score.value = a.score
+        triggerFeedback('success')
+      }
+      if (a.type === 'TIME_SYNC') {
+        timeLeft.value = a.timeLeft
       }
     }
+    return
+  }
 
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'BOARD_SYNC') {
-      currentWordObj.value = normalizeWordObj(msg.action.wordObj)
-      scrambledLetters.value = normalizeLetters(msg.action.letters)
+  if (msg.type === 'ROUND_ENDED_BY_WINNER' && !gameFinished.value) {
+    finishGame()
+    return
+  }
+
+  if (msg.type === 'GAME_ACTION') {
+    const a = msg.action
+    
+    if (a.type === 'REQUEST_SYNC' && isAuthority.value && !gameFinished.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        level: level.value,
+        score: score.value,
+        currentStep: currentStep.value,
+        totalSteps: totalSteps.value,
+        scrambledLetters: scrambledLetters.value,
+        currentWordObj: currentWordObj.value,
+        timeLeft: timeLeft.value
+      })
+    }
+
+    if (a.type === 'SABOTAGE' && a.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+      timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 2))
+      if (timeLeft.value <= 0 && !gameFinished.value) finishGame()
+    }
+
+    if (a.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+      timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 5))
+      if (timeLeft.value <= 0 && !gameFinished.value) finishGame()
+    }
+
+    if (a.type === 'BOARD_SYNC' && !props.isDuel && !props.isRace) {
+      currentWordObj.value = normalizeWordObj(a.wordObj)
+      scrambledLetters.value = normalizeLetters(a.letters)
       message.value = ''
       isRoundLocked.value = false
     }
 
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user) {
+    if (a.type === 'ORDER_SYNC' && msg.from !== astroStore.user && !props.isDuel && !props.isRace) {
       isUpdatingFromSync = true
-      scrambledLetters.value = normalizeLetters(msg.action.letters)
+      scrambledLetters.value = normalizeLetters(a.letters)
     }
 
-    if (msg.type === 'GAME_ACTION' && msg.action?.type === 'ANSWER_CHECKED') {
+    if (a.type === 'ANSWER_CHECKED' && !props.isDuel && !props.isRace) {
       checkAnswer(true)
     }
 
-    if (msg.action?.type === 'WC_TIME_UP') {
+    if (a.type === 'WC_TIME_UP') {
       finishGame()
-      return
     }
 
-    if (msg.type === 'GAME_ACTION') {
-      if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
-        multiplayerStore.roundScores[msg.from] = msg.action.score
-        return
-      }
+    if (a.type === 'TIME_SYNC' && !isAuthority.value && !props.isDuel && !props.isRace) {
+      timeLeft.value = a.timeLeft
+      if (timeLeft.value <= 0) finishGame()
+    }
 
-      if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
-        if (props.isDuel || props.isRace || !props.isMultiplayer) {
-          multiplayerStore.timeLeft = timeLeft.value
-        }
-        if (timeLeft.value <= 0 && !gameFinished.value) {
-          finishGame()
-        }
-      }
+    if (a.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
+      multiplayerStore.roundScores[msg.from] = a.score
+    }
 
-      if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
-        timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
-        if (props.isDuel || props.isRace || !props.isMultiplayer) {
-          multiplayerStore.timeLeft = timeLeft.value
-        }
-        if (timeLeft.value <= 0 && !gameFinished.value) {
-          finishGame()
-        }
-      }
+    if (a.type === 'WORD_SUCCESS' && !props.isDuel && !props.isRace) {
+      currentStep.value = a.currentStep
+      score.value = a.score
+      message.value = t('wordConstruction.partnerBuilt')
+      messageType.value = 'success'
+      setTimeout(() => { message.value = '' }, 2000)
+    }
+  }
+}, { immediate: true })
 
-      if (msg.action?.type === 'BOARD_SYNC' && !props.isDuel && !props.isRace) {
-        currentWordObj.value = msg.action.wordObj
-        scrambledLetters.value = msg.action.letters
-        message.value = ''
-        isRoundLocked.value = false
-      }
+  function applySpectatorSync (data) {
+    if (!data) return
+    isUpdatingFromSync = true
+    if (data.level !== undefined) level.value = data.level
+    if (data.score !== undefined) score.value = data.score
+    if (data.currentStep !== undefined) currentStep.value = data.currentStep
+    if (data.totalSteps !== undefined) totalSteps.value = data.totalSteps
+    if (data.timeLeft !== undefined) timeLeft.value = data.timeLeft
+    if (data.currentWordObj) currentWordObj.value = normalizeWordObj(data.currentWordObj)
+    if (data.scrambledLetters) scrambledLetters.value = normalizeLetters(data.scrambledLetters)
+    isUpdatingFromSync = false
+  }
 
-      if (msg.action?.type === 'ORDER_SYNC' && msg.from !== astroStore.user && !props.isDuel && !props.isRace) {
-        isUpdatingFromSync = true
-        scrambledLetters.value = msg.action.letters
-      }
-
-      if (msg.action?.type === 'ANSWER_CHECKED' && !props.isDuel && !props.isRace) {
-        checkAnswer(true)
-      }
-
-      if (msg.action?.type === 'WC_TIME_UP' && !props.isDuel && !props.isRace) {
-        finishGame()
-      }
-
-      if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
-        timeLeft.value = msg.action.timeLeft
-        if (timeLeft.value <= 0) finishGame()
-      }
-      if (msg.action?.type === 'WORD_SUCCESS' && !props.isDuel && !props.isRace) {
-        currentStep.value = msg.action.currentStep
-        score.value = msg.action.score
-        message.value = t('wordConstruction.partnerBuilt')
-        messageType.value = 'success'
-        setTimeout(() => {
-          message.value = ''
-        }, 2000)
+  onMounted(() => {
+    if (props.isSpectator && props.spectatedPlayer) {
+      const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer]
+      if (lastSync && (lastSync.type === 'SPECTATOR_SYNC' || lastSync.type === 'ORDER_SYNC')) {
+        applySpectatorSync(lastSync)
       }
     }
-  }, { immediate: true })
+  })
+
+  // Sincronización de tiempo global para Torneo/Duelos
+  watch(() => multiplayerStore.timeLeft, (newTime) => {
+    if (props.isMultiplayer) {
+      timeLeft.value = Math.ceil(newTime);
+      if (timeLeft.value <= 0 && !gameFinished.value) finishGame();
+    }
+  });
 
   watch(scrambledLetters, newVal => {
     if (isUpdatingFromSync) {
@@ -476,6 +558,14 @@
       return
     }
     if (props.isMultiplayer && !props.isDuel && !props.isRace && !isRoundLocked.value) {
+      multiplayerStore.sendGameAction({
+        type: 'ORDER_SYNC',
+        letters: newVal,
+      })
+    }
+    
+    // Broadcast para espectadores si estamos en modo competitivo
+    if (props.isMultiplayer && (props.isDuel || props.isRace) && !isRoundLocked.value) {
       multiplayerStore.sendGameAction({
         type: 'ORDER_SYNC',
         letters: newVal,

@@ -432,7 +432,9 @@
         "fuel": "COMBUSTIBLE QUÀNTIC",
         "lowFuel": "¡COMBUSTIBLE CRÍTIC!",
         "roleCatcher": "RECOL·LECTOR",
-        "roleSniper": "DESTRUCTOR"
+        "roleSniper": "DESTRUCTOR",
+        "entryFee": "CUOTA D'ENTRADA",
+        "astrocions": "ASTROCIONS"
     },
     "plans": {
         "individual": "Individual",

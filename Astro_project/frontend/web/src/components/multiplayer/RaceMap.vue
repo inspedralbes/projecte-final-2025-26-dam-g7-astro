@@ -242,7 +242,7 @@
     { name: 'Gliese-581', img: '/planet_saturn_futuristic_1778453954991.png' }
   ]
   const gamePool = ['WordConstruction', 'RadioSignal', 'RadarScan', 'SymmetryBreaker', 'SyllableQuest', 'RhymeSquad', 'SpelledRosco']
-  const anomalyPool = ['nebulosa', 'meteorits', 'raig-tempesta', 'raton-mirall', null]
+  const anomalyPool = ['nebulosa', 'meteorits', 'raig-tempesta']
 
   const nodes = computed(() => {
     const seed = (multiplayerStore.room?.id || 'BASE') + (multiplayerStore.room?.gameConfig?.seed || '')

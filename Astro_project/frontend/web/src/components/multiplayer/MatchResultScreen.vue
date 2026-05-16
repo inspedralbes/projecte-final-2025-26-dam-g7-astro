@@ -4,7 +4,7 @@
     <div class="stars-bg" />
 
     <!-- Icono principal -->
-    <div class="result-icon-wrapper mb-6">
+    <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="result-icon-wrapper mb-6">
       <v-icon
         class="result-icon"
         :color="isWin ? 'amber' : (isTie ? 'cyan-accent-2' : 'red-lighten-1')"
@@ -14,16 +14,21 @@
     </div>
 
     <!-- Título -->
-    <h1 class="result-title mb-2 italic glow-text" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-      {{ resultMainTitle }}
+    <h1 v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'" class="result-title mb-8 italic glow-text text-amber">
+      CLASSIFICACIÓ FINAL DEL TORNEIG
     </h1>
+    <template v-else>
+      <h1 class="result-title mb-2 italic glow-text" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
+        {{ resultMainTitle }}
+      </h1>
 
-    <div v-if="winner && winner.startsWith('team-')" class="team-winner-banner mb-8 pa-4 rounded-pill">
-      <v-icon icon="mdi-account-group" class="mr-2" />
-      <span class="text-h4 font-weight-black text-uppercase">{{ $t('multiplayerResult.team') }} {{ winner.split('-')[1] }} {{ $t('multiplayerResult.winsTheMatch') || 'GUANYA LA PARTIDA' }}</span>
-    </div>
+      <div v-if="winner && winner.startsWith('team-')" class="team-winner-banner mb-8 pa-4 rounded-pill">
+        <v-icon icon="mdi-account-group" class="mr-2" />
+        <span class="text-h4 font-weight-black text-uppercase">{{ $t('multiplayerResult.team') }} {{ winner.split('-')[1] }} {{ $t('multiplayerResult.winsTheMatch') || 'GUANYA LA PARTIDA' }}</span>
+      </div>
+    </template>
 
-    <p class="text-h5 text-grey-lighten-2 mb-10 text-center px-4 max-width-800">
+    <p v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="text-h5 text-grey-lighten-2 mb-10 text-center px-4 max-width-800">
       <span v-if="isWin" class="text-amber-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.winQuote') || '¡Has dominat la galàxia amb honor!' }}</span>
       <span v-else-if="isTie" class="text-cyan-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.tieQuote') || 'Un equilibri perfecte de forces.' }}</span>
       <span v-else class="text-red-lighten-3 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.defeatQuote') || 'La derrota és només un pas més cap al coneixement.' }}</span>
@@ -31,7 +36,7 @@
     </p>
 
     <!-- GRÀFICA DE PUNTUACIÓ (Line Chart) -->
-    <div v-if="chartData.length > 0" class="score-chart-container mb-12 w-100 max-width-800">
+    <div v-if="chartData.length > 0 && multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="score-chart-container mb-12 w-100 max-width-800">
       <div class="text-overline text-cyan-accent-2 mb-4 text-center tracking-widest">TELEMETRIA DE RENDIMENT HISTÒRIC</div>
       <div class="chart-wrapper pa-6 rounded-xl border-cyan bg-black-opacity-40">
         <svg :viewBox="`0 0 ${chartWidth || 800} ${chartHeight || 300}`" class="score-svg" preserveAspectRatio="none">
@@ -63,8 +68,87 @@
       </div>
     </div>
 
-    <!-- Marcador final -->
-    <div class="score-board d-flex align-center mb-12">
+    <!-- PODIO ESTILO KAHOOT (Solo en modo Torneo) -->
+    <div v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'" class="tournament-podium-container w-100 mb-12">
+      <div class="podium-wrapper">
+        
+        <!-- 2º PUESTO (Plata) -->
+        <div class="podium-step-wrapper rank-2">
+          <div class="podium-player">
+            <v-avatar size="80" class="podium-avatar border-silver">
+              <v-img v-if="tournamentRankings[1]" :src="getPlayerAvatar(tournamentRankings[1].name)" />
+              <v-icon v-else icon="mdi-account-question" color="grey" />
+            </v-avatar>
+            <div class="podium-name silver-text">{{ tournamentRankings[1]?.name || '---' }}</div>
+          </div>
+          <div class="podium-block step-silver">
+            <div class="rank-number">2</div>
+            <div class="podium-score">{{ tournamentRankings[1]?.score || 0 }} pts</div>
+            <div v-if="tournamentRankings[1]?.prize" class="podium-prize text-cyan-accent-2 font-weight-black mt-1">
+               +{{ tournamentRankings[1].prize }} <v-icon icon="mdi-star" size="14" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 1er PUESTO (Oro) -->
+        <div class="podium-step-wrapper rank-1">
+          <div class="podium-player">
+            <div class="crown-wrapper"><v-icon icon="mdi-crown" color="amber" size="40" class="crown-icon" /></div>
+            <v-avatar size="110" class="podium-avatar border-gold winner-glow">
+              <v-img v-if="tournamentRankings[0]" :src="getPlayerAvatar(tournamentRankings[0].name)" />
+              <v-icon v-else icon="mdi-account-question" color="grey" />
+            </v-avatar>
+            <div class="podium-name gold-text">{{ tournamentRankings[0]?.name || '---' }}</div>
+          </div>
+          <div class="podium-block step-gold">
+            <div class="rank-number">1</div>
+            <div class="podium-score">{{ tournamentRankings[0]?.score || 0 }} pts</div>
+            <div v-if="tournamentRankings[0]?.prize" class="podium-prize text-amber-accent-2 font-weight-black mt-1">
+               +{{ tournamentRankings[0].prize }} <v-icon icon="mdi-star" size="14" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3er PUESTO (Bronce) -->
+        <div class="podium-step-wrapper rank-3">
+          <div class="podium-player">
+            <v-avatar size="70" class="podium-avatar border-bronze">
+              <v-img v-if="tournamentRankings[2]" :src="getPlayerAvatar(tournamentRankings[2].name)" />
+              <v-icon v-else icon="mdi-account-question" color="grey" />
+            </v-avatar>
+            <div class="podium-name bronze-text">{{ tournamentRankings[2]?.name || '---' }}</div>
+          </div>
+          <div class="podium-block step-bronze">
+            <div class="rank-number">3</div>
+            <div class="podium-score">{{ tournamentRankings[2]?.score || 0 }} pts</div>
+            <div v-if="tournamentRankings[2]?.prize" class="podium-prize text-orange-accent-2 font-weight-black mt-1">
+               +{{ tournamentRankings[2].prize }} <v-icon icon="mdi-star" size="14" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CLASIFICACIÓN COMPLETA (Para más de 3 jugadores) -->
+    <div v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' && tournamentStandings.length > 3" class="full-classification-section w-100 max-width-600 mb-12">
+      <div class="text-overline text-grey-darken-1 mb-4 text-center">Clasificació Completa</div>
+      <v-list class="bg-transparent" theme="dark">
+        <v-list-item v-for="p in tournamentStandings.slice(3)" :key="p.name" class="classification-item px-4 py-2 mb-2 rounded-lg">
+          <template v-slot:prepend>
+            <div class="rank-badge mr-4">{{ p.rank }}</div>
+            <v-avatar size="40" class="mr-3 border-cyan-light"><v-img :src="getPlayerAvatar(p.name)" /></v-avatar>
+          </template>
+          <v-list-item-title class="font-weight-bold text-white">{{ p.name }}</v-list-item-title>
+          <template v-slot:append>
+            <div class="text-h6 font-weight-black text-cyan-accent-2">{{ p.score }} pts</div>
+          </template>
+        </v-list-item>
+      </v-list>
+    </div>
+
+    <!-- Marcador final (Solo modo normal/duelo) -->
+    <div v-else class="score-board d-flex align-center mb-12">
       <!-- TÚ -->
       <div class="player-result text-center" :class="{ 'winner-glow': isWin }">
         <v-avatar class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'" size="80">
@@ -159,7 +243,7 @@
     </div>
 
     <!-- Historial de rondas -->
-    <div v-if="multiplayerStore.room?.gameConfig?.roundHistory?.length" class="round-history-section w-100 max-width-600 mb-8">
+    <div v-if="multiplayerStore.room?.gameConfig?.roundHistory?.length && multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="round-history-section w-100 max-width-600 mb-8">
       <div class="text-overline text-grey-darken-1 mb-4 text-center">{{ $t('multiplayerResult.missionHistory') }}</div>
       <v-row dense justify="center">
         <v-col v-for="h in multiplayerStore.room?.gameConfig?.roundHistory" :key="h.round" cols="12">
@@ -180,7 +264,7 @@
                   variant="flat"
                 >{{ $t('multiplayerResult.victory') }}</v-chip>
                 <v-chip
-                  v-else-if="h.winner === opponentName"
+                  v-else-if="h.winner === (tournamentRankings[0] ? tournamentRankings[0].name : opponentName)"
                   class="font-weight-black"
                   color="error"
                   density="compact"
@@ -196,7 +280,9 @@
                   variant="tonal"
                 >{{ $t('multiplayerResult.tie') }}</v-chip>
               </div>
+              <div v-if="!multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'">
                 {{ (h.currentScores && h.currentScores[myName]) || 0 }} - {{ (h.currentScores && h.currentScores[opponentName]) || 0 }}
+              </div>
             </div>
           </v-card>
         </v-col>
@@ -341,6 +427,62 @@
     if (props.isTie || !props.winner) return false
     // Si el ganador es mi nombre o mi equipo
     return props.winner === myName.value || props.winner === myTeam.value
+  })
+
+  // Lógica de Ranking para el Podio
+  const tournamentRankings = computed(() => {
+    if (multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT') return []
+    
+    const tournament = multiplayerStore.room.gameConfig.tournament
+    const allMatches = tournament.brackets || []
+    
+    // Identificar la gran final (el último match del torneo)
+    const finalMatch = allMatches.length > 0 ? allMatches[allMatches.length - 1] : null
+    let first = null, second = null
+    
+    if (finalMatch && (finalMatch.status === 'FINISHED' || multiplayerStore.room.status === 'MATCH_FINISHED')) {
+      first = finalMatch.winner
+      if (first) {
+        second = (finalMatch.winner === finalMatch.p1) ? finalMatch.p2 : finalMatch.p1
+      }
+    }
+
+    // 3er puesto: Los perdedores de la ronda anterior (semifinales)
+    // O simplemente los que tengan más puntuación y no sean 1º ni 2º
+    const scores = multiplayerStore.room.gameConfig.scores || {}
+    const players = (multiplayerStore.room.players || []).map(p => typeof p === 'string' ? p : p.username)
+    
+    const sortedPlayers = [...players].sort((a, b) => (scores[b] || 0) - (scores[a] || 0))
+    
+    // Si no tenemos clara la final, usamos el top de scores
+    if (!first && sortedPlayers.length > 0) first = sortedPlayers[0]
+    if (!second && sortedPlayers.length > 1) second = sortedPlayers[1]
+    
+    const third = sortedPlayers.find(p => p !== first && p !== second)
+
+    const buyIn = multiplayerStore.room?.gameConfig?.buyIn || 0
+    const totalPool = buyIn * (multiplayerStore.room?.players?.length || 0)
+
+    const ranks = []
+    if (first) ranks.push({ name: first, score: scores[first] || 0, prize: Math.floor(totalPool * 0.6) })
+    if (second) ranks.push({ name: second, score: scores[second] || 0, prize: Math.floor(totalPool * 0.3) })
+    if (third) ranks.push({ name: third, score: scores[third] || 0, prize: Math.floor(totalPool * 0.1) })
+    
+    return ranks
+  })
+
+  const tournamentStandings = computed(() => {
+    if (multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT') return []
+    const scores = multiplayerStore.room.gameConfig.scores || {}
+    const players = (multiplayerStore.room.players || []).map(p => typeof p === 'string' ? p : p.username)
+    
+    return [...players]
+      .sort((a, b) => (scores[b] || 0) - (scores[a] || 0))
+      .map((name, index) => ({
+        rank: index + 1,
+        name,
+        score: scores[name] || 0
+      }))
   })
 
   const hasMeReturned = computed(() => multiplayerStore.returnedPlayers.includes(myName.value))
@@ -546,4 +688,144 @@
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
+  /* --- PODIUM STYLES --- */
+  .tournament-podium-container {
+    perspective: 1000px;
+    margin-top: 40px;
+  }
+  .podium-wrapper {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 20px;
+    height: 450px;
+  }
+  .podium-step-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 180px;
+    animation: slide-up-podium 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+  .rank-1 { animation-delay: 0.6s; z-index: 3; }
+  .rank-2 { animation-delay: 0.3s; z-index: 2; }
+  .rank-3 { animation-delay: 0s; z-index: 1; }
+
+  @keyframes slide-up-podium {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .podium-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  .podium-avatar {
+    background: #0f172a;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .podium-name {
+    margin-top: 10px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .podium-block {
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px 12px 0 0;
+    box-shadow: inset 0 2px 10px rgba(255,255,255,0.1);
+  }
+  .rank-number {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 5px;
+    opacity: 0.8;
+    font-style: italic;
+  }
+  .podium-score {
+    font-size: 0.9rem;
+    font-weight: 700;
+    opacity: 0.9;
+    background: rgba(0,0,0,0.2);
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
+
+  /* Materiales metálicos */
+  .step-gold { 
+    height: 240px; 
+    background: linear-gradient(135deg, #f59e0b 0%, #78350f 100%);
+    border: 2px solid #fbbf24;
+  }
+  .step-silver { 
+    height: 180px; 
+    background: linear-gradient(135deg, #94a3b8 0%, #334155 100%);
+    border: 2px solid #cbd5e1;
+  }
+  .step-bronze { 
+    height: 130px; 
+    background: linear-gradient(135deg, #b45309 0%, #451a03 100%);
+    border: 2px solid #d97706;
+  }
+
+  .gold-text { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+  .silver-text { color: #cbd5e1; text-shadow: 0 0 10px rgba(203, 213, 225, 0.5); }
+  .bronze-text { color: #d97706; text-shadow: 0 0 10px rgba(217, 119, 6, 0.5); }
+
+  .border-gold { border: 4px solid #fbbf24 !important; }
+  .border-silver { border: 4px solid #cbd5e1 !important; }
+  .border-bronze { border: 4px solid #d97706 !important; }
+
+  .crown-wrapper {
+    height: 40px;
+    margin-bottom: -5px;
+    animation: float 3s infinite ease-in-out;
+  }
+  .crown-icon { filter: drop-shadow(0 0 10px #fbbf24); }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .classification-item {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(0, 229, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+  .classification-item:hover {
+    background: rgba(0, 229, 255, 0.05) !important;
+    border-color: rgba(0, 229, 255, 0.3);
+    transform: translateX(5px);
+  }
+  .rank-badge {
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: #00e5ff;
+  }
+  .border-cyan-light {
+    border: 1px solid rgba(0, 229, 255, 0.3);
+  }
+  .max-width-600 {
+    max-width: 600px;
+  }
 </style>

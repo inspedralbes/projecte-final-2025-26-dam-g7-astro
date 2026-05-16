@@ -1,5 +1,5 @@
 <template>
-  <v-container class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" :class="{ 'game-paused': props.isPaused }" fluid style="min-height: 800px">
+  <v-container ref="gameArea" class="d-flex flex-column align-center justify-center game-container w-100 opendyslexic" :class="{ 'game-paused': props.isPaused }" fluid style="min-height: 800px" @mousemove="handleMouseMove">
 
     <v-card
       v-if="!isPlaying && !isGameOver && !isWaitingForOthers"
@@ -100,7 +100,7 @@
         </div>
 
         <div class="hud-right d-flex gap-4 align-center">
-          <div class="arcade-stat time" :class="{ 'critical': timeLeft <= 10 }">
+          <div v-if="!isMultiplayer" class="arcade-stat time" :class="{ 'critical': timeLeft <= 10 }">
             <v-icon icon="mdi-timer-outline" class="mr-2" />
             <span class="value">{{ timeLeft }}s</span>
           </div>
@@ -232,15 +232,23 @@ const props = defineProps({
   isDuel: { type: Boolean, default: false },
   duration: { type: Number, default: 60 },
   isPaused: { type: Boolean, default: false },
+  isSpectator: { type: Boolean, default: false },
+  spectatedPlayer: { type: String, default: null },
 })
 
 const subRole = computed(() => {
   if (props.isDuel || props.isRace) return 'catcher'
   return multiplayerStore.subRole || 'catcher'
 })
-const isHost = computed(() => {
-  const host = multiplayerStore.room?.host
-  return (typeof host === 'object' ? host.username || host.user : host) === astroStore.user
+const isAuthority = computed(() => {
+  if (props.isSpectator) return false
+  if (!props.isMultiplayer) return true
+  const hostName = (typeof multiplayerStore.room?.host === 'object' ? multiplayerStore.room?.host?.username || multiplayerStore.room?.host?.user : multiplayerStore.room?.host)
+  if (hostName === astroStore.user) return true
+  const modality = multiplayerStore.room?.gameConfig?.modality
+  const mode = multiplayerStore.room?.gameConfig?.mode
+  if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
+  return false
 })
 const anyRivalAlive = computed(() => {
   if (!props.isMultiplayer) return true
@@ -267,6 +275,33 @@ const isTurbo = ref(false)
 const showTimeBonus = ref(false)
 const showFeedback = ref(false)
 const feedbackType = ref('success')
+
+// --- MULTIJUGADOR: SEGUIMIENTO DE RATÓN Y SYNC ---
+let lastMouseSync = 0
+const gameArea = ref(null)
+function handleMouseMove(e) {
+  if (!isPlaying.value || props.isSpectator || !gameArea.value) return
+  const rect = gameArea.value.getBoundingClientRect()
+  const x = ((e.clientX - rect.left) / rect.width) * 100
+  const y = ((e.clientY - rect.top) / rect.height) * 100
+
+  const now = Date.now()
+  if (props.isMultiplayer && now - lastMouseSync > 50) {
+    lastMouseSync = now
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    
+    // Sync periódico para espectadores
+    if (isAuthority.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        score: score.value,
+        lives: lives.value,
+        timeLeft: timeLeft.value,
+        target: currentTarget.value
+      })
+    }
+  }
+}
 
 const sounds = {
   success: '/assets/sounds/success.mp3',
@@ -297,10 +332,20 @@ let currentSpeed = 5
 let bonusTimeout = null
 
 function handleStartClick() {
-  if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+  if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
     multiplayerStore.sendGameAction({ type: 'RHYME_START' })
   }
   startGame()
+  
+  if (props.isMultiplayer && isAuthority.value && (props.isDuel || props.isRace)) {
+    multiplayerStore.sendGameAction({
+      type: 'SPECTATOR_SYNC',
+      target: currentTarget.value,
+      score: score.value,
+      lives: lives.value,
+      timeLeft: timeLeft.value
+    })
+  }
 }
 
 function startGame() {
@@ -319,9 +364,9 @@ function startGame() {
   currentSpawnRate = 1200
   currentSpeed = 5
 
-  if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+  if (!props.isMultiplayer || isAuthority.value) {
     if (!currentTarget.value) pickNewTarget()
-    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+    if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
       multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
     }
     if (gameLoopInterval) clearInterval(gameLoopInterval)
@@ -331,24 +376,28 @@ function startGame() {
   let lastTick = Date.now()
   timerInterval = setInterval(() => {
     if (!isPlaying.value || props.isPaused || isWaitingForOthers.value) return
-    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+    if (isAuthority.value) {
       const now = Date.now()
       const delta = Math.floor((now - lastTick) / 1000)
       if (delta >= 1) {
-        timeLeft.value = Math.max(0, timeLeft.value - delta)
-        lastTick += delta * 1000
-        if (props.isMultiplayer) {
-          if (isHost.value || props.isDuel || props.isRace) {
-            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-          }
-          if (props.isDuel || props.isRace) {
-            multiplayerStore.timeLeft = timeLeft.value
-          }
+        lastTick = now
+        if (isAuthority.value) {
+          timeLeft.value = Math.max(0, timeLeft.value - Math.floor(delta))
+          multiplayerStore.timeLeft = timeLeft.value
+          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          
+          multiplayerStore.sendGameAction({
+            type: 'SPECTATOR_SYNC',
+            target: currentTarget.value,
+            score: score.value,
+            lives: lives.value,
+            timeLeft: timeLeft.value
+          })
         }
       }
       if (timeLeft.value <= 0) {
         timeLeft.value = 0
-        if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+        if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
           multiplayerStore.sendGameAction({ type: 'RHYME_TIME_UP' })
         }
         endGame()
@@ -399,7 +448,6 @@ function gameTick() {
     activeWords.value.splice(outIndices[i], 1)
   }
 
-  // Aumentar dificultad gradualmente
   if (score.value > 0 && score.value % 500 === 0) {
     currentSpeed = Math.min(10, currentSpeed + 0.05)
     currentSpawnRate = Math.max(500, currentSpawnRate - 10)
@@ -407,8 +455,7 @@ function gameTick() {
 }
 
 function spawnWord() {
-  if (!isPlaying.value) return
-  if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace) return
+  if (!isPlaying.value || !isAuthority.value) return
   
   let wordsToSpawn = 1
   if (combo.value > 3 && Math.random() < 0.35) wordsToSpawn = 2
@@ -433,7 +480,7 @@ function spawnWord() {
       speed: isTurbo.value ? currentSpeed * 1.2 : currentSpeed,
     }
     activeWords.value.push(newWord)
-    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+    if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
       multiplayerStore.sendGameAction({ type: 'RHYME_SPAWN_WORD', word: newWord })
     }
   }
@@ -466,7 +513,7 @@ function checkWord(word) {
     combo.value++
     if (combo.value > maxCombo.value) maxCombo.value = combo.value
     if (combo.value >= 10) isTurbo.value = true
-    if (combo.value % 5 === 0 && (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace)) pickNewTarget()
+    if (combo.value % 5 === 0 && isAuthority.value) pickNewTarget()
     triggerFeedback('success')
     
     if (props.isRace) {
@@ -497,6 +544,15 @@ function checkWord(word) {
 
   if (props.isMultiplayer) {
     multiplayerStore.sendGameAction({ type: 'RHYME_CATCH', id: word.id, status: word.status })
+    if (props.isDuel || props.isRace) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        target: currentTarget.value,
+        score: score.value,
+        lives: lives.value,
+        timeLeft: timeLeft.value
+      })
+    }
   }
 
   setTimeout(() => {
@@ -517,7 +573,7 @@ function takeDamage() {
   if (props.isMultiplayer) {
     if (props.isDuel || props.isRace) {
       lives.value = Math.max(0, lives.value - 1)
-    } else if (isHost.value) {
+    } else if (isAuthority.value) {
       lives.value = Math.max(0, lives.value - 1)
       multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
     } else {
@@ -544,11 +600,8 @@ function endGame(silent = false) {
   if (props.isMultiplayer && !silent) {
     isWaitingForOthers.value = true
     multiplayerStore.submitRoundResult()
-  } else if (props.isRace || silent || !props.isMultiplayer) {
-    emit('game-over', score.value)
-  } else {
-    isGameOver.value = true
   }
+  emit('game-over', score.value)
 }
 
 function returnToMenu() {
@@ -562,7 +615,12 @@ function getWordStatusClass(status) {
 }
 
 onMounted(() => {
-  if (props.isMultiplayer) {
+  if (props.isSpectator && props.spectatedPlayer) {
+    const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer]
+    if (lastSync && (lastSync.type === 'SPECTATOR_SYNC' || lastSync.type === 'RHYME_TARGET_SYNC')) {
+      applySpectatorSync(lastSync)
+    }
+  } else if (props.isMultiplayer) {
     if (!isHost.value) {
       multiplayerStore.sendGameAction({ type: 'REQUEST_RHYME_SYNC' })
     }
@@ -574,12 +632,25 @@ onMounted(() => {
 
     setTimeout(() => {
       if (!isPlaying.value) {
-        if (isHost.value || props.isDuel || props.isRace) handleStartClick()
+        if (isAuthority.value) handleStartClick()
         else startGame()
       }
     }, 3000)
   }
 })
+
+function applySpectatorSync(data) {
+  if (!data) return
+  if (data.target) currentTarget.value = data.target
+  if (data.score !== undefined) score.value = data.score
+  if (data.lives !== undefined) lives.value = data.lives
+  if (data.timeLeft !== undefined) timeLeft.value = data.timeLeft
+  if (!isPlaying.value) {
+      isPlaying.value = true
+      if (gameLoopInterval) clearInterval(gameLoopInterval)
+      gameLoopInterval = setInterval(gameTick, 16)
+  }
+}
 
 onUnmounted(() => {
   clearInterval(gameLoopInterval)
@@ -591,32 +662,53 @@ watch(() => multiplayerStore.lastMessage, msg => {
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER' && !isGameOver.value && isPlaying.value) {
     endGame(true)
+    return
+  }
+
+  // LÓGICA DE ESPECTADOR
+  if (props.isSpectator) {
+    if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
+      const a = msg.action
+      if (a.type === 'SPECTATOR_SYNC' || a.type === 'RHYME_TARGET_SYNC') applySpectatorSync(a)
+      if (a.type === 'RHYME_SPAWN_WORD') activeWords.value.push(a.word)
+      if (a.type === 'RHYME_CATCH' || a.type === 'RHYME_DESTROY') {
+        const id = a.id
+        const index = activeWords.value.findIndex(w => w.id === id)
+        if (index !== -1) {
+          activeWords.value[index].status = a.status || 'caught'
+          setTimeout(() => {
+            const idx = activeWords.value.findIndex(w => w.id === id)
+            if (idx !== -1) activeWords.value.splice(idx, 1)
+          }, 350)
+        }
+      }
+      if (a.type === 'TIME_SYNC') timeLeft.value = a.timeLeft
+      if (a.type === 'LIVES_SYNC') {
+        lives.value = a.lives
+        if (lives.value <= 0) endGame()
+      }
+    }
+    return
+  }
+
+  // LÓGICA DE JUGADOR NORMAL
+  if (msg.type === 'TIME_ATTACK') {
+    timeLeft.value = Math.max(0, timeLeft.value - 3)
+    triggerFeedback('error')
   }
 
   if (msg.type === 'GAME_ACTION') {
-    if (msg.action?.type === 'SCORE_UPDATE' && msg.from !== astroStore.user) {
-      multiplayerStore.roundScores[msg.from] = msg.action.score
-      return
+    const a = msg.action
+    if (a.type === 'RHYME_START' && !isAuthority.value && !props.isDuel && !props.isRace) startGame()
+    if (a.type === 'RHYME_SPAWN_WORD' && !isAuthority.value && !props.isDuel && !props.isRace) {
+      activeWords.value.push(a.word)
     }
-
-    if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
-      timeLeft.value = msg.action.timeLeft
-      if (timeLeft.value <= 0) endGame()
-    }
-    if (msg.action?.type === 'RHYME_TARGET_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
-      currentTarget.value = msg.action.target
-      if (!isPlaying.value && !isGameOver.value) startGame()
-    }
-    if (msg.action?.type === 'RHYME_START' && !isHost.value && !props.isDuel && !props.isRace) startGame()
-    if (msg.action?.type === 'RHYME_SPAWN_WORD' && !isHost.value && !props.isDuel && !props.isRace) {
-      activeWords.value.push(msg.action.word)
-    }
-    if (msg.action?.type === 'RHYME_CATCH' && !props.isDuel && !props.isRace) {
-      const id = msg.action.id
+    if (a.type === 'RHYME_CATCH' && !props.isDuel && !props.isRace) {
+      const id = a.id
       const index = activeWords.value.findIndex(w => w.id === id)
       if (index !== -1) {
-        activeWords.value[index].status = msg.action.status
-        if (msg.action.status === 'correct' && isHost.value && !props.isDuel && !props.isRace) {
+        activeWords.value[index].status = a.status
+        if (a.status === 'correct' && isAuthority.value) {
           const timeBonus = Math.floor(timeLeft.value / 10)
           score.value += (isTurbo.value ? 20 : 10) + timeBonus
         }
@@ -626,33 +718,36 @@ watch(() => multiplayerStore.lastMessage, msg => {
         }, 350)
       }
     }
-    if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
-      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 2))
-      if (props.isDuel || props.isRace) {
-        multiplayerStore.timeLeft = timeLeft.value
-      }
+    if (a.type === 'RHYME_DESTROY' && !props.isDuel && !props.isRace) {
+      const id = a.id
+      const index = activeWords.value.findIndex(w => w.id === id)
+      if (index !== -1) activeWords.value.splice(index, 1)
+    }
+    if (a.type === 'SABOTAGE' && a.subtype === 'REDUCE_TIME' && msg.from !== astroStore.user) {
+      timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 2))
       if (timeLeft.value <= 0) endGame()
     }
-
-    if (msg.action?.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
-      timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 5))
-      if (props.isDuel || props.isRace) {
-        multiplayerStore.timeLeft = timeLeft.value
-      }
+    if (a.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
+      timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 5))
       if (timeLeft.value <= 0) endGame()
     }
-
-    if (msg.action?.type === 'TAKE_DAMAGE' && isHost.value && !props.isDuel && !props.isRace) takeDamage()
-    if (msg.action?.type === 'LIVES_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
-      lives.value = msg.action.lives
+    if (a.type === 'TAKE_DAMAGE' && isAuthority.value && !props.isDuel && !props.isRace) takeDamage()
+    if (a.type === 'LIVES_SYNC' && !isAuthority.value && !props.isDuel && !props.isRace) {
+      lives.value = a.lives
       if (lives.value <= 0) endGame()
     }
-    if (msg.action?.type === 'RHYME_TIME_UP' && !props.isDuel && !props.isRace) {
-      endGame()
+    if (a.type === 'TIME_SYNC' && !isAuthority.value && !props.isDuel && !props.isRace) {
+      timeLeft.value = a.timeLeft
+      if (timeLeft.value <= 0) endGame()
     }
-    if (msg.action?.type === 'REQUEST_RHYME_SYNC' && isHost.value && !props.isDuel && !props.isRace) {
-      multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
-      multiplayerStore.sendGameAction({ type: 'LIVES_SYNC', lives: lives.value })
+    if (a.type === 'REQUEST_SYNC' && isAuthority.value && isPlaying.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        target: currentTarget.value,
+        score: score.value,
+        lives: lives.value,
+        timeLeft: timeLeft.value
+      })
     }
   }
 }, { immediate: true })

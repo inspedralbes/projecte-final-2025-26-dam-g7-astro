@@ -9,7 +9,7 @@
     />
 
     <transition name="fade-zoom">
-      <div v-if="activeGameComponent || isTransitioning || multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
+      <div v-if="activeGameComponent || isTransitioning || multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' || (multiplayerStore.room?.gameConfig?.mode === 'RACE' && multiplayerStore.room?.status === 'PLAYING') || (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' && multiplayerStore.room?.status === 'PLAYING')" class="game-active-overlay">
         <!-- MODO CARRERA HUD -->
         <RaceHUD
           v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
@@ -39,15 +39,18 @@
 
         <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'RACE' && multiplayerStore.room?.status !== 'TOURNAMENT_BRACKETS'" class="game-hud-container d-flex justify-center align-center">
           <div class="hud-main-bar d-flex align-center px-6">
-            <!-- Jugador local -->
+            <!-- Jugador 1 (Participante 1 o Local) -->
             <div class="hud-item d-flex align-center gap-3">
               <v-avatar class="border-cyan" size="36">
-                <v-img :src="getPlayerAvatar(astroStore.user)" />
+                <v-img :src="getPlayerAvatar(tournamentParticipants ? tournamentParticipants.p1 : astroStore.user)" />
               </v-avatar>
               <div class="hud-text">
-                <div class="hud-name">{{ astroStore.user }}</div>
-                <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(astroStore.selectedTitle) + '.name') }}</div>
-                <div v-if="!isTeammate" class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
+                <div class="hud-name">{{ tournamentParticipants ? tournamentParticipants.p1 : astroStore.user }}</div>
+                <div v-if="astroStore.selectedTitle && !tournamentParticipants" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(astroStore.selectedTitle) + '.name') }}</div>
+                <div v-if="!isTeammate" class="hud-puntos">
+                  {{ multiplayerStore.roundScores[tournamentParticipants ? tournamentParticipants.p1 : astroStore.user] || 0 }}
+                  <span v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[tournamentParticipants ? tournamentParticipants.p1 : astroStore.user] || 0 }})</span>
+                </div>
               </div>
             </div>
 
@@ -63,29 +66,20 @@
                 <v-icon class="mr-1" :icon="multiplayerStore.timeLeft <= 10 ? 'mdi-timer-alert' : 'mdi-timer-outline'" size="small" />
                 {{ Math.ceil(multiplayerStore.timeLeft) }}s
               </div>
-
-              <!-- Notificacions de sabotatge (flotants) -->
-              <transition-group name="floating-score">
-                <div
-                  v-for="notif in activeNotifications"
-                  :key="notif.id"
-                  class="sabotage-notif"
-                  :class="notif.amount > 0 ? 'text-success' : 'text-error'"
-                >
-                  {{ notif.amount > 0 ? '+' : '' }}{{ notif.amount }}s
-                </div>
-              </transition-group>
             </div>
 
-            <!-- Oponente -->
+            <!-- Jugador 2 (Participante 2 o Oponente) -->
             <div class="hud-item d-flex align-center flex-row-reverse gap-3 text-right">
               <v-avatar class="border-cyan" size="36">
-                <v-img :src="getPlayerAvatar(opponentName)" />
+                <v-img :src="getPlayerAvatar(tournamentParticipants ? tournamentParticipants.p2 : opponentName)" />
               </v-avatar>
               <div class="hud-text">
-                <div class="hud-name">{{ opponentName }}</div>
-                <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(opponentTitle) + '.name') }}</div>
-                <div v-if="!isTeammate" class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
+                <div class="hud-name">{{ tournamentParticipants ? tournamentParticipants.p2 : opponentName }}</div>
+                <div v-if="opponentTitle && !tournamentParticipants" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(opponentTitle) + '.name') }}</div>
+                <div v-if="!isTeammate" class="hud-puntos">
+                  {{ multiplayerStore.roundScores[tournamentParticipants ? tournamentParticipants.p2 : opponentName] || 0 }}
+                  <span v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[tournamentParticipants ? tournamentParticipants.p2 : opponentName] || 0 }})</span>
+                </div>
               </div>
             </div>
 
@@ -184,19 +178,70 @@
                     <div class="text-h6 font-weight-black text-white">{{ spectatedPlayer }}</div>
                   </div>
                 </div>
-                <v-btn color="cyan-accent-2" variant="tonal" rounded="pill" @click="spectatedPlayer = null">
+                <!-- Control de espectador: Carrera vs Torneo -->
+                <v-btn 
+                  v-if="multiplayerStore.room?.gameConfig?.mode === 'RACE'" 
+                  color="cyan-accent-2" 
+                  variant="tonal" 
+                  rounded="pill" 
+                  @click="spectatedPlayer = null"
+                >
                   <v-icon start icon="mdi-map-marker-path" />
                   TORNAR AL MAPA
                 </v-btn>
+
+                <!-- Switch players for tournament -->
+                <div v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' && tournamentParticipants" class="d-flex align-center gap-4">
+                  <v-btn 
+                    :variant="spectatedPlayer === tournamentParticipants.p1 ? 'elevated' : 'outlined'" 
+                    :color="spectatedPlayer === tournamentParticipants.p1 ? 'cyan-accent-2' : 'white'"
+                    rounded="pill"
+                    @click="spectatedPlayer = tournamentParticipants.p1"
+                  >
+                    <v-icon start icon="mdi-camera-account" />
+                    {{ tournamentParticipants.p1 }}
+                  </v-btn>
+                  <div class="text-white font-italic opacity-50 font-weight-black">VS</div>
+                  <v-btn 
+                    :variant="spectatedPlayer === tournamentParticipants.p2 ? 'elevated' : 'outlined'" 
+                    :color="spectatedPlayer === tournamentParticipants.p2 ? 'red-accent-2' : 'white'"
+                    rounded="pill"
+                    @click="spectatedPlayer = tournamentParticipants.p2"
+                  >
+                    <v-icon start icon="mdi-camera-account" />
+                    {{ tournamentParticipants.p2 }}
+                  </v-btn>
+                </div>
               </div>
 
-              <component
-                :is="spectatedGameComponent"
-                :is-multiplayer="true"
-                :is-spectator="true"
-                :players-config="multiplayerStore.room?.gameConfig?.teams || []"
-                :room-id="multiplayerStore.room?.id"
-              />
+              <div class="game-wrapper-mp">
+                <component
+                  :is="spectatedGameComponent"
+                  :is-multiplayer="true"
+                  :is-spectator="!!spectatedPlayer"
+                  :spectated-player="spectatedPlayer"
+                  :players-config="multiplayerStore.room?.gameConfig?.teams || []"
+                  :room-id="multiplayerStore.room?.id"
+                />
+                
+                <!-- Cursores para espectadores (ven al jugador observado) -->
+                <div class="remote-cursors-overlay">
+                  <div
+                    v-for="(pos, username) in multiplayerStore.remoteCursors"
+                    :key="username"
+                    class="remote-cursor"
+                    :style="{ 
+                      left: pos.x + '%', 
+                      top: pos.y + '%',
+                      display: (username === spectatedPlayer) ? 'block' : 'none'
+                    }"
+                  >
+                    <div class="cursor-pointer" :class="{ 'is-firing': pos.isFiring }" />
+                    <div class="cursor-label">{{ username }}</div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </transition>
 
@@ -262,24 +307,28 @@
             </div>
           </transition>
 
-          <component
-            :is="activeGameComponent"
-            v-if="activeGameComponent && !isTransitioning"
-            :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
-            :is-multiplayer="true"
-            :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
-            :is-duel="isDuel"
-            :duration="isDuel ? 60 : (multiplayerStore.room?.gameConfig?.duration || 60)"
-            :auto-start="true"
-            :anomaly="currentAnomaly"
-            @game-over="onGameFinished"
-          />
+          <div class="game-wrapper-mp" v-if="activeGameComponent && !isTransitioning">
+            <component
+              :is="activeGameComponent"
+              :key="multiplayerStore.room?.id + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
+              :is-multiplayer="true"
+              :is-race="multiplayerStore.room?.gameConfig?.mode === 'RACE'"
+              :is-duel="isDuel"
+              :duration="isDuel ? 60 : (multiplayerStore.room?.gameConfig?.duration || 60)"
+              :auto-start="true"
+              :anomaly="currentAnomaly"
+              @game-over="onGameFinished"
+            />
+            
+            <!-- Cursores remotos eliminados para jugadores activos por petición del usuario (solo los ve el observador) -->
+          </div>
 
           <!-- ÁRBOL DEL TORNEO -->
           <transition name="fade">
             <TournamentTree
-              v-if="multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' && !activeGameComponent && !isTransitioning"
+              v-if="multiplayerStore.room?.status === 'TOURNAMENT_BRACKETS' && !activeGameComponent && !isTransitioning && !spectatedGameComponent"
               :is-host="isHost"
+              @spectate-match="onTournamentSpectate"
             />
           </transition>
 
@@ -424,601 +473,569 @@
         <p class="text-subtitle-1 text-grey-lighten-1">{{ $t('multiplayerLobby.subtitle') }}</p>
       </div>
 
-      <v-row>
-        <!-- Pantalla Principal de Misión -->
-        <v-col cols="12" md="8">
-          <!-- VISTA: EN UNA SALA ACTIVA -->
-          <v-card v-if="multiplayerStore.room" class="mission-control-panel rounded-xl overflow-hidden d-flex flex-column" elevation="12" style="max-height: 80vh;">
-            <div class="mission-header pa-6 d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon class="mr-4" color="cyan-accent-2" icon="mdi-shield-star" size="36" />
-                <div>
-                  <div class="text-overline text-cyan-accent-2 line-height-1">{{ $t('multiplayerLobby.missionInProgress') }}</div>
-                  <h2 class="text-h4 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.room', { id: multiplayerStore.room.id }) }}</h2>
+      <!-- VISTA: EN UNA SALA ACTIVA -->
+      <div v-if="multiplayerStore.room">
+        <v-row>
+          <!-- Fila 1 - Columna Izquierda: Panel de Control de Misión -->
+          <v-col cols="12" md="8">
+            <v-card class="mission-control-panel rounded-xl overflow-hidden d-flex flex-column" elevation="12" style="max-height: 75vh;">
+              <div class="mission-header pa-6 d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                  <v-icon class="mr-4" color="cyan-accent-2" icon="mdi-shield-star" size="36" />
+                  <div>
+                    <div class="text-overline text-cyan-accent-2 line-height-1">{{ $t('multiplayerLobby.missionInProgress') }}</div>
+                    <h2 class="text-h4 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.room', { id: multiplayerStore.room.id }) }}</h2>
+                  </div>
                 </div>
-              </div>
-              <v-btn
-                class="px-6 font-weight-bold"
-                color="error"
-                rounded="pill"
-                size="small"
-                variant="tonal"
-                @click="multiplayerStore.leaveRoom()"
-              >
-                <v-icon icon="mdi-logout" start />
-                {{ $t('multiplayerLobby.abort') }}
-              </v-btn>
-            </div>
-
-            <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
-              <div class="d-flex align-center mb-8">
-                <h3 class="text-h6 text-white font-weight-bold mr-4">{{ $t('multiplayerLobby.currentCrew') }} (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
-                <v-divider class="flex-grow-1 border-opacity-25" color="cyan-lighten-4" />
-              </div>
-
-              <v-row class="mb-4">
-                <v-col
-                  v-for="player in multiplayerStore.room.players"
-                  :key="getPlayerName(player)"
-                  cols="12"
-                  lg="3"
-                  md="4"
-                  sm="6"
+                <v-btn
+                  class="px-6 font-weight-bold"
+                  color="error"
+                  rounded="pill"
+                  size="small"
+                  variant="tonal"
+                  @click="multiplayerStore.leaveRoom()"
                 >
-                  <v-card 
-                    class="crew-card pa-4 rounded-xl text-center" 
-                    :class="'team-' + (getPlayerTeam(getPlayerName(player)) || 1)"
-                    variant="outlined"
+                  <v-icon icon="mdi-logout" start />
+                  {{ $t('multiplayerLobby.abort') }}
+                </v-btn>
+              </div>
+
+              <div class="pa-8 flex-grow-1 overflow-y-auto custom-scroll">
+                <div class="d-flex align-center mb-8">
+                  <h3 class="text-h6 text-white font-weight-bold mr-4">{{ $t('multiplayerLobby.currentCrew') }} (<span class="text-cyan-accent-2">{{ multiplayerStore.room?.players?.length || 0 }}</span> / {{ multiplayerStore.room?.maxPlayers || 4 }})</h3>
+                  <v-divider class="flex-grow-1 border-opacity-25" color="cyan-lighten-4" />
+                </div>
+
+                <!-- DESCRIPCIÓN DEL MODO ACTIVO -->
+                <div class="active-mode-info mb-8 pa-4 rounded-xl border-light" style="background: rgba(0, 229, 255, 0.05); border-left: 4px solid #00e5ff;">
+                  <div class="text-overline text-cyan-accent-2 font-weight-black mb-1">
+                    {{ $t('multiplayerLobby.missionType') }}: {{ $t('multiplayerLobby.modalities.' + selectedModality) }}
+                  </div>
+                  <div class="text-caption text-white opacity-80">
+                    {{ $t('multiplayerLobby.modeDescriptions.' + selectedModality) }}
+                  </div>
+                </div>
+
+                <v-row class="mb-4">
+                  <v-col
+                    v-for="player in multiplayerStore.room.players"
+                    :key="getPlayerName(player)"
+                    cols="12"
+                    lg="3"
+                    md="4"
+                    sm="6"
                   >
-                    <v-badge
-                      v-if="getPlayerName(player) === multiplayerStore.room.host"
-                      color="amber-accent-2"
-                      icon="mdi-crown"
-                      location="top right"
-                      offset-x="10"
-                      offset-y="10"
-                      overlap
+                    <v-card 
+                      class="crew-card pa-4 rounded-xl text-center" 
+                      :class="'team-' + (getPlayerTeam(getPlayerName(player)) || 1)"
+                      variant="outlined"
                     >
-                      <v-avatar class="mb-3 player-glow-avatar" size="80">
+                      <v-badge
+                        v-if="getPlayerName(player) === multiplayerStore.room.host"
+                        color="amber-accent-2"
+                        icon="mdi-crown"
+                        location="top right"
+                        offset-x="10"
+                        offset-y="10"
+                        overlap
+                      >
+                        <v-avatar class="mb-3 player-glow-avatar" size="80">
+                          <v-img alt="Avatar" cover :src="getPlayerAvatar(getPlayerName(player))" />
+                        </v-avatar>
+                      </v-badge>
+                      <v-avatar v-else class="mb-3 player-glow-avatar" size="80">
                         <v-img alt="Avatar" cover :src="getPlayerAvatar(getPlayerName(player))" />
                       </v-avatar>
-                    </v-badge>
-                    <v-avatar v-else class="mb-3 player-glow-avatar" size="80">
-                      <v-img alt="Avatar" cover :src="getPlayerAvatar(getPlayerName(player))" />
-                    </v-avatar>
 
-                    <div class="text-h6 font-weight-bold text-white mb-1">{{ getPlayerName(player) }}</div>
+                      <div class="text-h6 font-weight-bold text-white mb-1">{{ getPlayerName(player) }}</div>
 
-                    <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
-                      {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ getRankName(player.level) }}
-                    </div>
-
-                    <v-chip
-                      v-if="getPlayerName(player) === multiplayerStore.room.host"
-                      class="text-black font-weight-black px-3 mb-2"
-                      color="amber-accent-2"
-                      size="x-small"
-                      variant="flat"
-                    >
-                      {{ $t('multiplayerLobby.commander') }}
-                    </v-chip>
-                    <v-chip
-                      v-else
-                      class="font-weight-bold px-3 mb-2"
-                      color="cyan-accent-1"
-                      size="x-small"
-                      variant="tonal"
-                    >
-                      {{ $t('multiplayerLobby.crewmate') }}
-                    </v-chip>
-
-                    <!-- Selector de Equipo con Flechas (Oculto en Carrera, 1vs1 y Torneo) -->
-                    <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
-                      <v-btn
-                        icon="mdi-chevron-left"
-                        variant="text"
-                        density="compact"
-                        size="small"
-                        :disabled="!isHost"
-                        :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
-                        @click="prevTeam(getPlayerName(player))"
-                      />
-                      
-                      <div class="team-label-box px-4 py-1 rounded-pill" :class="'bg-' + getTeamColor(getPlayerTeam(getPlayerName(player)))">
-                        <span class="text-caption font-weight-black text-black">
-                          {{ getSquadName(getPlayerTeam(getPlayerName(player))) }}
-                        </span>
+                      <div v-if="player.level" class="text-caption text-cyan-accent-1 mb-2 font-weight-bold">
+                        {{ $t('multiplayerLobby.level') }} {{ player.level }} · {{ getRankName(player.level) }}
                       </div>
 
-                      <v-btn
-                        icon="mdi-chevron-right"
-                        variant="text"
-                        density="compact"
-                        size="small"
-                        :disabled="!isHost"
-                        :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
-                        @click="cycleTeam(getPlayerName(player))"
-                      />
-                    </div>
-                  </v-card>
-                </v-col>
+                      <v-chip
+                        v-if="getPlayerName(player) === multiplayerStore.room.host"
+                        class="text-black font-weight-black px-3 mb-2"
+                        color="amber-accent-2"
+                        size="x-small"
+                        variant="flat"
+                      >
+                        {{ $t('multiplayerLobby.commander') }}
+                      </v-chip>
+                      <v-chip
+                        v-else
+                        class="font-weight-bold px-3 mb-2"
+                        color="cyan-accent-1"
+                        size="x-small"
+                        variant="tonal"
+                      >
+                        {{ $t('multiplayerLobby.crewmate') }}
+                      </v-chip>
 
-                <!-- Huecos Vacíos -->
-                <v-col
-                  v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room.players?.length || 0))"
-                  :key="'empty-' + n"
-                  cols="12"
-                  lg="3"
-                  md="4"
-                  sm="6"
-                >
-                  <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100 border-dashed" min-height="180" variant="outlined">
-                    <v-icon class="mb-2" color="grey-darken-1" icon="mdi-account-plus-outline" size="32" />
-                    <div class="text-body-2 text-grey-darken-1">{{ $t('multiplayerLobby.waiting') }}</div>
+                      <!-- Selector de Equipo -->
+                      <div v-if="selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="mt-4 team-arrow-selector d-flex align-center justify-center gap-2">
+                        <v-btn
+                          icon="mdi-chevron-left"
+                          variant="text"
+                          density="compact"
+                          size="small"
+                          :disabled="!isHost"
+                          :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
+                          @click="prevTeam(getPlayerName(player))"
+                        />
+                        <div class="team-label-box px-4 py-1 rounded-pill" :class="'bg-' + getTeamColor(getPlayerTeam(getPlayerName(player)))">
+                          <span class="text-caption font-weight-black text-black">
+                            {{ getSquadName(getPlayerTeam(getPlayerName(player))) }}
+                          </span>
+                        </div>
+                        <v-btn
+                          icon="mdi-chevron-right"
+                          variant="text"
+                          density="compact"
+                          size="small"
+                          :disabled="!isHost"
+                          :color="getTeamColor(getPlayerTeam(getPlayerName(player)))"
+                          @click="cycleTeam(getPlayerName(player))"
+                        />
+                      </div>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Huecos Vacíos -->
+                  <v-col
+                    v-for="n in ((multiplayerStore.room?.maxPlayers || 4) - (multiplayerStore.room.players?.length || 0))"
+                    :key="'empty-' + n"
+                    cols="12"
+                    lg="3"
+                    md="4"
+                    sm="6"
+                  >
+                    <v-card class="crew-card-empty pa-4 rounded-xl d-flex flex-column align-center justify-center h-100 border-dashed" min-height="180" variant="outlined">
+                      <v-icon class="mb-2" color="grey-darken-1" icon="mdi-account-plus-outline" size="32" />
+                      <div class="text-body-2 text-grey-darken-1">{{ $t('multiplayerLobby.waiting') }}</div>
+                    </v-card>
+                  </v-col>
+                </v-row>
+
+                <div class="mt-12 d-flex flex-column align-center">
+                  <div v-if="selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2" class="mb-4 text-orange-accent-2 font-weight-bold d-flex align-center gap-2">
+                    <v-icon icon="mdi-alert-circle-outline" />
+                    <span>EL MODO DUELO REQUIERE EXACTAMENTE 2 PILOTOS</span>
+                  </div>
+                  
+                  <v-btn
+                    v-if="isHost"
+                    class="start-mission-btn rounded-pill px-12 font-weight-black"
+                    color="orange-accent-3"
+                    :disabled="multiplayerStore.room?.status !== 'LOBBY' || ((multiplayerStore.room?.players?.length || 0) < 2) || (selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2) || !allPlayersHaveTeam"
+                    elevation="12"
+                    size="x-large"
+                    @click="startMatch"
+                  >
+                    {{ $t('multiplayerLobby.launchNow') }}
+                  </v-btn>
+                  <div v-else class="waiting-broadcast d-flex align-center">
+                    <v-progress-circular class="mr-3" color="amber-accent-2" indeterminate size="20" width="2" />
+                    <span class="text-amber-accent-2 font-weight-bold">{{ $t('multiplayerLobby.waitingOrders') }}</span>
+                  </div>
+                </div>
+              </div>
+            </v-card>
+
+            <!-- MANUAL DE OPERACIONES (EXTENSO) movido aquí -->
+            <v-card class="rules-panel-modern pa-8 rounded-xl mt-6" elevation="12" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(0, 229, 255, 0.2) !important;">
+              <div class="text-h4 font-weight-black text-white tracking-widest mb-2 text-uppercase text-center">MANUAL DE OPERACIONES</div>
+              <div class="text-subtitle-1 text-cyan-accent-1 opacity-70 text-center mb-8">Selecciona un minijuego o modo para ver su manual</div>
+
+              <div class="d-flex flex-column gap-4 mb-8">
+                <!-- MINIJUEGOS -->
+                <div class="d-flex align-center justify-space-between bg-dark-soft pa-4 rounded-xl border-light">
+                  <div class="d-flex align-center">
+                    <v-icon color="cyan-accent-2" size="32" class="mr-4">mdi-gamepad-variant</v-icon>
+                    <div class="text-overline text-cyan-accent-2 font-weight-black">MINIJUEGOS</div>
+                  </div>
+                  <div class="d-flex gap-3">
+                    <v-btn v-for="game in availableGames" :key="game" :class="{ 'game-btn-active-large': selectedGameForRule === game }" class="game-selector-btn-large rounded-xl" icon @click="selectedGameForRule = game">
+                      <v-icon size="32">{{ getGameIcon(game) }}</v-icon>
+                      <v-tooltip activator="parent" location="top">{{ t('games.' + game) }}</v-tooltip>
+                    </v-btn>
+                  </div>
+                </div>
+
+                <!-- MODOS -->
+                <div class="d-flex align-center justify-space-between bg-dark-soft pa-4 rounded-xl border-light">
+                  <div class="d-flex align-center">
+                    <v-icon color="orange-accent-2" size="32" class="mr-4">mdi-strategy</v-icon>
+                    <div class="text-overline text-orange-accent-2 font-weight-black">MODOS DE JUEGO</div>
+                  </div>
+                  <div class="d-flex gap-3">
+                    <v-btn v-for="mode in modalities" :key="mode.id" :class="{ 'game-btn-active-large': selectedGameForRule === mode.id }" class="game-selector-btn-large rounded-xl" icon @click="selectedGameForRule = mode.id">
+                      <v-icon size="32">{{ mode.icon }}</v-icon>
+                      <v-tooltip activator="parent" location="top">{{ mode.name }}</v-tooltip>
+                    </v-btn>
+                  </div>
+                </div>
+              </div>
+
+              <v-divider class="mb-8 border-opacity-25" color="cyan-accent-2" />
+              <div v-if="selectedGameForRule" class="rule-display-extensive animate-fade-in">
+                <v-row>
+                  <v-col cols="12" md="7">
+                    <div class="d-flex align-center mb-6">
+                      <v-icon color="cyan-accent-2" class="mr-4" size="32">{{ isModality(selectedGameForRule) ? getModality(selectedGameForRule).icon : 'mdi-rocket-launch-outline' }}</v-icon>
+                      <h2 class="text-h3 font-weight-black text-white">{{ isModality(selectedGameForRule) ? getModality(selectedGameForRule).name : t('multiplayerLobby.gameRules.' + selectedGameForRule + '.name') }}</h2>
+                    </div>
+                    <div class="text-h6 text-grey-lighten-2 mb-8 line-height-1-8 font-weight-medium">{{ isModality(selectedGameForRule) ? getModality(selectedGameForRule).desc : t('multiplayerLobby.gameRules.' + selectedGameForRule + '.rules') }}</div>
+                    <div class="tip-box-large pa-6 rounded-xl d-flex align-center">
+                      <v-icon color="amber-accent-2" size="40" class="mr-6">mdi-lightbulb-on</v-icon>
+                      <div>
+                        <div class="text-h6 font-weight-black text-amber-accent-2 mb-2">CONSEJO TÁCTICO</div>
+                        <div class="text-subtitle-1 text-white font-weight-bold">"{{ isModality(selectedGameForRule) ? getModality(selectedGameForRule).tip : t('multiplayerLobby.gameRules.' + selectedGameForRule + '.tip') }}"</div>
+                      </div>
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="5" class="d-flex align-center justify-center">
+                    <div class="mission-visual-box rounded-xl pa-8 text-center border-light">
+                      <v-icon color="cyan-accent-2" size="120" class="mb-4 opacity-50">{{ isModality(selectedGameForRule) ? getModality(selectedGameForRule).icon : getGameIcon(selectedGameForRule) }}</v-icon>
+                      <div class="text-overline text-cyan-accent-2 font-weight-black">MÓDULO OPERATIVO</div>
+                      <div class="text-h5 text-white font-weight-bold">OPERATIVO AL 100%</div>
+                    </div>
+                  </v-col>
+                </v-row>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- Fila 1 - Columna Derecha: Configuración y Reclutamiento -->
+          <v-col cols="12" md="4">
+            <!-- SELECCIONA MODALITAT -->
+            <v-card class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
+              <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
+                <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-gamepad-variant" />
+                {{ $t('multiplayerLobby.selectModality') }}
+              </h3>
+
+              <div v-if="isHost" class="mb-6 pa-4 rounded-xl bg-dark-soft border-light">
+                <div class="mb-4">
+                  <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest text-none">Máximo de pilotos</div>
+                  <v-select
+                    v-model="maxPlayers"
+                    bg-color="rgba(255,255,255,0.05)"
+                    class="player-limit-select-mini"
+                    density="compact"
+                    hide-details
+                    :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
+                    prepend-inner-icon="mdi-account-group"
+                    rounded="pill"
+                    variant="solo-filled"
+                  >
+                    <template #selection="{ item }">{{ item.title }} pilotos</template>
+                  </v-select>
+                </div>
+                <div class="mb-4">
+                  <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest text-none">Objetivo de rondas</div>
+                  <v-select
+                    v-model="pointsToWin"
+                    bg-color="rgba(255,255,255,0.05)"
+                    class="points-limit-select-mini"
+                    density="compact"
+                    hide-details
+                    :items="[1, 2, 3, 4, 5]"
+                    prepend-inner-icon="mdi-trophy-outline"
+                    rounded="pill"
+                    variant="solo-filled"
+                  >
+                    <template #selection="{ item }">{{ item.title }} rondas</template>
+                  </v-select>
+                </div>
+
+                <div v-if="selectedModality === 'torneig'" class="mb-4">
+                  <div class="text-caption text-yellow-accent-4 font-weight-bold mb-2 tracking-widest text-none">Cuota de entrada</div>
+                  <v-text-field
+                    v-model.number="tournamentBuyIn"
+                    bg-color="rgba(255,255,255,0.05)"
+                    class="buyin-select-mini"
+                    density="compact"
+                    hide-details
+                    type="number"
+                    min="0"
+                    step="100"
+                    prepend-inner-icon="mdi-database-outline"
+                    rounded="pill"
+                    variant="solo-filled"
+                    :suffix="$t('multiplayerLobby.astrocions')"
+                    @update:model-value="updateRoomConfig"
+                  />
+                </div>
+                
+                <!-- Personalización de Mapa (Solo en Carrera) -->
+                <div v-if="selectedModality === 'carrera'" class="mt-4 pt-4 border-top-light">
+                  <div class="text-overline text-cyan-accent-2 font-weight-bold mb-4">AJUSTES DEL MAPA</div>
+                  <v-row dense>
+                    <v-col cols="6" class="mb-4">
+                      <div class="text-7px text-yellow-accent-4 font-weight-bold mb-1">MINAS DE ORO: {{ numGoldMines }}</div>
+                      <v-slider v-model="numGoldMines" color="yellow-accent-4" density="compact" hide-details max="5" min="0" step="1" thumb-size="12" @update:model-value="updateRoomConfig" />
+                    </v-col>
+                    <v-col cols="6" class="mb-4">
+                      <div class="text-7px text-red-accent-2 font-weight-bold mb-1">ARENAS: {{ numBattles }}</div>
+                      <v-slider v-model="numBattles" color="red-accent-2" density="compact" hide-details max="6" min="0" step="1" thumb-size="12" @update:model-value="updateRoomConfig" />
+                    </v-col>
+                    <v-col cols="6" class="mb-2">
+                      <div class="text-7px text-cyan-accent-2 font-weight-bold mb-1">GASOLINERAS: {{ numFuelStations }}</div>
+                      <v-slider v-model="numFuelStations" color="cyan-accent-2" density="compact" hide-details max="5" min="1" step="1" thumb-size="12" @update:model-value="updateRoomConfig" />
+                    </v-col>
+                    <v-col cols="6" class="mb-2">
+                      <div class="text-7px text-purple-accent-1 font-weight-bold mb-1">MISTERIOS: {{ numMysteryNodes }}</div>
+                      <v-slider v-model="numMysteryNodes" color="purple-accent-1" density="compact" hide-details max="8" min="0" step="1" thumb-size="12" @update:model-value="updateRoomConfig" />
+                    </v-col>
+                  </v-row>
+                  
+                  <div class="mt-4 d-flex align-center justify-space-between bg-dark-soft pa-3 rounded-lg border-light">
+                    <div class="text-caption text-white font-weight-bold">Repetir mismo mapa</div>
+                    <v-switch v-model="sharedChallenge" color="cyan-accent-2" density="compact" hide-details inset @update:model-value="updateRoomConfig" />
+                  </div>
+                </div>
+              </div>
+
+              <v-row class="ma-n1">
+                <v-col v-for="mode in modalities" :key="mode.id" :cols="mode.id === 'carrera' || mode.id === 'torneig' ? 12 : 6" class="pa-1">
+                  <v-card
+                    v-ripple="mode.active && isHost"
+                    class="modality-card pa-3 d-flex align-center rounded-lg cursor-pointer transition-all w-100"
+                    :class="{ 
+                      'active-mode': selectedModality === mode.id, 
+                      'disabled-mode': !mode.active,
+                      'is-host': isHost,
+                      'mode-selected-anim': selectedModality === mode.id
+                    }"
+                    variant="flat"
+                    @click="mode.active ? selectModality(mode.id) : null"
+                  >
+                    <v-icon 
+                      class="mr-3 mode-icon" 
+                      :class="{ 'icon-pop': selectedModality === mode.id }"
+                      :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-lighten-1'" 
+                      :icon="mode.icon" 
+                      size="24" 
+                    />
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="text-caption font-weight-black text-uppercase text-truncate" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-lighten-1'">
+                        {{ $te('multiplayerLobby.modalities.' + mode.id) ? $t('multiplayerLobby.modalities.' + mode.id) : mode.name }}
+                      </div>
+                      <v-chip
+                        v-if="!mode.active"
+                        class="mt-1 text-7px"
+                        color="grey-darken-2"
+                        size="x-small"
+                        variant="tonal"
+                      >{{ $t('multiplayerLobby.comingSoon') }}</v-chip>
+                    </div>
                   </v-card>
                 </v-col>
               </v-row>
+            </v-card>
 
-              <div class="mt-12 d-flex flex-column align-center">
-                <div v-if="selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2" class="mb-4 text-orange-accent-2 font-weight-bold d-flex align-center gap-2">
-                  <v-icon icon="mdi-alert-circle-outline" />
-                  <span>EL MODO DUELO REQUIERE EXACTAMENTE 2 PILOTOS</span>
-                </div>
-                <div v-if="isHost && selectedModality !== '1vs1' && selectedModality !== 'carrera' && selectedModality !== 'torneig'" class="team-actions mb-4 d-flex gap-3">
-                  <v-btn
-                    color="cyan-accent-2"
-                    prepend-icon="mdi-dice-5"
-                    rounded="pill"
-                    variant="tonal"
-                    @click="randomizeTeams"
-                  >
-                    {{ $t('multiplayerLobby.randomizeTeams') }}
-                  </v-btn>
-                </div>
-
-                <v-btn
-                  v-if="isHost"
-                  class="start-mission-btn rounded-pill px-12 font-weight-black"
-                  color="orange-accent-3"
-                  :disabled="((multiplayerStore.room?.players?.length || 0) < 2) || (selectedModality === '1vs1' && (multiplayerStore.room?.players?.length || 0) !== 2) || !allPlayersHaveTeam"
-                  elevation="12"
-                  size="x-large"
-                  @click="startMatch"
-                >
-                  {{ $t('multiplayerLobby.launchNow') }}
-                </v-btn>
-                <div v-else class="waiting-broadcast d-flex align-center">
-                  <v-progress-circular
-                    class="mr-3"
-                    color="amber-accent-2"
-                    indeterminate
-                    size="20"
-                    width="2"
-                  />
-                  <span class="text-amber-accent-2 font-weight-bold">{{ $t('multiplayerLobby.waitingOrders') }}</span>
-                </div>
+            <!-- RECLUTAR TRIPULACIÓN -->
+            <v-card class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4">
+              <div class="pa-4 border-bottom-light">
+                <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
+                  <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-account-group" />
+                  {{ $t('multiplayerLobby.recruitCrew') }}
+                </h3>
               </div>
-            </div>
-          </v-card>
-
-          <!-- VISTA: SIN SALA (CREAR O UNIRSE) -->
-          <div v-else>
-            <v-card class="setup-panel pa-6 rounded-xl" elevation="4">
-              <div class="text-center mb-6">
-                <v-icon class="mb-2" color="cyan-accent-2" icon="mdi-orbit" size="48" />
-                <h3 class="text-h5 font-weight-black text-white">{{ $t('multiplayerLobby.prepareExpedition') }}</h3>
-              </div>
-
-              <v-row justify="center">
-                <v-col cols="12" sm="10">
-                  <!-- Sección Crear -->
-                  <div class="setup-section mb-8 pa-4 rounded-xl border-light">
-                    <div class="d-flex align-center justify-space-between mb-4">
-                      <div class="d-flex align-center">
-                        <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-plus-circle-outline" />
-                        <span class="text-subtitle-1 font-weight-bold text-white">{{ $t('multiplayerLobby.newMission') }}</span>
-                      </div>
-                      <v-switch
-                        v-model="isPublic"
-                        class="privacy-switch"
+              <v-list bg-color="transparent" class="pa-0 recruit-list" max-height="400px">
+                <template v-if="friendsList.length > 0">
+                  <v-list-subheader class="text-cyan-accent-2 font-weight-bold text-overline pb-0">{{ $t('multiplayerLobby.friends') }}</v-list-subheader>
+                  <v-list-item v-for="explorer in friendsList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
+                    <template #prepend>
+                      <v-avatar class="mr-3 border-light" size="40">
+                        <v-img cover :src="getAvatarUrl(explorer.avatar, explorer.user)" />
+                      </v-avatar>
+                    </template>
+                    <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                      Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
+                    </v-list-item-subtitle>
+                    <template #append>
+                      <v-btn
                         color="cyan-accent-2"
-                        density="compact"
-                        hide-details
-                        inset
-                        :label="isPublic ? $t('multiplayerLobby.public') : $t('multiplayerLobby.private')"
+                        :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
+                        icon="mdi-bullhorn-outline"
+                        size="small"
+                        variant="text"
+                        @click="multiplayerStore.inviteFriend(explorer.user)"
                       />
-                    </div>
+                    </template>
+                  </v-list-item>
+                </template>
 
-                    <v-btn
-                      block
-                      class="rounded-pill font-weight-bold h-custom-btn text-black shadow-cyan"
-                      color="cyan-accent-2"
-                      size="large"
-                      @click="createRoom"
-                    >
+                <template v-if="otherExplorersList.length > 0">
+                  <v-list-subheader class="text-grey-lighten-1 font-weight-bold text-overline pb-0 mt-2">{{ $t('multiplayerLobby.possibleCrewmates') }}</v-list-subheader>
+                  <v-list-item v-for="explorer in otherExplorersList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
+                    <template #prepend>
+                      <v-avatar class="mr-3 border-light" size="40">
+                        <v-img cover :src="getAvatarUrl(explorer.avatar, explorer.user)" />
+                      </v-avatar>
+                    </template>
+                    <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                      Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
+                    </v-list-item-subtitle>
+                    <template #append>
+                      <v-btn
+                        color="cyan-accent-2"
+                        :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
+                        icon="mdi-bullhorn-outline"
+                        size="small"
+                        variant="text"
+                        @click="multiplayerStore.inviteFriend(explorer.user)"
+                      />
+                    </template>
+                  </v-list-item>
+                </template>
+                
+                <div v-if="friendsList.length === 0 && otherExplorersList.length === 0" class="text-center py-8 opacity-40">
+                  <v-icon size="40" class="mb-2">mdi-account-search-outline</v-icon>
+                  <div class="text-caption">No hi ha exploradors disponibles</div>
+                </div>
+              </v-list>
+            </v-card>
+          </v-col>
+        </v-row>
+
+
+      </div>
+
+      <!-- VISTA: SIN SALA (CREAR O UNIRSE) -->
+      <div v-else>
+        <v-row>
+          <v-col cols="12" md="8">
+            <v-card class="setup-panel pa-8 rounded-xl" elevation="4" style="min-height: 550px;">
+              <div class="text-center mb-10">
+                <v-icon class="mb-4" color="cyan-accent-2" icon="mdi-orbit" size="80" />
+                <h3 class="text-h3 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.prepareExpedition') }}</h3>
+                <p class="text-subtitle-1 text-grey-darken-1 mt-2">Configura els sistemes per al llançament</p>
+              </div>
+
+              <v-row>
+                <v-col cols="12" md="6">
+                  <div class="setup-section pa-6 rounded-xl border-light h-100" style="background: rgba(0, 229, 255, 0.03);">
+                    <div class="d-flex align-center justify-space-between mb-6">
+                      <div class="d-flex align-center">
+                        <v-icon class="mr-3" color="cyan-accent-2" icon="mdi-plus-circle-outline" size="28" />
+                        <span class="text-h6 font-weight-bold text-white">{{ $t('multiplayerLobby.newMission') }}</span>
+                      </div>
+                      <v-switch v-model="isPublic" color="cyan-accent-2" density="compact" hide-details inset :label="isPublic ? $t('multiplayerLobby.public') : $t('multiplayerLobby.private')" />
+                    </div>
+                    <p class="text-caption text-grey-lighten-1 mb-8">Crea un nou sector operatiu per a tu i la teva tripulació.</p>
+                    <v-btn block color="cyan-accent-2" size="x-large" class="rounded-pill font-weight-black text-black action-glow-btn mt-auto" @click="createRoom">
                       {{ $t('multiplayerLobby.startRoom') }}
                     </v-btn>
                   </div>
+                </v-col>
 
-                  <v-divider class="mb-8" color="rgba(255,255,255,0.1)" />
-
-                  <!-- Sección Unirse -->
-                  <div class="setup-section pa-4 rounded-xl border-light">
-                    <div class="d-flex align-center mb-4">
-                      <v-icon class="mr-2" color="amber-accent-2" icon="mdi-key-variant" />
-                      <span class="text-subtitle-1 font-weight-bold text-white">{{ $t('multiplayerLobby.joinByCode') }}</span>
+                <v-col cols="12" md="6">
+                  <div class="setup-section pa-6 rounded-xl border-light h-100" style="background: rgba(255, 160, 0, 0.03);">
+                    <div class="d-flex align-center mb-6">
+                      <v-icon class="mr-3" color="amber-accent-2" icon="mdi-key-variant" size="28" />
+                      <span class="text-h6 font-weight-bold text-white">{{ $t('multiplayerLobby.joinByCode') }}</span>
                     </div>
-                    <v-text-field
-                      v-model="roomCode"
-                      bg-color="rgba(255,255,255,0.05)"
-                      class="room-code-input mb-4"
-                      hide-details
-                      maxlength="6"
-                      :placeholder="$t('multiplayerLobby.codePlaceholder')"
-                      rounded="pill"
-                      variant="solo-filled"
+                    <v-text-field 
+                      v-model="roomCode" 
+                      bg-color="rgba(255,255,255,0.05)" 
+                      class="mb-6 custom-otp-field" 
+                      maxlength="6" 
+                      :placeholder="$t('multiplayerLobby.codePlaceholder')" 
+                      rounded="pill" 
+                      variant="solo-filled" 
+                      flat
                     />
-                    <v-btn
-                      block
-                      class="rounded-pill font-weight-bold text-black h-custom-btn shadow-amber"
-                      color="amber-accent-2"
-                      :disabled="!roomCode || roomCode.length < 6"
-                      size="large"
-                      @click="joinByCode"
-                    >
+                    <v-btn block color="amber-accent-2" :disabled="!roomCode || roomCode.length < 6" size="x-large" class="rounded-pill font-weight-black text-black" @click="joinByCode">
                       {{ $t('multiplayerLobby.dock') }}
                     </v-btn>
                   </div>
                 </v-col>
               </v-row>
             </v-card>
-          </div>
-        </v-col>
+          </v-col>
 
-        <!-- Panel Lateral -->
-        <v-col cols="12" md="4">
-          <!-- SELECCIONA MODALITAT -->
-          <v-card class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
-            <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
-              <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-gamepad-variant" />
-              {{ $t('multiplayerLobby.selectModality') }}
-            </h3>
-
-            <!-- CONFIGURACIÓN DE SALA (Solo Host en Lobby) -->
-            <div v-if="multiplayerStore.room && isHost" class="room-settings-in-lobby mb-6 pa-4 rounded-xl bg-slate-900 border-light">
-              <div class="mb-4">
-                <div class="text-caption text-cyan-accent-2 font-weight-bold mb-2 tracking-widest text-uppercase">{{ $t('multiplayerLobby.maxPlayers') }}</div>
-                <v-select
-                  v-model="maxPlayers"
-                  bg-color="rgba(255,255,255,0.05)"
-                  class="player-limit-select-mini"
-                  density="compact"
-                  hide-details
-                  :items="[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]"
-                  :menu-props="{ maxHeight: '300' }"
-                  prepend-inner-icon="mdi-account-group"
-                  rounded="pill"
-                  variant="solo-filled"
-                >
-                  <template #selection="{ item }">
-                    <span class="text-white font-weight-bold text-caption">{{ item.title }} {{ $t('multiplayerLobby.astronauts') }}</span>
-                  </template>
-                </v-select>
-              </div>
-
-              <div>
-                <div class="text-caption text-orange-accent-2 font-weight-bold mb-2 tracking-widest text-uppercase">{{ $t('multiplayerLobby.roundsCount') }}</div>
-                <v-select
-                  v-model="pointsToWin"
-                  bg-color="rgba(255,255,255,0.05)"
-                  class="points-limit-select-mini mb-4"
-                  density="compact"
-                  hide-details
-                  :items="[1, 2, 3, 4, 5]"
-                  prepend-inner-icon="mdi-trophy-outline"
-                  rounded="pill"
-                  variant="solo-filled"
-                >
-                  <template #selection="{ item }">
-                    <span class="text-white font-weight-bold text-caption">{{ item.title }} {{ $t('multiplayerLobby.rounds') }}</span>
-                  </template>
-                </v-select>
-              </div>
-
-              <div v-if="selectedModality === '1vs1' || selectedModality === 'torneig'" class="mt-4">
-                <v-switch
-                  v-model="sharedChallenge"
-                  color="cyan-accent-2"
-                  density="compact"
-                  hide-details
-                  :label="sharedChallenge ? 'MISMOS RETOS' : 'RETOS ALEATORIOS'"
-                  class="shared-challenge-switch"
-                  @change="updateRoomConfig"
-                >
-                  <template #label>
-                    <span class="text-caption font-weight-bold" :class="sharedChallenge ? 'text-cyan-accent-2' : 'text-grey-lighten-1'">
-                      {{ sharedChallenge ? 'RETO IDÉNTICO' : 'RETO ALEATORIO' }}
-                    </span>
-                  </template>
-                </v-switch>
-              </div>
-            </div>
-
-            <v-row dense>
-              <v-col v-for="mode in modalities" :key="mode.id" cols="6">
-                <v-card
-                  v-ripple="mode.active && isHost"
-                  class="modality-card pa-3 d-flex flex-column align-center justify-center text-center rounded-lg cursor-pointer transition-all"
-                  :class="{ 
-                    'active-mode': selectedModality === mode.id, 
-                    'disabled-mode': !mode.active,
-                    'is-host': isHost,
-                    'mode-selected-anim': selectedModality === mode.id
-                  }"
-                  variant="flat"
-                  @click="mode.active ? selectModality(mode.id) : null"
-                >
-                  <v-icon 
-                    class="mb-2 mode-icon" 
-                    :class="{ 'icon-pop': selectedModality === mode.id }"
-                    :color="selectedModality === mode.id ? 'cyan-accent-2' : 'grey-lighten-1'" 
-                    :icon="mode.icon" 
-                    size="32" 
-                  />
-                  <div class="text-caption font-weight-black line-height-1" :class="selectedModality === mode.id ? 'text-white' : 'text-grey-lighten-1'">
-                    {{ $te('multiplayerLobby.modalities.' + mode.id) ? $t('multiplayerLobby.modalities.' + mode.id) : mode.name }}
-                  </div>
-                  <v-chip
-                    v-if="!mode.active"
-                    class="mt-2 text-7px"
-                    color="grey-darken-2"
-                    size="x-small"
-                    variant="tonal"
-                  >{{ $t('multiplayerLobby.comingSoon') }}</v-chip>
-                </v-card>
-              </v-col>
-            </v-row>
-
-
-
-            <!-- PERSONALITZAR MAPA (Solo Host, Solo Carrera) -->
-            <div v-if="selectedModality === 'carrera' && isHost" class="mt-6">
-              <div class="pa-4 rounded-xl bg-slate-900 border-light-cyan">
-                <div class="text-overline text-cyan-accent-2 font-weight-bold mb-4 tracking-widest d-flex align-center">
-                  <v-icon icon="mdi-tune-variant" size="small" class="mr-2" />
-                  PERSONALITZAR MAPA
-                </div>
-
-                <!-- Mines d'Or -->
-                <div class="mb-4">
-                  <div class="d-flex justify-space-between text-caption text-yellow-accent-4 font-weight-bold mb-1">
-                    <span>MINES D'OR</span>
-                    <span>{{ numGoldMines }}</span>
-                  </div>
-                  <v-slider 
-                    v-model="numGoldMines" 
-                    color="yellow-accent-4" 
-                    density="compact" 
-                    hide-details 
-                    max="5" 
-                    min="0" 
-                    step="1" 
-                    thumb-size="12"
-                    @update:model-value="updateRoomConfig"
-                  />
-                </div>
-
-                <!-- Arenes de Duel -->
-                <div class="mb-4">
-                  <div class="d-flex justify-space-between text-caption text-red-accent-2 font-weight-bold mb-1">
-                    <span>ARENES DE DUEL</span>
-                    <span>{{ numBattles }}</span>
-                  </div>
-                  <v-slider 
-                    v-model="numBattles" 
-                    color="red-accent-2" 
-                    density="compact" 
-                    hide-details 
-                    max="6" 
-                    min="0" 
-                    step="1" 
-                    thumb-size="12"
-                    @update:model-value="updateRoomConfig"
-                  />
-                </div>
-
-                <!-- Estacions Fuel -->
-                <div class="mb-4">
-                  <div class="d-flex justify-space-between text-caption text-orange-accent-2 font-weight-bold mb-1">
-                    <span>ESTACIONS FUEL</span>
-                    <span>{{ numFuelStations }}</span>
-                  </div>
-                  <v-slider 
-                    v-model="numFuelStations" 
-                    color="orange-accent-2" 
-                    density="compact" 
-                    hide-details 
-                    max="5" 
-                    min="1" 
-                    step="1" 
-                    thumb-size="12"
-                    @update:model-value="updateRoomConfig"
-                  />
-                </div>
-
-                <!-- Sectors Desconeguts -->
-                <div>
-                  <div class="d-flex justify-space-between text-caption text-purple-accent-1 font-weight-bold mb-1">
-                    <div class="d-flex align-center">
-                      <v-icon size="14" class="mr-1">mdi-help-circle-outline</v-icon>
-                      <span>SECTORS DESCONEGUTS</span>
-                    </div>
-                    <span>{{ numMysteryNodes }}</span>
-                  </div>
-                  <v-slider 
-                    v-model="numMysteryNodes" 
-                    color="purple-accent-1" 
-                    density="compact" 
-                    hide-details 
-                    max="8" 
-                    min="0" 
-                    step="1" 
-                    thumb-size="12"
-                    @update:model-value="updateRoomConfig"
-                  />
-                </div>
-              </div>
-            </div>
-          </v-card>
-
-          <!-- Invitaciones -->
-          <v-card v-if="multiplayerStore.invitations.length > 0" class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
-            <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
-              <v-icon class="mr-2" color="orange-accent-2" icon="mdi-email-alert" />
-              {{ $t('multiplayerLobby.incomingCalls', { count: multiplayerStore.invitations.length }) }}
-            </h3>
-            <v-list bg-color="transparent">
-              <v-list-item v-for="(inv, index) in multiplayerStore.invitations" :key="index" class="px-2 invitation-item mb-2 rounded-lg">
-                <div class="d-flex align-center w-100">
-                  <div class="flex-grow-1">
-                    <div class="text-body-2 text-white"><span v-html="$t('multiplayerLobby.requestSupport', { user: `<b>${inv.from}</b>` })" /></div>
-                  </div>
-                  <div class="d-flex gap-2">
-                    <v-btn
-                      color="success"
-                      icon="mdi-check"
-                      size="x-small"
-                      variant="flat"
-                      @click="acceptInvitation(inv, index)"
-                    />
-                    <v-btn
-                      color="error"
-                      icon="mdi-close"
-                      size="x-small"
-                      variant="tonal"
-                      @click="rejectInvitation(index)"
-                    />
-                  </div>
-                </div>
-              </v-list-item>
-            </v-list>
-          </v-card>
-
-          <!-- Salas Disponibles (Misiones Públicas) -->
-          <v-card v-if="!multiplayerStore.room" class="side-panel-card rounded-xl pa-0 mb-6 overflow-hidden" elevation="8">
-            <div class="side-panel-header pa-4 d-flex align-center">
-              <v-icon class="mr-3" color="cyan-accent-2" icon="mdi-map-search" />
-              <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.missionNetwork') }}</h3>
-            </div>
-
-            <div class="pa-4">
-              <v-list v-if="multiplayerStore.availableRooms.length > 0" bg-color="transparent" class="pa-0">
-                <v-fade-transition group>
-                  <v-list-item v-for="room in multiplayerStore.availableRooms" :key="room.id" class="px-3 py-4 mb-4 mission-card-v3 rounded-xl">
-                    <div class="d-flex flex-column w-100">
-                      <div class="d-flex align-center justify-space-between mb-3">
-                        <div class="d-flex align-center">
-                          <div class="mission-status-led mr-2" />
-                          <div class="text-body-2 font-weight-black text-white">{{ $t('multiplayerLobby.sector', { id: room.id }) }}</div>
-                        </div>
-                        <v-chip class="rounded-pill font-weight-bold" color="cyan-lighten-4" size="x-small" variant="tonal">
-                          {{ room.players.length }}/{{ room.maxPlayers || 4 }} SLOT
-                        </v-chip>
-                      </div>
-
-                      <div class="d-flex align-center mb-4">
-                        <v-avatar class="mr-3 border-thin" size="32">
-                          <v-img cover :src="getPlayerAvatar(room.host)" />
-                        </v-avatar>
-                        <div>
-                          <div class="text-caption text-grey-lighten-1 line-height-1">{{ $t('multiplayerLobby.commander') }}</div>
-                          <div class="text-body-2 font-weight-bold text-white">{{ room.host }}</div>
-                        </div>
-                      </div>
-
-                      <v-btn
-                        block
-                        class="rounded-pill font-weight-black text-black action-glow-btn"
-                        color="cyan-accent-2"
-                        size="small"
-                        variant="elevated"
-                        @click="multiplayerStore.joinRoom(room.id)"
-                      >
-                        {{ $t('multiplayerLobby.establishLink') }}
-                      </v-btn>
-                    </div>
-                  </v-list-item>
-                </v-fade-transition>
-              </v-list>
-              <div v-else class="text-center py-12 empty-discovery rounded-xl">
-                <v-icon class="mb-4" color="rgba(255, 255, 255, 0.05)" icon="mdi-wifi-off" size="48" />
-                <p class="text-caption text-grey-darken-1 font-weight-bold">{{ $t('multiplayerLobby.noSignals') }}</p>
-              </div>
-            </div>
-          </v-card>
-
-          <!-- Reclutamiento -->
-          <v-card v-if="multiplayerStore.room" class="side-panel-card rounded-xl pa-0 overflow-hidden" elevation="4">
-            <div class="pa-4 border-bottom-light">
-              <h3 class="text-subtitle-1 font-weight-bold text-white d-flex align-center">
-                <v-icon class="mr-2" color="cyan-accent-2" icon="mdi-account-group" />
-                {{ $t('multiplayerLobby.recruitCrew') }}
+          <v-col cols="12" md="4">
+            <!-- Invitacions (Només si no estem en sala) -->
+            <v-card v-if="multiplayerStore.invitations.length > 0" class="side-panel-card rounded-xl pa-4 mb-6" elevation="0">
+              <h3 class="text-subtitle-1 font-weight-bold text-white mb-4 d-flex align-center">
+                <v-icon class="mr-2" color="orange-accent-2" icon="mdi-email-alert" />
+                {{ $t('multiplayerLobby.incomingCalls', { count: multiplayerStore.invitations.length }) }}
               </h3>
-            </div>
-            <v-list bg-color="transparent" class="pa-0 recruit-list" max-height="450px">
-              <template v-if="friendsList.length > 0">
-                <v-list-subheader class="text-cyan-accent-2 font-weight-bold text-overline pb-0">{{ $t('multiplayerLobby.friends') }}</v-list-subheader>
-                <v-list-item v-for="explorer in friendsList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
-                  <template #prepend>
-                    <v-avatar class="mr-3 border-light" size="40">
-                      <v-img cover :src="getAvatarUrl(explorer.avatar, explorer.user)" />
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                    Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
-                  </v-list-item-subtitle>
-                  <template #append>
-                    <v-btn
-                      color="cyan-accent-2"
-                      :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
-                      icon="mdi-bullhorn-outline"
-                      size="small"
-                      variant="text"
-                      @click="multiplayerStore.inviteFriend(explorer.user)"
-                    />
-                  </template>
+              <v-list bg-color="transparent">
+                <v-list-item v-for="(inv, index) in multiplayerStore.invitations" :key="index" class="px-2 invitation-item mb-2 rounded-lg">
+                  <div class="d-flex align-center w-100">
+                    <div class="flex-grow-1">
+                      <div class="text-body-2 text-white"><span v-html="$t('multiplayerLobby.requestSupport', { user: `<b>${inv.from}</b>` })" /></div>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <v-btn color="success" icon="mdi-check" size="x-small" variant="flat" @click="acceptInvitation(inv, index)" />
+                      <v-btn color="error" icon="mdi-close" size="x-small" variant="tonal" @click="rejectInvitation(index)" />
+                    </div>
+                  </div>
                 </v-list-item>
-              </template>
+              </v-list>
+            </v-card>
 
-              <template v-if="otherExplorersList.length > 0">
-                <v-list-subheader class="text-grey-lighten-1 font-weight-bold text-overline pb-0 mt-2">{{ $t('multiplayerLobby.possibleCrewmates') }}</v-list-subheader>
-                <v-list-item v-for="explorer in otherExplorersList" :key="explorer.user" class="px-4 py-3 recruit-item border-bottom-light">
-                  <template #prepend>
-                    <v-avatar class="mr-3 border-light" size="40">
-                      <v-img cover :src="getAvatarUrl(explorer.avatar, explorer.user)" />
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-body-2 text-white font-weight-bold">{{ explorer.user }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-grey-darken-1">
-                    Lv. {{ explorer.level }} · {{ getRankName(explorer.level) }}
-                  </v-list-item-subtitle>
-                  <template #append>
-                    <v-btn
-                      color="cyan-accent-2"
-                      :disabled="multiplayerStore.room?.players?.some(p => (p.username || p) === explorer.user) || (multiplayerStore.room?.players?.length >= (multiplayerStore.room?.maxPlayers || 4))"
-                      icon="mdi-bullhorn-outline"
-                      size="small"
-                      variant="text"
-                      @click="multiplayerStore.inviteFriend(explorer.user)"
-                    />
-                  </template>
-                </v-list-item>
-              </template>
-            </v-list>
-          </v-card>
-        </v-col>
-      </v-row>
+            <!-- Red de Misiones (Salas Públicas) -->
+            <v-card class="side-panel-card rounded-xl pa-0 overflow-hidden d-flex flex-column" elevation="8" style="height: 550px;">
+              <div class="side-panel-header pa-4 d-flex align-center border-bottom-light">
+                <v-icon class="mr-3" color="cyan-accent-2" icon="mdi-map-search" />
+                <h3 class="text-subtitle-1 font-weight-black text-white tracking-widest">{{ $t('multiplayerLobby.missionNetwork') }}</h3>
+              </div>
+
+              <div class="pa-4 flex-grow-1 overflow-y-auto custom-scroll">
+                <v-list v-if="multiplayerStore.availableRooms.length > 0" bg-color="transparent" class="pa-0">
+                  <v-fade-transition group>
+                    <v-list-item v-for="room in multiplayerStore.availableRooms" :key="room.id" class="px-3 py-4 mb-4 mission-card-v3 rounded-xl">
+                      <div class="d-flex flex-column w-100">
+                        <div class="d-flex align-center justify-space-between mb-3">
+                          <div class="d-flex align-center">
+                            <div class="mission-status-led mr-2" />
+                            <div class="text-body-2 font-weight-black text-white">SECTOR {{ room.id }}</div>
+                          </div>
+                          <v-chip class="rounded-pill font-weight-bold" color="cyan-lighten-4" size="x-small" variant="tonal">
+                            {{ room.players.length }}/{{ room.gameConfig?.maxPlayers || room.maxPlayers || 4 }} PILOTOS
+                          </v-chip>
+                        </div>
+
+                        <div class="d-flex align-center mb-4">
+                          <v-avatar class="mr-3 border-thin" size="32">
+                            <v-img cover :src="getPlayerAvatar(room.host)" />
+                          </v-avatar>
+                          <div>
+                            <div class="text-caption text-grey-lighten-1 line-height-1">COMANDANTE</div>
+                            <div class="text-body-2 font-weight-bold text-white">{{ room.host }}</div>
+                          </div>
+                        </div>
+
+                        <v-btn
+                          block
+                          class="rounded-pill font-weight-black text-black action-glow-btn"
+                          color="cyan-accent-2"
+                          size="small"
+                          variant="elevated"
+                          @click="multiplayerStore.joinRoom(room.id)"
+                        >
+                          ESTABLECER VÍNCULO
+                        </v-btn>
+                      </div>
+                    </v-list-item>
+                  </v-fade-transition>
+                </v-list>
+                <div v-else class="text-center py-12 empty-discovery rounded-xl h-100 d-flex flex-column align-center justify-center">
+                  <v-icon class="mb-4" color="rgba(255, 255, 255, 0.05)" icon="mdi-wifi-off" size="64" />
+                  <p class="text-body-2 text-grey-darken-1 font-weight-bold">{{ $t('multiplayerLobby.noSignals') }}</p>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
     </div>
 
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
@@ -1190,14 +1207,39 @@
   const isPublic = ref(true)
   const maxPlayers = ref(Number(localStorage.getItem('astro_mp_maxPlayers')) || 4)
   const pointsToWin = ref(Number(localStorage.getItem('astro_mp_pointsToWin')) || 3)
+  const tournamentBuyIn = ref(Number(localStorage.getItem('astro_mp_tournamentBuyIn')) || 500)
   const sharedChallenge = ref(localStorage.getItem('astro_mp_sharedChallenge') === 'true')
   const roomCode = ref('')
   const showRoulette = ref(false)
   const showBriefing = ref(false)
   const briefingCountdown = ref(10)
   let briefingTimer = null
+  const selectedGameForRule = ref('WordConstruction')
   const activeGameComponent = shallowRef(null)
   const spectatedPlayer = ref(null)
+  const currentTournamentMatch = computed(() => {
+    if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
+      return multiplayerStore.room?.gameConfig?.tournament?.brackets?.find(m => m.status === 'PLAYING')
+    }
+    return null
+  })
+  const tournamentParticipants = computed(() => {
+    const match = currentTournamentMatch.value
+    if (match) {
+      return { p1: match.p1, p2: match.p2 }
+    }
+    return null
+  })
+
+  const isTournamentFinished = computed(() => {
+    if (multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT') return false
+    const brackets = multiplayerStore.room?.gameConfig?.tournament?.brackets || []
+    if (brackets.length === 0) return false
+    // La final es el último match generado en el bracket
+    const finalMatch = brackets[brackets.length - 1]
+    // El torneo acaba cuando la final está marcada como FINISHED
+    return finalMatch && finalMatch.status === 'FINISHED'
+  })
   const showDuelSelector = ref(false)
   const currentDuelNodeId = ref(null)
 
@@ -1233,6 +1275,13 @@
     isDuelInternal.value = true
     
     startBriefing(randomGame)
+  }
+
+  function onTournamentSpectate (playerName) {
+    console.log('👀 Espectando manualmente a:', playerName)
+    spectatedPlayer.value = playerName
+    isTransitioning.value = false
+    isDuelInternal.value = true
   }
 
   function selectRandomRival () {
@@ -1356,12 +1405,20 @@
   })
 
   const modalities = [
-    { id: '1vs1', name: 'Mode 1vs1', icon: 'mdi-sword-cross', active: true },
-    { id: '2vs2', name: 'Mode 2vs2', icon: 'mdi-account-group', active: true },
-    { id: 'boss', name: 'Mode Boss', icon: 'mdi-skull', active: false },
-    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true },
-    { id: 'torneig', name: 'Torneig', icon: 'mdi-trophy-variant', active: true },
+    { id: '1vs1', name: 'Modo 1vs1', icon: 'mdi-sword-cross', active: true, desc: 'Enfréntate a un rival en duelo directo. El piloto con mejor puntuación al finalizar el tiempo se lleva la victoria.', tip: 'Sé rápido y preciso para no darle ventaja al oponente.' },
+    { id: '2vs2', name: 'Modo 2vs2', icon: 'mdi-account-group', active: true, desc: 'Forma escuadrones de dos y compite sumando la puntuación total del equipo. La coordinación es clave.', tip: 'Divide las tareas para ser más eficientes.' },
+    { id: 'boss', name: 'Modo Boss', icon: 'mdi-skull', active: false, desc: 'Toda la tripulación se enfrenta a un enemigo colosal. ¡Próximamente disponible en nuevas misiones!', tip: 'Prepara tus mejores tácticas, el trabajo en equipo lo es todo.' },
+    { id: 'carrera', name: 'Carrera Espacial', icon: 'mdi-rocket-launch', active: true, desc: 'Avanza por un mapa de nodos recogiendo minerales, sobreviviendo a anomalías y enfrentándote en duelos antes de que se acabe tu combustible.', tip: 'Controla siempre tus reservas de gas y evita quedarte varado.' },
+    { id: 'torneig', name: 'Torneo', icon: 'mdi-trophy-variant', active: true, desc: 'Competición de eliminación directa. Paga tu inscripción con Astrocions y avanza en el bracket para ganar el premio final.', tip: 'No hay margen de error, una derrota y quedarás eliminado.' },
   ]
+
+  function isModality(id) {
+    return modalities.some(m => m.id === id)
+  }
+
+  function getModality(id) {
+    return modalities.find(m => m.id === id) || {}
+  }
 
   const ALL_TITLES = [
     { name: 'El Imparable', key: 'titleUnstoppable' },
@@ -1413,9 +1470,29 @@
     }
   }, { immediate: true })
 
+  watch(() => multiplayerStore.room?.gameConfig?.buyIn, (newBuyIn) => {
+    if (newBuyIn && newBuyIn !== tournamentBuyIn.value) {
+      console.log('--- CUOTA DE ENTRADA ACTUALIZADA ---', newBuyIn)
+      tournamentBuyIn.value = newBuyIn
+    }
+  }, { immediate: true })
+
   function getRankName (level) {
     const index = Math.min(Math.floor(((level || 1) - 1) / 10), 14)
     return t(`ranks.${index}`)
+  }
+
+  function getGameIcon (game) {
+    const icons = {
+      'RadarScan': 'mdi-radar',
+      'RadioSignal': 'mdi-radio-tower',
+      'RhymeSquad': 'mdi-music-note',
+      'SpelledRosco': 'mdi-alpha-a-circle-outline',
+      'SymmetryBreaker': 'mdi-mirror-variant',
+      'WordConstruction': 'mdi-hammer-wrench',
+      'SyllableQuest': 'mdi-format-letter-case'
+    }
+    return icons[game] || 'mdi-gamepad-variant'
   }
 
   // Vigilante para cambios de juego (Solo para modo Cooperativo/Normal, el modo Carrera lo gestiona por Duelos)
@@ -1435,7 +1512,12 @@
           if (!isParticipant) {
             console.log('👀 Ets espectador d\'aquest duel del torneig.')
             activeGameComponent.value = null
+            spectatedPlayer.value = currentMatch.p1
+            isDuelInternal.value = true
             return
+          } else {
+            // Soy participante: ASEGURAR que spectatedPlayer sea nulo para no entrar en bucle de observación
+            spectatedPlayer.value = null
           }
         }
       }
@@ -1464,6 +1546,23 @@
     }
   })
 
+  watch(() => multiplayerStore.room?.status, (newStatus, oldStatus) => {
+    if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
+      if (isTournamentFinished.value) {
+        console.log('🏆 Torneig finalitzat! Mostrant podi i premis...')
+        showMatchResult.value = true
+        activeGameComponent.value = null
+        return
+      }
+
+      if (oldStatus === 'PLAYING' && newStatus === 'TOURNAMENT_BRACKETS') {
+        console.log('🏆 Duel finalitzat, tornant al bracket...')
+        spectatedPlayer.value = null
+        activeGameComponent.value = null
+      }
+    }
+  })
+
   // Vigilante de Duelos 1vs1 (Sincronización Atacante-Rival)
   watch(() => multiplayerStore.lastDuelEvent, (event) => {
     if (!event) return
@@ -1475,12 +1574,20 @@
     if (targetRival === myName) {
       console.log("⚔️ ¡HAS SIDO RETADO POR " + event.attacker + "! Entrando en " + event.game)
       
-      multiplayerStore.activeGameName = event.game
-      currentDuelNodeId.value = event.nodeId
-      currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
-      isDuelInternal.value = true
+      // Limpiar estados previos para "reparar" el siguiente juego
+      multiplayerStore.lastSpectatorSync = null
+      spectatedPlayer.value = null
+      activeGameComponent.value = null
       
-      startBriefing(event.game)
+      // Iniciar briefing con retraso para asegurar carga limpia
+      setTimeout(() => {
+        multiplayerStore.activeGameName = event.game
+        currentDuelNodeId.value = event.nodeId
+        currentAnomaly.value = null // NUNCA hay eventos en duelos 1vs1
+        isDuelInternal.value = true
+        
+        startBriefing(event.game)
+      }, 100)
     }
   })
 
@@ -1519,12 +1626,14 @@
         showRoulette.value = false
         showRoundResults.value = false
         activeGameComponent.value = null
+        spectatedPlayer.value = null
         break
       }
       case 'ROUND_RESULTS': {
         const isCompetitive = ['1vs1', 'carrera', 'torneig'].includes(selectedModality.value)
         showRoundResults.value = !isCompetitive 
         activeGameComponent.value = null
+        spectatedPlayer.value = null
         if (isHost.value) {
           // En modo competitivo saltamos casi instantáneamente (300ms)
           const delay = isCompetitive ? 300 : 1500
@@ -1537,13 +1646,19 @@
         break
       }
       case 'GAME_OVER':
-      case 'MATCH_RESULTS': {
+      case 'MATCH_RESULTS':
+      case 'MATCH_FINISHED': {
         showRoundResults.value = false
+        showMatchResult.value = true
         activeGameComponent.value = null
+        spectatedPlayer.value = null
+        finalScores.value = multiplayerStore.room?.gameConfig?.scores || {}
+        matchWinnerName.value = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT' ? multiplayerStore.room?.gameConfig?.tournament?.brackets?.find(m => m.round === Math.ceil(Math.log2(multiplayerStore.room?.players?.length || 2)))?.winner : null
         break
       }
       case 'LOBBY': {
         activeGameComponent.value = null
+        spectatedPlayer.value = null
         showRoulette.value = false
         roundWinner.value = null
         showRoundResults.value = false
@@ -1565,13 +1680,61 @@
       showRoulette.value = false
       isTransitioning.value = true
       
+      // Gestión de Astrocions: Comisión de Torneo
+      if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
+        const fee = multiplayerStore.room.gameConfig.buyIn || 0
+        if (fee > 0) {
+          console.log(`💸 COBRANT COMISIÓ DE TORNEIG: ${fee}`)
+          astroStore.setCoins(Math.max(0, astroStore.coins - fee))
+          showMessage(`S'ha cobrat una comisió de ${fee} Astrocions`, 'warning')
+        }
+      }
+
       const gameName = multiplayerStore.room?.gameConfig?.currentGame
+      const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
+
       if (gameName && gameComponents[gameName] && multiplayerStore.room?.gameConfig?.mode !== 'RACE') {
-        setTimeout(() => {
-          activeGameComponent.value = gameComponents[gameName]
-          isTransitioning.value = false
-          startBriefing()
-        }, 300)
+        const launch = () => {
+          if (isTournament) {
+            const currentMatch = multiplayerStore.room?.gameConfig?.tournament?.brackets?.find(m => m.status === 'PLAYING')
+            if (currentMatch) {
+              const isParticipant = currentMatch.p1 === astroStore.user || currentMatch.p2 === astroStore.user
+              if (!isParticipant) {
+                console.log('👀 Ets espectador d\'aquest duel del torneig.')
+                isTransitioning.value = false
+                spectatedPlayer.value = currentMatch.p1
+                isDuelInternal.value = true
+                multiplayerStore.roundScores = {}
+                showBriefing.value = false
+                return
+              }
+            }
+            // En torneos, inicio instantáneo para los participantes
+            activeGameComponent.value = gameComponents[gameName]
+            isTransitioning.value = false
+            showBriefing.value = false
+            multiplayerStore.roundScores = {}
+            multiplayerStore.returnedPlayers = []
+            spectatedPlayer.value = null
+            // REPARACIÓN: Limpieza total antes de cargar el siguiente juego
+            activeGameComponent.value = null
+            multiplayerStore.lastSpectatorSync = null
+            multiplayerStore.roundScores = {}
+            multiplayerStore.returnedPlayers = []
+            
+            setTimeout(() => {
+              activeGameComponent.value = gameComponents[gameName]
+              isTransitioning.value = false
+              startBriefing(gameName, null, 10)
+            }, 50)
+          }
+        }
+
+        if (isTournament) {
+          launch()
+        } else {
+          setTimeout(launch, 300)
+        }
       } else {
         isTransitioning.value = false
       }
@@ -1597,6 +1760,51 @@
       showMatchResult.value = true
       activeGameComponent.value = null
       showRoundResults.value = false
+
+      // Entrega de premios y automatización de retorno en Torneos
+      if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
+        const brackets = multiplayerStore.room.gameConfig.tournament.brackets || []
+        const finalMatch = brackets[brackets.length - 1]
+        
+        // Si el match que acaba de terminar NO es el último del bracket, volvemos al árbol
+        const isFinalMatch = finalMatch && tournamentParticipants.value &&
+          ((finalMatch.p1 === tournamentParticipants.value.p1 && finalMatch.p2 === tournamentParticipants.value.p2) ||
+           (finalMatch.p1 === tournamentParticipants.value.p2 && finalMatch.p2 === tournamentParticipants.value.p1))
+
+        if (!isFinalMatch && !isTournamentFinished.value) {
+          console.log('🔄 Combate finalitzat. Tornant a l\'arbre automàticament...')
+          setTimeout(() => {
+            if (showMatchResult.value) {
+              multiplayerStore.returnToLobby()
+              showMatchResult.value = false
+            }
+          }, 500)
+        } else {
+          console.log('🏆 TORNEIG FINALITZAT DEFINITIVAMENT.')
+        }
+
+        const buyIn = multiplayerStore.room.gameConfig.buyIn || 0
+        const totalPlayers = (multiplayerStore.room.players || []).length
+        const totalPool = buyIn * totalPlayers
+        
+        // Determinar rankings por scores
+        const sortedScores = Object.entries(finalScores.value)
+          .sort(([,a], [,b]) => b - a)
+          .map(([user]) => user)
+          
+        const myRank = sortedScores.indexOf(astroStore.user) + 1
+        let prize = 0
+        
+        if (myRank === 1) prize = Math.floor(totalPool * 0.6)
+        else if (myRank === 2) prize = Math.floor(totalPool * 0.3)
+        else if (myRank === 3) prize = Math.floor(totalPool * 0.1)
+        
+        if (prize > 0) {
+          console.log(`🏆 PREMIO DE TORNEO (Puesto ${myRank}): ${prize} Astrocions`)
+          astroStore.setCoins(astroStore.coins + prize)
+          showMessage(`¡HAS QUEDAT EN EL PUESTO ${myRank}! Has guanyat ${prize} Astrocions`, 'success')
+        }
+      }
     }
 
     if (msg.type === 'GAME_ACTION' && msg.action?.type === 'SABOTAGE') {
@@ -1921,6 +2129,7 @@
   function createRoom () {
     const initialConfig = {
       pointsToWin: (selectedModality.value === 'carrera' || selectedModality.value === 'torneig') ? 1 : pointsToWin.value,
+      buyIn: tournamentBuyIn.value,
       modality: selectedModality.value,
       mode: selectedModality.value === 'carrera' ? 'RACE' : (selectedModality.value === 'torneig' ? 'TOURNAMENT' : 'NORMAL'),
       numGoldMines: numGoldMines.value,
@@ -1942,6 +2151,7 @@
       seed: newSeed,
       currentRound: 0,
       scores: {},
+      buyIn: tournamentBuyIn.value,
       numGoldMines: numGoldMines.value,
       numBattles: numBattles.value,
       numFuelStations: numFuelStations.value,
@@ -1964,9 +2174,11 @@
       numBattles: numBattles.value,
       numFuelStations: numFuelStations.value,
       numMysteryNodes: numMysteryNodes.value,
+      buyIn: tournamentBuyIn.value,
       sharedChallenge: sharedChallenge.value
     })
     localStorage.setItem('astro_mp_sharedChallenge', String(sharedChallenge.value))
+    localStorage.setItem('astro_mp_tournamentBuyIn', String(tournamentBuyIn.value))
 
   }
 
@@ -2011,6 +2223,13 @@
       // Misión normal en planeta
       const completedPlanetId = multiplayerStore.raceProgress
       multiplayerStore.updateRaceProgress(completedPlanetId, true)
+      isTransitioning.value = true
+      setTimeout(() => {
+        activeGameComponent.value = null
+        isTransitioning.value = false
+      }, 1500)
+    } else if (multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT') {
+      multiplayerStore.submitRoundResult()
       isTransitioning.value = true
       setTimeout(() => {
         activeGameComponent.value = null
@@ -2067,13 +2286,16 @@
         'raig-tempesta': 'TORMENTA DE RAIGS'
       }
       const eventName = anomalyNames[node.anomaly] || node.anomaly?.toUpperCase() || 'FENOMEN DESCONEGUT'
-      activeMysteryAlert.value = `¡AVÍS METEOROLÒGIC! En la pròxima ronda hi haurá: ${eventName}`
+      activeMysteryAlert.value = `¡AVÍS METEOROLÒGIC! En la pròxima missió hi haurà: ${eventName}`
       
-      // Notificar a TODOS los jugadores de la anomalía
+      // Notificar a TODOS los jugadores para que guarden la anomalía para SU propia próxima partida
       multiplayerStore.sendGameAction({
-        type: 'GLOBAL_ANOMALY',
+        type: 'GLOBAL_ANOMALY_TRIGGER',
         anomaly: node.anomaly
       })
+
+      // Guardarla también localmente por si acaso el mensaje tarda
+      multiplayerStore.nextMoveAnomaly = node.anomaly
 
       // Actualizar posición pero NO entrar en juego
       multiplayerStore.updateRaceProgress(id, true)
@@ -2291,31 +2513,41 @@
     }, 1000)
   }
 
-  function startBriefing (gameName, anomaly = null) {
+  function startBriefing (gameName, anomaly = null, duration = 10) {
     if (!gameName || !gameComponents[gameName]) return
     
-    currentAnomaly.value = anomaly
+    // Si no viene anomalía, usamos la que tengamos guardada del interrogante
+    const activeAnomaly = anomaly || multiplayerStore.nextMoveAnomaly
+    currentAnomaly.value = activeAnomaly
 
-    // MODO CARRERA: Si NO es un duelo, saltamos el briefing UI para no ser redundantes
+    // Si había una anomalía pendiente, la "consumimos" ahora
+    if (multiplayerStore.nextMoveAnomaly) {
+      console.log('🌪️ CONSUMIENDO ANOMALÍA PENDIENTE EN BRIEFING:', multiplayerStore.nextMoveAnomaly)
+      multiplayerStore.clearGlobalAnomaly()
+    }
+
+    // MODO CARRERA / TORNEO: Saltamos el briefing UI para inicio instantáneo
     const isRaceMode = multiplayerStore.room?.gameConfig?.mode === 'RACE'
-    if (isRaceMode && !isDuel.value) {
+    const isTournament = multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
+    
+    if ((isRaceMode && !isDuel.value) || isTournament) {
       showBriefing.value = false
       isTransitioning.value = true
       
       // Iniciamos el temporizador de abortar de 45s
       startAbortTimer()
       
-      // Esperar a que la animación de "viajando al planeta" termine antes de poner el juego
+      // MODO TORNEO: Carga ultra-rápida (500ms)
       setTimeout(() => {
         activeGameComponent.value = gameComponents[gameName]
         isTransitioning.value = false
-      }, 1500)
+      }, 500)
       return
     }
     
     // Si es un duelo o modo normal (COOP/VS), mostramos el briefing detallado
     showBriefing.value = true
-    briefingCountdown.value = 10
+    briefingCountdown.value = duration
     
     if (briefingTimer) clearInterval(briefingTimer)
     
@@ -2460,8 +2692,102 @@
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
 }
 
-.border-light {
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.rules-panel-modern {
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 229, 255, 0.05);
+}
+
+.rules-icon-bg-large {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 229, 255, 0.1);
+  border-radius: 20px;
+  border: 2px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+}
+
+.modality-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 60px;
+  margin-bottom: 4px;
+}
+
+.modality-card:hover:not(.disabled-mode).is-host {
+  border-color: rgba(0, 229, 255, 0.6);
+  background: rgba(0, 229, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.modality-card.active-mode {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.modality-card .text-caption {
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px;
+}
+
+.game-selector-btn-large {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.game-btn-active-large {
+  background: rgba(0, 229, 255, 0.2) !important;
+  border: 2px solid rgba(0, 229, 255, 0.6) !important;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.line-height-1-8 {
+  line-height: 1.8;
+}
+
+.tip-box-large {
+  background: rgba(255, 179, 0, 0.08);
+  border: 1px solid rgba(255, 179, 0, 0.3);
+  border-left: 6px solid #ffb300;
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.1);
+}
+
+.tip-icon-glow {
+  filter: drop-shadow(0 0 10px #ffb300);
+}
+
+.mission-visual-box {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.05);
+}
+
+.bg-dark-soft {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.line-height-1-4 {
+  line-height: 1.4;
 }
 
 .h-custom-btn {
@@ -2723,17 +3049,7 @@
 .shadow-cyan { box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); }
 .shadow-amber { box-shadow: 0 0 20px rgba(255, 171, 64, 0.3); }
 
-/* Ocultar HUDs internos de los minijuegos en multijugador para evitar solapamientos */
-:deep(.session-hud),
-:deep(.hud),
-:deep(.hud-row),
-:deep(.radio-cabinet .session-hud),
-:deep(.word-construction-header),
-:deep(.hud-pill),
-:deep(.game-container > .v-card:first-child:not(.rhyme-header):not(.bg-grey-darken-4)),
-:deep(.radio-cabinet + .session-hud) {
-  display: none !important;
-}
+/* Mantenim els dissenys originals dels minijocs */
 
 /* REGLAS ESPECÍFICAS PARA MINIJUEGOS EN MULTIPLAYER */
 :deep(.rhyme-header) {
@@ -2865,6 +3181,65 @@
   width: 12px;
   height: 2px;
   background: rgba(0, 229, 255, 0.3);
+}
+
+.game-wrapper-mp {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.remote-cursors-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.remote-cursor {
+  position: absolute;
+  transition: all 0.1s linear;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.cursor-pointer {
+  width: 20px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300e5ff' d='M7,2L19,12L11,13L15.06,21L13,22L8.94,14L4,19L7,2Z' /%3E%3C/svg%3E") no-repeat;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.8));
+  transform: translate(-2px, -2px);
+}
+
+.cursor-pointer.is-firing {
+  filter: drop-shadow(0 0 15px #00e5ff) brightness(1.5);
+  transform: translate(-2px, -2px) scale(1.2);
+}
+
+.cursor-label {
+  background: rgba(0, 229, 255, 0.9);
+  color: #000;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  position: absolute;
+  top: 20px;
+  left: 10px;
+  text-transform: uppercase;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
 }
 
 .transition-all {
@@ -3151,5 +3526,32 @@
   font-weight: 900;
   font-size: 0.8rem;
   border-radius: 4px;
+}
+
+.mode-icon {
+  transition: all 0.3s ease;
+}
+
+.icon-pop {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));
+}
+
+.disabled-mode {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.text-7px {
+  font-size: 7px;
+}
+
+.mode-selected-anim {
+  animation: mode-pulse 2s infinite;
+}
+
+@keyframes mode-pulse {
+  0%, 100% { border-color: #00e5ff; }
+  50% { border-color: rgba(0, 229, 255, 0.4); }
 }
 </style>

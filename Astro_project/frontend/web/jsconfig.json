@@ -33,6 +33,14 @@
     "src/components/games/scratch_radio_utf8.vue",
     "src/components/games/scratch_symmetry.vue",
     "src/components/games/scratch_symmetry_utf8.vue",
-    "src/components/games/MultiplayerScoreSystem.vue"
+    "src/components/games/MultiplayerScoreSystem.vue",
+    "src/components/games/radar_scan_old.vue",
+    "src/components/games/radio_signal_old_design.vue",
+    "src/components/games/radio_signal_old_logic.vue",
+    "src/pages/friends/old_lobby.vue",
+    "src/pages/friends/old_lobby_v2.vue",
+    "src/pages/friends/old_lobby_fe.vue",
+    "src/pages/friends/old_lobby_fe_utf8.vue",
+    "src/pages/friends/temp_*.vue"
   ]
 }

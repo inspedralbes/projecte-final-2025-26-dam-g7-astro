@@ -23,8 +23,6 @@ declare module 'vue-router/auto-routes' {
     '/auth/register': RouteRecordInfo<'/auth/register', '/auth/register', Record<never, never>, Record<never, never>>,
     '/friends/friends': RouteRecordInfo<'/friends/friends', '/friends/friends', Record<never, never>, Record<never, never>>,
     '/friends/MultiplayerLobby': RouteRecordInfo<'/friends/MultiplayerLobby', '/friends/MultiplayerLobby', Record<never, never>, Record<never, never>>,
-    '/friends/old_lobby': RouteRecordInfo<'/friends/old_lobby', '/friends/old_lobby', Record<never, never>, Record<never, never>>,
-    '/friends/old_lobby_v2': RouteRecordInfo<'/friends/old_lobby_v2', '/friends/old_lobby_v2', Record<never, never>, Record<never, never>>,
     '/home/': RouteRecordInfo<'/home/', '/home', Record<never, never>, Record<never, never>>,
     '/inventory/inventory': RouteRecordInfo<'/inventory/inventory', '/inventory/inventory', Record<never, never>, Record<never, never>>,
     '/plans/educational': RouteRecordInfo<'/plans/educational', '/plans/educational', Record<never, never>, Record<never, never>>,
@@ -64,14 +62,6 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/friends/MultiplayerLobby.vue': {
       routes: '/friends/MultiplayerLobby'
-      views: never
-    }
-    'src/pages/friends/old_lobby.vue': {
-      routes: '/friends/old_lobby'
-      views: never
-    }
-    'src/pages/friends/old_lobby_v2.vue': {
-      routes: '/friends/old_lobby_v2'
       views: never
     }
     'src/pages/home/index.vue': {

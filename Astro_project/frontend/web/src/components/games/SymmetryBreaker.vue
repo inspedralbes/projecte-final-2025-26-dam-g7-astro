@@ -2,7 +2,7 @@
   <div
     ref="gameArea"
     class="game-container"
-    :class="{ 'hide-cursor': isPlaying, 'game-paused': props.isPaused }"
+    :class="{ 'hide-cursor': isPlaying && !props.isSpectator, 'game-paused': props.isPaused, 'pointer-events-none': props.isSpectator }"
     @mousedown.left.prevent="beginFiring"
     @mouseleave="stopFiring"
     @mousemove="handlePointerMove"
@@ -14,6 +14,7 @@
           <div class="text-h5 font-weight-bold text-amber-accent-3">{{ $t('symmetryBreaker.points', { score }) }}</div>
           <div class="text-h6 text-cyan-accent-2">{{ $t('symmetryBreaker.target', { target: currentChallenge?.target || '-' }) }}</div>
           <div
+            v-if="!isMultiplayer"
             class="text-h5 font-weight-bold d-flex align-center"
             :class="isPenaltyActive || timeLeft <= 10 ? 'text-red-accent-2' : 'text-white'"
           >
@@ -127,10 +128,10 @@
       type: Boolean,
       default: false,
     },
-    isPaused: {
-      type: Boolean,
-      default: false,
-    },
+    isPaused: { type: Boolean, default: false },
+    isSpectator: { type: Boolean, default: false },
+    spectatedPlayer: { type: String, default: null },
+    duration: { type: Number, default: 60 },
   })
 
   const isMultiplayer = computed(() => props.isMultiplayer)
@@ -140,6 +141,16 @@
   const emit = defineEmits(['game-over'])
 
   const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
+  const isAuthority = computed(() => {
+    if (props.isSpectator) return false
+    if (!props.isMultiplayer) return true
+    if (isHost.value) return true
+    // En duelos, torneos o carreras cada jugador es autoridad de su propio minijuego
+    const modality = multiplayerStore.room?.gameConfig?.modality
+    const mode = multiplayerStore.room?.gameConfig?.mode
+    if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
+    return false
+  })
   const anyRivalAlive = computed(() => {
     if (!props.isMultiplayer) return true
     const rivals = Object.keys(multiplayerStore.playerTimes).filter(u => u !== astroStore.user)
@@ -194,7 +205,7 @@
   const showGameOverOverlay = ref(false)
   const isPlaying = ref(false)
   const score = ref(0)
-  const timeLeft = ref(60)
+  const timeLeft = ref(props.duration)
   const round = ref(1)
   const isPenaltyActive = ref(false)
   const roundHintText = ref('')
@@ -248,15 +259,31 @@
 
   const holdProgressPct = computed(() => Math.min(100, (holdProgressMs.value / holdRequiredMs.value) * 100))
 
+  // LCG Random para sincronización determinista
+  let currentSeed = 0
+  function lcgRandom () {
+    currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296
+    return currentSeed / 4294967296
+  }
+
   function randomBetween (min, max) {
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
+      return max <= min ? min : lcgRandom() * (max - min) + min
+    }
     return max <= min ? min : Math.random() * (max - min) + min
   }
-  function clamp (value, min, max) {
-    return Math.min(max, Math.max(min, value))
-  }
+
   function randomVelocity (speed) {
-    const angle = Math.random() * Math.PI * 2; return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }
+    let angle
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
+      angle = lcgRandom() * Math.PI * 2
+    } else {
+      angle = Math.random() * Math.PI * 2
+    }
+    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed }
   }
+
+
 
   function resolveEntityColors ({ isTarget, isUniformMode }) {
     if (isUniformMode) return { ringColor: CLASSIC_DECOY_RING, fillColor: CLASSIC_DECOY_FILL }
@@ -290,7 +317,14 @@
   function generateTargets () {
     if (!gameCanvas.value) return
 
-    if (props.isMultiplayer && !isHost.value && !props.isDuel && !props.isRace) {
+    // Reiniciar semilla para esta ronda si hay una semilla global
+    if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed) {
+      const baseSeed = multiplayerStore.room.gameConfig.seed
+      const roundSeed = (baseSeed + '-' + round.value).split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+      currentSeed = roundSeed
+    }
+
+    if (props.isMultiplayer && props.isSpectator) {
       targets.value = []
       return
     }
@@ -302,7 +336,8 @@
 
     if (sourceSet.length === 0) return
 
-    const challenge = sourceSet[Math.floor(Math.random() * sourceSet.length)]
+    const rndIdx = props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed ? Math.floor(lcgRandom() * sourceSet.length) : Math.floor(Math.random() * sourceSet.length)
+    const challenge = sourceSet[rndIdx]
     currentChallenge.value = challenge
     triggerRoundHint(challenge.target)
 
@@ -315,7 +350,15 @@
     const newTargets = []
     for (let i = 0; i < 1 + decoyCount; i++) {
       const isTarget = i === 0
-      const text = isTarget ? challenge.target : challenge.decoys[Math.floor(Math.random() * challenge.decoys.length)]
+      
+      let text
+      if (isTarget) {
+        text = challenge.target
+      } else {
+        const dIdx = props.isMultiplayer && multiplayerStore.room?.gameConfig?.seed ? Math.floor(lcgRandom() * challenge.decoys.length) : Math.floor(Math.random() * challenge.decoys.length)
+        text = challenge.decoys[dIdx]
+      }
+
       const velocity = randomVelocity(currentSpeed * randomBetween(0.92, 1.08))
       const { ringColor, fillColor } = resolveEntityColors({ isTarget, isUniformMode })
 
@@ -324,7 +367,18 @@
     targets.value = newTargets
     holdProgressMs.value = 0
 
-    if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+    if (props.isMultiplayer && isAuthority.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        targets: newTargets,
+        challenge: challenge,
+        round: round.value,
+        score: score.value,
+        timeLeft: timeLeft.value
+      })
+    }
+    
+    if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
       multiplayerStore.sendGameAction({
         type: 'SYMMETRY_SYNC_TARGETS',
         targets: newTargets,
@@ -360,25 +414,40 @@
     const timePenalty = (hasPenaltyShot && (!props.isRace || props.isDuel)) ? 1.2 : 1
     isPenaltyActive.value = timePenalty > 1
     
-    // Eliminada la penalización de score por 'tick' de disparo fallido as per user request
-
-
     const timeMultiplier = isSlowTimeActive.value ? 0.8 : 1
 
-    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+    const oldTime = Math.floor(timeLeft.value)
+    if (isAuthority.value) {
       timeLeft.value -= dt * timePenalty * timeMultiplier
-      if (props.isMultiplayer) {
-        if (isHost.value || props.isDuel || props.isRace) {
+      const newTime = Math.floor(timeLeft.value)
+
+      if (props.isMultiplayer && isAuthority.value) {
+        if (newTime !== oldTime) {
+          multiplayerStore.timeLeft = timeLeft.value
           multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+          
+          // Sync para observadores (menos frecuente para evitar lag)
+          multiplayerStore.sendGameAction({
+            type: 'SPECTATOR_SYNC',
+            score: score.value,
+            timeLeft: timeLeft.value,
+            round: round.value,
+            targets: targets.value.map(t => ({
+              x: Math.round((t.x / (gameCanvas.value?.width || 1000)) * 1000),
+              y: Math.round((t.y / (gameCanvas.value?.height || 1000)) * 1000),
+              text: t.text,
+              isTarget: t.isTarget
+            }))
+          })
         }
-      } else if (props.isDuel || props.isRace || !props.isMultiplayer) {
+      } else {
         multiplayerStore.timeLeft = timeLeft.value
       }
     }
 
     if (timeLeft.value <= 0) {
       if (!props.isRace || props.isDuel) {
-        if (props.isMultiplayer && isHost.value) {
+        if (props.isMultiplayer && isAuthority.value) {
           multiplayerStore.sendGameAction({ type: 'SYMMETRY_TIME_UP' })
         }
         endGame(); return
@@ -391,12 +460,12 @@
     for (const t of targets.value) {
       t.x += t.vx * dt; t.y += t.vy * dt
 
-      if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+      if (isAuthority.value) {
         if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
-          t.vx *= -1; t.x = clamp(t.x, t.bounds.minX, t.bounds.maxX)
+          t.vx *= -1; t.x = Math.min(t.bounds.maxX, Math.max(t.bounds.minX, t.x))
         }
         if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
-          t.vy *= -1; t.y = clamp(t.y, t.bounds.minY, t.bounds.maxY)
+          t.vy *= -1; t.y = Math.min(t.bounds.maxY, Math.max(t.bounds.minY, t.y))
         }
       }
     }
@@ -411,8 +480,8 @@
         return uid !== astroStore.user && (props.isDuel ? true : isSameTeam)
       })?.[1]
       if (partner && partner.isFiring && target) {
-        const rx = (partner.x / 1000) * gameCanvas.value.width
-        const ry = (partner.y / 1000) * gameCanvas.value.height
+        const rx = (partner.x / 1000) * (gameCanvas.value?.width || 1000)
+        const ry = (partner.y / 1000) * (gameCanvas.value?.height || 1000)
         const partnerIsOnTarget = Math.hypot(rx - target.x, ry - target.y) < target.size / 2
         bothPointing = localIsPointing && partnerIsOnTarget
       } else {
@@ -432,19 +501,40 @@
     }
 
     const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
-    if (props.isMultiplayer && isHost.value && isPlaying.value && (!props.isDuel || isShared)) {
-      posSyncCounter++
-      if (posSyncCounter >= 3) {
+    if (props.isMultiplayer && isPlaying.value) {
+      const now = Date.now()
+      if (now - lastMouseSync > 33) {
+        lastMouseSync = now
         multiplayerStore.sendGameAction({
-          type: 'SYMMETRY_POS_SYNC',
-          targets: targets.value.map(t => ({
-            x: Math.round((t.x / gameCanvas.value.width) * 1000),
-            y: Math.round((t.y / gameCanvas.value.height) * 1000),
-            vx: Math.round((t.vx / gameCanvas.value.width) * 1000),
-            vy: Math.round((t.vy / gameCanvas.value.height) * 1000),
-          })),
+            type: 'MOUSE_MOVE',
+            x: Math.round((mouseX.value / (gameCanvas.value?.width || 1000)) * 1000),
+            y: Math.round((mouseY.value / (gameCanvas.value?.height || 1000)) * 1000),
+            isFiring: isFiring.value
         })
-        posSyncCounter = 0
+
+        if (isAuthority.value) {
+            posSyncCounter++
+            if (posSyncCounter >= 10) { 
+                multiplayerStore.sendGameAction({
+                    type: 'SPECTATOR_SYNC',
+                    score: score.value,
+                    round: round.value,
+                    timeLeft: timeLeft.value,
+                    targets: targets.value.map(t => ({
+                        x: Math.round((t.x / (gameCanvas.value?.width || 1000)) * 1000),
+                        y: Math.round((t.y / (gameCanvas.value?.height || 1000)) * 1000),
+                        vx: Math.round((t.vx / (gameCanvas.value?.width || 1000)) * 1000),
+                        vy: Math.round((t.vy / (gameCanvas.value?.height || 1000)) * 1000),
+                        text: t.text,
+                        isTarget: t.isTarget,
+                        ringColor: t.ringColor,
+                        fillColor: t.fillColor,
+                        size: t.size
+                    })),
+                })
+                posSyncCounter = 0
+            }
+        }
       }
     }
   }
@@ -452,7 +542,7 @@
   function lockTarget () {
     if (props.isMultiplayer) {
       if (!isCompetitiveMode.value) {
-        if (isHost.value) {
+        if (isAuthority.value) {
           score.value += 50 + (round.value * 10) + (successfulLocks.value * 5)
           successfulLocks.value += 1
           if (anyRivalAlive.value) {
@@ -473,7 +563,6 @@
           multiplayerStore.sendGameAction({ type: 'SYMMETRY_LOCK' })
         }
       } else {
-        // Modo Duelo o 2vs2: puntuación independiente
         const timeBonus = Math.floor(timeLeft.value / 2)
         score.value += 20 + timeBonus
         successfulLocks.value += 1
@@ -514,12 +603,25 @@
     if (!ctx) return
     ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height)
 
-    if (isFiring.value) {
-      ctx.beginPath(); ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height); ctx.lineTo(mouseX.value, mouseY.value)
+    let drawMouseX = mouseX.value
+    let drawMouseY = mouseY.value
+    let actualIsFiring = isFiring.value
+
+    if (props.isSpectator && props.spectatedPlayer) {
+      const cursor = multiplayerStore.remoteCursors[props.spectatedPlayer]
+      if (cursor) {
+        drawMouseX = (cursor.x / 1000) * (gameCanvas.value?.width || 1000)
+        drawMouseY = (cursor.y / 1000) * (gameCanvas.value?.height || 1000)
+        actualIsFiring = cursor.isFiring
+      }
+    }
+
+    if (actualIsFiring) {
+      ctx.beginPath(); ctx.moveTo(gameCanvas.value.width / 2, gameCanvas.value.height); ctx.lineTo(drawMouseX, drawMouseY)
 
       let laserColor = '#00e5ff'
       if (isPenaltyActive.value) laserColor = '#ff5252'
-      else if (shieldImmunityLeft.value > 0 && isFiring.value && (!targets.value.some(t => Math.hypot(mouseX.value - t.x, mouseY.value - t.y) < t.size / 2 && t.isTarget))) laserColor = '#00bfa5'
+      else if (shieldImmunityLeft.value > 0 && actualIsFiring && (!targets.value.some(t => Math.hypot(drawMouseX - t.x, drawMouseY - t.y) < t.size / 2 && t.isTarget))) laserColor = '#00bfa5'
 
       const target = targets.value.find(t => t.isTarget)
       const partner = props.isMultiplayer ? Object.entries(multiplayerStore.remoteCursors).find(([uid]) => uid !== astroStore.user)?.[1] : null
@@ -528,7 +630,7 @@
         const rx = (partner.x / 1000) * gameCanvas.value.width
         const ry = (partner.y / 1000) * gameCanvas.value.height
         const partnerOn = Math.hypot(rx - target.x, ry - target.y) < target.size / 2
-        const localOn = isFiring.value && Math.hypot(mouseX.value - target.x, mouseY.value - target.y) < target.size / 2
+        const localOn = actualIsFiring && Math.hypot(drawMouseX - target.x, drawMouseY - target.y) < target.size / 2
         bothOnTarget = localOn && partnerOn
       }
 
@@ -556,7 +658,7 @@
           const rx = (partner.x / 1000) * gameCanvas.value.width
           const ry = (partner.y / 1000) * gameCanvas.value.height
           const partnerOn = Math.hypot(rx - t.x, ry - t.y) < t.size / 2
-          const localOn = isFiring.value && Math.hypot(mouseX.value - t.x, mouseY.value - t.y) < t.size / 2
+          const localOn = actualIsFiring && Math.hypot(drawMouseX - t.x, drawMouseY - t.y) < t.size / 2
           if (partnerOn && localOn) {
             ctx.strokeStyle = '#ffff00'
             ctx.lineWidth = 6
@@ -575,8 +677,8 @@
     const mainTarget = targets.value.find(t => t.isTarget)
     if (mainTarget) drawEntity(mainTarget)
 
-    ctx.beginPath(); ctx.arc(mouseX.value, mouseY.value, 18, 0, Math.PI * 2)
-    ctx.strokeStyle = isFiring.value ? '#00e5ff' : '#ffffff'; ctx.lineWidth = 2; ctx.stroke()
+    ctx.beginPath(); ctx.arc(drawMouseX, drawMouseY, 18, 0, Math.PI * 2)
+    ctx.strokeStyle = actualIsFiring ? '#00e5ff' : '#ffffff'; ctx.lineWidth = 2; ctx.stroke()
 
     if (props.isMultiplayer) {
       for (const [uid, cursor] of Object.entries(multiplayerStore.remoteCursors)) {
@@ -624,13 +726,16 @@
     animationFrame = requestAnimationFrame(gameLoop)
   }
 
+  let lastMouseSync = 0
   function handlePointerMove (e) {
-    if (!gameArea.value) return
+    if (!gameArea.value || props.isSpectator) return
     const rect = gameArea.value.getBoundingClientRect()
     mouseX.value = e.clientX - rect.left
     mouseY.value = e.clientY - rect.top
 
-    if (props.isMultiplayer) {
+    const now = Date.now()
+    if (props.isMultiplayer && now - lastMouseSync > 33) {
+      lastMouseSync = now
       multiplayerStore.sendGameAction({
         type: 'MOUSE_MOVE',
         x: Math.round((mouseX.value / gameCanvas.value.width) * 1000),
@@ -641,17 +746,15 @@
   }
 
   function beginFiring () {
-    if (isPlaying.value) {
+    if (isPlaying.value && !props.isSpectator) {
       isFiring.value = true
       
-      // Penalización por "clic" inicial fallido (miss-click)
       const hitsTarget = targets.value.some(t => {
         const dx = t.x - mouseX.value, dy = t.y - mouseY.value
         return Math.sqrt(dx * dx + dy * dy) < (BASE_ENTITY_SIZE / 2 + 15)
       })
       if (!hitsTarget) {
-        // score.value = Math.max(0, score.value - 25) // Eliminada penalización por clic fallido
-        const penalty = (props.isDuel || props.isRace) ? 2 : 1 // Reducida penalización de tiempo
+        const penalty = (props.isDuel || props.isRace) ? 2 : 1
         timeLeft.value = Math.max(0, timeLeft.value - penalty)
         if (props.isDuel || props.isRace || !props.isMultiplayer) {
           multiplayerStore.timeLeft = timeLeft.value
@@ -669,7 +772,7 @@
     }
   }
   function stopFiring () {
-    isFiring.value = false
+    if (!props.isSpectator) isFiring.value = false
     if (props.isMultiplayer) {
       multiplayerStore.sendGameAction({
         type: 'MOUSE_MOVE',
@@ -713,7 +816,7 @@
       isPlaying.value = false
       isFiring.value = false
       cancelAnimationFrame(animationFrame)
-      multiplayerStore.submitRoundResult()
+      emit('game-over', score.value)
       return
     }
     isPlaying.value = false
@@ -726,12 +829,47 @@
     }
   }
 
+  function applySpectatorSync(data) {
+    if (!data) return
+    if (data.targets && gameCanvas.value) {
+        targets.value = data.targets.map(t => {
+            const size = t.size || 60 // Valor por defecto si falta
+            return {
+                ...t,
+                size: size,
+                x: (t.x / 1000) * gameCanvas.value.width,
+                y: (t.y / 1000) * gameCanvas.value.height,
+                vx: (t.vx || 0) / 1000 * gameCanvas.value.width,
+                vy: (t.vy || 0) / 1000 * gameCanvas.value.height,
+                bounds: {
+                    minX: size / 2,
+                    maxX: gameCanvas.value.width - size / 2,
+                    minY: 120 + (size / 2),
+                    maxY: gameCanvas.value.height - 20
+                },
+                ringColor: t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)'),
+                fillColor: t.fillColor || 'rgba(10, 20, 40, 0.85)'
+            }
+        })
+    }
+    if (data.score !== undefined) score.value = data.score
+    if (data.round !== undefined) round.value = data.round
+    if (data.timeLeft !== undefined) timeLeft.value = data.timeLeft
+    showStartOverlay.value = false
+  }
+
   onMounted(() => {
     ctx = gameCanvas.value.getContext('2d')
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
 
-    if (props.isMultiplayer || props.isRace || props.autoStart) {
+    if (props.isSpectator && props.spectatedPlayer) {
+      isPlaying.value = true
+      const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer]
+      if (lastSync) applySpectatorSync(lastSync)
+      animationFrame = requestAnimationFrame(gameLoop)
+      multiplayerStore.sendGameAction({ type: 'REQUEST_SYNC' })
+    } else if (props.isMultiplayer || props.isRace || props.autoStart) {
       setTimeout(() => {
         if (!isPlaying.value) startGame()
       }, 3000)
@@ -742,12 +880,40 @@
 
   watch(() => multiplayerStore.lastMessage, msg => {
     if (!msg) return
-    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
-      if (isPlaying.value) {
-        isPlaying.value = false; isFiring.value = false; cancelAnimationFrame(animationFrame); showGameOverOverlay.value = true
+
+    if (props.isSpectator) {
+      if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
+        if (msg.action?.type === 'SPECTATOR_SYNC' || msg.action?.type === 'SYMMETRY_SYNC_TARGETS') {
+          applySpectatorSync(msg.action)
+        }
+        if (msg.action?.type === 'SYMMETRY_POS_SYNC') {
+          for (const [idx, st] of msg.action.targets.entries()) {
+            if (targets.value[idx]) {
+              targets.value[idx].x = (st.x / 1000) * gameCanvas.value.width
+              targets.value[idx].y = (st.y / 1000) * gameCanvas.value.height
+            }
+          }
+        }
+        if (msg.action?.type === 'TIME_SYNC') {
+          timeLeft.value = msg.action.timeLeft
+        }
+        if (msg.action?.type === 'SYMMETRY_TIME_UP') {
+          endGame()
+        }
       }
       return
     }
+
+    if (msg.type === 'ROUND_ENDED_BY_WINNER') {
+      if (isPlaying.value) {
+        isPlaying.value = false
+        isFiring.value = false
+        cancelAnimationFrame(animationFrame)
+        showGameOverOverlay.value = true
+      }
+      return
+    }
+
     if (msg.type === 'GAME_ACTION') {
       if (msg.action?.type === 'SYMMETRY_SYNC_TARGETS' && !isHost.value && !props.isDuel && !props.isRace) {
         targets.value = msg.action.targets
@@ -756,10 +922,10 @@
         triggerRoundHint(currentChallenge.value.target)
         holdProgressMs.value = 0
       }
-      if (msg.action?.type === 'SYMMETRY_LOCK' && isHost.value && !props.isDuel && !props.isRace) {
+      if (msg.action?.type === 'SYMMETRY_LOCK' && isAuthority.value && !props.isDuel && !props.isRace) {
         lockTarget()
       }
-      if (msg.action?.type === 'SYMMETRY_REQUEST_SYNC' && isHost.value) {
+      if (msg.action?.type === 'SYMMETRY_REQUEST_SYNC' && isAuthority.value) {
         multiplayerStore.sendGameAction({
           type: 'SYMMETRY_SYNC_TARGETS',
           targets: targets.value,
@@ -768,7 +934,7 @@
         })
       }
       const isShared = multiplayerStore.room?.gameConfig?.sharedChallenge
-      if (msg.action?.type === 'SYMMETRY_POS_SYNC' && !isHost.value && (!props.isDuel || isShared) && !props.isRace) {
+      if (msg.action?.type === 'SYMMETRY_POS_SYNC' && !isAuthority.value && (!props.isDuel || isShared) && !props.isRace) {
         for (const [idx, st] of msg.action.targets.entries()) {
           if (targets.value[idx]) {
             const targetX = (st.x / 1000) * gameCanvas.value.width
@@ -816,6 +982,25 @@
 
       if (msg.action?.type === 'SYMMETRY_TIME_UP') {
         endGame()
+      }
+
+      if (msg.type === 'TIME_ATTACK') {
+        timeLeft.value = Math.max(0, timeLeft.value - 3)
+        triggerFeedback('error')
+      }
+      if (msg.action?.type === 'REQUEST_SYNC' && !props.isSpectator && isAuthority.value) {
+        multiplayerStore.sendGameAction({
+          type: 'SPECTATOR_SYNC',
+          score: score.value,
+          timeLeft: timeLeft.value,
+          round: round.value,
+          targets: targets.value.map(t => ({
+            x: Math.round((t.x / gameCanvas.value.width) * 1000),
+            y: Math.round((t.y / gameCanvas.value.height) * 1000),
+            text: t.text,
+            isTarget: t.isTarget
+          }))
+        })
       }
     }
   }, { immediate: true })

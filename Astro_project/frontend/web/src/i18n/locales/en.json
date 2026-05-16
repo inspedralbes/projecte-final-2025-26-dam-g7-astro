@@ -161,7 +161,9 @@
         "fuel": "QUANTUM FUEL",
         "lowFuel": "CRITICAL FUEL!",
         "roleCatcher": "COLLECTOR",
-        "roleSniper": "DESTRUCTOR"
+        "roleSniper": "DESTRUCTOR",
+        "entryFee": "ENTRY FEE",
+        "astrocions": "ASTROCIONS"
     },
     "plans": {
         "individual": "Individual",

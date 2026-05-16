@@ -432,7 +432,57 @@
         "fuel": "COMBUSTIBLE CUÁNTICO",
         "lowFuel": "¡COMBUSTIBLE CRÍTICO!",
         "roleCatcher": "RECOLECTOR",
-        "roleSniper": "DESTRUCTOR"
+        "roleSniper": "DESTRUCTOR",
+        "entryFee": "CUOTA DE ENTRADA",
+        "astrocions": "ASTROCIONES",
+        "missionInProgress": "MISIÓN EN CURSO",
+        "missionType": "TIPO DE MISIÓN",
+        "room": "SALA {id}",
+        "modeDescriptions": {
+            "1vs1": "Duelo directo entre dos pilotos. ¡Quien obtenga más puntos gana!",
+            "2vs2": "Cooperación en parejas para vencer al equipo rival.",
+            "carrera": "Viaja por planetas superando minijuegos para llegar primero a la meta.",
+            "torneig": "Competición por eliminatorias. Solo puede quedar uno."
+        },
+        "gameRules": {
+            "title": "MANUAL DE OPERACIONES",
+            "selectGame": "Selecciona un juego para ver su manual",
+            "WordConstruction": {
+                "name": "Construcción de Palabras",
+                "rules": "Arrastra las letras a su posición correcta para formar la palabra antes de que se agote el tiempo.",
+                "tip": "¡La velocidad otorga puntos extra!"
+            },
+            "SyllableQuest": {
+                "name": "Misión de Sílabas",
+                "rules": "Escucha o lee la palabra y pulsa el botón de aplauso una vez por cada sílaba que tenga.",
+                "tip": "¡No hay ayudas, confía en tu oído!"
+            },
+            "SpelledRosco": {
+                "name": "Rosco Estelar",
+                "rules": "Adivina las palabras que empiezan o contienen cada letra a partir de su definición.",
+                "tip": "Puedes pasar palabra y volver a ella más tarde."
+            },
+            "RhymeSquad": {
+                "name": "Escuadrón de Rimas",
+                "rules": "Caza las palabras que riman con el objetivo. Si eres destructor, ¡elimina las que no riman!",
+                "tip": "Mantén el combo para multiplicar tus puntos."
+            },
+            "RadarScan": {
+                "name": "Escáner de Radar",
+                "rules": "Mueve el escáner por la pantalla para localizar el objetivo oculto.",
+                "tip": "El tiempo corre, ¡sé preciso!"
+            },
+            "RadioSignal": {
+                "name": "Señal de Radio",
+                "rules": "Sintoniza la frecuencia correcta y escribe la frase que escuchas a través de las interferencias.",
+                "tip": "Colabora con tu equipo si no oyes bien la señal."
+            },
+            "SymmetryBreaker": {
+                "name": "Rompedor de Simetría",
+                "rules": "Identifica el símbolo que rompe la simetría perfecta en la matriz galáctica.",
+                "tip": "¡Mantén la calma y observa bien!"
+            }
+        }
     },
     "plans": {
         "selectMode": "SELECCIONA TU MODO DE MISIÓN",

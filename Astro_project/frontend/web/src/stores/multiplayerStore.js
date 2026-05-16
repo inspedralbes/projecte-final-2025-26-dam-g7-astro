@@ -51,6 +51,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     isRaceImmortal: false, // Evita Game Over por vidas/tiempo
     lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
     currentGlobalAnomaly: null, // Anomalía que afecta a todos
+    lastSpectatorSync: {}, // Caché del último estado de cada jugador: { username: { type, ...data } }
   }),
 
   getters: {
@@ -180,6 +181,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         }
         case 'ROOM_UPDATE': {
           if (data.room) {
+            // Reset de puntos local si pasamos a estado de juego para evitar arrastrar puntos anteriores
+            if (data.room.status === 'PLAYING' && this.room?.status !== 'PLAYING') {
+              this.roundScores = {}
+              this.remoteCursors = {}
+            }
             this.room = { ...data.room }
             if (data.room.gameConfig?.subRoles) {
               this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
@@ -240,7 +246,15 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           break
         }
         case 'GAME_ACTION': {
-          if (data.action?.type === 'MOUSE_MOVE') {
+          const action = data.action
+          if (!action) return
+
+          // Cachear sincronización para futuros observadores
+          if (action.type === 'SPECTATOR_SYNC' && data.from) {
+            this.lastSpectatorSync[data.from] = action
+          }
+
+          if (action.type === 'MOUSE_MOVE') {
             this.remoteCursors[data.from] = {
               x: data.action.x,
               y: data.action.y,
@@ -279,9 +293,13 @@ export const useMultiplayerStore = defineStore('multiplayer', {
 
           if (data.action?.type === 'TIME_SYNC') {
             this.playerTimes[data.from] = data.action.timeLeft
-            // Solo sobrescribir el tiempo local si es cooperativo (no Duel ni Race)
-            const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE'
-            if (isShared) {
+            
+            // Sincronizar el tiempo global si es compartido 
+            // O si soy un espectador (no estoy en la lista de jugadores activos)
+            const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE' && this.room?.gameConfig?.mode !== 'TOURNAMENT'
+            const isSpectator = !this.room?.players?.includes(sessionStore.user)
+            
+            if (isShared || isSpectator) {
               this.timeLeft = data.action.timeLeft
             }
           }
@@ -550,7 +568,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
       }
 
       if (action.type === 'TIME_SYNC') {
-        this.timeLeft = action.timeLeft
+        const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE' && this.room?.gameConfig?.mode !== 'TOURNAMENT'
+        // En modo competitivo/torneo, solo actualizamos el store local con nuestro propio tiempo
+        // (Los espectadores lo actualizan al recibir el mensaje en su propio componente)
+        if (isShared || this.room?.status === 'PLAYING') {
+          this.timeLeft = action.timeLeft
+        }
       }
 
       this.socket.send(JSON.stringify({

@@ -22,7 +22,8 @@ class RoomManager {
         this.roundTimers = new Map();
         this.roundGameScores = new Map();
         this.roundFinishedPlayers = new Map(); // roomId -> Set de jugadors que han acabat
-        this.playedGames = new Map();          // roomId -> Set de jocs ja jugats
+        this.playedGames = new Map();          // roomId -> Set de jocs ja jugats (general)
+        this.playerPlayedGames = new Map();    // username -> Set de jocs ja jugats en el torneig actual
         this.returnedToLobbyPlayers = new Map(); // roomId -> Set de jugadors que han tornat al lobby
         this.userToRoom = new Map();           // user -> roomId
 
@@ -504,10 +505,10 @@ class RoomManager {
         if (!room || room.players.size < 2) return { error: 'Se necesitan al menos 2 jugadores' };
 
         this.updateRoomActivity(roomId);
-        
+
         const isRace = room.gameConfig.mode === 'RACE';
         const isTournament = room.gameConfig.mode === 'TOURNAMENT';
-        
+
         if (isTournament) {
             room.status = 'TOURNAMENT_BRACKETS';
             room.gameConfig.tournament = {
@@ -531,7 +532,7 @@ class RoomManager {
         if (!room.gameConfig.scores) room.gameConfig.scores = {};
         if (!room.gameConfig.teams) room.gameConfig.teams = {};
         if (!room.gameConfig.subRoles) room.gameConfig.subRoles = {};
-        
+
         // Reset scores for a new match but keep teams if they exist
         room.players.forEach(p => {
             room.gameConfig.scores[p] = 0;
@@ -571,28 +572,48 @@ class RoomManager {
         if (nextMatch) {
             console.log(`[TOURNAMENT] Lanzando duelo: ${nextMatch.p1} vs ${nextMatch.p2}`);
             nextMatch.status = 'PLAYING';
-            const game = this.pickNextGame(roomId);
+            // Pasamos los participantes para elegir un juego que no hayan jugado
+            const game = this.pickNextGame(roomId, [nextMatch.p1, nextMatch.p2]);
             room.gameConfig.currentGame = game;
-            
+
+            // Marcar el juego como jugado para cada uno de los participantes
+            [nextMatch.p1, nextMatch.p2].forEach(p => {
+                if (!p) return;
+                let userGames = this.playerPlayedGames.get(p);
+                if (!userGames) {
+                    userGames = new Set();
+                    this.playerPlayedGames.set(p, userGames);
+                }
+                userGames.add(game);
+            });
+
             // Forzamos roles de 1v1 para el torneo
             room.gameConfig.teams = { [nextMatch.p1]: 'team-1', [nextMatch.p2]: 'team-2' };
             room.gameConfig.subRoles = { [nextMatch.p1]: null, [nextMatch.p2]: null };
-            
+
+            this.roundGameScores.set(roomId, {});
+            this.roundFinishedPlayers.set(roomId, new Set());
             this.setRoomStatus(roomId, 'PLAYING');
-            console.log(`[TOURNAMENT] Estado de la sala cambiado a PLAYING con juego: ${game}`);
+            console.log(`[TOURNAMENT] Estado de la sala cambiado a PLAYING con juego: ${game} y seed: ${room.gameConfig.seed}. Puntuaciones de ronda reseteadas.`);
         } else {
             console.log(`[TOURNAMENT] No hay partidas WAITING disponibles para lanzar.`);
         }
     }
 
-    generateBrackets(players) {
-        const shuffled = [...players].sort(() => Math.random() - 0.5);
+    generateBrackets(players, round = 1) {
+        const shuffled = [...players];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         const brackets = [];
-        // Generamos la primera ronda
+        // Generamos la ronda especificada
         for (let i = 0; i < shuffled.length; i += 2) {
+            const matchId = `round${round}-m${i / 2}`;
             if (i + 1 < shuffled.length) {
                 brackets.push({
-                    id: `round1-m${i / 2}`,
+                    id: matchId,
+                    round: round,
                     p1: shuffled[i],
                     p2: shuffled[i + 1],
                     winner: null,
@@ -601,7 +622,8 @@ class RoomManager {
             } else {
                 // Bye (pasa directo si es impar)
                 brackets.push({
-                    id: `round1-m${i / 2}`,
+                    id: matchId,
+                    round: round,
                     p1: shuffled[i],
                     p2: null,
                     winner: shuffled[i],
@@ -612,22 +634,49 @@ class RoomManager {
         return brackets;
     }
 
-    pickNextGame(roomId) {
+    pickNextGame(roomId, players = []) {
         const room = this.rooms.get(roomId);
-        const played = this.playedGames.get(roomId) || new Set();
-        let pool = this.availableGames.filter(g => !played.has(g));
-        if (pool.length === 0) pool = this.availableGames;
+        const playedInRoom = this.playedGames.get(roomId) || new Set();
 
-        // Si es torneo, filtramos solo juegos competitivos 1v1
+        let pool = this.availableGames;
+
+        // Si pasamos jugadores (Torneo), buscamos un juego que NINGUNO de ellos haya jugado
+        if (players.length > 0) {
+            const forbiddenGames = new Set();
+            players.forEach(p => {
+                const pGames = this.playerPlayedGames.get(p) || new Set();
+                pGames.forEach(g => forbiddenGames.add(g));
+            });
+
+            let filteredPool = this.availableGames.filter(g => !forbiddenGames.has(g));
+
+            // Si todos los juegos han sido jugados por alguno, usamos la lista de la sala
+            if (filteredPool.length === 0) {
+                filteredPool = this.availableGames.filter(g => !playedInRoom.has(g));
+            }
+            if (filteredPool.length > 0) pool = filteredPool;
+        } else {
+            let filteredPool = this.availableGames.filter(g => !playedInRoom.has(g));
+            if (filteredPool.length > 0) pool = filteredPool;
+        }
+
+        // Filtro adicional para Torneo (todos los juegos competitivos)
         if (room && room.gameConfig.mode === 'TOURNAMENT') {
-            const competitiveGames = ['WordConstruction', 'ColorMatch', 'MemorySync', 'PatternPulse'];
+            const competitiveGames = [
+                'WordConstruction',
+                'SymmetryBreaker',
+                'SyllableQuest',
+                'RadarScan',
+                'RadioSignal',
+                'RhymeSquad'
+            ];
             pool = pool.filter(g => competitiveGames.includes(g));
             if (pool.length === 0) pool = competitiveGames;
         }
 
         const game = pool[Math.floor(Math.random() * pool.length)];
-        played.add(game);
-        this.playedGames.set(roomId, played);
+        playedInRoom.add(game);
+        this.playedGames.set(roomId, playedInRoom);
         return game;
     }
 
@@ -639,7 +688,7 @@ class RoomManager {
         if (!room.gameConfig.subRoles) room.gameConfig.subRoles = {};
 
         const playerArray = Array.from(room.players);
-        
+
         if (room.gameConfig.mode === 'RACE') {
             playerArray.forEach(p => {
                 room.gameConfig.teams[p] = p; // Cada uno en su equipo (su propio nombre)
@@ -772,6 +821,21 @@ class RoomManager {
         }
 
         finished.add(user);
+
+        // En modo TORNEO, solo esperamos a los 2 participantes del duelo actual
+        if (room.gameConfig.mode === 'TOURNAMENT') {
+            const currentMatch = room.gameConfig.tournament.brackets.find(m => m.status === 'PLAYING');
+            if (currentMatch) {
+                const participants = [currentMatch.p1, currentMatch.p2].filter(p => p !== null);
+                const participantsFinished = participants.filter(p => finished.has(p));
+                console.log(`[TOURNAMENT] Esperando participantes: ${participantsFinished.length}/${participants.length}`);
+                if (participantsFinished.length >= participants.length) {
+                    this.finishRound(roomId);
+                }
+                return;
+            }
+        }
+
         console.log(`[Room ${roomId}] Jugador ${user} ha terminado la ronda. (${finished.size}/${room.players.size})`);
 
         if (finished.size >= room.players.size) {
@@ -799,7 +863,7 @@ class RoomManager {
         // Si hay equipos, calculamos el ganador por equipo
         const isCompetitive = ['1vs1', 'carrera', 'torneig', 'race', 'tournament', 'duel'].includes(room.gameConfig.modality);
         const hasTeams = room.gameConfig.teams && Object.keys(room.gameConfig.teams).length > 0 && !isCompetitive;
-        
+
         if (hasTeams) {
             const teamScores = {};
             Object.entries(roundScores).forEach(([u, s]) => {
@@ -871,7 +935,7 @@ class RoomManager {
                 currentMatch.status = 'FINISHED';
             }
             room.status = 'TOURNAMENT_BRACKETS';
-            
+
             // Si era la final, podriamos poner MATCH_RESULTS pero por ahora volvemos al árbol
         } else if (room.gameConfig.currentRound >= room.gameConfig.totalRounds - 1) {
             room.status = 'MATCH_RESULTS';
@@ -891,13 +955,34 @@ class RoomManager {
             const currentRoom = this.rooms.get(roomId);
             if (!currentRoom) return;
 
+            // En modo TOURNAMENT, no usamos la lógica normal de rondas/puntos
+            if (currentRoom.gameConfig.mode === 'TOURNAMENT') {
+                const tournament = currentRoom.gameConfig.tournament;
+                const nextMatch = tournament.brackets.find(m => m.status === 'WAITING');
+
+                if (nextMatch) {
+                    // Si hay más combates en esta ronda, lanzamos el siguiente tras 10 segundos
+                    console.log(`[TOURNAMENT] Preparando siguiente duelo en 10s...`);
+                    setTimeout(() => {
+                        this.launchTournamentRound(roomId);
+                    }, 10000);
+                } else {
+                    // Si no hay más combates, avanzamos de ronda tras 10 segundos
+                    console.log(`[TOURNAMENT] Ronda finalizada. Avanzando en 10s...`);
+                    setTimeout(() => {
+                        this.handleTournamentRoundEnd(roomId);
+                    }, 10000);
+                }
+                return;
+            }
+
             currentRoom.gameConfig.currentRound++;
 
             const winnerOfMatch = Object.entries(currentRoom.gameConfig.scores).find(([u, s]) => s >= currentRoom.gameConfig.pointsToWin);
 
             if (winnerOfMatch || currentRoom.gameConfig.currentRound >= currentRoom.gameConfig.totalRounds) {
                 currentRoom.status = 'GAME_OVER';
-                
+
                 let finalWinner = winnerOfMatch ? winnerOfMatch[0] : null;
                 if (!finalWinner) {
                     // Si nadie llegó a los puntos, el que tenga más victorias/puntos gana
@@ -1047,11 +1132,11 @@ class RoomManager {
                 match.status = 'PLAYING';
                 const game = this.pickNextGame(roomId);
                 room.gameConfig.currentGame = game;
-                
+
                 // Forzamos roles de 1v1 para el torneo
                 room.gameConfig.teams = { [match.p1]: 'team-1', [match.p2]: 'team-2' };
                 room.gameConfig.subRoles = { [match.p1]: null, [match.p2]: null };
-                
+
                 this.setRoomStatus(roomId, 'PLAYING');
             }
         }
@@ -1061,39 +1146,16 @@ class RoomManager {
         }
 
         if (action.type === 'NEXT_TOURNAMENT_ROUND') {
-            if (!room.gameConfig.tournament) return;
-            const tournament = room.gameConfig.tournament;
-            const winners = tournament.brackets.map(m => m.winner).filter(w => w !== null);
-            
-            if (winners.length > 1) {
-                tournament.round++;
-                tournament.brackets = this.generateBrackets(winners);
-                
-                // Inicio automático de la siguiente ronda tras 15s
-                setTimeout(() => {
-                    this.launchTournamentRound(roomId);
-                }, 15000);
-            } else if (winners.length === 1) {
-                // Ganador final del torneo
-                this.broadcastToRoom(roomId, {
-                    type: 'TOURNAMENT_FINISHED',
-                    winner: winners[0]
-                });
-                room.status = 'MATCH_RESULTS';
-                room.gameConfig.scores[winners[0]] = 999; // Placeholder para indicar ganador
-            }
-            
-            const roomUpdate = await this.getRoom(roomId);
-            this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: roomUpdate });
+            this.handleTournamentRoundEnd(roomId);
         }
 
         if (action.type === 'SCORE_UPDATE' && room.gameConfig.mode === 'TOURNAMENT') {
             if (room.gameConfig.timer > 5) {
                 room.gameConfig.timer -= 3;
-                this.broadcastToRoom(roomId, { 
-                    type: 'TIME_ATTACK', 
+                this.broadcastToRoom(roomId, {
+                    type: 'TIME_ATTACK',
                     attacker: user,
-                    message: '-3s ATAQUE!' 
+                    message: '-3s ATAQUE!'
                 });
             }
         }
@@ -1103,6 +1165,46 @@ class RoomManager {
             from: user,
             action
         });
+    }
+
+    async handleTournamentRoundEnd(roomId) {
+        const room = this.rooms.get(roomId);
+        if (!room || !room.gameConfig.tournament) return;
+
+        const tournament = room.gameConfig.tournament;
+        const currentRound = tournament.round;
+        const winners = tournament.brackets
+            .filter(m => m.round === currentRound)
+            .map(m => m.winner)
+            .filter(w => w !== null);
+
+        if (winners.length > 1) {
+            console.log(`[TOURNAMENT] Generando nueva ronda con ${winners.length} ganadores.`);
+            tournament.round++;
+            const nextBrackets = this.generateBrackets(winners, tournament.round);
+            // Reemplazamos los brackets para que solo queden los nuevos y el historial de terminados sea limpio
+            tournament.brackets = [...tournament.brackets, ...nextBrackets];
+
+            // Inicio automático del primer combate de la nueva ronda tras 10s
+            setTimeout(() => {
+                this.launchTournamentRound(roomId);
+            }, 10000);
+        } else if (winners.length === 1) {
+            console.log(`[TOURNAMENT] Torneo finalizado. Ganador: ${winners[0]}`);
+            room.status = 'GAME_OVER'; // Cambiamos a GAME_OVER para que salte el Kahoot
+            this.broadcastToRoom(roomId, {
+                type: 'MATCH_FINISHED',
+                winner: winners[0],
+                room: room
+            });
+            room.gameConfig.scores[winners[0]] = (room.gameConfig.scores[winners[0]] || 0) + 1000; // Bonus por ganar el torneo
+
+            // Limpiar el historial de juegos de jugadores al acabar el torneo
+            room.players.forEach(p => this.playerPlayedGames.delete(p));
+        }
+
+        const roomUpdate = await this.getRoom(roomId);
+        this.broadcastToRoom(roomId, { type: 'ROOM_UPDATE', room: roomUpdate });
     }
 
     swapTeamRoles(roomId, teamId) {
@@ -1168,15 +1270,15 @@ class RoomManager {
         const players = Array.from(room.players);
         const scores = room.gameConfig.scores || {};
         const game = "Multijugador";
-        
+
         for (const username of players) {
             try {
                 const score = scores[username] || 0;
-                await this.gameService.completeGame(username, { 
-                    game, 
-                    score, 
-                    completedMapNode: null, 
-                    timeSeconds: 0 
+                await this.gameService.completeGame(username, {
+                    game,
+                    score,
+                    completedMapNode: null,
+                    timeSeconds: 0
                 });
                 console.log(`📝 [RoomManager] Partida multijugador registrada para ${username} (${score} pts)`);
             } catch (err) {

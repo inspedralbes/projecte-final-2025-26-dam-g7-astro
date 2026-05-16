@@ -1,35 +1,25 @@
 <template>
-  <v-container class="text-center d-flex justify-center align-center fill-height" :class="{ 'game-paused': props.isPaused }" fluid>
-    <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10" max-width="560" rounded="xl" width="100%">
+  <v-container class="fill-height d-flex flex-column align-center justify-center syllable-quest-container pa-4" style="position: relative;" @mousemove="handleMouseMove" :class="{ 'game-paused': props.isPaused }" fluid>
+    <v-card class="pa-6 bg-slate-900 border-amber game-shell mb-10 game-board" max-width="560" rounded="xl" width="100%">
       <div class="hud-row mb-6">
         <div class="text-subtitle-1 text-amber-accent-2 font-weight-bold">{{ $t('syllableQuest.points', { score: score }) }}</div>
-        <div class="text-subtitle-1 font-weight-bold" :class="timeLeft <= 10 ? 'text-red-accent-2' : 'text-cyan-accent-2'">
+        <div v-if="!props.isMultiplayer" class="text-subtitle-1 font-weight-bold" :class="timeLeft <= 10 ? 'text-red-accent-2' : 'text-cyan-accent-2'">
           {{ $t('syllableQuest.time', { time: timeLeft }) }}
         </div>
       </div>
 
       <template v-if="!gameFinished">
         <div v-if="!isMultiplayer || props.isDuel">
-          <div class="text-h4 mb-2">{{ currentWord.text }}</div>
+          <div class="text-h4 mb-2">{{ currentWord.text.replace(/-/g, '') }}</div>
           <div class="text-caption text-grey-lighten-1 mb-6">{{ $t('syllableQuest.missionProgress', { current: currentWordIndex + 1, total: words.length }) }}</div>
 
-          <div class="d-flex justify-center gap-4 mb-8">
-            <v-avatar
-              v-for="n in currentWord.syllables"
-              :key="n"
-              class="elevation-4"
-              :color="userSyllables >= n ? 'amber-accent-3' : 'grey-darken-3'"
-              size="60"
-            >
-              <v-icon v-if="userSyllables >= n">mdi-music-note</v-icon>
-            </v-avatar>
-          </div>
 
           <v-btn
             class="mb-4"
             color="amber-accent-3"
             icon="mdi-hand-clap"
             size="x-large"
+            :disabled="props.isSpectator"
             @click="addSyllable"
           />
 
@@ -40,6 +30,7 @@
             class="font-weight-bold"
             color="success"
             rounded="lg"
+            :disabled="props.isSpectator"
             @click="checkSyllables"
           >
             {{ $t('syllableQuest.check') }}
@@ -71,7 +62,7 @@
               :key="'word-'+idx"
               class="text-none font-weight-bold"
               color="amber-accent-3"
-              :disabled="usedWordIndices.has(idx)"
+              :disabled="usedWordIndices.has(idx) || props.isSpectator"
               rounded="pill"
               @click="handleWordClick(idx)"
             >
@@ -138,15 +129,25 @@ const props = defineProps({
   isDuel: { type: Boolean, default: false },
   duration: { type: Number, default: 60 },
   isPaused: { type: Boolean, default: false },
+  isSpectator: { type: Boolean, default: false },
+  spectatedPlayer: { type: String, default: null },
 })
 const emit = defineEmits(['game-over'])
 
-const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
-const anyRivalAlive = computed(() => {
+const isPlaying = ref(true)
+const level = ref(1)
+const successfulDetections = ref(0)
+const showStartOverlay = ref(false)
+
+const isAuthority = computed(() => {
+  if (props.isSpectator) return false
   if (!props.isMultiplayer) return true
-  const rivals = Object.keys(multiplayerStore.playerTimes || {}).filter(u => u !== astroStore.user)
-  if (rivals.length === 0) return true 
-  return rivals.some(u => (multiplayerStore.playerTimes?.[u] || 0) > 0)
+  const hostName = multiplayerStore.room?.host?.username || multiplayerStore.room?.host
+  if (hostName === astroStore.user) return true
+  const modality = multiplayerStore.room?.gameConfig?.modality
+  const mode = multiplayerStore.room?.gameConfig?.mode
+  if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
+  return false
 })
 
 // --- REFORÇ VISUAL I SONOR ---
@@ -164,6 +165,38 @@ function triggerFeedback(type) {
   audio.volume = 0.4
   audio.play().catch(e => console.warn('Audio play blocked:', e))
   setTimeout(() => { showFeedback.value = false }, 800)
+}
+
+// --- MULTIJUGADOR: SEGUIMIENTO DE RATÓN Y SYNC ---
+let lastMouseSync = 0
+function handleMouseMove(e) {
+  if (!isPlaying.value || props.isSpectator) return
+  const container = document.querySelector('.game-board')
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  const x = ((e.clientX - rect.left) / rect.width) * 100
+  const y = ((e.clientY - rect.top) / rect.height) * 100
+
+  const now = Date.now()
+  if (props.isMultiplayer && now - lastMouseSync > 50) {
+    lastMouseSync = now
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    
+    // Sync periódico para espectadores
+    if (isAuthority.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        score: score.value,
+        timeLeft: timeLeft.value,
+        wordIndex: currentWordIndex.value,
+        level: level.value,
+        successes: successfulDetections.value,
+        phraseIndex: currentPhraseIndex.value,
+        shuffled: shuffledWords.value,
+        correctWordsInOrder: correctWordsInOrder.value
+      })
+    }
+  }
 }
 
 // LCG Random
@@ -237,9 +270,7 @@ function checkSyllables() {
   if (gameFinished.value || props.isPaused) return
   if (userSyllables.value === currentWord.value.syllables) {
     score.value += 20 + (currentWord.value.syllables * 5)
-    if (anyRivalAlive.value) {
-      timeLeft.value = Math.min(90, timeLeft.value + 5)
-    }
+    successfulDetections.value++
     message.value = t('syllableQuest.correct')
     messageType.value = 'success'
     triggerFeedback('success')
@@ -260,6 +291,7 @@ function checkSyllables() {
       message.value = ''
       userSyllables.value = 0
       currentWordIndex.value++
+      if (currentWordIndex.value % 5 === 0) level.value++
     }, 1000)
   } else {
     timeLeft.value = Math.max(0, timeLeft.value - 5)
@@ -280,7 +312,6 @@ function syncPhrase() {
   const phrase = phrases[idx]
   const wordsArr = phrase.split(' ')
   
-  // Use LCG for shuffling to maintain sync
   const shuffled = [...wordsArr]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(lcgRandom() * (i + 1));
@@ -292,7 +323,7 @@ function syncPhrase() {
   usedWordIndices.value.clear()
   correctWordsInOrder.value = []
 
-  if (props.isMultiplayer && isHost.value && !props.isDuel && !props.isRace) {
+  if (props.isMultiplayer && isAuthority.value && !props.isDuel && !props.isRace) {
     multiplayerStore.sendGameAction({ type: 'PHRASE_SYNC', phraseIndex: idx, shuffled })
   }
 }
@@ -320,6 +351,7 @@ function processCorrectClick(idx, word) {
   usedWordIndices.value.add(idx)
   correctWordsInOrder.value.push(word)
   score.value += 15
+  successfulDetections.value++
   triggerFeedback('success')
 
   const phraseWords = phrases[currentPhraseIndex.value].split(' ')
@@ -344,12 +376,14 @@ function processIncorrectClick() {
   setTimeout(() => { message.value = '' }, 1000)
 }
 
+function startGame() { isPlaying.value = true }
+
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval)
   let lastTick = Date.now()
   timerInterval = setInterval(() => {
     if (gameFinished.value || props.isPaused) return
-    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+    if (isAuthority.value) {
       const now = Date.now()
       const delta = Math.floor((now - lastTick) / 1000)
       if (delta >= 1) {
@@ -357,12 +391,8 @@ function startTimer() {
         lastTick += delta * 1000
 
         if (props.isMultiplayer) {
-          if (isHost.value || props.isDuel || props.isRace) {
-            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-          }
-          if (props.isDuel || props.isRace) {
             multiplayerStore.timeLeft = timeLeft.value
-          }
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
         }
       }
       if (timeLeft.value <= 0) finishGame()
@@ -375,13 +405,10 @@ function finishGame() {
   gameFinished.value = true
   if (timerInterval) clearInterval(timerInterval)
 
-  if (props.isMultiplayer && !props.isDuel && !props.isRace) {
+  if (props.isMultiplayer) {
     multiplayerStore.submitRoundResult()
   }
-  
-  if (!props.isMultiplayer || props.isRace || props.isDuel) {
-    emitExit()
-  }
+  emitExit()
 }
 
 function emitExit() {
@@ -396,18 +423,76 @@ onMounted(() => {
     timeLeft.value = props.duration
   }
 
-  startTimer()
-  if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
-    if (multiplayerStore.room?.gameConfig?.seed) {
-      const s = multiplayerStore.room.gameConfig.seed
-      currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
+  if (props.isSpectator && props.spectatedPlayer) {
+    const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer]
+    if (lastSync && (lastSync.type === 'SPECTATOR_SYNC' || lastSync.type === 'PHRASE_SYNC')) {
+      applySpectatorSync(lastSync)
+    } else {
+      multiplayerStore.sendGameAction({ type: 'REQUEST_SYNC' })
     }
-    syncPhrase()
+  } else {
+    startTimer()
+    if (isAuthority.value) {
+      if (multiplayerStore.room?.gameConfig?.seed) {
+        const s = multiplayerStore.room.gameConfig.seed
+        currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
+      }
+      syncPhrase()
+    }
   }
 })
 
+function applySpectatorSync(data) {
+  if (!data) return
+  if (data.score !== undefined) score.value = data.score
+  if (data.timeLeft !== undefined) timeLeft.value = data.timeLeft
+  if (data.wordIndex !== undefined) currentWordIndex.value = data.wordIndex
+  if (data.level !== undefined) level.value = data.level
+  if (data.successes !== undefined) successfulDetections.value = data.successes
+  if (data.phraseIndex !== undefined) currentPhraseIndex.value = data.phraseIndex
+  if (data.shuffled !== undefined) shuffledWords.value = data.shuffled
+  if (data.correctWordsInOrder !== undefined) correctWordsInOrder.value = data.correctWordsInOrder
+  
+  showStartOverlay.value = false
+  if (!isPlaying.value) startGame()
+  if (gameFinished.value) gameFinished.value = false
+}
+
 watch(() => multiplayerStore.lastMessage, msg => {
   if (!msg) return
+
+  // LÓGICA ESPECTADOR
+  if (props.isSpectator) {
+    if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
+        if (msg.action?.type === 'SPECTATOR_SYNC' || msg.action?.type === 'PHRASE_SYNC') {
+          applySpectatorSync(msg.action)
+        }
+        if (msg.action?.type === 'PHRASE_CLICK') {
+          if (msg.action.correct) {
+            processCorrectClick(msg.action.index, msg.action.word)
+          } else {
+            processIncorrectClick()
+          }
+        }
+        if (msg.action?.type === 'REQUEST_SYNC' && isAuthority.value) {
+          multiplayerStore.sendGameAction({
+            type: 'SPECTATOR_SYNC',
+            score: score.value,
+            timeLeft: timeLeft.value,
+            wordIndex: currentWordIndex.value,
+            level: level.value,
+            successes: successfulDetections.value,
+            phraseIndex: currentPhraseIndex.value,
+            shuffled: shuffledWords.value,
+            correctWordsInOrder: correctWordsInOrder.value
+          })
+        }
+        if (msg.action?.type === 'TIME_SYNC') {
+          timeLeft.value = msg.action.timeLeft
+        }
+    }
+    return
+  }
 
   if (msg.type === 'ROUND_ENDED_BY_WINNER') {
     finishGame()
@@ -435,7 +520,7 @@ watch(() => multiplayerStore.lastMessage, msg => {
       }
     }
 
-    if (msg.action?.type === 'TIME_SYNC' && !isHost.value && !props.isDuel && !props.isRace) {
+    if (msg.action?.type === 'TIME_SYNC' && !isAuthority.value && !props.isDuel && !props.isRace) {
       timeLeft.value = msg.action.timeLeft
       if (timeLeft.value <= 0) finishGame()
     }
@@ -456,6 +541,14 @@ watch(() => multiplayerStore.lastMessage, msg => {
     }
   }
 }, { immediate: true })
+
+// Sincronización de tiempo global para Torneo/Duelos
+watch(() => multiplayerStore.timeLeft, (newTime) => {
+  if (props.isMultiplayer) {
+    timeLeft.value = Math.ceil(newTime);
+    if (timeLeft.value <= 0 && !gameFinished.value) finishGame();
+  }
+});
 
 watch(score, newScore => {
   if (props.isMultiplayer) {

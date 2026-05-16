@@ -1,12 +1,6 @@
 <template>
-  <v-container class="game-container pa-0 w-100 opendyslexic position-relative" fluid style="min-height: 800px; overflow: hidden; background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);">
+  <v-container ref="gameArea" class="game-container pa-0 w-100 opendyslexic position-relative" fluid style="min-height: 800px; overflow: hidden; background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);" @mousemove="handleMouseMove">
     
-    <!-- Star Path Background Decor -->
-    <div class="star-decor-bg">
-      <svg viewBox="0 0 400 400" width="100%" height="100%" opacity="0.1">
-        <path :d="starPath" fill="none" stroke="rgba(0, 229, 255, 0.5)" stroke-width="1" />
-      </svg>
-    </div>
 
     <!-- HUD -->
     <div class="hud d-flex justify-space-between align-center px-6 w-100 position-absolute" style="top: 20px; z-index: 20;">
@@ -133,10 +127,10 @@
             autocomplete="off"
             @keydown.enter="checkAnswer"
             @input="onTyping"
-            :disabled="isChecking || isTranslator || isSender"
+            :disabled="isChecking || isTranslator || isSender || props.isSpectator"
           >
             <template v-slot:append-inner>
-              <v-btn icon="mdi-send" variant="text" color="cyan-accent-3" @click="checkAnswer" :disabled="isChecking || isTranslator || isSender" />
+              <v-btn icon="mdi-send" variant="text" color="cyan-accent-3" @click="checkAnswer" :disabled="isChecking || isTranslator || isSender || props.isSpectator" />
             </template>
           </v-text-field>
 
@@ -147,7 +141,7 @@
             rounded="lg"
             class="font-weight-black px-6"
             @click="skipLetter"
-            :disabled="isChecking || isTranslator || isSender"
+            :disabled="isChecking || isTranslator || isSender || props.isSpectator"
           >
             {{ $t('spelledRosco.pass') }}
           </v-btn>
@@ -222,6 +216,8 @@ const props = defineProps({
   isDuel: { type: Boolean, default: false },
   autoStart: { type: Boolean, default: false },
   isPaused: { type: Boolean, default: false },
+  isSpectator: { type: Boolean, default: false },
+  spectatedPlayer: { type: String, default: null },
 })
 
 const textHint = ref('')
@@ -244,7 +240,7 @@ function throttle(func, limit) {
   }
 }
 
-const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), timeLeft = ref(60), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
+const roscoLetters = ref([]), currentIndex = ref(0), rawInput = ref(''), gameFinished = ref(false), score = ref(0), showFeedback = ref(false), feedbackMessage = ref(''), feedbackColor = ref('info'), isChecking = ref(false), timeLeft = ref(props.duration), rocketAnimating = ref(false), rocketPos = reactive({ x: 0, y: 0 }), trailParticles = ref([]), visitedSegments = ref(new Set())
 let timerInterval = null
 let currentSeed = 0
 
@@ -281,6 +277,16 @@ const subRole = computed(() => multiplayerStore.subRole)
 const isHost = computed(() => {
   const host = multiplayerStore.room?.host
   return (typeof host === 'object' ? host.username || host.user : host) === astroStore.user
+})
+const isAuthority = computed(() => {
+  if (props.isSpectator) return false
+  if (!props.isMultiplayer) return true
+  if (isHost.value) return true
+  // En duelos, torneos o carreras cada jugador es autoridad de su propio minijuego
+  const modality = multiplayerStore.room?.gameConfig?.modality
+  const mode = multiplayerStore.room?.gameConfig?.mode
+  if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
+  return false
 })
 const isTranslator = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'translator')
 const isSender = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'sender')
@@ -346,6 +352,15 @@ function initRosco(force = false) {
       roscoLetters.value = data; currentIndex.value = 0; rocketPos.x = starPoints[0].x; rocketPos.y = starPoints[0].y
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({ type: 'ROSCO_SYNC', data })
+        if (props.isDuel || props.isRace) {
+            multiplayerStore.sendGameAction({
+                type: 'SPECTATOR_SYNC',
+                data: data,
+                index: currentIndex.value,
+                score: score.value,
+                timeLeft: timeLeft.value
+            })
+        }
         if (!props.isDuel && !props.isRace) {
           multiplayerStore.sendGameAction({ type: 'INDEX_SYNC', index: 0 })
         }
@@ -386,20 +401,92 @@ onMounted(() => {
     const s = multiplayerStore.room.gameConfig.seed
     currentSeed = typeof s === 'string' ? s.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : s
   }
-  initRosco()
-  setTimeout(() => { 
-    if (!gameFinished.value && !isPlaying.value) startGame() 
-  }, (props.isMultiplayer || props.isRace || props.autoStart) ? 3000 : 0)
+  
+  if (props.isSpectator && props.spectatedPlayer) {
+    const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer]
+    if (lastSync && (lastSync.type === 'SPECTATOR_SYNC' || lastSync.type === 'ROSCO_SYNC')) {
+      applySpectatorSync(lastSync)
+    }
+  } else {
+    initRosco()
+    setTimeout(() => { 
+      if (!gameFinished.value && !isPlaying.value) startGame() 
+    }, (props.isMultiplayer || props.isRace || props.autoStart) ? 3000 : 0)
+  }
 })
+
+function applySpectatorSync(data) {
+  if (!data) return
+  if (data.data) roscoLetters.value = data.data
+  if (data.index !== undefined && data.index !== currentIndex.value) {
+     const start = letterPositions[currentIndex.value]
+     const end = letterPositions[data.index]
+     if (!rocketAnimating.value) {
+       rocketAnimating.value = true
+       animateRocketPath(start, end).then(() => {
+         currentIndex.value = data.index
+         rocketAnimating.value = false
+       })
+     } else {
+       currentIndex.value = data.index // Sync instantáneo si ya se está moviendo
+     }
+  }
+  if (data.score !== undefined) score.value = data.score
+  if (data.timeLeft !== undefined) timeLeft.value = data.timeLeft
+  if (!isPlaying.value) {
+      isPlaying.value = true
+      startTimer()
+  }
+}
 
 watch(() => multiplayerStore.room, () => initRosco(), { deep: true })
 const emitTyping = throttle(text => {
   if (props.isMultiplayer && !isTranslator.value && !isSender.value && !props.isDuel) multiplayerStore.sendGameAction({ type: 'TYPING_SYNC', text })
 }, 150)
+let lastMouseSync = 0
+const gameArea = ref(null)
+function handleMouseMove(e) {
+  if (!isPlaying.value || props.isSpectator || !gameArea.value) return
+  const rect = gameArea.value.getBoundingClientRect()
+  const x = ((e.clientX - rect.left) / rect.width) * 100
+  const y = ((e.clientY - rect.top) / rect.height) * 100
+
+  const now = Date.now()
+  if (props.isMultiplayer && now - lastMouseSync > 50) {
+    lastMouseSync = now
+    multiplayerStore.sendGameAction({ type: 'MOUSE_MOVE', x, y })
+    
+    // Sync periódico para espectadores
+    if (isAuthority.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        score: score.value,
+        timeLeft: timeLeft.value,
+        index: currentIndex.value,
+        data: roscoLetters.value
+      })
+    }
+  }
+}
+
 function onTyping() { emitTyping(rawInput.value) }
 
-watch(() => multiplayerStore.lastMessage, msg => {
+  watch(() => multiplayerStore.lastMessage, msg => {
   if (!msg) return
+
+  // LÓGICA ESPECTADOR
+  if (props.isSpectator) {
+    if (msg.from === props.spectatedPlayer && msg.type === 'GAME_ACTION') {
+      if (msg.action?.type === 'SPECTATOR_SYNC' || msg.action?.type === 'ROSCO_SYNC' || msg.action?.type === 'INDEX_SYNC') {
+        applySpectatorSync(msg.action)
+      }
+      if (msg.action?.type === 'TIME_SYNC') {
+        timeLeft.value = msg.action.timeLeft
+      }
+    }
+    return
+  }
+
   if (msg.type === 'ROUND_ENDED_BY_WINNER') { gameFinished.value = true; emitExit() }
   if (msg.type === 'GAME_ACTION') {
     const a = msg.action
@@ -421,6 +508,15 @@ watch(() => multiplayerStore.lastMessage, msg => {
     }
     if (a.type === 'TIME_PENALTY' && msg.from !== astroStore.user) {
       timeLeft.value = Math.max(0, timeLeft.value - (a.amount || 8))
+    }
+    if (a.type === 'REQUEST_SYNC' && isHost.value && isPlaying.value) {
+      multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        score: score.value,
+        timeLeft: timeLeft.value,
+        index: currentIndex.value,
+        data: roscoLetters.value
+      })
     }
   }
   if (msg.type === 'GAME_ROLES_SWAPPED') {
@@ -458,6 +554,16 @@ function handleResult(status) {
   showFeedback.value = true
   if (props.isMultiplayer && !props.isDuel && !props.isRace) {
     multiplayerStore.sendGameAction({ type: 'ADVANCE_LETTER', index: currentIndex.value, status, score: score.value })
+  }
+  
+  if (props.isMultiplayer && (props.isDuel || props.isRace)) {
+    multiplayerStore.sendGameAction({
+        type: 'SPECTATOR_SYNC',
+        data: roscoLetters.value,
+        index: currentIndex.value,
+        score: score.value,
+        timeLeft: timeLeft.value
+    })
   }
   setTimeout(() => { showFeedback.value = false; rawInput.value = ''; isChecking.value = false; advanceTurn() }, 1000)
 }
@@ -534,21 +640,38 @@ function animateSegment(p1, p2) {
 
 function startTimer() {
   if (timerInterval) clearInterval(timerInterval)
+  let lastTick = Date.now()
   timerInterval = setInterval(() => {
-    if (gameFinished.value || props.isPaused) return
-    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
-      timeLeft.value = Math.max(0, timeLeft.value - 1)
-      if (props.isMultiplayer) {
-        if (isHost.value || props.isDuel || props.isRace) {
-          multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
-        }
-        if (props.isDuel || props.isRace) {
-          multiplayerStore.timeLeft = timeLeft.value
-        }
-      }
-      if (timeLeft.value === 0) finishGame()
+    if (gameFinished.value || props.isPaused) {
+      lastTick = Date.now() // Reset tick to avoid jump when unpausing
+      return
     }
-  }, 1000)
+    if (!props.isMultiplayer || isHost.value || props.isDuel || props.isRace) {
+      const now = Date.now()
+      const delta = Math.floor((now - lastTick) / 1000)
+      if (delta >= 1) {
+        timeLeft.value = Math.max(0, timeLeft.value - delta)
+        lastTick += delta * 1000
+
+        if (props.isMultiplayer) {
+          if (isHost.value || props.isDuel || props.isRace) {
+            multiplayerStore.timeLeft = timeLeft.value
+            multiplayerStore.sendGameAction({ type: 'TIME_SYNC', timeLeft: timeLeft.value })
+            
+            // Sync para observadores
+            multiplayerStore.sendGameAction({
+              type: 'SPECTATOR_SYNC',
+              score: score.value,
+              timeLeft: timeLeft.value,
+              index: currentIndex.value,
+              data: roscoLetters.value
+            })
+          }
+        }
+        if (timeLeft.value === 0) finishGame()
+      }
+    }
+  }, 500)
 }
 
 function finishGame() { 
