@@ -45,8 +45,15 @@
     "search_placeholder": "Buscar exploradores...",
     "tabs": {
       "friends": "AMIGOS",
-      "requests": "SOLICITUDES"
+      "requests": "SOLICITUDES",
+      "explore": "EXPLORAR"
     },
+    "recruit": "RECLUTAR",
+    "pagination": {
+      "next": "SIGUIENTE",
+      "prev": "ANTERIOR"
+    },
+    "empty_explore": "No se encontraron exploradores",
     "empty_friends": "Sin Contactos",
     "empty_friends_sub": "Busca a otros exploradores por su nombre de usuario para entrenar juntos.",
     "empty_requests": "Sin Solicitudes",

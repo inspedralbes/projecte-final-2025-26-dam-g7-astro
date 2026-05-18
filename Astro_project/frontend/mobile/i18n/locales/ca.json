@@ -45,8 +45,15 @@
     "search_placeholder": "Cercar exploradors...",
     "tabs": {
       "friends": "AMICS",
-      "requests": "SOL·LICITUDS"
+      "requests": "SOL·LICITUDS",
+      "explore": "EXPLORAR"
     },
+    "recruit": "RECLUTAR",
+    "pagination": {
+      "next": "SEGÜENT",
+      "prev": "ANTERIOR"
+    },
+    "empty_explore": "No s'han trobat exploradors",
     "empty_friends": "Sense Contactes",
     "empty_friends_sub": "Cerca altres exploradors pel seu nom d'usuari per entrenar junts.",
     "empty_requests": "Sense Sol·licituds",

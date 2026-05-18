@@ -45,8 +45,15 @@
     "search_placeholder": "Search explorers...",
     "tabs": {
       "friends": "FRIENDS",
-      "requests": "REQUESTS"
+      "requests": "REQUESTS",
+      "explore": "EXPLORE"
     },
+    "recruit": "RECRUIT",
+    "pagination": {
+      "next": "NEXT",
+      "prev": "PREV"
+    },
+    "empty_explore": "No Explorers Found",
     "empty_friends": "No Contacts",
     "empty_friends_sub": "Search for other explorers by their username to train together.",
     "empty_requests": "No Requests",
