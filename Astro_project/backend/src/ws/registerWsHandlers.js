@@ -183,7 +183,6 @@ function registerWsHandlers(wss, getDB) {
                         }
                         break;
                     }
-
                     case 'CHALLENGE_RESPONSE': {
                         // { type: 'CHALLENGE_RESPONSE', from: 'UserB', to: 'UserA', accepted: true/false }
                         console.log(`⚔️ Respuesta al desafío de ${msg.from} para ${msg.to}: ${msg.accepted ? 'ACEPTADO' : 'RECHAZADO'}`);
@@ -193,6 +192,14 @@ function registerWsHandlers(wss, getDB) {
                         
                         // Persistir en DB: msg.to es el challenger (UserA), msg.from es el receptor (UserB)
                         await chatService.updateLatestChallengeStatus(dbR, msg.to, msg.from, newStatus);
+
+                        // Enviar conteo de no leídos actualizado al receptor (msg.from)
+                        try {
+                            const unread = await chatService.getUnreadByConversation(dbR, msg.from);
+                            ws.send(JSON.stringify({ type: 'CHAT_UNREAD_COUNTS', counts: unread }));
+                        } catch (e) {
+                            console.error('Error enviando unread counts post respuesta a desafío:', e);
+                        }
 
                         if (msg.accepted) {
                             // Crear una sala privada para los dos

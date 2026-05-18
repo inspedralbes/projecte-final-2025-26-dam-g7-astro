@@ -50,6 +50,13 @@
         "exerciseSourceDefault": "Predeterminado general",
         "exerciseSourceLoading": "Cargando...",
         "exerciseSourceNoCustomPremium": "Puedes editar tus propios ejercicios en Gestión Educativa.",
+        "results_title": "¡MISIÓN COMPLETADA CON ÉXITO!",
+        "score_obtained": "Puntuación Obtenida:",
+        "xp_earned": "Experiencia Ganada:",
+        "coins_earned": "AstroCoins Conseguidas:",
+        "double_score_booster": "¡Puntaje duplicado x2 gracias al Duplicador de Puntos!",
+        "double_coins_booster": "¡AstroCoins duplicadas x2 gracias al Duplicador de Monedas!",
+        "confirm_telemetry": "CONFIRMAR TELEMETRÍA",
         "exit_confirm": {
             "title": "¿ABORTAR MISIÓN?",
             "desc": "Si abandonas ahora, perderás todo el progreso de esta sesión y tus puntos de entrenamiento no se guardarán.",

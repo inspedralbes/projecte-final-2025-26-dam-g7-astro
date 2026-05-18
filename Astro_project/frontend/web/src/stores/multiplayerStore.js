@@ -530,7 +530,11 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         to: challengerName,
         accepted,
       }))
-      useChatStore().setChallengeStatus(challengerName, accepted ? 'accepted' : 'rejected')
+      const chatStore = useChatStore()
+      chatStore.setChallengeStatus(challengerName, accepted ? 'accepted' : 'rejected')
+      if (chatStore.unreadCounts[challengerName]) {
+        chatStore.unreadCounts[challengerName] = 0
+      }
       this.challengeRequests = this.challengeRequests.filter(r => r.from !== challengerName)
     },
 

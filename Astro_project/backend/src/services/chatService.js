@@ -43,7 +43,7 @@ async function updateLatestChallengeStatus(db, from, to, status) {
     if (lastChallenge) {
         await messages.updateOne(
             { _id: lastChallenge._id },
-            { $set: { status } }
+            { $set: { status, read: true } }
         );
         return true;
     }
