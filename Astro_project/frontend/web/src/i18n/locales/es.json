@@ -169,6 +169,7 @@
         "accountSettings": "AJUSTES DE CUENTA",
         "settings": "AJUSTES",
         "changePassword": "CAMBIAR CONTRASEÑA",
+        "weakPasswordWarning": "Tu contraseña es muy débil. Por favor, actualízala para proteger tu cuenta de tripulante.",
         "oldPassword": "Contraseña Actual",
         "newPassword": "Nueva Contraseña",
         "confirmNewPassword": "Confirmar Nueva Contraseña",

@@ -169,6 +169,7 @@
         "accountSettings": "ACCOUNT SETTINGS",
         "settings": "SETTINGS",
         "changePassword": "CHANGE PASSWORD",
+        "weakPasswordWarning": "Your password is very weak. Please update it to protect your crewmate account.",
         "oldPassword": "Current Password",
         "newPassword": "New Password",
         "confirmNewPassword": "Confirm New Password",

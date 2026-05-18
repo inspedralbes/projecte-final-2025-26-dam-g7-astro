@@ -70,7 +70,8 @@ function registerAuthRoutes(app, {
                     groupApprovalRequests: user.groupApprovalRequests || [],
                     scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
                     pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null,
-                    profileColor: user.profileColor || '#0a192f'
+                    profileColor: user.profileColor || '#0a192f',
+                    isPasswordWeak: user.isPasswordWeak || false
                 }
             });
         } catch (error) {
