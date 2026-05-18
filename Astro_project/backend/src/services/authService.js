@@ -88,10 +88,13 @@ class AuthService {
             plan
         });
         
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // Preparem el document per a MongoDB assegurant els noms de camps correctes
         const userDoc = {
             user: newUser.username,
-            pass: password,
+            pass: hashedPassword,
             plan: newUser.plan,
             role: newUser.role,
             rank: newUser.rank,
@@ -121,7 +124,7 @@ class AuthService {
     }
 
     async login(username, password) {
-        // En una app real, aquí comprovaríem el hash de la password
+        // Comprovar les credencials del hash de la password (retorna el document si és vàlid)
         const userDoc = await this.userRepo.findByCredentials(username, password);
         if (!userDoc) {
             throw new Error('Credenciales no reconocidas');

@@ -49,12 +49,32 @@ class InMemoryUserRepository extends UserRepository {
         return user;
     }
 
+    async saveDoc(doc) {
+        const data = doc;
+        if (!data.id && !data._id) data.id = Math.random().toString(36).substr(2, 9);
+        this.users.set((data.user || data.username).toString(), data);
+        return { insertedId: data.id || data._id };
+    }
+
     async findByCredentials(username, password) {
         const key = username?.toString();
         if (!key || !password) return null;
         const user = this.users.get(key);
         if (!user) return null;
-        return user.pass === password ? user : null;
+
+        const storedPass = user.pass;
+        if (!storedPass) return null;
+
+        const bcrypt = require('bcryptjs');
+        let isValid = false;
+
+        if (typeof storedPass === 'string' && (storedPass.startsWith('$2a$') || storedPass.startsWith('$2b$') || storedPass.startsWith('$2y$'))) {
+            isValid = await bcrypt.compare(password, storedPass);
+        } else {
+            isValid = (password === storedPass);
+        }
+
+        return isValid ? user : null;
     }
 
     async updatePassword(username, newPassword) {
@@ -64,7 +84,10 @@ class InMemoryUserRepository extends UserRepository {
         const existing = this.users.get(key);
         if (!existing) return false;
 
-        this.users.set(key, { ...existing, pass: newPassword });
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        this.users.set(key, { ...existing, pass: hashedPassword });
         return true;
     }
 }
