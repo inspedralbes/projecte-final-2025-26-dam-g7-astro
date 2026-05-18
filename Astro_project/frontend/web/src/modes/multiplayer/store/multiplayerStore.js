@@ -1,0 +1,913 @@
+import { defineStore } from 'pinia'
+import { API_BASE_URL, requestJson } from '@/stores/astroShared'
+import { useChatStore } from '@/stores/chatStore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { useSocialStore } from '@/stores/socialStore'
+import { useAstroStore } from '@/stores/astroStore'
+import { useProgressStore } from '@/stores/progressStore'
+import { useInventoryStore } from '@/stores/inventoryStore'
+import i18n from '@/i18n'
+
+function buildWsUrl () {
+  let wsUrl = API_BASE_URL.replace(/^http/i, 'ws')
+  wsUrl = wsUrl.replace(/\/$/, '')
+  return `${wsUrl}/ws`
+}
+
+export const useMultiplayerStore = defineStore('multiplayer', {
+  state: () => ({
+    socket: null,
+    isConnected: false,
+    room: null,
+    availableRooms: [],
+    invitations: [],
+    challengeRequests: [],
+    error: null,
+    lastMessage: null,
+    roundScores: {},
+    remoteCursors: {},
+    coopChatMessages: [],
+    subRole: null,
+    partnerText: '',
+    partnerEmojis: [],
+    returnedPlayers: [],
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 5,
+    timeLeft: 0, playerTimes: {},
+    // --- RACE MODE STATE ---
+    raceFuel: 100,
+    raceProgress: 'START',
+    completedPlanets: [],
+    // Seguimiento de todos los jugadores para el modo carrera
+    playersProgress: {}, // { username: 'NODE_ID' }
+    playersCompletedPlanets: {}, // { username: ['C1_0', ...] }
+    fuelInterval: null,
+    // --- BATTLE / STUN STATE ---
+    isStunned: false,
+    stunTimeRemaining: 0,
+    stunInterval: null,
+    nextMoveAnomaly: null, // Para eventos globales (?)
+    activeGameName: null, // Para ajustar consumos según el juego
+    playerStates: {}, // { username: 'MAP' | 'IN_GAME' }
+    playerTimes: {}, // { username: seconds }
+    isRaceImmortal: false, // Evita Game Over por vidas/tiempo
+    lastDuelEvent: null, // Registro de duelos 1vs1 iniciados
+    currentGlobalAnomaly: null, // Anomalía que afecta a todos
+    lastSpectatorSync: {}, // Caché del último estado de cada jugador: { username: { type, ...data } }
+    heartbeatInterval: null,
+    activeBossEffect: null,
+    bossEffectTimeout: null,
+  }),
+
+  getters: {
+    isInGame (state) {
+      return state.room?.status === 'PLAYING'
+    },
+    canAccessBossMode () {
+      const inventoryStore = useInventoryStore()
+      const lifePack = (inventoryStore.inventory || []).find(item => item.id === 1)
+      return lifePack && lifePack.quantity > 0
+    },
+  },
+
+  actions: {
+    getSession () {
+      return useSessionStore()
+    },
+
+    validateBossAccess () {
+      if (!this.canAccessBossMode) {
+        return {
+          valid: false,
+          message: i18n.global.t('multiplayerLobby.bossModeNoLives', 'Necessites almenys un Pack de Vidas (ID 1) per activar el Modo Boss. Pots comprar-lo a la botiga.'),
+        }
+      }
+      return { valid: true }
+    },
+
+    async fetchAvailableRooms () {
+      try {
+        const { response, data } = await requestJson('/api/multiplayer/rooms')
+        if (response.ok) {
+          this.availableRooms = data
+        }
+      } catch (error) {
+        console.error('❌ Error cargando salas:', error)
+      }
+    },
+
+    connect () {
+      const sessionStore = this.getSession()
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        return
+      }
+
+      const ws = new WebSocket(buildWsUrl())
+
+      ws.addEventListener('open', () => {
+        this.isConnected = true
+        this.socket = ws
+        this.reconnectAttempts = 0
+        console.log('🚀 Conexión Multijugador establecida')
+
+        ws.send(JSON.stringify({
+          type: 'IDENTIFY',
+          user: sessionStore.user,
+          token: sessionStore.token,
+        }))
+
+        // Heartbeat para evitar timeouts de inactividad
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval)
+        this.heartbeatInterval = setInterval(() => {
+          if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({ type: 'PING' }))
+          }
+        }, 30000)
+      })
+
+      ws.addEventListener('message', event => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.type !== 'GLOBAL_ROOMS_UPDATE' && data.action?.type !== 'MOUSE_MOVE') {
+            console.log(`📩 [WS] Recibido: ${data.type}`, data)
+          }
+          this.handleMessage(data)
+        } catch (error) {
+          console.error('❌ Error procesando mensaje:', error)
+        }
+      })
+
+      ws.addEventListener('close', (event) => {
+        this.isConnected = false
+        this.socket = null
+        this.room = null
+        if (this.heartbeatInterval) {
+          clearInterval(this.heartbeatInterval)
+          this.heartbeatInterval = null
+        }
+        console.warn(`⚠️ Conexión Multijugador cerrada. Código: ${event.code}, Razón: ${event.reason || 'Desconocida'}`)
+
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++
+          console.log(`Intentando reconectar... (Intento ${this.reconnectAttempts})`)
+          setTimeout(() => this.connect(), 2000 * this.reconnectAttempts)
+        }
+      })
+
+      ws.addEventListener('error', () => {
+        this.error = 'No se pudo establecer conexión multijugador.'
+      })
+    },
+
+    disconnect () {
+      if (this.socket) {
+        this.socket.close()
+      }
+      this.socket = null
+      this.reconnectAttempts = this.maxReconnectAttempts
+      this.isConnected = false
+      this.room = null
+      this.invitations = []
+      this.challengeRequests = []
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval)
+        this.heartbeatInterval = null
+      }
+    },
+
+    handleMessage (data) {
+      const sessionStore = this.getSession()
+
+      switch (data.type) {
+        case 'BOSS_ACTION_RESULT': {
+          this.activeBossEffect = data.attackType
+          if (this.bossEffectTimeout) clearTimeout(this.bossEffectTimeout)
+          this.bossEffectTimeout = setTimeout(() => {
+            this.activeBossEffect = null
+          }, 4000) // Un poco más de tiempo para que se note
+          break
+        }
+        case 'INVITATION_RECEIVED': {
+          this.invitations.push({ from: data.from, roomId: data.roomId })
+          break
+        }
+        case 'ERROR': {
+          this.error = data.message || 'S\'ha produït un error en la comunicació'
+          console.error('❌ Error rebut del servidor:', data.message)
+          break
+        }
+        case 'CHALLENGE_RECEIVED': {
+          if (!this.challengeRequests.some(r => r.from === data.from)) {
+            this.challengeRequests.push({ from: data.from })
+            setTimeout(() => {
+              this.challengeRequests = this.challengeRequests.filter(r => r.from !== data.from)
+            }, 5000)
+          }
+          break
+        }
+        case 'CHALLENGE_ACCEPTED': {
+          this.joinRoom(data.roomId)
+          this.lastMessage = data
+          useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'accepted')
+          break
+        }
+        case 'CHALLENGE_REJECTED': {
+          this.lastMessage = data
+          useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'rejected')
+          break
+        }
+        case 'GLOBAL_ROOMS_UPDATE': {
+          this.availableRooms = data.rooms
+          break
+        }
+        case 'ROOM_CREATED': {
+          this.joinRoom(data.roomId)
+          break
+        }
+        case 'JOIN_SUCCESS': {
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
+          break
+        }
+        case 'ROOM_UPDATE': {
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            // Reset de puntos local si pasamos a estado de juego para evitar arrastrar puntos anteriores
+            if (data.room.status === 'PLAYING' && this.room?.status !== 'PLAYING') {
+              this.roundScores = {}
+              this.remoteCursors = {}
+            }
+            this.room = { ...data.room }
+            if (data.room.gameConfig?.subRoles) {
+              this.subRole = data.room.gameConfig.subRoles[sessionStore.user]
+            }
+          }
+          break
+        }
+        case "TIME_UPDATE": {
+          if (data.playerTimes) {
+            this.playerTimes = data.playerTimes;
+            const myUser = sessionStore.user;
+            if (data.playerTimes[myUser] !== undefined) {
+              this.timeLeft = data.playerTimes[myUser];
+            } else {
+              this.timeLeft = data.timeLeft;
+            }
+          } else {
+            this.timeLeft = data.timeLeft;
+          }
+          if (this.room && this.room.gameConfig) {
+            this.room.gameConfig.timeLeft = this.timeLeft;
+          }
+          break
+        }
+        case 'MATCH_STARTING': {
+          this.roundScores = {}
+          this.remoteCursors = {}
+          this.playerTimes = {}
+          this.partnerText = ''
+          this.partnerEmojis = []
+          this.lastMessage = data
+          this.activeBossEffect = null
+          if (this.bossEffectTimeout) clearTimeout(this.bossEffectTimeout)
+          
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
+
+          // En modo carrera, el estado real de juego es PLAYING para activar el mapa inmediatamente
+          if (this.room?.gameConfig?.mode === 'RACE') {
+            this.room.status = 'PLAYING'
+          }
+
+          if (this.room?.gameConfig?.subRoles) {
+            this.subRole = this.room.gameConfig.subRoles[sessionStore.user]
+          }
+          const is1vs1 = data.room?.gameConfig?.modality === '1vs1' || data.room?.gameConfig?.mode === 'TOURNAMENT';
+          this.timeLeft = data.room?.gameConfig?.mode === 'RACE' ? 999 : (is1vs1 ? 60 : 60);
+          this.isRaceImmortal = data.room?.gameConfig?.mode === 'RACE'
+          
+          // Reset Race Mode state
+          this.raceFuel = 100
+          this.raceProgress = 'START'
+          this.playersProgress = {}
+          this.completedPlanets = []
+          this.playersCompletedPlanets = {}
+          this.stopFuelTimer()
+          
+          if (this.room?.gameConfig?.mode === 'RACE') {
+            this.room.players.forEach(p => {
+              const uname = p.username || p
+              this.playersProgress[uname] = 'START'
+              this.playersCompletedPlanets[uname] = []
+            })
+            this.startFuelTimer()
+          }
+          break
+        }
+        case 'ROUND_ENDED_BY_WINNER': {
+          this.remoteCursors = {}
+          this.partnerText = ''
+          this.partnerEmojis = []
+          if (this.room && data.scores) {
+            this.room.gameConfig.scores = data.scores
+          }
+          this.lastMessage = data
+          break
+        }
+        case 'SCORE_UPDATE_LIVE': {
+          this.roundScores = { ...this.roundScores, [data.user]: data.score }
+          break
+        }
+        case 'GAME_ACTION': {
+          const action = data.action
+          if (!action) return
+
+          // Cachear sincronización para futuros observadores
+          if (action.type === 'SPECTATOR_SYNC' && data.from) {
+            if (!this.lastSpectatorSync) this.lastSpectatorSync = {}
+            this.lastSpectatorSync[data.from] = action
+          }
+
+          if (action.type === 'MOUSE_MOVE') {
+            if (!this.remoteCursors) this.remoteCursors = {}
+            this.remoteCursors[data.from] = {
+              x: data.action.x,
+              y: data.action.y,
+              isFiring: !!data.action.isFiring,
+            }
+          }
+
+          if (data.action?.type === 'PARTNER_TYPING') {
+            this.partnerText = data.action.text
+          }
+
+          if (data.action?.type === 'PARTNER_EMOJI') {
+            this.partnerEmojis.push(data.action.emoji)
+          }
+
+          if (data.action?.type === 'GLOBAL_ANOMALY_TRIGGER') {
+            this.nextMoveAnomaly = data.action.anomaly
+            console.log('EVENTO GLOBAL ACTIVADO:', this.nextMoveAnomaly)
+          }
+
+          if (data.action?.type === 'COOP_CHAT') {
+            this.coopChatMessages.push({
+              from: data.from,
+              text: data.action.text,
+              timestamp: Date.now(),
+            })
+          }
+
+          if (data.action?.type === 'WORD_DESTROYED') {
+            this.lastMessage = data
+          }
+
+          if (data.action?.type === 'SCORE_UPDATE') {
+            this.roundScores[data.from] = data.action.score
+          }
+
+          if (data.action?.type === 'TIME_SYNC') {
+            this.playerTimes = {
+              ...this.playerTimes,
+              [data.from]: data.action.timeLeft
+            }
+            
+            // Sincronizar el tiempo global si es compartido 
+            // O si soy un espectador (no estoy en la lista de jugadores activos)
+            const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE' && this.room?.gameConfig?.mode !== 'TOURNAMENT'
+            const isSpectator = !this.room?.players?.includes(sessionStore.user)
+            
+            if (isShared || isSpectator) {
+              this.timeLeft = data.action.timeLeft
+            }
+          }
+
+          if (data.action?.type === 'TIME_PENALTY') {
+            if (data.from !== sessionStore.user) {
+              // El rival ha puntuado, yo pierdo tiempo
+              this.timeLeft = Math.max(0, this.timeLeft - (data.action.amount || 5))
+            }
+          }
+
+          if (data.action?.type === 'RACE_PROGRESS' || data.action?.type === 'RACE_PROGRESS_UPDATE') {
+            const uname = data.from
+            const newPos = data.action.nodeId || data.action.progress
+            if (newPos) {
+              this.playersProgress = {
+                ...this.playersProgress,
+                [uname]: newPos
+              }
+              // Si soy yo, actualizar también mi progreso local
+              if (uname === sessionStore.user) {
+                this.raceProgress = newPos
+              }
+            }
+            
+            if (data.action.isCompleted || data.action.completed) {
+              const completedNode = data.action.nodeId || data.action.progress
+              if (!this.playersCompletedPlanets[uname]) this.playersCompletedPlanets[uname] = []
+              if (!this.playersCompletedPlanets[uname].includes(completedNode)) {
+                this.playersCompletedPlanets[uname].push(completedNode)
+              }
+              if (uname === sessionStore.user && !this.completedPlanets.includes(completedNode)) {
+                this.completedPlanets.push(completedNode)
+              }
+            }
+          }
+
+          if (data.action?.type === 'PLAYER_STATUS_UPDATE') {
+            this.playerStates[data.from] = data.action.status
+          }
+
+          if (data.action?.type === 'FUEL_RECHARGE') {
+            this.rechargeFuel(data.action.amount)
+          }
+
+          if (data.action?.type === 'DUEL_START') {
+            // Un jugador ha retado a otro. 
+            // Guardamos el evento para que el Lobby lo detecte y actúe
+            this.lastDuelEvent = {
+              attacker: data.action.attacker,
+              rival: data.action.rival,
+              game: data.action.game,
+              nodeId: data.action.nodeId,
+              timestamp: Date.now()
+            }
+            console.log("🔥 DUELO DETECTADO EN STORE:", this.lastDuelEvent)
+          }
+
+          if (data.action?.type === 'GLOBAL_ANOMALY') {
+            this.currentGlobalAnomaly = data.action.anomaly
+            console.log("🌪️ ANOMALÍA GLOBAL RECIBIDA:", data.action.anomaly)
+          }
+
+          this.lastMessage = data
+          break
+        }
+        case 'ROUND_FINISHED': {
+          this.roundScores = {}
+          this.remoteCursors = {}
+          this.partnerText = ''
+          this.partnerEmojis = []
+          
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
+          
+          this.lastMessage = null // Limpiamos para la nueva ronda
+
+          if (this.room?.gameConfig?.subRoles) {
+            this.subRole = this.room.gameConfig.subRoles[sessionStore.user]
+          }
+          this.timeLeft = 60
+          break
+        }
+        case 'MATCH_FINISHED': {
+          this.returnedPlayers = []
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+             this.room = { ...data.room }
+          }
+          this.activeBossEffect = null
+          if (this.bossEffectTimeout) clearTimeout(this.bossEffectTimeout)
+          this.lastMessage = data
+          this.stopFuelTimer()
+
+          // Actualizar estadísticas tras partida multijugador
+          const astroStore = useAstroStore()
+          astroStore.fetchUserStats()
+
+          break
+        }
+        case 'SUDDEN_DEATH_START': {
+          if (data.room) {
+            if (data.room.players && !Array.isArray(data.room.players)) {
+              data.room.players = Object.values(data.room.players)
+            }
+            this.room = { ...data.room }
+          }
+          this.lastMessage = data
+          break
+        }
+        case 'PLAYER_RETURNED': {
+          this.lastMessage = data
+          if (data.user && !this.returnedPlayers.includes(data.user)) {
+            this.returnedPlayers.push(data.user)
+          }
+          break
+        }
+        case 'ROOM_CLOSED': {
+          this.room = null
+          this.lastMessage = data
+          break
+        }
+        case 'GAME_ROLES_SWAPPED': {
+          if (data.subRoles) {
+            this.subRole = data.subRoles[sessionStore.user]
+          }
+          this.lastMessage = data
+          break
+        }
+        case 'ERROR': {
+          this.error = data.message
+          break
+        }
+        case 'CHAT_MESSAGE': {
+          useChatStore().handleIncomingMessage(data)
+          break
+        }
+        case 'CHAT_HISTORY': {
+          useChatStore().handleHistory(data)
+          break
+        }
+        case 'CHAT_UNREAD_COUNTS': {
+          useChatStore().handleUnreadCounts(data)
+          break
+        }
+        case 'FRIEND_UPDATE': {
+          useSocialStore().setFriends(data.friends)
+          useSocialStore().fetchAllUsers()
+          break
+        }
+        case 'FRIEND_REQUEST_UPDATE': {
+          useSocialStore().setFriendRequests(data.friendRequests)
+          useSocialStore().fetchAllUsers()
+          break
+        }
+        case 'FRIEND_ACCEPT_NOTIF': {
+          useSocialStore().setFriends(data.friends)
+          useSocialStore().setFriendRequests(data.friendRequests)
+          useSocialStore().fetchAllUsers()
+          break
+        }
+        case 'GROUP_INVITATION_UPDATE': {
+          sessionStore.setGroupInvitations(data.groupInvitations || [])
+          break
+        }
+        case 'GROUP_APPROVAL_UPDATE': {
+          sessionStore.setGroupApprovalRequests(data.groupApprovalRequests || [])
+          break
+        }
+        case 'GROUP_MEMBERSHIP_UPDATE': {
+          if (data.profile) {
+            sessionStore.setPlan(data.profile.plan || sessionStore.plan)
+            sessionStore.setRole(data.profile.role || null)
+            sessionStore.setParentId(data.profile.parentId || null)
+            if (Object.prototype.hasOwnProperty.call(data.profile, 'pendingGroupLeaveRequest')) {
+              sessionStore.setPendingGroupLeaveRequest(data.profile.pendingGroupLeaveRequest)
+            } else if (!data.profile.parentId) {
+              sessionStore.setPendingGroupLeaveRequest(null)
+            }
+          }
+          if (Array.isArray(data.groupInvitations)) {
+            sessionStore.setGroupInvitations(data.groupInvitations)
+          }
+          break
+        }
+        case 'PROFILE_UPDATE': {
+          const astroStore = useAstroStore()
+          if (data.coins !== undefined) astroStore.setCoins(data.coins)
+          if (data.inventory !== undefined) astroStore.setInventory(data.inventory)
+          if (data.streakFreezes !== undefined) {
+            const progressStore = useProgressStore()
+            progressStore.setStreakFreezes(data.streakFreezes)
+          }
+          if (data.dailyPurchaseHistory !== undefined) {
+            sessionStore.setDailyPurchaseHistory(data.dailyPurchaseHistory)
+          }
+          if (data.selectedTitle !== undefined) {
+            sessionStore.setSelectedTitle(data.selectedTitle)
+          }
+          if (data.avatar !== undefined) {
+            sessionStore.setAvatar(data.avatar)
+          }
+          break
+        }
+        default: {
+          break
+        }
+      }
+    },
+
+    updateGameConfig (config) {
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'UPDATE_GAME_CONFIG',
+        roomId: this.room.id,
+        config,
+      }))
+    },
+
+    startMatch () {
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'START_MATCH',
+        roomId: this.room.id,
+      }))
+    },
+
+    setRoomStatus (status) {
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'SET_ROOM_STATUS',
+        roomId: this.room.id,
+        status,
+      }))
+    },
+
+    updateBossStakes (lives) {
+      const sessionStore = useSessionStore()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'UPDATE_BOSS_STAKES',
+        roomId: this.room.id,
+        user: sessionStore.user,
+        lives,
+      }))
+    },
+
+    submitRoundResult () {
+      const sessionStore = useSessionStore()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'SUBMIT_ROUND_RESULT',
+        roomId: this.room.id,
+        user: sessionStore.user,
+      }))
+    },
+
+    returnToLobby () {
+      const sessionStore = useSessionStore()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'PLAYER_RETURN_TO_LOBBY',
+        roomId: this.room.id,
+        user: sessionStore.user,
+      }))
+    },
+
+    sendGameAction (action) {
+      const sessionStore = useSessionStore()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+
+      // En modo carrera, las penalizaciones de tiempo se convierten en consumo de gasolina
+      if (action.type === 'TIME_SYNC' && this.room?.gameConfig?.mode === 'RACE') {
+        const timeDiff = this.timeLeft - action.timeLeft
+        if (timeDiff > 0) {
+          // Si el tiempo ha bajado (penalización), restamos gasolina
+          this.consumeFuel(timeDiff) // Resta % equivalente a segundos perdidos
+          // Mantener el tiempo alto para que no se acabe la partida por tiempo
+          action.timeLeft = this.timeLeft 
+        }
+      }
+
+      if (action.type === 'TIME_SYNC') {
+        const isShared = this.room?.gameConfig?.mode !== 'DUEL' && this.room?.gameConfig?.mode !== 'RACE' && this.room?.gameConfig?.mode !== 'TOURNAMENT' && this.room?.gameConfig?.modality !== '1vs1'
+        
+        if (!isShared) {
+          // En duelos 1vs1 y torneos competitivos, el servidor es la autoridad absoluta de tiempos.
+          // El cliente no transmite su sincronización de tiempo para evitar clobbering y lag en red.
+          return
+        }
+
+        if (isShared || this.room?.status === 'PLAYING') {
+          this.timeLeft = action.timeLeft
+        }
+      }
+
+      this.socket.send(JSON.stringify({
+        type: 'GAME_ACTION',
+        roomId: this.room.id,
+        user: sessionStore.user,
+        action,
+      }))
+    },
+
+    sendEmojiClue (emoji) {
+      this.sendGameAction({
+        type: 'EMOJI_CHAT',
+        emoji,
+      })
+    },
+
+    async sendChallenge (friendName) {
+      const sessionStore = this.getSession()
+      if (!this.isConnected || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+        this.connect()
+        const connected = await new Promise(resolve => {
+          let attempts = 0
+          const interval = setInterval(() => {
+            attempts++
+            if (this.isConnected && this.socket?.readyState === WebSocket.OPEN) {
+              clearInterval(interval)
+              resolve(true)
+            }
+            if (attempts > 30) {
+              clearInterval(interval)
+              resolve(false)
+            }
+          }, 100)
+        })
+        if (!connected) {
+          return false
+        }
+      }
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({
+          type: 'CHALLENGE',
+          from: sessionStore.user,
+          to: friendName,
+        }))
+        return true
+      }
+      return false
+    },
+
+    respondToChallenge (challengerName, accepted) {
+      const sessionStore = this.getSession()
+      if (!this.isConnected || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'CHALLENGE_RESPONSE',
+        from: sessionStore.user,
+        to: challengerName,
+        accepted,
+      }))
+      useChatStore().setChallengeStatus(challengerName, accepted ? 'accepted' : 'rejected')
+      this.challengeRequests = this.challengeRequests.filter(r => r.from !== challengerName)
+    },
+
+    createRoom (userAccount, isPublic = true, maxPlayers = 4, gameConfig = {}) {
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({
+          type: 'CREATE_ROOM',
+          user: userAccount,
+          isPublic,
+          maxPlayers,
+          gameConfig,
+        }))
+      }
+    },
+
+    joinRoom (roomId) {
+      const sessionStore = this.getSession()
+      if (!this.isConnected || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'JOIN_ROOM',
+        roomId,
+        user: sessionStore.user,
+      }))
+    },
+
+    inviteFriend (friendName) {
+      const sessionStore = this.getSession()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'INVITE',
+        from: sessionStore.user,
+        to: friendName,
+        roomId: this.room.id,
+      }))
+    },
+
+    leaveRoom () {
+      const sessionStore = this.getSession()
+      if (!this.isConnected || !this.room || !this.socket) {
+        return
+      }
+      this.socket.send(JSON.stringify({
+        type: 'LEAVE_ROOM',
+        roomId: this.room.id,
+        user: sessionStore.user,
+      }))
+      this.room = null
+      this.stopFuelTimer()
+    },
+
+    // --- RACE MODE ACTIONS ---
+    updateRaceProgress (id, isCompleted = false) {
+      const sessionStore = this.getSession()
+      this.raceProgress = id
+      if (isCompleted && !this.completedPlanets.includes(id)) {
+        this.completedPlanets.push(id)
+      }
+      if (!this.isConnected || !this.room || !this.socket) return
+
+      this.socket.send(JSON.stringify({
+        type: 'GAME_ACTION',
+        roomId: this.room.id,
+        user: sessionStore.user,
+        action: {
+          type: 'RACE_PROGRESS_UPDATE',
+          progress: id,
+          completed: isCompleted,
+        },
+      }))
+
+      // Actualizar mi estado local
+      const status = isCompleted ? 'MAP' : 'IN_GAME'
+      this.playerStates[sessionStore.user] = status
+      
+      // Enviar actualización de estado a los demás
+      this.sendGameAction({
+        type: 'PLAYER_STATUS_UPDATE',
+        status: status
+      })
+    },
+
+    rechargeFuel (amount = 20) {
+      this.raceFuel = Math.min(100, this.raceFuel + amount)
+    },
+
+    consumeFuel (amount = 10) {
+      this.raceFuel = Math.max(0, this.raceFuel - amount)
+    },
+
+    startFuelTimer () {
+      this.stopFuelTimer()
+      this.raceFuel = 100
+      this.fuelInterval = setInterval(() => {
+        if (this.raceFuel > 0) {
+          // Consumo equilibrado: 0.04% cada 100ms (0.4% por segundo)
+          let decrement = 0.04
+          
+          // Si es un juego de pensar/escuchar, bajar consumo a la mitad (0.2% por segundo)
+          if (this.activeGameName === 'RadioSignal' || this.activeGameName === 'SpelledRosco' || this.activeGameName === 'RhymeSquad') {
+            decrement = 0.02 
+          }
+
+          this.raceFuel = Math.max(0, this.raceFuel - decrement) 
+          if (this.raceFuel <= 0) {
+            this.raceFuel = 0
+            this.stopFuelTimer()
+          }
+        }
+      }, 100)
+    },
+
+    stopFuelTimer () {
+      if (this.fuelInterval) {
+        clearInterval(this.fuelInterval)
+        this.fuelInterval = null
+      }
+    },
+
+    consumeFuel (amount) {
+      this.raceFuel = Math.max(0, this.raceFuel - amount)
+    },
+
+    applyStun (seconds = 15) {
+      if (this.stunInterval) clearInterval(this.stunInterval)
+      this.isStunned = true
+      this.stunTimeRemaining = seconds
+      
+      this.stunInterval = setInterval(() => {
+        this.stunTimeRemaining--
+        if (this.stunTimeRemaining <= 0) {
+          this.isStunned = false
+          clearInterval(this.stunInterval)
+          this.stunInterval = null
+        }
+      }, 1000)
+    },
+
+    clearGlobalAnomaly () {
+      this.nextMoveAnomaly = null
+    },
+  },
+})
+

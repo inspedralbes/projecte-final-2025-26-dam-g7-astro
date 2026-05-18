@@ -536,7 +536,10 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtenir Recompensa",
         "msgCorrect": "Correcte! Molt bé!",
-        "msgIncorrect": "Incorrecte! Era \"{answer}\""
+        "msgIncorrect": "Incorrecte! Era \"{answer}\"",
+        "completed": "Rosco Completat!",
+        "totalPointsLabel": "Punts Totals:",
+        "returnMenu": "TORNAR AL MENÚ"
     },
     "rhymeSquad": {
         "title": "Esquadró de Rimes",

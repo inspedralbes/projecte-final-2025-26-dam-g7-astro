@@ -584,7 +584,10 @@
         "reward": "Recompensa: {reward}",
         "getReward": "Obtener Recompensa",
         "msgCorrect": "¡Correcto! ¡Muy bien!",
-        "msgIncorrect": "¡Incorrecto! Era \"{answer}\""
+        "msgIncorrect": "¡Incorrecto! Era \"{answer}\"",
+        "completed": "¡Rosco Completado!",
+        "totalPointsLabel": "Puntos Totales:",
+        "returnMenu": "VOLVER AL MENÚ"
     },
     "rhymeSquad": {
         "title": "Escuadrón de Rimas",

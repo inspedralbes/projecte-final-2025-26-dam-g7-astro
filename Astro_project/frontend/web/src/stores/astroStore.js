@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { useAchievementsStore } from './achievementsStore'
 import { useInventoryStore } from './inventoryStore'
-import { useMultiplayerStore } from './multiplayerStore'
+import { useMultiplayerStore } from '@/modes/multiplayer/store/multiplayerStore'
 import { useProgressStore } from './progressStore'
 import { useSessionStore } from './sessionStore'
 import { useSocialStore } from './socialStore'
@@ -307,7 +307,7 @@ export const useAstroStore = defineStore('astro', () => {
       return { success: false, message: 'No hay usuario' }
     }
     try {
-      const { requestJson } = await import('./astroShared')
+      const { requestJson } = await import('@/stores/astroShared')
       const { response, data } = await requestJson('/api/user/change-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

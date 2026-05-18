@@ -545,7 +545,7 @@
   import { useAstroStore } from '@/stores/astroStore'
   import { useChatStore } from '@/stores/chatStore'
   import { useGroupStore } from '@/stores/groupStore'
-  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { useMultiplayerStore } from '@/modes/multiplayer/store/multiplayerStore'
 
   const { t } = useI18n()
   const astroStore = useAstroStore()
@@ -962,3 +962,4 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>
+

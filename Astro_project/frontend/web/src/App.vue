@@ -25,8 +25,8 @@
   import LeftSidebar from '@/components/layout/LeftSidebar.vue'
   import RightSidebar from '@/components/layout/RightSidebar.vue'
   import StreakLossDialog from '@/components/layout/StreakLossDialog.vue'
-  import ChallengePopup from '@/components/multiplayer/ChallengePopup.vue'
-  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import ChallengePopup from '@/modes/multiplayer/components/ChallengePopup.vue'
+  import { useMultiplayerStore } from '@/modes/multiplayer/store/multiplayerStore'
   import { useSessionStore } from '@/stores/sessionStore'
 
   const route = useRoute()
@@ -172,3 +172,4 @@ h4, h5, h6, .text-h4, .text-h5, .text-h6, .text-subtitle-1, .v-btn {
   background: var(--astro-glow);
 }
 </style>
+

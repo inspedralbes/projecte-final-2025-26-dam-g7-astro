@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useMultiplayerStore } from '../stores/multiplayerStore'
+import { useMultiplayerStore } from '../modes/multiplayer/store/multiplayerStore'
 
 vi.mock('../stores/astroShared', () => ({
   API_BASE_URL: 'http://localhost',

@@ -167,7 +167,7 @@
   import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useChatStore } from '@/stores/chatStore'
-  import { useMultiplayerStore } from '@/stores/multiplayerStore'
+  import { useMultiplayerStore } from '@/modes/multiplayer/store/multiplayerStore'
   import { useSessionStore } from '@/stores/sessionStore'
 
   const { t, locale } = useI18n()
@@ -710,3 +710,4 @@
 .chat-overlay-enter-active, .chat-overlay-leave-active { transition: opacity 0.4s; }
 .chat-overlay-enter-from, .chat-overlay-leave-to { opacity: 0; }
 </style>
+

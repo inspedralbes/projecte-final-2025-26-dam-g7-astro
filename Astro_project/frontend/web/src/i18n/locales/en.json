@@ -268,7 +268,10 @@
         "reward": "Reward: {reward}",
         "getReward": "Get Reward",
         "msgCorrect": "Correct! Well done!",
-        "msgIncorrect": "Incorrect! It was \"{answer}\""
+        "msgIncorrect": "Incorrect! It was \"{answer}\"",
+        "completed": "Rosco Completed!",
+        "totalPointsLabel": "Total Points:",
+        "returnMenu": "BACK TO MENU"
     },
     "rhymeSquad": {
         "title": "Rhyme Squad",

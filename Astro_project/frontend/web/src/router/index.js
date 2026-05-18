@@ -27,7 +27,7 @@ const router = createRouter({
     {
       path: '/singleplayer',
       name: 'SinglePlayer',
-      component: () => import('@/pages/training/singleplayer.vue'),
+      component: () => import('@/modes/training/pages/SinglePlayer.vue'),
       meta: { requiresAuth: true },
     },
 
@@ -52,7 +52,7 @@ const router = createRouter({
     {
       path: '/educational',
       name: 'Educational',
-      component: () => import('@/pages/plans/educational.vue'),
+      component: () => import('@/modes/educational/pages/Educational.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -76,7 +76,7 @@ const router = createRouter({
     {
       path: '/multiplayer',
       name: 'Multiplayer',
-      component: () => import('@/pages/friends/MultiplayerLobby.vue'),
+      component: () => import('@/modes/multiplayer/pages/MultiplayerLobby.vue'),
       meta: { requiresAuth: true },
     },
   ],
@@ -104,3 +104,4 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+

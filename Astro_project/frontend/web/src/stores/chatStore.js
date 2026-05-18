@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { useMultiplayerStore } from './multiplayerStore'
+import { useMultiplayerStore } from '@/modes/multiplayer/store/multiplayerStore'
 import { useSessionStore } from './sessionStore'
 
 export const useChatStore = defineStore('chat', {
