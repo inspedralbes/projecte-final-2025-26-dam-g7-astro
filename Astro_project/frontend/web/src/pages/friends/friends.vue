@@ -59,10 +59,16 @@
           >
             <v-card
               class="friend-card detailed-card h-100"
-              :style="{ background: friend.profileColor ? `${friend.profileColor}CC` : 'rgba(30, 41, 59, 0.4)' }"
               variant="flat"
             >
-              <div class="card-header-gradient" :class="getRankClass(friend.level)" />
+              <div
+                class="card-header-gradient"
+                :class="!friend.profileColor || friend.profileColor === '#0a192f' ? getRankClass(friend.level) : ''"
+                :style="{
+                  background: friend.profileColor && friend.profileColor !== '#0a192f' ? `${friend.profileColor} !important` : '',
+                  opacity: friend.profileColor && friend.profileColor !== '#0a192f' ? '0.95 !important' : ''
+                }"
+              />
 
               <div class="card-body pa-5 pt-2">
                 <div class="d-flex align-start justify-space-between mb-2">
@@ -205,10 +211,16 @@
           >
             <v-card
               class="friend-card explorer-card detailed-card h-100"
-              :style="{ background: explorer.profileColor ? `${explorer.profileColor}CC` : 'rgba(30, 41, 59, 0.4)' }"
               variant="flat"
             >
-              <div class="card-header-gradient" :class="getRankClass(explorer.level)" />
+              <div
+                class="card-header-gradient"
+                :class="!explorer.profileColor || explorer.profileColor === '#0a192f' ? getRankClass(explorer.level) : ''"
+                :style="{
+                  background: explorer.profileColor && explorer.profileColor !== '#0a192f' ? `${explorer.profileColor} !important` : '',
+                  opacity: explorer.profileColor && explorer.profileColor !== '#0a192f' ? '0.95 !important' : ''
+                }"
+              />
 
               <div class="card-body pa-5 pt-2">
                 <div class="d-flex align-start justify-space-between mb-2">
@@ -561,7 +573,7 @@
   const tab = ref('friends')
   const randomExplorers = ref([])
   const sentRequests = ref([])
-  const challengeCooldowns = ref({})
+  const challengeCooldowns = computed(() => multiplayerStore.challengeCooldowns || {})
 
   const profileDialog = ref({
     show: false,
@@ -664,7 +676,7 @@
       potential = potential.filter(p => p.user.toLowerCase().includes(q))
     }
 
-    randomExplorers.value = [...potential].sort(() => 0.5 - Math.random()).slice(0, 12)
+    randomExplorers.value = [...potential].sort(() => 0.5 - Math.random()).slice(0, 9)
     reloading.value = false
   }
 
@@ -769,16 +781,12 @@
   async function challengeFriend (friendName) {
     if (challengeCooldowns.value[friendName]) return
     showMessage(t('friends.connectingChallenge', { name: friendName }), 'info')
-    challengeCooldowns.value[friendName] = true
     const success = await multiplayerStore.sendChallenge(friendName)
 
     if (success) {
       showMessage(t('friends.challengeSent', { name: friendName }))
     } else {
       showMessage(t('friends.challengeError', { name: friendName }), 'error')
-      setTimeout(() => {
-        challengeCooldowns.value[friendName] = false
-      }, 5000)
     }
   }
 </script>

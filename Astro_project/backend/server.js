@@ -179,6 +179,25 @@ connectDB()
     });
 
 // --- RUTES D'USUARI EXTRES ---
+const notifyFriendsOfProfileUpdate = async (username) => {
+    try {
+        const userObj = await userRepository.findByUsername(username);
+        if (userObj && Array.isArray(userObj.friends)) {
+            for (const friendName of userObj.friends) {
+                const friendProfile = await userRepository.findByUsername(friendName);
+                if (friendProfile) {
+                    roomManager.sendToUser(friendName, { 
+                        type: 'FRIEND_UPDATE', 
+                        friends: friendProfile.friends 
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error al notificar amigos de actualización de perfil:", e);
+    }
+};
+
 app.get('/api/users', async (req, res) => {
     try {
         const processedUsers = await userServiceInstance.getAllExplorers();
@@ -198,6 +217,7 @@ app.put('/api/user/avatar', async (req, res) => {
     try {
         await userServiceInstance.updateAvatar(user, avatar);
         console.log(`👤 Avatar actualizado en DB para ${user}: ${avatar}`);
+        notifyFriendsOfProfileUpdate(user);
         res.json({ success: true, avatar });
     } catch (error) {
         console.error("❌ Error al actualizar avatar en DB:", error);
@@ -214,6 +234,7 @@ app.put('/api/user/title', async (req, res) => {
     try {
         await userServiceInstance.updateSelectedTitle(user, title);
         console.log(`👤 Título actualizado en DB para ${user}: ${title}`);
+        notifyFriendsOfProfileUpdate(user);
         res.json({ success: true, title });
     } catch (error) {
         console.error("❌ Error al actualizar título en DB:", error);
@@ -230,6 +251,7 @@ app.put('/api/user/color', async (req, res) => {
     try {
         await userServiceInstance.updateProfileColor(user, color);
         console.log(`👤 Color de perfil actualizado en DB para ${user}: ${color}`);
+        notifyFriendsOfProfileUpdate(user);
         res.json({ success: true, color });
     } catch (error) {
         console.error("❌ Error al actualizar color de perfil en DB:", error);
@@ -266,6 +288,7 @@ app.post('/api/user/change-name', async (req, res) => {
         userObj.displayName = newDisplayName;
         userObj.nameChangesCount = (userObj.nameChangesCount || 0) + 1;
         await userRepository.update(userObj);
+        notifyFriendsOfProfileUpdate(user);
 
         res.json({
             success: true,

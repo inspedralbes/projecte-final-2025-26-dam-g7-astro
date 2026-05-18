@@ -76,7 +76,14 @@
         "reward": "¡RECOMPENSA!",
         "accept": "Acceptar",
         "goToInventory": "ANAR A L'INVENTARI",
-        "keepBuying": "SEGUIR COMPRANT"
+        "keepBuying": "SEGUIR COMPRANT",
+        "category": {
+            "pin": "INSÍGNIA",
+            "avatar": "AVATAR",
+            "trail": "EFECTE DE RASTRE",
+            "title": "TÍTOL DE PERFIL",
+            "item": "SUBMINISTRAMENT"
+        }
     },
     "inventory": {
         "title": "EL MEU INVENTARI",
@@ -180,6 +187,7 @@
         "newDisplayName": "Nou Apodo",
         "cardColor": "Color de Targeta Personalitzada",
         "colorUpdated": "Color de targeta actualitzat!",
+        "preview": "VISTA PRÈVIA DE LA TEVA TARGETA",
         "firstChangeFree": "El teu primer canvi d'apodo és gratuït!",
         "noNameChangeTokens": "No tens subministraments de Canvi de Nom.",
         "goToShop": "Anar a la botiga",
@@ -202,7 +210,7 @@
         "preferences": "PREFERÈNCIES",
         "recoverySuccess": "¡El teu compte ha estat recuperat amb èxit! Benvingut de nou, explorador.",
         "recoveryTitle": "RECUPERACIÓ DE COMPTE",
-        "security": "SEGURTAT",
+        "security": "SEGURETAT",
         "seniorityLabel": "ANTIGUITAT",
         "sound": "SO",
         "wrongPhrase": "La frase no coincideix exactament"
@@ -658,7 +666,7 @@
         },
         "sabotageRay": {
             "name": "Raig Sabotejador",
-            "desc": "En multijugador, els teus encerts resten el doble de temps al rival.",
+            "desc": "Els teus encerts resten el doble de temps al rival.",
             "limit": "* Només per a la pròxima partida multijugador"
         },
         "titleUnstoppable": {

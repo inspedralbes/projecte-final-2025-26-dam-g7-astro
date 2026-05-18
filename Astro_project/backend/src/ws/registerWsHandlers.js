@@ -208,6 +208,29 @@ function registerWsHandlers(wss, getDB) {
                             
                             roomManager.sendToUser(msg.to, acceptedMsg);
                             roomManager.sendToUser(msg.from, acceptedMsg);
+
+                            // Guardar y enviar mensaje de resultado en el chat
+                            try {
+                                const resultContent = '✅ ¡Desafío aceptado! Preparando la batalla...';
+                                const savedResult = await chatService.saveMessage(dbR, {
+                                    from: msg.from,
+                                    to: msg.to,
+                                    content: resultContent,
+                                    type: 'challenge-result'
+                                });
+                                const resultChatMsg = {
+                                    type: 'CHAT_MESSAGE',
+                                    from: msg.from,
+                                    to: msg.to,
+                                    content: resultContent,
+                                    at: savedResult.at.toISOString(),
+                                    msgType: 'challenge-result'
+                                };
+                                roomManager.sendToUser(msg.to, resultChatMsg);
+                                roomManager.sendToUser(msg.from, resultChatMsg);
+                            } catch (e) {
+                                console.error('Error guardando mensaje de resultado de desafío:', e);
+                            }
                         } else {
                             const rejectedMsg = {
                                 type: 'CHALLENGE_REJECTED',
@@ -216,6 +239,29 @@ function registerWsHandlers(wss, getDB) {
                             };
                             roomManager.sendToUser(msg.to, rejectedMsg);
                             ws.send(JSON.stringify(rejectedMsg)); // También al que rechazó para confirmar
+
+                            // Guardar y enviar mensaje de resultado en el chat
+                            try {
+                                const resultContent = '❌ Desafío rechazado';
+                                const savedResult = await chatService.saveMessage(dbR, {
+                                    from: msg.from,
+                                    to: msg.to,
+                                    content: resultContent,
+                                    type: 'challenge-result'
+                                });
+                                const resultChatMsg = {
+                                    type: 'CHAT_MESSAGE',
+                                    from: msg.from,
+                                    to: msg.to,
+                                    content: resultContent,
+                                    at: savedResult.at.toISOString(),
+                                    msgType: 'challenge-result'
+                                };
+                                roomManager.sendToUser(msg.to, resultChatMsg);
+                                roomManager.sendToUser(msg.from, resultChatMsg);
+                            } catch (e) {
+                                console.error('Error guardando mensaje de rechazo de desafío:', e);
+                            }
                         }
                         break;
                     }
