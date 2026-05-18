@@ -43,6 +43,24 @@ class RoomManager {
             clearInterval(this.gcInterval);
             this.gcInterval = null;
         }
+        for (const [roomId, room] of this.rooms.entries()) {
+            if (room.idleTimer) {
+                clearTimeout(room.idleTimer);
+                room.idleTimer = null;
+            }
+            if (room.roundFinishedTimer) {
+                clearTimeout(room.roundFinishedTimer);
+                room.roundFinishedTimer = null;
+            }
+            if (room.gameOverCleanupTimer) {
+                clearTimeout(room.gameOverCleanupTimer);
+                room.gameOverCleanupTimer = null;
+            }
+        }
+        for (const [roomId, timer] of this.roundTimers.entries()) {
+            clearTimeout(timer);
+        }
+        this.roundTimers.clear();
     }
 
     init(roomRepository, userRepository, wss, gameService) {
@@ -456,6 +474,7 @@ class RoomManager {
                     if (user) {
                         details = {
                             username: user.username || username || 'Jugador',
+                            displayName: user.displayName || null,
                             level: user.level || 1,
                             rank: user.rank || 'Cadete',
                             avatar: user.avatar || 'Astronauta_blanc.jpg'
@@ -795,7 +814,7 @@ class RoomManager {
             room: roomUpdate
         });
 
-        setTimeout(async () => {
+        const roundFinishedTimer = setTimeout(async () => {
             const currentRoom = this.rooms.get(roomId);
             if (!currentRoom) return;
 
@@ -816,10 +835,16 @@ class RoomManager {
                 this.registerMultiplayerResults(currentRoom);
 
                 // Auto-cleanup GAME_OVER rooms after 10 mins
-                setTimeout(async () => {
+                const gameOverCleanupTimer = setTimeout(async () => {
                     if (this.rooms.has(roomId) && this.rooms.get(roomId).status === 'GAME_OVER') {
                         console.log(`🧹 [Room ${roomId}] Auto-cleanup: sala abandonada en GAME_OVER.`);
                         this.broadcastToRoom(roomId, { type: 'ROOM_CLOSED', reason: 'abandoned' });
+                        const r = this.rooms.get(roomId);
+                        if (r) {
+                            if (r.idleTimer) clearTimeout(r.idleTimer);
+                            if (r.roundFinishedTimer) clearTimeout(r.roundFinishedTimer);
+                            if (r.gameOverCleanupTimer) clearTimeout(r.gameOverCleanupTimer);
+                        }
                         this.rooms.delete(roomId);
                         if (this.roomRepo) {
                             await this.roomRepo.deleteById(roomId);
@@ -827,6 +852,8 @@ class RoomManager {
                         }
                     }
                 }, 10 * 60 * 1000);
+
+                currentRoom.gameOverCleanupTimer = gameOverCleanupTimer;
 
             } else {
                 const isRace = currentRoom.gameConfig.mode === 'RACE';
@@ -843,6 +870,8 @@ class RoomManager {
                 });
             }
         }, 2000);
+
+        room.roundFinishedTimer = roundFinishedTimer;
     }
 
     handleGameAction(roomId, user, action) {
