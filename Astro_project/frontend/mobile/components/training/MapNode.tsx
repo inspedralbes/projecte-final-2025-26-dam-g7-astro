@@ -39,15 +39,20 @@ export default function MapNode({ name, state, onPress, position }: MapNodeProps
         disabled={isLocked}
         style={[styles.node, getNodeStyle()]}
       >
-        <MaterialCommunityIcons
-          name={state === 'completed' ? 'check-bold' : state === 'current' ? 'rocket-launch' : 'lock'}
-          size={32}
-          color={isLocked ? 'rgba(255,255,255,0.3)' : '#fff'}
-        />
+        <View style={styles.nodeInner}>
+          <MaterialCommunityIcons
+            name={state === 'completed' ? 'check-decagram' : state === 'current' ? 'rocket-launch' : 'lock-outline'}
+            size={32}
+            color={isLocked ? 'rgba(255,255,255,0.2)' : '#fff'}
+          />
+        </View>
+        {state === 'current' && <View style={styles.pulseRing} />}
       </TouchableOpacity>
-      <Text style={[styles.label, isLocked && styles.labelLocked]}>
-        {name.toUpperCase()}
-      </Text>
+      <View style={styles.labelContainer}>
+        <Text style={[styles.label, isLocked && styles.labelLocked]}>
+          {name.toUpperCase()}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -55,49 +60,74 @@ export default function MapNode({ name, state, onPress, position }: MapNodeProps
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
-    marginVertical: 20,
-    width: 150,
+    marginVertical: 25,
+    width: 140,
   },
-  pos_left: { alignSelf: 'flex-start' },
-  pos_right: { alignSelf: 'flex-end' },
+  pos_left: { alignSelf: 'flex-start', marginLeft: 10 },
+  pos_right: { alignSelf: 'flex-end', marginRight: 10 },
   pos_center: { alignSelf: 'center' },
   node: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  nodeInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 38,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    elevation: 10,
-    shadowColor: '#00f2ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    zIndex: 2,
   },
   node_locked: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderColor: 'rgba(255,255,255,0.1)',
-    shadowOpacity: 0,
+    opacity: 0.6,
   },
   node_current: {
-    backgroundColor: Colors.dark.tint,
-    borderColor: '#fff',
+    shadowColor: Colors.dark.tint,
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
+    shadowRadius: 15,
+    elevation: 15,
   },
   node_completed: {
-    backgroundColor: '#00c853',
-    borderColor: '#fff',
-    shadowColor: '#00c853',
+    shadowColor: '#00ff88',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint,
+    opacity: 0.4,
+    zIndex: 1,
+  },
+  labelContainer: {
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   label: {
     color: '#fff',
-    marginTop: 8,
     fontFamily: Fonts.subheader,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
     textAlign: 'center',
+    letterSpacing: 1,
   },
   labelLocked: {
-    opacity: 0.4,
+    color: 'rgba(255,255,255,0.3)',
   },
 });

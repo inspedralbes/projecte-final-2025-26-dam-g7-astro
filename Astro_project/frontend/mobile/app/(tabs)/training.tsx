@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, Alert, ScrollView, Text } from 'react-native';
 import AstroLayout from '@/components/layout/AstroLayout';
 import MapNode, { NodeState } from '@/components/training/MapNode';
 import MapPath from '@/components/training/MapPath';
 import PhaseDivider from '@/components/training/PhaseDivider';
 import LevelPreview from '@/components/training/LevelPreview';
 import WordConstruction from '@/components/games/WordConstruction';
+import { SpelledRosco } from '@/components/games/SpelledRosco';
+import { RadarScan } from '@/components/games/RadarScan';
+import { RadioSignal } from '@/components/games/RadioSignal';
 import { useProgressStore } from '@/stores/progressStore';
+import { Fonts, Colors } from '@/constants/theme';
 
 export default function TrainingScreen() {
   const { mapLevel, registerCompletedGame, fetchUserStats } = useProgressStore();
@@ -50,9 +54,23 @@ export default function TrainingScreen() {
   if (activeGame === 'word-construction') {
     return <WordConstruction onGameOver={handleGameOver} />;
   }
+  if (activeGame === 'radar-scan') {
+    return <RadarScan onExit={handleGameOver} />;
+  }
+  if (activeGame === 'radio-signal') {
+    return <RadioSignal onExit={handleGameOver} />;
+  }
+  if (activeGame === 'spelled-rosco') {
+    return <SpelledRosco onExit={handleGameOver} />;
+  }
 
   return (
     <AstroLayout>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>ENTRENAMIENTO</Text>
+        <Text style={styles.headerSubtitle}>Progresión de Vuelo</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.mapContainer}>
           {levelSequence.map((level, index) => (
@@ -107,11 +125,33 @@ export default function TrainingScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    paddingTop: 20,
+    paddingHorizontal: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  headerTitle: {
+    fontFamily: Fonts.header,
+    color: '#fff',
+    fontSize: 22,
+    letterSpacing: 3,
+    fontWeight: '900',
+  },
+  headerSubtitle: {
+    fontFamily: Fonts.subheader,
+    color: Colors.dark.tint,
+    fontSize: 12,
+    letterSpacing: 1,
+    opacity: 0.8,
+    marginTop: 2,
+  },
   scrollContent: {
     paddingHorizontal: 20,
   },
   mapContainer: {
-    paddingTop: 60,
+    paddingTop: 40,
     position: 'relative',
   },
 });

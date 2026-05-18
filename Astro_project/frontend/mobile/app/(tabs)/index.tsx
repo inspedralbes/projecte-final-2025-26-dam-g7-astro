@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,7 +12,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const user = useSessionStore((state) => state.user);
   const clearSession = useSessionStore((state) => state.clearSession);
-  const { xp, level, streak } = useProgressStore();
+  const { xp, level, streak, coins, fetchUserStats } = useProgressStore();
+
+  useEffect(() => {
+    // Sync stats whenever home is visited
+    fetchUserStats();
+  }, []);
 
   return (
     <AstroLayout>
@@ -25,6 +31,10 @@ export default function HomeScreen() {
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{i18n.t('home.level')}</Text>
             <Text style={styles.statValue}>{level}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>{i18n.t('home.coins') || 'MONEDAS'}</Text>
+            <Text style={styles.statValue}>{coins}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>{i18n.t('home.streak')}</Text>
@@ -86,7 +96,9 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 15,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
     marginBottom: 40,
   },
   statCard: {
@@ -94,21 +106,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
-    padding: 20,
-    width: 150,
+    padding: 15,
+    width: 105,
     alignItems: 'center',
   },
   statLabel: {
     fontFamily: Fonts.subheader,
     color: Colors.dark.tint,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: 8,
+    letterSpacing: 1,
     fontWeight: '800',
+    textAlign: 'center',
   },
   statValue: {
     fontFamily: Fonts.header,
     color: '#fff',
-    fontSize: 24,
+    fontSize: 18,
     marginTop: 5,
   },
   menuGrid: {

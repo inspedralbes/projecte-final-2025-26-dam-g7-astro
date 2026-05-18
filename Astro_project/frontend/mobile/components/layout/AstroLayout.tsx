@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/theme';
+import StarsBackground from '../ui/StarsBackground';
 
 interface AstroLayoutProps {
   children: React.ReactNode;

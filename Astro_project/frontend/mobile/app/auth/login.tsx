@@ -31,11 +31,16 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     const result = await login({ username, password });
-    setIsLoading(false);
 
     if (result.success) {
+      // Fetch stats after login to sync data
+      const { useProgressStore } = await import('../../stores/progressStore');
+      await useProgressStore.getState().fetchUserStats();
+      
+      setIsLoading(false);
       router.replace('/(tabs)');
     } else {
+      setIsLoading(false);
       Alert.alert('Error de acceso', result.message || 'Credenciales incorrectas');
     }
   };
