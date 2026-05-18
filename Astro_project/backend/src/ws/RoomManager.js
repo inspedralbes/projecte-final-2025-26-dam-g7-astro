@@ -456,6 +456,7 @@ class RoomManager {
                     if (user) {
                         details = {
                             username: user.username || username || 'Jugador',
+                            displayName: user.displayName || null,
                             level: user.level || 1,
                             rank: user.rank || 'Cadete',
                             avatar: user.avatar || 'Astronauta_blanc.jpg'

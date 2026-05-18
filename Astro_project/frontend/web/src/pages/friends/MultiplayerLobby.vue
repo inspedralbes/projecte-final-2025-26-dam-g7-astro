@@ -46,7 +46,7 @@
                 <v-img :src="getPlayerAvatar(astroStore.user)" />
               </v-avatar>
               <div class="hud-text">
-                <div class="hud-name">{{ astroStore.user }}</div>
+                <div class="hud-name">{{ astroStore.displayName || astroStore.user }}</div>
                 <div v-if="astroStore.selectedTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(astroStore.selectedTitle) + '.name') }}</div>
                 <div v-if="!isTeammate" class="hud-puntos">{{ multiplayerStore.roundScores[astroStore.user] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[astroStore.user] || 0 }})</span></div>
               </div>
@@ -84,7 +84,7 @@
                 <v-img :src="getPlayerAvatar(opponentName)" />
               </v-avatar>
               <div class="hud-text">
-                <div class="hud-name">{{ opponentName }}</div>
+                <div class="hud-name">{{ opponentDisplayName }}</div>
                 <div v-if="opponentTitle" class="text-caption text-cyan-accent-1 line-height-1 mb-1 font-italic">{{ $t('shopItems.' + getTitleKey(opponentTitle) + '.name') }}</div>
                 <div v-if="!isTeammate" class="hud-puntos">{{ multiplayerStore.roundScores[opponentName] || 0 }} <span class="hud-total">({{ multiplayerStore.room?.gameConfig?.scores?.[opponentName] || 0 }})</span></div>
               </div>
@@ -1007,6 +1007,13 @@
     return op?.username || op || t('multiplayerLobby.opponent')
   })
 
+  const opponentDisplayName = computed(() => {
+    const username = opponentName.value
+    if (username === t('multiplayerLobby.opponent')) return username
+    const explorer = astroStore.explorers?.find(e => e.user === username)
+    return explorer?.displayName || username
+  })
+
   const opponentTitle = computed(() => {
     const opName = opponentName.value
     if (opName === t('multiplayerLobby.opponent')) return null
@@ -1168,15 +1175,25 @@
 
   function getPlayerName (player) {
     if (!player) return 'Unknown'
-    if (typeof player === 'string') return player
 
-    // Prioridad de campos: displayName -> username -> user -> id
-    const name = player.displayName || player.username || player.user || player.id
+    // Si es un string (username), buscar displayName en explorers
+    if (typeof player === 'string') {
+      const explorer = astroStore.explorers?.find(e => e.user === player)
+      return explorer?.displayName || player
+    }
 
+    // Si es un objeto, buscar displayName en el propio objeto o en explorers
+    const username = player.username || player.user || player.id
+    if (player.displayName) return player.displayName
+    if (username) {
+      const explorer = astroStore.explorers?.find(e => e.user === username)
+      if (explorer?.displayName) return explorer.displayName
+    }
+
+    const name = username
     if (name) {
       if (typeof name === 'string') return name
       if (typeof name === 'object' && name !== null) {
-        // Si el campo es un objeto, intentamos sacar el string de dentro
         return name.username || name.user || JSON.stringify(name)
       }
       return String(name)

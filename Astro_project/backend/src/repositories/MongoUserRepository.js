@@ -100,7 +100,8 @@ class MongoUserRepository extends UserRepository {
                 selectedAchievements: 1,
                 friendRequests: 1,
                 selectedTitle: 1,
-                profileColor: 1
+                profileColor: 1,
+                displayName: 1
             }
         }).toArray();
 

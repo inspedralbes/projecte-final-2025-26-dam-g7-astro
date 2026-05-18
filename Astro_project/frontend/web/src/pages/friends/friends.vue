@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="mb-4">
-                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.user }}</h2>
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ friend.displayName || friend.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(friend.level)]" size="x-small">
                     {{ friend.selectedTitle ? $t('shopItems.' + getTitleKey(friend.selectedTitle) + '.name') : getRankName(friend.level) }}
                   </v-chip>
@@ -232,7 +232,7 @@
                 </div>
 
                 <div class="mb-4">
-                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.user }}</h2>
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ explorer.displayName || explorer.user }}</h2>
                   <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(explorer.level)]" size="x-small">
                     {{ explorer.selectedTitle ? $t('shopItems.' + getTitleKey(explorer.selectedTitle) + '.name') : getRankName(explorer.level) }}
                   </v-chip>
@@ -397,7 +397,7 @@
                 </div>
 
                 <div class="mb-6">
-                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.user }}</h2>
+                  <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ requester.displayName || requester.user }}</h2>
                   <div class="d-flex align-center gap-2">
                     <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(requester.level)]" size="x-small">
                       {{ requester.selectedTitle ? $t('shopItems.' + getTitleKey(requester.selectedTitle) + '.name') : getRankName(requester.level) }}
@@ -479,7 +479,7 @@
             </div>
           </div>
 
-          <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.user }}</h2>
+          <h2 class="text-h3 font-weight-black text-white mb-1">{{ profileDialog.user?.displayName || profileDialog.user?.user }}</h2>
           <div class="mb-6">
             <v-chip :class="['rank-chip font-weight-black px-6', getRankClass(profileDialog.user?.level)]" size="large">
               {{ profileDialog.user?.selectedTitle ? $t('shopItems.' + getTitleKey(profileDialog.user?.selectedTitle) + '.name') : getRankName(profileDialog.user?.level) }}
@@ -827,8 +827,8 @@
 .card-header-gradient.rank-tier-2 { background: linear-gradient(135deg, #2e7d32, #004d40); }
 .card-header-gradient.rank-tier-3 { background: linear-gradient(135deg, #1565c0, #0d47a1); }
 .card-header-gradient.rank-tier-4 { background: linear-gradient(135deg, #6a1b9a, #4a148c); }
-.card-header-gradient.rank-tier-5 { background: linear-gradient(135deg, #ff8f00, #e65100); }
-.card-header-gradient.rank-tier-6 { background: linear-gradient(135deg, #c62828, #b71c1c); }
+.card-header-gradient.rank-tier-5 { background: linear-gradient(135deg, #00e5ff, #311b92); }
+.card-header-gradient.rank-tier-6 { background: linear-gradient(135deg, #ff00ea, #6a1b9a); }
 
 .card-header-gradient.bg-requests {
   background: linear-gradient(135deg, #fbc02d, #f57f17);
@@ -850,8 +850,8 @@
 .avatar-ring.rank-tier-2 { background: #4caf50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.3); }
 .avatar-ring.rank-tier-3 { background: #2196f3; box-shadow: 0 0 15px rgba(33, 150, 243, 0.3); }
 .avatar-ring.rank-tier-4 { background: #9c27b0; box-shadow: 0 0 15px rgba(156, 39, 176, 0.3); }
-.avatar-ring.rank-tier-5 { background: #ff9800; box-shadow: 0 0 15px rgba(255, 152, 0, 0.3); }
-.avatar-ring.rank-tier-6 { background: #f44336; box-shadow: 0 0 15px rgba(244, 67, 54, 0.3); }
+.avatar-ring.rank-tier-5 { background: #00e5ff; box-shadow: 0 0 15px rgba(0, 229, 255, 0.5); }
+.avatar-ring.rank-tier-6 { background: #ff00ea; box-shadow: 0 0 15px rgba(255, 0, 234, 0.5); }
 
 .avatar-ring.ring-requests {
   background: #fbc02d;
@@ -879,8 +879,8 @@
 .rank-chip-mini.rank-tier-2 { background: #4caf50 !important; color: #fff !important; }
 .rank-chip-mini.rank-tier-3 { background: #2196f3 !important; color: #fff !important; }
 .rank-chip-mini.rank-tier-4 { background: #9c27b0 !important; color: #fff !important; }
-.rank-chip-mini.rank-tier-5 { background: #ff9800 !important; color: #000 !important; }
-.rank-chip-mini.rank-tier-6 { background: #f44336 !important; color: #fff !important; }
+.rank-chip-mini.rank-tier-5 { background: #00e5ff !important; color: #000 !important; }
+.rank-chip-mini.rank-tier-6 { background: #ff00ea !important; color: #fff !important; }
 
 .section-label-mini {
   font-size: 0.65rem;
