@@ -81,6 +81,38 @@
               variant="solo-filled"
             />
           </v-col>
+
+          <!-- Requisitos de Contraseña -->
+          <v-col cols="12" class="mt-3">
+            <div class="password-requirements-panel pa-3">
+              <div class="text-caption text-cyan-accent-3 mb-2 font-weight-bold tracking-wide">
+                <v-icon size="small" class="mr-1">mdi-shield-lock-outline</v-icon>
+                {{ $t('auth.rules.title') }}
+              </div>
+              <v-row no-gutters>
+                <v-col
+                  v-for="(rule, idx) in passwordRequirements"
+                  :key="idx"
+                  cols="12"
+                  sm="6"
+                  class="d-flex align-center py-1"
+                >
+                  <v-icon
+                    :color="rule.met ? 'green-accent-3' : 'red-accent-2'"
+                    size="16"
+                    class="mr-2 rule-icon"
+                  >
+                    {{ rule.met ? 'mdi-check-circle-outline' : 'mdi-close-circle-outline' }}
+                  </v-icon>
+                  <span
+                    :class="['text-caption transition-all duration-300', rule.met ? 'text-green-lighten-3 font-weight-bold' : 'text-grey-lighten-1']"
+                  >
+                    {{ rule.text }}
+                  </span>
+                </v-col>
+              </v-row>
+            </div>
+          </v-col>
         </v-row>
 
         <div v-if="errorMessage" class="error-display mt-6 pa-3 d-flex align-center">
@@ -92,7 +124,7 @@
           block
           class="register-btn font-weight-black mt-8 text-h6"
           color="cyan-accent-3"
-          :disabled="!!passwordMatchError"
+          :disabled="!!passwordMatchError || !isPasswordValid"
           height="64"
           :loading="loading"
           type="submit"
@@ -139,6 +171,21 @@
     return formData.value.password === formData.value.confirmPassword
       ? ''
       : t('auth.codesDontMatch')
+  })
+
+  const passwordRequirements = computed(() => {
+    const p = formData.value.password || ''
+    return [
+      { text: t('auth.rules.length'), met: p.length >= 8 },
+      { text: t('auth.rules.uppercase'), met: /[A-Z]/.test(p) },
+      { text: t('auth.rules.lowercase'), met: /[a-z]/.test(p) },
+      { text: t('auth.rules.digit'), met: /[0-9]/.test(p) },
+      { text: t('auth.rules.special'), met: /[^A-Za-z0-9]/.test(p) }
+    ]
+  })
+
+  const isPasswordValid = computed(() => {
+    return passwordRequirements.value.every(r => r.met)
   })
 
   async function handleRegister () {
@@ -309,5 +356,16 @@
 
 :deep(.v-field__input) {
     color: white !important;
+}
+
+.password-requirements-panel {
+  background: rgba(0, 20, 40, 0.4);
+  border: 1px solid rgba(0, 242, 255, 0.15);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.rule-icon {
+  transition: all 0.3s ease;
 }
 </style>

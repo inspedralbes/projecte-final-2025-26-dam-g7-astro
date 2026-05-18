@@ -291,7 +291,15 @@
         "codesDontMatch": "Los códigos no coinciden",
         "allReqs": "Todos los campos son obligatorios.",
         "signUpErr": "Error al procesar el alta.",
-        "serverConnErr": "Error crítico: No se ha podido contactar con la base."
+        "serverConnErr": "Error crítico: No se ha podido contactar con la base.",
+        "rules": {
+            "title": "Protocolo de Seguridad de Contraseña:",
+            "length": "Mínimo 8 caracteres",
+            "uppercase": "Al menos una mayúscula (A-Z)",
+            "lowercase": "Al menos una minúscula (a-z)",
+            "digit": "Al menos un número (0-9)",
+            "special": "Al menos un carácter especial"
+        }
     },
     "chat": {
         "title": "Chat privado",

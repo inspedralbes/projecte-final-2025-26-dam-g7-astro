@@ -23,6 +23,35 @@
 
             <!-- CABECERA: AVATAR Y DATOS BÁSICOS -->
             <div class="profile-header px-6 px-md-10">
+              <!-- Alerta Global de Contraseña Débil -->
+              <v-alert
+                v-if="astroStore.isPasswordWeak"
+                class="mb-6 mt-4 neon-warning-alert"
+                density="comfortable"
+                type="warning"
+                variant="outlined"
+                icon="mdi-alert-decagram"
+                closable
+              >
+                <div class="d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center ga-3">
+                  <div>
+                    <strong class="text-amber-accent-3 text-subtitle-2">{{ $t('profile.security').toUpperCase() }}:</strong>
+                    <span class="text-caption text-grey-lighten-2 ml-1 d-block d-sm-inline">
+                      {{ $t('profile.weakPasswordWarning') }}
+                    </span>
+                  </div>
+                  <v-btn
+                    color="amber-accent-3"
+                    size="small"
+                    variant="tonal"
+                    prepend-icon="mdi-shield-key-outline"
+                    @click="openSettingsDialog(); settingsTab = 'security'"
+                  >
+                    {{ $t('profile.changePassword') }}
+                  </v-btn>
+                </div>
+              </v-alert>
+
               <div class="avatar-container">
                 <div class="main-avatar-wrapper">
                   <v-avatar class="avatar-circle" size="160">
@@ -747,6 +776,36 @@
                   variant="outlined"
                 />
 
+                <!-- Requisitos de Contraseña -->
+                <div class="password-requirements-panel pa-3 mb-4">
+                  <div class="text-caption text-cyan-accent-3 mb-2 font-weight-bold tracking-wide">
+                    <v-icon size="small" class="mr-1">mdi-shield-lock-outline</v-icon>
+                    {{ $t('auth.rules.title') }}
+                  </div>
+                  <v-row no-gutters>
+                    <v-col
+                      v-for="(rule, idx) in passwordRequirements"
+                      :key="idx"
+                      cols="12"
+                      sm="6"
+                      class="d-flex align-center py-1"
+                    >
+                      <v-icon
+                        :color="rule.met ? 'green-accent-3' : 'red-accent-2'"
+                        size="16"
+                        class="mr-2 rule-icon"
+                      >
+                        {{ rule.met ? 'mdi-check-circle-outline' : 'mdi-close-circle-outline' }}
+                      </v-icon>
+                      <span
+                        :class="['text-caption transition-all duration-300', rule.met ? 'text-green-lighten-3 font-weight-bold' : 'text-grey-lighten-1']"
+                      >
+                        {{ rule.text }}
+                      </span>
+                    </v-col>
+                  </v-row>
+                </div>
+
                 <v-text-field
                   v-model="confirmNewPassword"
                   class="mb-8"
@@ -1085,6 +1144,21 @@
 
   const passwordsMatch = computed(() => newPassword.value === confirmNewPassword.value)
 
+  const passwordRequirements = computed(() => {
+    const p = newPassword.value || ''
+    return [
+      { text: t('auth.rules.length'), met: p.length >= 8 },
+      { text: t('auth.rules.uppercase'), met: /[A-Z]/.test(p) },
+      { text: t('auth.rules.lowercase'), met: /[a-z]/.test(p) },
+      { text: t('auth.rules.digit'), met: /[0-9]/.test(p) },
+      { text: t('auth.rules.special'), met: /[^A-Za-z0-9]/.test(p) }
+    ]
+  })
+
+  const isPasswordValid = computed(() => {
+    return passwordRequirements.value.every(r => r.met)
+  })
+
   const isDeleteConfirmed = computed(() => {
     return deleteConfirmationInput.value.trim().toLowerCase() === t('profile.deleteConfirmationPhrase').toLowerCase()
   })
@@ -1099,8 +1173,9 @@
     return Boolean(
       oldPassword.value
         && newPassword.value
-      && confirmNewPassword.value
-        && passwordsMatch.value,
+        && confirmNewPassword.value
+        && passwordsMatch.value
+        && isPasswordValid.value,
     )
   })
 
@@ -1719,4 +1794,22 @@
   height: 48px !important;
 }
 .gap-2 { gap: 8px; }
+
+.password-requirements-panel {
+  background: rgba(0, 20, 40, 0.4);
+  border: 1px solid rgba(0, 242, 255, 0.15);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.rule-icon {
+  transition: all 0.3s ease;
+}
+
+.neon-warning-alert {
+  background: rgba(255, 179, 0, 0.05) !important;
+  border: 1px solid rgba(255, 179, 0, 0.3) !important;
+  box-shadow: 0 0 15px rgba(255, 179, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
 </style>

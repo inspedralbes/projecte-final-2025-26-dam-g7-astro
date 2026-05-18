@@ -291,7 +291,15 @@
         "codesDontMatch": "Els codis no coincideixen",
         "allReqs": "Tots els camps són obligatoris.",
         "signUpErr": "Error al processar l'alta.",
-        "serverConnErr": "Error crític: No s'ha pogut contactar amb la base."
+        "serverConnErr": "Error crític: No s'ha pogut contactar amb la base.",
+        "rules": {
+            "title": "Protocol de Seguretat de Contrasenya:",
+            "length": "Mínim 8 caràcters",
+            "uppercase": "Almenys una majúscula (A-Z)",
+            "lowercase": "Almenys una minúscula (a-z)",
+            "digit": "Almenys un número (0-9)",
+            "special": "Almenys un caràcter especial"
+        }
     },
     "chat": {
         "title": "Xat privat",
