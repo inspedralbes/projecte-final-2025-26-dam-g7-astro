@@ -1807,16 +1807,17 @@
   letter-spacing: 1px;
 }
 .rank-chip-mini {
-  height: 18px;
+  height: 20px;
   font-size: 0.6rem;
   letter-spacing: 1px;
+  border-radius: 10px !important;
 }
-.rank-chip-mini.rank-tier-1 { background: #90a4ae !important; color: #000 !important; }
-.rank-chip-mini.rank-tier-2 { background: #4caf50 !important; color: #fff !important; }
-.rank-chip-mini.rank-tier-3 { background: #2196f3 !important; color: #fff !important; }
-.rank-chip-mini.rank-tier-4 { background: #9c27b0 !important; color: #fff !important; }
-.rank-chip-mini.rank-tier-5 { background: #00e5ff !important; color: #000 !important; }
-.rank-chip-mini.rank-tier-6 { background: #ff00ea !important; color: #fff !important; }
+.rank-chip-mini.rank-tier-1 { background: linear-gradient(135deg, #78909c, #455a64) !important; color: white !important; }
+.rank-chip-mini.rank-tier-2 { background: linear-gradient(135deg, #00acc1, #006064) !important; color: white !important; border: 1px solid rgba(0, 255, 255, 0.3) !important; }
+.rank-chip-mini.rank-tier-3 { background: linear-gradient(135deg, #8e24aa, #4a148c) !important; color: white !important; border: 1px solid rgba(255, 0, 255, 0.4) !important; }
+.rank-chip-mini.rank-tier-4 { background: linear-gradient(135deg, #ff9800, #e65100) !important; color: white !important; border: 1.5px solid rgba(255, 255, 0, 0.5) !important; }
+.rank-chip-mini.rank-tier-5 { background: linear-gradient(135deg, #c62828, #1a237e) !important; color: white !important; border: 1.5px solid #ff1744 !important; }
+.rank-chip-mini.rank-tier-6 { background: linear-gradient(270deg, #6200ea, #00b0ff, #d500f9) !important; background-size: 400% 400% !important; animation: cosmic-bg 10s ease infinite !important; color: white !important; }
 
 .section-label-mini {
   font-size: 0.65rem;
