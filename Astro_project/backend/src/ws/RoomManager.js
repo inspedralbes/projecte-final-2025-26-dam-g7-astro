@@ -32,6 +32,7 @@ class RoomManager {
             'RadioSignal': 600000,
             'RhymeSquad': 600000,
             'SpelledRosco': 600000,
+            'SyllableQuest': 600000,
             'SymmetryBreaker': 600000,
             'WordConstruction': 600000
         };
