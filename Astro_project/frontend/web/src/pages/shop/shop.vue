@@ -60,12 +60,12 @@
                     <v-icon :color="item.color" size="24">{{ item.icon }}</v-icon>
                   </v-avatar>
 
-                  <div class="text-truncate">
+                  <div class="flex-grow-1" style="min-width: 0;">
                     <div class="text-subtitle-1 font-weight-bold text-white text-truncate">{{
                       item.name }}</div>
                     <div
-                      class="text-caption text-grey-lighten-2 text-truncate"
-                      style="line-height: 1.2;"
+                      class="text-caption text-grey-lighten-2"
+                      style="line-height: 1.3; white-space: normal;"
                     >
                       {{ item.desc }}
                     </div>
@@ -144,31 +144,76 @@
               sm="6"
             >
               <v-card
-                class="mx-auto item-card premium-card rounded-xl pt-6 pb-4"
+                class="mx-auto item-card premium-card rounded-xl pt-7 pb-4 position-relative d-flex flex-column"
                 color="#1e293b"
                 elevation="6"
                 height="100%"
               >
-                <div class="text-center mb-4">
-                  <v-avatar
-                    class="elevation-4"
-                    :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
-                    size="80"
+                <!-- Category Badge -->
+                <div class="position-absolute top-0 right-0 mt-3 mr-3">
+                  <span 
+                    class="font-weight-black px-2 py-1 rounded text-white tracking-widest"
+                    style="font-size: 0.625rem; letter-spacing: 0.1em;"
+                    :style="getCategoryBadgeStyle(item)"
                   >
-                    <v-img v-if="item.image" :src="`/${item.image}`" cover>
-                      <template #error>
-                        <v-icon :color="item.color" size="40">{{ item.icon }}</v-icon>
-                      </template>
-                    </v-img>
-                    <v-icon v-else :color="item.color" size="40">{{ item.icon }}</v-icon>
-                  </v-avatar>
+                    {{ getCategoryLabel(item) }}
+                  </span>
                 </div>
-                <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0">
-                  {{ item.name }}
-                </v-card-title>
+
+                <div class="flex-grow-1 d-flex flex-column justify-center align-center">
+                  <!-- Custom visual representation for Title vs Avatar vs others -->
+                  <div class="text-center mb-4 mt-2 w-100 px-3">
+                    <template v-if="item.cat === 'title'">
+                      <div class="d-flex align-center justify-center" style="height: 80px;">
+                        <div 
+                          class="title-preview-tag px-3 py-2 rounded-lg position-relative d-flex align-center justify-center overflow-hidden elevation-5"
+                          :style="{
+                            border: `1px solid ${item.color}`,
+                            boxShadow: `0 0 15px ${item.bgColor || 'rgba(0,229,255,0.2)'}`,
+                            background: 'rgba(15, 23, 42, 0.8)',
+                            minWidth: '150px'
+                          }"
+                        >
+                          <div class="tech-grid-overlay"></div>
+                          <v-icon :color="item.color" class="mr-2" size="16">mdi-label-outline</v-icon>
+                          <span 
+                            class="font-weight-black text-uppercase text-body-2 font-italic tracking-wider text-center" 
+                            :style="{ color: item.color, textShadow: `0 0 8px ${item.color}` }"
+                          >
+                            {{ item.name }}
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <v-avatar
+                        class="elevation-4"
+                        :color="item.bgColor || 'rgba(255, 193, 7, 0.15)'"
+                        size="80"
+                      >
+                        <v-img v-if="item.image" :src="`/${item.image}`" cover>
+                          <template #error>
+                            <v-icon :color="item.color" size="40">{{ item.icon }}</v-icon>
+                          </template>
+                        </v-img>
+                        <v-icon v-else :color="item.color" size="40">{{ item.icon }}</v-icon>
+                      </v-avatar>
+                    </template>
+                  </div>
+
+                  <v-card-title class="text-subtitle-1 font-weight-bold text-center text-white pt-0 pb-1 w-100">
+                    {{ item.name }}
+                  </v-card-title>
+                  
+                  <div class="px-4 text-center text-caption text-grey-lighten-2 mb-3" style="line-height: 1.3; min-height: 45px; display: flex; align-items: center; justify-content: center;">
+                    {{ item.desc }}
+                  </div>
+                </div>
+
                 <div class="text-center text-caption text-grey mb-2">
                   {{ isOwned(item.id) ? $t('store.owned') : $t('store.available') }}
                 </div>
+
                 <v-card-actions class="justify-center px-4 pb-2">
                   <v-btn
                     block
@@ -372,6 +417,30 @@
 
   function isOwned (itemId) {
     return getItemQuantity(itemId) > 0
+  }
+
+  function getCategoryLabel (item) {
+    if (item.id === 101) return t('store.category.pin')
+    if (item.cat === 'title') return t('store.category.title')
+    if (item.cat === 'trails') return t('store.category.trail')
+    if (item.image || item.cat === 'skin') return t('store.category.avatar')
+    return t('store.category.item')
+  }
+
+  function getCategoryBadgeStyle (item) {
+    if (item.id === 101) {
+      return { background: 'linear-gradient(135deg, #ffc107, #ff9800)', boxShadow: '0 0 10px rgba(255, 193, 7, 0.4)' }
+    }
+    if (item.cat === 'title') {
+      return { background: 'linear-gradient(135deg, #f44336, #e91e63)', boxShadow: '0 0 10px rgba(244, 67, 54, 0.4)' }
+    }
+    if (item.cat === 'trails') {
+      return { background: 'linear-gradient(135deg, #e91e63, #9c27b0)', boxShadow: '0 0 10px rgba(233, 30, 99, 0.4)' }
+    }
+    if (item.image || item.cat === 'skin') {
+      return { background: 'linear-gradient(135deg, #00e5ff, #2979ff)', boxShadow: '0 0 10px rgba(0, 229, 255, 0.4)' }
+    }
+    return { background: 'linear-gradient(135deg, #7c4dff, #651fff)', boxShadow: '0 0 10px rgba(124, 77, 255, 0.4)' }
   }
 
   function hasReachedMax (itemId) {
@@ -616,5 +685,39 @@
 
 .block {
     display: block;
+}
+
+.tech-grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 8px 8px;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+.title-preview-tag {
+    transition: all 0.3s ease;
+}
+
+.title-preview-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.item-card:hover .title-preview-tag::before {
+    left: 150%;
 }
 </style>

@@ -70,7 +70,14 @@
         "reward": "REWARD!",
         "accept": "Accept",
         "goToInventory": "GO TO INVENTORY",
-        "keepBuying": "KEEP BUYING"
+        "keepBuying": "KEEP BUYING",
+        "category": {
+            "pin": "BADGE",
+            "avatar": "AVATAR",
+            "trail": "TRAIL EFFECT",
+            "title": "PROFILE TITLE",
+            "item": "SUPPLY"
+        }
     },
     "inventory": {
         "title": "MY INVENTORY",
@@ -173,6 +180,7 @@
         "passwordChangeError": "Error updating password",
         "changeDisplayName": "Change Display Name",
         "newDisplayName": "New Display Name",
+        "preview": "YOUR CARD PREVIEW",
         "firstChangeFree": "Your first name change is free!",
         "noNameChangeTokens": "You don't have Name Change supplies.",
         "goToShop": "Go to shop",
@@ -650,7 +658,7 @@
         },
         "sabotageRay": {
             "name": "Sabotage Ray",
-            "desc": "In multiplayer, your hits deduct double the time from your opponent.",
+            "desc": "Your hits deduct double the time from your opponent.",
             "limit": "* Only for the next multiplayer match"
         },
         "titleUnstoppable": {

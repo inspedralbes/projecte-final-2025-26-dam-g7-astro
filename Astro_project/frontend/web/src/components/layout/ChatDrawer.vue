@@ -112,6 +112,17 @@
                   </div>
                 </div>
 
+                 <!-- Mensaje de Resultado de Desafío -->
+                <div v-else-if="msg.msgType === 'challenge-result'" class="challenge-result-msg-card" :class="{ 'challenge-result-msg-card--accepted': msg.content.includes('aceptado'), 'challenge-result-msg-card--rejected': msg.content.includes('rechazado') }">
+                  <div class="challenge-result-header">
+                    <v-icon class="mr-2" :color="msg.content.includes('aceptado') ? 'success' : 'error'" :icon="msg.content.includes('aceptado') ? 'mdi-sword-cross' : 'mdi-close-circle'" size="16" />
+                    <span>{{ msg.content.includes('aceptado') ? 'DESAFÍO ACEPTADO' : 'DESAFÍO RECHAZADO' }}</span>
+                  </div>
+                  <div class="challenge-result-body">
+                    {{ msg.content }}
+                  </div>
+                </div>
+
                 <!-- Mensaje de Texto Normal -->
                 <div
                   v-else
@@ -701,6 +712,50 @@
   margin-top: 6px;
   text-align: center;
   letter-spacing: 0.5px;
+}
+
+.challenge-result-msg-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.challenge-result-msg-card--accepted {
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.challenge-result-msg-card--rejected {
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.challenge-result-header {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+}
+
+.challenge-result-msg-card--accepted .challenge-result-header {
+  color: #4caf50;
+}
+
+.challenge-result-msg-card--rejected .challenge-result-header {
+  color: #f44336;
+}
+
+.challenge-result-body {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 
 /* Transiciones */

@@ -76,7 +76,14 @@
         "reward": "¡RECOMPENSA!",
         "accept": "Aceptar",
         "goToInventory": "IR AL INVENTARIO",
-        "keepBuying": "SEGUIR COMPRANDO"
+        "keepBuying": "SEGUIR COMPRANDO",
+        "category": {
+            "pin": "INSIGNIA",
+            "avatar": "AVATAR",
+            "trail": "EFECTO DE RASTRO",
+            "title": "TÍTULO DE PERFIL",
+            "item": "SUMINISTRO"
+        }
     },
     "inventory": {
         "title": "MI INVENTARIO",
@@ -175,6 +182,7 @@
         "newDisplayName": "Nuevo Apodo",
         "cardColor": "Color de Tarjeta Personalizada",
         "colorUpdated": "¡Color de tarjeta actualizado!",
+        "preview": "VISTA PREVIA DE TU TARJETA",
         "firstChangeFree": "¡Tu primer cambio de apodo es gratis!",
         "noNameChangeTokens": "No tienes suministros de Cambio de Nombre.",
         "goToShop": "Ir a la tienda",
@@ -670,7 +678,7 @@
         },
         "sabotageRay": {
             "name": "Rayo Saboteador",
-            "desc": "En multijugador, tus aciertos restan el doble de tiempo al rival.",
+            "desc": "Tus aciertos restan el doble de tiempo al rival.",
             "limit": "* Solo para la próxima partida multijugador"
         },
         "titleUnstoppable": {

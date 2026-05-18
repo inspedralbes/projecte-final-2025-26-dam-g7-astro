@@ -7,7 +7,7 @@
           <v-card
             class="profile-card elevation-24"
             height="100%"
-            :style="{ background: profileColor ? `${profileColor}CC` : 'rgba(10, 12, 16, 0.95)' }"
+            :style="{ background: 'rgba(10, 12, 16, 0.95)' }"
           >
             <!-- BANNER SUPERIOR -->
             <div class="banner-section">
@@ -527,7 +527,7 @@
                 class="mb-1 nav-item"
                 prepend-icon="mdi-account-outline"
                 rounded="lg"
-                :title="$t('sidebar.profile')"
+                :title="$t('sidebar.profile').toUpperCase()"
                 @click="settingsTab = 'profile'"
               />
               <v-list-item
@@ -571,20 +571,66 @@
 
             <!-- SECCIÓN: PERFIL -->
             <div v-if="settingsTab === 'profile'" class="tab-pane">
-              <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('sidebar.profile') }}</h3>
+              <h3 class="text-h5 font-weight-black text-white mb-6">{{ $t('sidebar.profile').toUpperCase() }}</h3>
 
-              <div class="d-flex align-center mb-8 profile-preview-box pa-4 rounded-xl">
-                <v-avatar class="mr-4 border-cyan" size="80">
-                  <v-img :src="`/${avatar}`" />
-                </v-avatar>
-                <div>
-                  <div class="text-overline text-cyan-accent-3">{{ $t('profile.systemLabel') }} ID</div>
-                  <div class="text-h6 text-white font-weight-bold">{{ user }}</div>
-                </div>
+              <!-- Mini replica Friend Card Preview -->
+              <div class="d-flex flex-column align-center mb-6">
+                <div class="text-caption text-cyan-accent-3 font-weight-black mb-2">{{ $t('profile.preview') || 'VISTA PREVIA DE TU TARJETA' }}</div>
+                <v-card
+                  class="friend-card detailed-card"
+                  :style="{
+                    maxWidth: '320px',
+                    width: '100%'
+                  }"
+                  variant="flat"
+                >
+                  <div
+                    class="card-header-gradient"
+                    :class="!pendingColor || pendingColor === '#0a192f' ? getRankClass(level) : ''"
+                    :style="{
+                      background: pendingColor && pendingColor !== '#0a192f' ? `${pendingColor} !important` : '',
+                      opacity: pendingColor && pendingColor !== '#0a192f' ? '0.95 !important' : ''
+                    }"
+                  />
+
+                  <div class="card-body pa-5 pt-2 mb-2">
+                    <div class="d-flex align-start justify-space-between mb-2">
+                      <div class="avatar-container mt-n12">
+                        <div class="avatar-ring" :class="getRankClass(level)">
+                          <v-avatar class="main-avatar" color="#0a192f" size="84">
+                            <v-img cover :src="`/${avatar}`" />
+                          </v-avatar>
+                        </div>
+                      </div>
+
+                      <div class="text-right">
+                        <div class="text-overline text-cyan-accent-1 lh-1 mb-1">{{ $t('friends.level', { level: level || 1 }) }}</div>
+                        <div class="xp-mini-bar">
+                          <v-progress-linear color="cyan-accent-2" height="4" :model-value="(xp / xpRequired) * 100" rounded />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 class="text-h5 font-weight-black text-white mb-1 name-title">{{ newDisplayName || displayName || user }}</h2>
+                      <v-chip :class="['rank-chip-mini font-weight-black', getRankClass(level)]" size="x-small">
+                        {{ selectedTitle ? $t('shopItems.' + getTitleKey(selectedTitle) + '.name') : getRankName(level) }}
+                      </v-chip>
+                    </div>
+                  </div>
+                </v-card>
               </div>
 
-              <v-form @submit.prevent="submitNameChange">
-                <div class="text-subtitle-2 text-grey-lighten-1 mb-2">{{ $t('profile.changeDisplayName') }}</div>
+              <v-form @submit.prevent="saveProfileChanges">
+                <div class="d-flex align-center ga-2 mb-2">
+                  <div class="text-subtitle-2 text-grey-lighten-1 mb-0">{{ $t('profile.changeDisplayName') }}</div>
+                  <div v-if="nameChangesCount === 0" class="text-caption text-cyan-accent-3 font-weight-bold mb-0">
+                    ({{ $t('profile.firstChangeFree') }})
+                  </div>
+                  <div v-else class="text-caption text-grey mb-0">
+                    ({{ $t('profile.tokensAvailable', { count: nameChangeTokens }) }})
+                  </div>
+                </div>
                 <v-text-field
                   v-model="newDisplayName"
                   class="mb-4"
@@ -601,11 +647,11 @@
                     v-for="color in profileColorOptions"
                     :key="color"
                     class="color-option"
-                    :class="{ 'active-color': profileColor === color }"
-                    :style="{ backgroundColor: color }"
-                    @click="updateColor(color)"
+                    :class="{ 'active-color': pendingColor === color }"
+                    :style="{ background: color }"
+                    @click="pendingColor = color"
                   >
-                    <v-icon v-if="profileColor === color" color="white" icon="mdi-check" size="20" />
+                    <v-icon v-if="pendingColor === color" color="white" icon="mdi-check" size="20" />
                   </div>
                 </div>
 
@@ -618,12 +664,21 @@
                 >
                   {{ nameChangeError }}
                 </v-alert>
+                <v-alert
+                  v-if="settingsSuccess"
+                  class="mb-4"
+                  density="compact"
+                  type="success"
+                  variant="tonal"
+                >
+                  {{ settingsSuccess }}
+                </v-alert>
 
                 <div class="d-flex align-center ga-4">
                   <v-btn
                     class="font-weight-black flex-grow-1"
                     color="cyan-accent-3"
-                    :disabled="!newDisplayName || newDisplayName === (displayName || user)"
+                    :disabled="newDisplayName === (displayName || user) && pendingColor === (profileColor || '#0a192f')"
                     height="48"
                     :loading="nameChangeLoading"
                     rounded="lg"
@@ -631,13 +686,6 @@
                   >
                     {{ $t('profile.saveChanges') }}
                   </v-btn>
-
-                  <div v-if="nameChangesCount === 0" class="text-caption text-cyan-accent-3 font-weight-bold">
-                    {{ $t('profile.firstChangeFree') }}
-                  </div>
-                  <div v-else class="text-caption text-grey">
-                    {{ $t('profile.tokensAvailable', { count: nameChangeTokens }) }}
-                  </div>
                 </div>
               </v-form>
             </div>
@@ -859,6 +907,7 @@
   const nameChangeError = ref('')
   const newDisplayName = ref('')
   const settingsSuccess = ref('')
+  const pendingColor = ref('#0a192f')
   const oldPassword = ref('')
   const newPassword = ref('')
   const confirmNewPassword = ref('')
@@ -965,31 +1014,17 @@
   ]
 
   const profileColorOptions = [
-    '#0a192f', // Deep Space Blue
-    '#1a237e', // Indigo Nebula
-    '#311b92', // Deep Purple Galaxy
-    '#004d40', // Teal Void
-    '#1b5e20', // Emerald Nebula
-    '#b71c1c', // Crimson Pulsar
-    '#4a148c', // Dark Matter Purple
-    '#263238', // Charcoal Meteor
+    'linear-gradient(135deg, #455a64, #1a237e)',
+    'linear-gradient(135deg, #2e7d32, #004d40)',
+    'linear-gradient(135deg, #1565c0, #0d47a1)',
+    'linear-gradient(135deg, #6a1b9a, #4a148c)',
+    'linear-gradient(135deg, #00e5ff, #311b92)',
+    'linear-gradient(135deg, #ff00ea, #6a1b9a)',
+    'linear-gradient(135deg, #ffe600, #ff5100)',
   ]
 
-  async function updateColor (color) {
-    settingsLoading.value = true
-    try {
-      const result = await astroStore.updateProfileColorAction(color)
-      if (result.success) {
-        settingsSuccess.value = t('profile.colorUpdated')
-        setTimeout(() => { settingsSuccess.value = '' }, 3000)
-      } else {
-        settingsError.value = result.message
-      }
-    } catch (e) {
-      settingsError.value = e.message
-    } finally {
-      settingsLoading.value = false
-    }
+  function updateColor (color) {
+    pendingColor.value = color
   }
 
   function getTitleKey (titleName) {
@@ -1149,6 +1184,8 @@
 
   function openSettingsDialog () {
     clearPasswordForm()
+    newDisplayName.value = displayName.value || user.value || ''
+    pendingColor.value = profileColor.value || '#0a192f'
     settingsTab.value = 'profile'
     settingsDialog.value = true
   }
@@ -1160,22 +1197,52 @@
 
   function openNameChangeDialog () {
     newDisplayName.value = displayName.value || user.value || ''
+    pendingColor.value = profileColor.value || '#0a192f'
     nameChangeError.value = ''
     settingsTab.value = 'profile'
     settingsDialog.value = true
   }
 
-  async function submitNameChange () {
+  async function saveProfileChanges () {
     if (nameChangeLoading.value) return
     nameChangeError.value = ''
-    if (!newDisplayName.value) return
+    settingsSuccess.value = ''
     nameChangeLoading.value = true
-    const result = await astroStore.changeDisplayName(newDisplayName.value)
-    nameChangeLoading.value = false
-    if (result.success) {
-      // El store actualiza displayName localmente
-    } else {
-      nameChangeError.value = result.message || 'Error al cambiar apodo'
+    try {
+      const displayNameChanged = newDisplayName.value && newDisplayName.value !== (displayName.value || user.value)
+      const colorChanged = pendingColor.value !== (profileColor.value || '#0a192f')
+
+      let success = true
+      let errorMsg = ''
+
+      if (displayNameChanged) {
+        const result = await astroStore.changeDisplayName(newDisplayName.value)
+        if (!result.success) {
+          success = false
+          errorMsg = result.message || 'Error al cambiar apodo'
+        }
+      }
+
+      if (colorChanged && success) {
+        const result = await astroStore.updateProfileColorAction(pendingColor.value)
+        if (!result.success) {
+          success = false
+          errorMsg = result.message || 'Error al guardar el color'
+        }
+      }
+
+      if (success) {
+        settingsSuccess.value = t('profile.colorUpdated') || '¡Cambios guardados con éxito!'
+        setTimeout(() => {
+          settingsSuccess.value = ''
+        }, 3000)
+      } else {
+        nameChangeError.value = errorMsg
+      }
+    } catch (e) {
+      nameChangeError.value = e.message
+    } finally {
+      nameChangeLoading.value = false
     }
   }
 
@@ -1551,4 +1618,94 @@
     border: 3px solid #00f2ff !important;
     box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
 }
+
+/* --- FRIEND CARD PREVIEW CLASSES --- */
+.friend-card {
+  width: 100%;
+}
+.detailed-card {
+  background: rgba(10, 25, 41, 0.7) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 24px !important;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.card-header-gradient {
+  height: 80px;
+  opacity: 0.6;
+}
+.card-header-gradient.rank-tier-1 { background: linear-gradient(135deg, #455a64, #1a237e); }
+.card-header-gradient.rank-tier-2 { background: linear-gradient(135deg, #2e7d32, #004d40); }
+.card-header-gradient.rank-tier-3 { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+.card-header-gradient.rank-tier-4 { background: linear-gradient(135deg, #6a1b9a, #4a148c); }
+.card-header-gradient.rank-tier-5 { background: linear-gradient(135deg, #00e5ff, #311b92); }
+.card-header-gradient.rank-tier-6 { background: linear-gradient(135deg, #ff00ea, #6a1b9a); }
+
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+.avatar-ring {
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+.avatar-ring.rank-tier-1 { background: #90a4ae; box-shadow: 0 0 15px rgba(144, 164, 174, 0.3); }
+.avatar-ring.rank-tier-2 { background: #4caf50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.3); }
+.avatar-ring.rank-tier-3 { background: #2196f3; box-shadow: 0 0 15px rgba(33, 150, 243, 0.3); }
+.avatar-ring.rank-tier-4 { background: #9c27b0; box-shadow: 0 0 15px rgba(156, 39, 176, 0.3); }
+.avatar-ring.rank-tier-5 { background: #00e5ff; box-shadow: 0 0 15px rgba(0, 229, 255, 0.5); }
+.avatar-ring.rank-tier-6 { background: #ff00ea; box-shadow: 0 0 15px rgba(255, 0, 234, 0.5); }
+
+.main-avatar {
+  border: 4px solid #0a192f;
+}
+:deep(.main-avatar .v-img__img) {
+  transform: scale(1.4);
+}
+.name-title {
+  letter-spacing: 1px;
+}
+.rank-chip-mini {
+  height: 18px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+}
+.rank-chip-mini.rank-tier-1 { background: #90a4ae !important; color: #000 !important; }
+.rank-chip-mini.rank-tier-2 { background: #4caf50 !important; color: #fff !important; }
+.rank-chip-mini.rank-tier-3 { background: #2196f3 !important; color: #fff !important; }
+.rank-chip-mini.rank-tier-4 { background: #9c27b0 !important; color: #fff !important; }
+.rank-chip-mini.rank-tier-5 { background: #00e5ff !important; color: #000 !important; }
+.rank-chip-mini.rank-tier-6 { background: #ff00ea !important; color: #fff !important; }
+
+.section-label-mini {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.xp-mini-bar {
+  width: 60px;
+}
+.achievements-showcase {
+  display: flex;
+  gap: 8px;
+}
+.mini-medal-slot {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.h-large {
+  height: 48px !important;
+}
+.gap-2 { gap: 8px; }
 </style>

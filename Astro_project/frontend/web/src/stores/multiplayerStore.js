@@ -32,6 +32,7 @@ export const useMultiplayerStore = defineStore('multiplayer', {
     reconnectAttempts: 0,
     maxReconnectAttempts: 5,
     timeLeft: 0,
+    challengeCooldowns: {},
     // --- RACE MODE STATE ---
     raceFuel: 100,
     raceProgress: 'START',
@@ -145,12 +146,16 @@ export const useMultiplayerStore = defineStore('multiplayer', {
         case 'CHALLENGE_ACCEPTED': {
           this.joinRoom(data.roomId)
           this.lastMessage = data
-          useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'accepted')
+          const partner = data.from === sessionStore.user ? data.to : data.from
+          useChatStore().setChallengeStatus(partner, 'accepted')
+          this.challengeCooldowns[partner] = false
           break
         }
         case 'CHALLENGE_REJECTED': {
           this.lastMessage = data
-          useChatStore().setChallengeStatus(data.from === sessionStore.user ? data.to : data.from, 'rejected')
+          const partner = data.from === sessionStore.user ? data.to : data.from
+          useChatStore().setChallengeStatus(partner, 'rejected')
+          this.challengeCooldowns[partner] = false
           break
         }
         case 'GLOBAL_ROOMS_UPDATE': {
@@ -503,6 +508,12 @@ export const useMultiplayerStore = defineStore('multiplayer', {
           from: sessionStore.user,
           to: friendName,
         }))
+        this.challengeCooldowns[friendName] = true
+        setTimeout(() => {
+          if (this.challengeCooldowns[friendName]) {
+            this.challengeCooldowns[friendName] = false
+          }
+        }, 30000)
         return true
       }
       return false
