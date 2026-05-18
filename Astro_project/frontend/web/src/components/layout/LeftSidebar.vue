@@ -35,6 +35,14 @@
         <v-list-item-title class="text-subtitle-1 font-weight-bold">
           {{ $t(item.titleKey) }}
         </v-list-item-title>
+        <template #append>
+          <span
+            v-if="item.titleKey === 'sidebar.friends' && totalNotifications > 0"
+            class="notification-badge d-flex align-center justify-center font-weight-black"
+          >
+            {{ totalNotifications }}
+          </span>
+        </template>
       </v-list-item>
     </v-list>
 
@@ -94,11 +102,19 @@
   import { useRouter } from 'vue-router'
   import LanguageSelector from '@/components/layout/LanguageSelector.vue'
   import { useAstroStore } from '@/stores/astroStore'
+  import { useChatStore } from '@/stores/chatStore'
 
   const router = useRouter()
   const store = useAstroStore()
+  const chatStore = useChatStore()
 
   const showLogoutDialog = ref(false)
+
+  const totalNotifications = computed(() => {
+    const pendingRequests = store.friendRequests?.length || 0
+    const unreadMessages = chatStore.totalUnread || 0
+    return pendingRequests + unreadMessages
+  })
 
   function handleLogout () {
     showLogoutDialog.value = false
@@ -203,5 +219,34 @@
     backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 24px;
+}
+
+.notification-badge {
+    background: linear-gradient(135deg, #ff5252 0%, #ff1744 100%);
+    color: white !important;
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    padding: 0 5px;
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: glow-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes glow-pulse {
+    0% {
+        box-shadow: 0 0 4px rgba(255, 82, 82, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 14px rgba(255, 82, 82, 1), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        transform: scale(1.06);
+    }
+    100% {
+        box-shadow: 0 0 4px rgba(255, 82, 82, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        transform: scale(1);
+    }
 }
 </style>

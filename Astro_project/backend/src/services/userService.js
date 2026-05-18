@@ -1,5 +1,7 @@
 // Astro_project/backend/src/services/userService.js
 
+const { isStrongPassword } = require('../utils/passwordValidator');
+
 class UserService {
     constructor({ userRepository }) {
         this.userRepo = userRepository;
@@ -207,6 +209,10 @@ class UserService {
     async changePassword(username, oldPassword, newPassword) {
         const user = await this.userRepo.findByUsername(username);
         if (!user) throw new Error("Usuario no encontrado");
+
+        if (!isStrongPassword(newPassword)) {
+            throw new Error("La nueva contraseña debe tener al menos 8 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial.");
+        }
 
         const validCredentials = await this.userRepo.findByCredentials(username, oldPassword);
         if (!validCredentials) throw new Error("Contraseña actual incorrecta");

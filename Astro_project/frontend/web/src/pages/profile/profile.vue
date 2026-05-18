@@ -713,6 +713,17 @@
                 {{ settingsSuccess }}
               </v-alert>
 
+              <v-alert
+                v-if="astroStore.isPasswordWeak"
+                class="mb-4"
+                density="comfortable"
+                type="warning"
+                variant="tonal"
+                icon="mdi-alert-decagram"
+              >
+                {{ $t('profile.weakPasswordWarning') }}
+              </v-alert>
+
               <v-form @submit.prevent="submitPasswordChange">
                 <v-text-field
                   v-model="oldPassword"

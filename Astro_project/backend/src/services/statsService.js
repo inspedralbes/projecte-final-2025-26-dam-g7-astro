@@ -107,7 +107,8 @@ class StatsService {
             groupApprovalRequests: user.groupApprovalRequests || [],
             scheduledPlanDowngrade: user.scheduledPlanDowngrade || null,
             pendingGroupLeaveRequest: user.pendingGroupLeaveRequest || null,
-            profileColor: user.profileColor || '#0a192f'
+            profileColor: user.profileColor || '#0a192f',
+            isPasswordWeak: !!(user.isPasswordWeak || (typeof user.pass === 'string' && !user.pass.startsWith('$2a$') && !user.pass.startsWith('$2b$') && !user.pass.startsWith('$2y$')))
         };
     }
 

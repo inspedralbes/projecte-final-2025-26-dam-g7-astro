@@ -49,7 +49,20 @@
         "exerciseSourceLabel": "Active exercise",
         "exerciseSourceDefault": "General default",
         "exerciseSourceLoading": "Loading...",
-        "exerciseSourceNoCustomPremium": "You can edit your own exercises in Educational Management."
+        "exerciseSourceNoCustomPremium": "You can edit your own exercises in Educational Management.",
+        "results_title": "MISSION COMPLETED SUCCESSFULLY!",
+        "score_obtained": "Score Obtained:",
+        "xp_earned": "Experience Gained:",
+        "coins_earned": "AstroCoins Earned:",
+        "double_score_booster": "Double Score x2 active! Points have been doubled by your booster!",
+        "double_coins_booster": "Double Coins x2 active! Coins have been doubled by your booster!",
+        "confirm_telemetry": "CONFIRM TELEMETRY",
+        "exit_confirm": {
+            "title": "ABORT MISSION?",
+            "desc": "If you leave now, you will lose all progress from this session and your training points will not be saved.",
+            "cancel": "STAY IN ORBIT",
+            "confirm": "ABORT AND EXIT"
+        }
     },
     "store": {
         "title": "Space Bazaar",
@@ -169,6 +182,7 @@
         "accountSettings": "ACCOUNT SETTINGS",
         "settings": "SETTINGS",
         "changePassword": "CHANGE PASSWORD",
+        "weakPasswordWarning": "Your password is very weak. Please update it to protect your crewmate account.",
         "oldPassword": "Current Password",
         "newPassword": "New Password",
         "confirmNewPassword": "Confirm New Password",

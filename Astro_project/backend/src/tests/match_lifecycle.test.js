@@ -19,6 +19,7 @@ describe('Match Lifecycle (LOBBY -> ROULETTE -> PLAYING -> ROUND_RESULTS)', () =
             'RadioSignal': 5000,
             'RhymeSquad': 5000,
             'SpelledRosco': 5000,
+            'SyllableQuest': 5000,
             'SymmetryBreaker': 5000,
             'WordConstruction': 5000
         };

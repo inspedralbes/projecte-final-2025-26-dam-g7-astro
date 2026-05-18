@@ -110,7 +110,12 @@ class GameService {
             newLevel: user.level,
             newBalance: user.coins,
             newXp: user.xp,
-            newRank: user.rank
+            newRank: user.rank,
+            originalScore: normalizedScore,
+            scoreMultiplier,
+            coinsMultiplier,
+            doubleScoreActive: currentBoosters.doubleScoreGamesLeft > 0,
+            doubleCoinsActive: currentBoosters.doubleCoinsGamesLeft > 0
         };
     }
 }

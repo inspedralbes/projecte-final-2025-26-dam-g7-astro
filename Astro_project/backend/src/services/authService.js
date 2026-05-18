@@ -1,6 +1,7 @@
 // Astro_project/backend/src/services/authService.js
 
 const User = require('../domain/User');
+const { isStrongPassword } = require('../utils/passwordValidator');
 
 class AuthService {
     constructor({
@@ -76,6 +77,10 @@ class AuthService {
             throw new Error('El nombre de usuario no puede estar vacío.');
         }
 
+        if (!isStrongPassword(password)) {
+            throw new Error('La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial.');
+        }
+
         const existingUser = await this.userRepo.findByUsername(username);
         if (existingUser) {
             throw new Error('El ID de tripulante ya existe.');
@@ -132,6 +137,12 @@ class AuthService {
 
         const initialUser = new User(userDoc);
         const user = await this._applyDueScheduledDowngrade(initialUser);
+        
+        // Determinar si la contraseña es débil (no cumple requisitos o está en texto plano antiguo)
+        const isWeak = !isStrongPassword(password) || 
+            (typeof userDoc.pass === 'string' && !userDoc.pass.startsWith('$2a$') && !userDoc.pass.startsWith('$2b$') && !userDoc.pass.startsWith('$2y$'));
+        user.isPasswordWeak = isWeak;
+
         // Utilitzar l'entitat de domini User
         const normalizedInventory = await this.normalizeAndPersistInventory(user);
         const freezeUnits = this.getInventoryQuantity(normalizedInventory, 2);

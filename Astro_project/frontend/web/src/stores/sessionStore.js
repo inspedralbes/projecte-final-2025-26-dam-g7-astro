@@ -41,6 +41,7 @@ export const useSessionStore = defineStore('session', {
     pendingGroupLeaveRequest: null,
     dailyPurchaseHistory: { date: '', items: {} },
     profileColor: storageGetItem(STORAGE_KEYS.profileColor) || '#0a192f',
+    isPasswordWeak: storageGetItem('astro_is_password_weak') === 'true',
     error: null,
   }),
 
@@ -162,6 +163,10 @@ export const useSessionStore = defineStore('session', {
       }
       if (profile.profileColor) {
         this.setProfileColor(profile.profileColor)
+      }
+      if (profile.isPasswordWeak !== undefined) {
+        this.isPasswordWeak = !!profile.isPasswordWeak
+        persistNullable('astro_is_password_weak', this.isPasswordWeak ? 'true' : null)
       }
     },
 
@@ -355,6 +360,9 @@ export const useSessionStore = defineStore('session', {
           throw new Error(data.message || tr('session.errors.passwordChange'))
         }
 
+        this.isPasswordWeak = false
+        persistNullable('astro_is_password_weak', null)
+
         return { success: true, message: data.message || tr('session.errors.passwordChangeSuccess') }
       } catch (error) {
         console.error('❌ Error cambiando contraseña:', error)
@@ -487,6 +495,7 @@ export const useSessionStore = defineStore('session', {
       this.scheduledPlanDowngrade = null
       this.pendingGroupLeaveRequest = null
       this.profileColor = '#0a192f'
+      this.isPasswordWeak = false
       this.error = null
 
       // Limpiar ambos (Persistent y Session) por seguridad
@@ -504,6 +513,7 @@ export const useSessionStore = defineStore('session', {
         'astro_name_changes',
         'astro_deletion_scheduled',
         STORAGE_KEYS.profileColor,
+        'astro_is_password_weak',
       ]) {
         storageRemoveItem(key, false) // Session
         storageRemoveItem(key, true) // Local

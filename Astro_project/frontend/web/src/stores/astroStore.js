@@ -33,6 +33,7 @@ export const useAstroStore = defineStore('astro', () => {
   const pendingGroupLeaveRequest = computed({ get: () => sessionStore.pendingGroupLeaveRequest, set: value => sessionStore.setPendingGroupLeaveRequest(value) })
   const dailyPurchaseHistory = computed({ get: () => sessionStore.dailyPurchaseHistory, set: value => sessionStore.setDailyPurchaseHistory(value) })
   const profileColor = computed({ get: () => sessionStore.profileColor, set: value => sessionStore.setProfileColor(value) })
+  const isPasswordWeak = computed({ get: () => sessionStore.isPasswordWeak, set: value => { sessionStore.isPasswordWeak = value } })
 
   // Progress State
   const coins = computed({ get: () => progressStore.coins, set: value => progressStore.setCoins(value) })
@@ -352,7 +353,7 @@ export const useAstroStore = defineStore('astro', () => {
     user, plan, role, parentId, rank, selectedTitle, displayName, nameChangesCount, coins, partides, level, xp, streak, streakFreezes, activeBoosters, needsFreeze,
     inventory, selectedAchievements, unlockedAchievements, avatar, token, deletionScheduledAt, lastActivity, lastGame,
     groupInvitations, groupApprovalRequests, scheduledPlanDowngrade, pendingGroupLeaveRequest, dailyPurchaseHistory,
-    profileColor,
+    profileColor, isPasswordWeak,
     dailyMissions, weeklyMissions, friends, explorers, socket, isConnected,
     friendRequests, missionsCompleted, totalPoints, mapLevel,
     gameHistory, topGames, maxScores, totalGamesPlayed, error,

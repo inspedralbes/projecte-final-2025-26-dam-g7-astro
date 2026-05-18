@@ -271,6 +271,88 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="showSuccessResultsDialog" max-width="450" persistent z-index="200">
+      <v-card
+        class="text-center pa-8 rounded-xl elevation-24"
+        style="background: #020617; border: 2px solid #00e5ff; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);"
+      >
+        <div class="glow-icon-wrapper mb-4">
+          <v-icon class="animate-bounce" color="cyan-accent-3" icon="mdi-check-decagram-outline" size="90" />
+        </div>
+
+        <h2 class="text-h4 font-weight-black text-cyan-accent-3 mb-2 tracking-tighter uppercase">
+          {{ $t('singleplayer.results_title') }}
+        </h2>
+
+        <v-divider class="my-4 border-cyan opacity-30" />
+
+        <div class="py-4 text-left">
+          <div class="d-flex justify-space-between align-center mb-3">
+            <span class="text-body-1 text-grey-lighten-1">{{ $t('singleplayer.score_obtained') }}</span>
+            <span class="text-h5 font-weight-black text-white">
+              {{ gameResultsData?.originalScore }} pts
+              <span v-if="gameResultsData?.scoreMultiplier > 1" class="text-cyan-accent-2 text-subtitle-2 ml-1">(x{{ gameResultsData?.scoreMultiplier }})</span>
+            </span>
+          </div>
+
+          <div class="d-flex justify-space-between align-center mb-3">
+            <span class="text-body-1 text-grey-lighten-1">{{ $t('singleplayer.xp_earned') }}</span>
+            <span class="text-h5 font-weight-black text-green-accent-3">+{{ gameResultsData?.xpEarned }} XP</span>
+          </div>
+
+          <div class="d-flex justify-space-between align-center mb-5">
+            <span class="text-body-1 text-grey-lighten-1">{{ $t('singleplayer.coins_earned') }}</span>
+            <span class="text-h5 font-weight-black text-amber-accent-2 d-flex align-center">
+              <v-icon icon="mdi-database-outline" color="amber-accent-2" class="mr-1" size="small" />
+              +{{ gameResultsData?.coinsEarned }}
+            </span>
+          </div>
+
+          <v-alert
+            v-if="gameResultsData?.doubleScoreActive || gameResultsData?.scoreMultiplier > 1"
+            border="start"
+            color="success"
+            variant="tonal"
+            class="mb-3 d-flex align-center py-2"
+          >
+            <template #prepend>
+              <v-icon color="amber-accent-3" class="mr-2">mdi-rocket-launch</v-icon>
+            </template>
+            <div class="text-caption text-success font-weight-bold">
+              {{ $t('singleplayer.double_score_booster') }}
+            </div>
+          </v-alert>
+
+          <v-alert
+            v-if="gameResultsData?.doubleCoinsActive || gameResultsData?.coinsMultiplier > 1"
+            border="start"
+            color="warning"
+            variant="tonal"
+            class="mb-3 d-flex align-center py-2"
+          >
+            <template #prepend>
+              <v-icon color="amber-accent-3" class="mr-2">mdi-piggy-bank</v-icon>
+            </template>
+            <div class="text-caption text-warning font-weight-bold">
+              {{ $t('singleplayer.double_coins_booster') }}
+            </div>
+          </v-alert>
+        </div>
+
+        <v-btn
+          block
+          class="font-weight-black text-black mt-4"
+          color="cyan-accent-3"
+          rounded="xl"
+          size="x-large"
+          variant="elevated"
+          @click="closeSuccessResultsDialog"
+        >
+          {{ $t('singleplayer.confirm_telemetry') }}
+        </v-btn>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="showFailDialog" max-width="400" persistent z-index="200">
       <v-card
         class="text-center pa-8 rounded-xl elevation-24"
@@ -365,6 +447,17 @@
 
   const showLevelUpDialog = ref(false)
   const showFailDialog = ref(false)
+  const showSuccessResultsDialog = ref(false)
+  const gameResultsData = ref(null)
+
+  function closeSuccessResultsDialog () {
+    showSuccessResultsDialog.value = false
+    if (gameResultsData.value?.levelUpPending) {
+      newLevelData.value = gameResultsData.value.levelUpData
+      showLevelUpDialog.value = true
+    }
+    gameResultsData.value = null
+  }
 
   const lastScore = ref(0)
   const requiredScore = ref(0)
@@ -593,14 +686,23 @@
 
         if (!result.success) throw new Error(result.message)
 
-        if (astroStore.level > previousAccountLevel) {
-          newLevelData.value = {
+        gameResultsData.value = {
+          originalScore: result.data.originalScore || finalScore,
+          boostedScore: result.data.boostedScore || finalScore,
+          xpEarned: result.data.xpEarned || 0,
+          coinsEarned: result.data.coinsEarned || 0,
+          doubleScoreActive: !!result.data.doubleScoreActive,
+          doubleCoinsActive: !!result.data.doubleCoinsActive,
+          scoreMultiplier: result.data.scoreMultiplier || 1,
+          coinsMultiplier: result.data.coinsMultiplier || 1,
+          levelUpPending: astroStore.level > previousAccountLevel,
+          levelUpData: {
             level: astroStore.level,
             rank: result.data.newRank || 'Explorador',
             rankChanged: !!result.data.newRank,
           }
-          showLevelUpDialog.value = true
         }
+        showSuccessResultsDialog.value = true
       } catch (error) {
         console.error('❌ Error al registrar la partida:', error)
       } finally {

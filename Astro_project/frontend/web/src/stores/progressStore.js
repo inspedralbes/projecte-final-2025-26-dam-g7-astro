@@ -225,6 +225,10 @@ export const useProgressStore = defineStore('progress', {
         sessionStore.setGroupApprovalRequests(userData.groupApprovalRequests || [])
         sessionStore.setScheduledPlanDowngrade(userData.scheduledPlanDowngrade || null)
         sessionStore.setPendingGroupLeaveRequest(userData.pendingGroupLeaveRequest || null)
+        if (userData.isPasswordWeak !== undefined) {
+          sessionStore.isPasswordWeak = !!userData.isPasswordWeak
+          persistNullable('astro_is_password_weak', sessionStore.isPasswordWeak ? 'true' : null)
+        }
 
         const achievementsStore = useAchievementsStore()
         achievementsStore.setSelectedAchievements(userData.selectedAchievements || [])
