@@ -42,16 +42,31 @@ class MongoUserRepository extends UserRepository {
 
         const query = { 
             $or: [
-                { user: username, pass: password }
+                { user: username }
             ]
         };
         
         const numUser = Number(username);
         if (!isNaN(numUser) && username !== '') {
-            query.$or.push({ user: numUser, pass: password });
+            query.$or.push({ user: numUser });
         }
 
-        return await this.collection.findOne(query);
+        const doc = await this.collection.findOne(query);
+        if (!doc) return null;
+
+        const storedPass = doc.pass;
+        if (!storedPass) return null;
+
+        const bcrypt = require('bcryptjs');
+        let isValid = false;
+
+        if (typeof storedPass === 'string' && (storedPass.startsWith('$2a$') || storedPass.startsWith('$2b$') || storedPass.startsWith('$2y$'))) {
+            isValid = await bcrypt.compare(password, storedPass);
+        } else {
+            isValid = (password === storedPass);
+        }
+
+        return isValid ? doc : null;
     }
 
     async save(user) {
@@ -123,8 +138,11 @@ class MongoUserRepository extends UserRepository {
             filter.$or.push({ user: numUser });
         }
 
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
         const result = await this.collection.updateOne(filter, {
-            $set: { pass: newPassword }
+            $set: { pass: hashedPassword }
         });
 
         return result.modifiedCount > 0;
