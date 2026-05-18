@@ -298,7 +298,12 @@
             "uppercase": "Al menos una mayúscula (A-Z)",
             "lowercase": "Al menos una minúscula (a-z)",
             "digit": "Al menos un número (0-9)",
-            "special": "Al menos un carácter especial"
+            "special": "Al menos un carácter especial",
+            "strengthLabel": "Fuerza de la contraseña:",
+            "strengthWeak": "Débil",
+            "strengthMedium": "Medio",
+            "strengthStrong": "Fuerte",
+            "strengthNone": "Ninguna"
         }
     },
     "chat": {

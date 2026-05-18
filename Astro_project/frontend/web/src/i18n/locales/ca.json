@@ -298,7 +298,12 @@
             "uppercase": "Almenys una majúscula (A-Z)",
             "lowercase": "Almenys una minúscula (a-z)",
             "digit": "Almenys un número (0-9)",
-            "special": "Almenys un caràcter especial"
+            "special": "Almenys un caràcter especial",
+            "strengthLabel": "Força de la contrasenya:",
+            "strengthWeak": "Feble",
+            "strengthMedium": "Mitjana",
+            "strengthStrong": "Forta",
+            "strengthNone": "Cap"
         }
     },
     "chat": {

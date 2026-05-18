@@ -782,6 +782,24 @@
                     <v-icon size="small" class="mr-1">mdi-shield-lock-outline</v-icon>
                     {{ $t('auth.rules.title') }}
                   </div>
+
+                  <!-- Indicador de Fuerza en Tiempo Real -->
+                  <div class="mb-4 mt-1 px-1">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                      <span class="text-caption text-grey-lighten-1">{{ $t('auth.rules.strengthLabel') }}</span>
+                      <span :class="['text-caption font-weight-black text-uppercase', strengthColorClass]">
+                        {{ strengthText }}
+                      </span>
+                    </div>
+                    <v-progress-linear
+                      :color="strengthColor"
+                      height="6"
+                      :model-value="strengthPercentage"
+                      rounded
+                      class="strength-bar"
+                    />
+                  </div>
+
                   <v-row no-gutters>
                     <v-col
                       v-for="(rule, idx) in passwordRequirements"
@@ -1157,6 +1175,40 @@
 
   const isPasswordValid = computed(() => {
     return passwordRequirements.value.every(r => r.met)
+  })
+
+  const metCount = computed(() => {
+    return passwordRequirements.value.filter(r => r.met).length
+  })
+
+  const strengthPercentage = computed(() => {
+    const p = newPassword.value || ''
+    if (!p) return 0
+    return (metCount.value / 5) * 100
+  })
+
+  const strengthText = computed(() => {
+    const p = newPassword.value || ''
+    if (!p) return t('auth.rules.strengthNone')
+    if (metCount.value <= 2) return t('auth.rules.strengthWeak')
+    if (metCount.value <= 4) return t('auth.rules.strengthMedium')
+    return t('auth.rules.strengthStrong')
+  })
+
+  const strengthColor = computed(() => {
+    const p = newPassword.value || ''
+    if (!p) return 'grey-darken-2'
+    if (metCount.value <= 2) return 'red-accent-2'
+    if (metCount.value <= 4) return 'amber-accent-2'
+    return 'cyan-accent-3'
+  })
+
+  const strengthColorClass = computed(() => {
+    const p = newPassword.value || ''
+    if (!p) return 'text-grey'
+    if (metCount.value <= 2) return 'text-red-accent-2 glow-text-red'
+    if (metCount.value <= 4) return 'text-amber-accent-2 glow-text-amber'
+    return 'text-cyan-accent-3 glow-text'
   })
 
   const isDeleteConfirmed = computed(() => {
@@ -1811,5 +1863,19 @@
   border: 1px solid rgba(255, 179, 0, 0.3) !important;
   box-shadow: 0 0 15px rgba(255, 179, 0, 0.1);
   backdrop-filter: blur(10px);
+}
+
+.strength-bar {
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.05);
+}
+
+.glow-text-red {
+  text-shadow: 0 0 8px rgba(255, 64, 129, 0.8);
+}
+
+.glow-text-amber {
+  text-shadow: 0 0 8px rgba(255, 179, 0, 0.8);
 }
 </style>
