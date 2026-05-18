@@ -134,22 +134,38 @@
     duration: { type: Number, default: 60 },
   })
 
+  const emit = defineEmits(['game-over', 'action'])
+
   const isMultiplayer = computed(() => props.isMultiplayer)
   const isRace = computed(() => props.isRace)
   const isDuel = computed(() => props.isDuel)
-
-  const emit = defineEmits(['game-over', 'action'])
 
   const isHost = computed(() => (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user)
   const isAuthority = computed(() => {
     if (props.isSpectator) return false
     if (!props.isMultiplayer) return true
-    if (isHost.value) return true
-    // En duelos, torneos o carreras cada jugador es autoridad de su propio minijuego
+    
     const modality = multiplayerStore.room?.gameConfig?.modality
     const mode = multiplayerStore.room?.gameConfig?.mode
+    
     if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
-    return false
+    
+    // Si hay equipos (cooperativo por parejas/2vs2)
+    const teams = multiplayerStore.room?.gameConfig?.teams || {}
+    if (Object.keys(teams).length > 0) {
+      const myTeam = teams[astroStore.user]
+      if (myTeam) {
+        const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+        const myTeamMembers = players
+          .map(p => typeof p === 'string' ? p : (p.username || p.user))
+          .filter(u => teams[u] === myTeam)
+          .sort()
+        
+        return myTeamMembers[0] === astroStore.user
+      }
+    }
+    
+    return isHost.value
   })
   const anyRivalAlive = computed(() => {
     if (!props.isMultiplayer) return true
@@ -470,12 +486,48 @@
     for (const t of targets.value) {
       t.x += t.vx * dt; t.y += t.vy * dt
 
-      if (isAuthority.value) {
-        if (t.x < t.bounds.minX || t.x > t.bounds.maxX) {
-          t.vx *= -1; t.x = Math.min(t.bounds.maxX, Math.max(t.bounds.minX, t.x))
-        }
-        if (t.y < t.bounds.minY || t.y > t.bounds.maxY) {
-          t.vy *= -1; t.y = Math.min(t.bounds.maxY, Math.max(t.bounds.minY, t.y))
+      const bounds = getPlayBounds(t.size || BASE_ENTITY_SIZE)
+      if (t.x < bounds.minX || t.x > bounds.maxX) {
+        t.vx *= -1; t.x = Math.min(bounds.maxX, Math.max(bounds.minX, t.x))
+      }
+      if (t.y < bounds.minY || t.y > bounds.maxY) {
+        t.vy *= -1; t.y = Math.min(bounds.maxY, Math.max(bounds.minY, t.y))
+      }
+
+      // Rebote con el HUD superior izquierdo en modo 2vs2 / Cooperativo por equipos
+      const isTeamMode = props.isMultiplayer && multiplayerStore.room?.gameConfig?.teams && Object.keys(multiplayerStore.room.gameConfig.teams).length > 0 && !props.isDuel
+      if (isTeamMode) {
+        const hudMinX = 80
+        const hudMaxX = 520
+        const hudMinY = 0
+        const hudMaxY = 190
+        const radius = t.size / 2
+
+        const closestX = Math.max(hudMinX, Math.min(t.x, hudMaxX))
+        const closestY = Math.max(hudMinY, Math.min(t.y, hudMaxY))
+
+        const distanceX = t.x - closestX
+        const distanceY = t.y - closestY
+        const distance = Math.hypot(distanceX, distanceY)
+
+        if (distance < radius) {
+          if (distance > 0) {
+            const nx = distanceX / distance
+            const ny = distanceY / distance
+
+            t.x = closestX + nx * radius
+            t.y = closestY + ny * radius
+
+            const dotProduct = t.vx * nx + t.vy * ny
+            if (dotProduct < 0) {
+              t.vx = t.vx - 2 * dotProduct * nx
+              t.vy = t.vy - 2 * dotProduct * ny
+            }
+          } else {
+            t.vy *= -1
+            t.vx *= -1
+            t.y = hudMaxY + radius
+          }
         }
       }
     }
@@ -485,17 +537,27 @@
 
     let bothPointing = localIsPointing
     if (props.isMultiplayer && !props.isDuel) {
-      const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => {
+      const teammates = Object.keys(multiplayerStore.room?.gameConfig?.teams || {}).filter(uid => {
         const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
-        return uid !== astroStore.user && (props.isDuel ? true : isSameTeam)
-      })?.[1]
-      if (partner && partner.isFiring && target) {
-        const rx = (partner.x / 1000) * (gameCanvas.value?.width || 1000)
-        const ry = (partner.y / 1000) * (gameCanvas.value?.height || 1000)
-        const partnerIsOnTarget = Math.hypot(rx - target.x, ry - target.y) < target.size / 2
-        bothPointing = localIsPointing && partnerIsOnTarget
+        return uid !== astroStore.user && isSameTeam
+      })
+      const hasTeammates = teammates.length > 0
+
+      if (hasTeammates) {
+        const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => {
+          const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+          return uid !== astroStore.user && isSameTeam
+        })?.[1]
+        if (partner && partner.isFiring && target) {
+          const rx = (partner.x / 1000) * (gameCanvas.value?.width || 1000)
+          const ry = (partner.y / 1000) * (gameCanvas.value?.height || 1000)
+          const partnerIsOnTarget = Math.hypot(rx - target.x, ry - target.y) < target.size / 2
+          bothPointing = localIsPointing && partnerIsOnTarget
+        } else {
+          bothPointing = false
+        }
       } else {
-        bothPointing = false
+        bothPointing = localIsPointing
       }
     }
 
@@ -633,7 +695,10 @@
       else if (shieldImmunityLeft.value > 0 && actualIsFiring && (!targets.value.some(t => Math.hypot(drawMouseX - t.x, drawMouseY - t.y) < t.size / 2 && t.isTarget))) laserColor = '#00bfa5'
 
       const target = targets.value.find(t => t.isTarget)
-      const partner = props.isMultiplayer ? Object.entries(multiplayerStore.remoteCursors).find(([uid]) => uid !== astroStore.user)?.[1] : null
+      const partner = props.isMultiplayer ? Object.entries(multiplayerStore.remoteCursors).find(([uid]) => {
+        const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+        return uid !== astroStore.user && isSameTeam
+      })?.[1] : null
       let bothOnTarget = false
       if (props.isMultiplayer && partner && partner.isFiring && target) {
         const rx = (partner.x / 1000) * gameCanvas.value.width
@@ -662,7 +727,10 @@
       ctx.lineWidth = t.isTarget ? 3 : 2; ctx.strokeStyle = t.ringColor || (t.isTarget ? '#00e5ff' : 'rgba(255, 255, 255, 0.25)')
 
       if (t.isTarget && props.isMultiplayer) {
-        const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => uid !== astroStore.user)?.[1]
+        const partner = Object.entries(multiplayerStore.remoteCursors).find(([uid]) => {
+          const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+          return uid !== astroStore.user && isSameTeam
+        })?.[1]
         if (partner && partner.isFiring) {
           const rx = (partner.x / 1000) * gameCanvas.value.width
           const ry = (partner.y / 1000) * gameCanvas.value.height
@@ -689,9 +757,11 @@
     ctx.beginPath(); ctx.arc(drawMouseX, drawMouseY, 18, 0, Math.PI * 2)
     ctx.strokeStyle = actualIsFiring ? '#00e5ff' : '#ffffff'; ctx.lineWidth = 2; ctx.stroke()
 
-    if (props.isMultiplayer && !isCompetitiveMode.value) {
+    if (props.isMultiplayer) {
       for (const [uid, cursor] of Object.entries(multiplayerStore.remoteCursors)) {
-        if (uid !== astroStore.user && gameArea.value) {
+        const isSameTeam = multiplayerStore.room?.gameConfig?.teams?.[uid] === multiplayerStore.room?.gameConfig?.teams?.[astroStore.user]
+        const shouldShow = !isCompetitiveMode.value || isSameTeam
+        if (uid !== astroStore.user && shouldShow && gameArea.value) {
           const rx = (cursor.x / 1000) * gameCanvas.value.width
           const ry = (cursor.y / 1000) * gameCanvas.value.height
 
@@ -1045,8 +1115,9 @@
   })
 
   watch(() => multiplayerStore.timeLeft, newTime => {
-    if (props.isMultiplayer && (props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT')) {
+    if (props.isMultiplayer) {
       timeLeft.value = newTime
+      if (timeLeft.value <= 0 && isPlaying.value) endGame()
     }
   })
   onBeforeUnmount(() => {

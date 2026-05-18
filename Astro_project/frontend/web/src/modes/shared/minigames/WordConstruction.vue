@@ -5,7 +5,7 @@
     <div v-if="props.isMultiplayer && (!isCompetitiveMode || props.isSpectator)" class="remote-cursors-container">
       <template v-for="(pos, username) in multiplayerStore.remoteCursors" :key="username">
         <div
-          v-if="!props.isSpectator || username === props.spectatedPlayer"
+          v-if="username !== astroStore.user && (!props.isSpectator || username === props.spectatedPlayer)"
           class="remote-cursor"
           :style="{ left: pos.x + '%', top: pos.y + '%' }"
         >
@@ -28,24 +28,21 @@
     </div>
 
     <!-- Capçalera del joc -->
-    <v-card class="mb-6 pa-4 bg-deep-purple-darken-4 elevation-10" max-width="600" rounded="xl" width="100%">
+    <v-card class="mb-6 pa-4 bg-slate-900 border-cyan rounded-xl elevation-10" max-width="600" width="100%">
       <div class="d-flex justify-space-between align-center">
         <div>
           <h2 class="text-h5 font-weight-bold text-cyan-accent-2">{{ $t('wordConstruction.level', { level: state.level }) }}</h2>
-        <div v-if="!isMultiplayer" class="text-caption text-grey-lighten-2">
-          <span>{{ $t('wordConstruction.score', { score: state.score }) }}</span>
-          <span class="mx-2">|</span>
-          <span :class="{ 'text-red-accent-2': state.timeLeft <= 15 }">{{ $t('wordConstruction.time', { time: state.timeLeft }) }}</span>
-        </div>
-        <div v-else class="text-caption text-grey-lighten-2">
-          <span>{{ $t('wordConstruction.score', { score: state.score }) }}</span>
-        </div>
+          <div class="text-caption text-grey-lighten-2">
+            <span>{{ $t('wordConstruction.score', { score: state.score }) }}</span>
+            <span class="mx-2">|</span>
+            <span :class="{ 'text-red-accent-2': state.timeLeft <= 15 }">{{ $t('wordConstruction.time', { time: Math.ceil(state.timeLeft) }) }}</span>
+          </div>
         </div>
         <!-- Barra de progrés "Construcció" -->
         <div class="d-flex flex-column align-end">
-          <span class="text-overline mb-1">{{ $t('wordConstruction.baseStatus') }}</span>
+          <span class="text-overline mb-1 text-cyan-accent-2">{{ $t('wordConstruction.baseStatus') }}</span>
           <v-progress-linear
-            color="success"
+            color="cyan-accent-3"
             height="10"
             :model-value="(state.currentStep / state.totalSteps) * 100"
             rounded
@@ -163,12 +160,29 @@
   const isAuthority = computed(() => {
     if (props.isSpectator) return false
     if (!props.isMultiplayer) return true
-    const hostName = multiplayerStore.room?.host?.username || multiplayerStore.room?.host
-    if (hostName === astroStore.user) return true
+    
     const modality = multiplayerStore.room?.gameConfig?.modality
     const mode = multiplayerStore.room?.gameConfig?.mode
+    
     if (props.isDuel || props.isRace || modality === '1vs1' || mode === 'TOURNAMENT' || mode === 'RACE') return true
-    return false
+    
+    // Si hay equipos (cooperativo por parejas/2vs2)
+    const teams = multiplayerStore.room?.gameConfig?.teams || {}
+    if (Object.keys(teams).length > 0) {
+      const myTeam = teams[astroStore.user]
+      if (myTeam) {
+        const players = Array.isArray(multiplayerStore.room.players) ? multiplayerStore.room.players : []
+        const myTeamMembers = players
+          .map(p => typeof p === 'string' ? p : (p.username || p.user))
+          .filter(u => teams[u] === myTeam)
+          .sort()
+        
+        return myTeamMembers[0] === astroStore.user
+      }
+    }
+    
+    const hostName = multiplayerStore.room?.host?.username || multiplayerStore.room?.host
+    return hostName === astroStore.user
   })
   
   const isLocalPlayerActive = computed(() => !props.isSpectator)
@@ -183,6 +197,7 @@
 
   // --- LCG RANDOM PARA SINCRONIZACIÓN ---
   let currentSeed = 0
+  let lastReceivedLettersJson = ''
   function lcgRandom () {
     currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296
     return currentSeed / 4294967296
@@ -256,6 +271,13 @@
         currentWordObj: wordObj,
         timeLeft: state.value.timeLeft
       })
+      if (!props.isDuel && !props.isRace) {
+        multiplayerStore.sendGameAction({
+          type: 'BOARD_SYNC',
+          letters: state.value.scrambledLetters,
+          wordObj: wordObj
+        })
+      }
     }
   }
 
@@ -498,6 +520,18 @@
 
     if (msg.type === 'GAME_ACTION') {
       const a = msg.action
+      
+      // Filtrar por equipo en juegos cooperativos de parejas/2vs2
+      if (!props.isDuel && !props.isRace) {
+        const teams = multiplayerStore.room?.gameConfig?.teams || {}
+        if (Object.keys(teams).length > 0) {
+          const myTeam = teams[astroStore.user]
+          const senderTeam = teams[msg.from]
+          if (myTeam && myTeam !== senderTeam) {
+            return // Ignorar acciones del equipo rival
+          }
+        }
+      }
       if (a.type === 'APPLY_INTERFERENCE') {
         if (a.actionType === 'FREEZE') {
            // Congelación manejada por FreezeOverlay.vue, pero podemos pausar localmente
@@ -516,13 +550,18 @@
         if (state.value.timeLeft <= 0 && !state.value.gameFinished) finishGame()
       }
       if (a.type === 'BOARD_SYNC' && !props.isDuel && !props.isRace) {
+        lastReceivedLettersJson = JSON.stringify(a.letters)
         state.value.currentWordObj = normalizeWordObj(a.wordObj)
         state.value.scrambledLetters = normalizeLetters(a.letters)
         state.value.message = ''
         state.value.isRoundLocked = false
       }
       if (a.type === 'ORDER_SYNC' && msg.from !== astroStore.user && !props.isDuel && !props.isRace) {
-        state.value.scrambledLetters = normalizeLetters(a.letters)
+        const lettersJson = JSON.stringify(a.letters)
+        if (lettersJson !== lastReceivedLettersJson) {
+          lastReceivedLettersJson = lettersJson
+          state.value.scrambledLetters = normalizeLetters(a.letters)
+        }
       }
       if (a.type === 'ANSWER_CHECKED' && !props.isDuel && !props.isRace) {
         checkAnswer(true)
@@ -534,9 +573,6 @@
       if (a.type === 'WORD_SUCCESS' && !props.isDuel && !props.isRace) {
         state.value.currentStep = a.currentStep
         state.value.score = a.score
-        state.value.message = t('wordConstruction.partnerBuilt')
-        state.value.messageType = 'success'
-        setTimeout(() => { state.value.message = '' }, 2000)
       }
     }
   }, { immediate: true })
@@ -561,6 +597,10 @@
 
   watch(() => state.value.scrambledLetters, newVal => {
     if (props.isMultiplayer && !state.value.isRoundLocked) {
+      const currentJson = JSON.stringify(newVal)
+      if (currentJson === lastReceivedLettersJson) {
+        return
+      }
       multiplayerStore.sendGameAction({ type: 'ORDER_SYNC', letters: newVal })
     }
   }, { deep: true })

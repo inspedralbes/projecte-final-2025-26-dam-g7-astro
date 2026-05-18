@@ -8,7 +8,7 @@
     </div>
 
     <div 
-      class="board d-flex flex-wrap justify-center align-center" 
+      class="board board-neon d-flex flex-wrap justify-center align-center" 
       :style="{ width: boardSize + 'px' }"
       :class="{ 'board-transitioning': isTransitioning && !correctClicked }"
     >
@@ -27,15 +27,11 @@
       </div>
     </div>
 
-    <div 
-      class="flashlight-overlay" 
+    <canvas 
+      ref="flashlightCanvas"
+      class="flashlight-canvas" 
       :class="{ 'flashlight-hidden': isTransitioning }"
-      :style="{ 
-        '--mouseX': displayMouseX + 'px', 
-        '--mouseY': displayMouseY + 'px',
-        '--tunnelSize': currentTunnelSize + 'px'
-      }"
-    ></div>
+    ></canvas>
 
     <v-overlay v-model="showStartOverlay" class="align-center justify-center" persistent>
       <v-card class="pa-8 text-center bg-slate-900 border-cyan rounded-xl" max-width="400">
@@ -118,6 +114,18 @@ const mouseY = ref(0);
 const targetMouseX = ref(0);
 const targetMouseY = ref(0);
 const gameArea = ref(null);
+const flashlightCanvas = ref(null);
+
+const myTeam = computed(() => {
+  if (!multiplayerStore.room?.gameConfig?.teams) return null;
+  return multiplayerStore.room.gameConfig.teams[astroStore.user];
+});
+
+const teammateName = computed(() => {
+  if (!props.isMultiplayer || !myTeam.value) return null;
+  const teams = multiplayerStore.room.gameConfig.teams;
+  return Object.keys(teams).find(u => u !== astroStore.user && teams[u] === myTeam.value);
+});
 
 // Computada para saber qué ratón mostrar (el local o el del jugador observado)
 const displayMouseX = computed(() => {
@@ -140,6 +148,71 @@ const displayMouseY = computed(() => {
   }
   return mouseY.value;
 });
+
+const drawLightCircle = (ctx, x, y, radius) => {
+  const grad = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
+  grad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+  grad.addColorStop(0.8, 'rgba(0, 0, 0, 0.2)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+};
+
+const drawCanvasFlashlight = () => {
+  const canvas = flashlightCanvas.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Clear
+  ctx.clearRect(0, 0, w, h);
+
+  // Fill dark background
+  ctx.fillStyle = 'rgba(11, 17, 32, 0.98)';
+  ctx.fillRect(0, 0, w, h);
+
+  // destination-out to carve
+  ctx.globalCompositeOperation = 'destination-out';
+
+  const tunnelSize = currentTunnelSize.value;
+
+  // 1. Local light
+  drawLightCircle(ctx, displayMouseX.value, displayMouseY.value, tunnelSize);
+
+  // 2. Teammate's light
+  const isCoop2vs2 = props.isMultiplayer && multiplayerStore.room?.gameConfig?.modality === '2vs2';
+  if (isCoop2vs2 && teammateName.value) {
+    const cursor = multiplayerStore.remoteCursors[teammateName.value];
+    if (cursor) {
+      const tmX = (cursor.x / 1000) * w;
+      const tmY = (cursor.y / 1000) * h;
+      drawLightCircle(ctx, tmX, tmY, tunnelSize);
+    }
+  }
+
+  // Restore composite
+  ctx.globalCompositeOperation = 'source-over';
+};
+
+watch([mouseX, mouseY, () => multiplayerStore.remoteCursors], () => {
+  drawCanvasFlashlight();
+}, { deep: true });
+
+const resizeCanvas = () => {
+  const canvas = flashlightCanvas.value;
+  const container = gameArea.value?.$el || gameArea.value;
+  if (canvas && container) {
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    drawCanvasFlashlight();
+  }
+};
 
 // --- LÓGICA DEL TAULER ---
 const board = ref([]);
@@ -295,6 +368,11 @@ const checkLetter = (index) => {
       
       if (props.isMultiplayer) {
         multiplayerStore.sendGameAction({
+          type: 'RADAR_CELL_REVEAL',
+          index: index
+        });
+
+        multiplayerStore.sendGameAction({
           type: 'SABOTAGE',
           subtype: 'REDUCE_TIME',
           amount: 1
@@ -376,6 +454,9 @@ const returnToMenu = () => {
 };
 
 onMounted(() => {
+  window.addEventListener('resize', resizeCanvas);
+  setTimeout(resizeCanvas, 200);
+
   if (props.isSpectator && props.spectatedPlayer) {
     const lastSync = multiplayerStore.lastSpectatorSync[props.spectatedPlayer];
     if (lastSync && lastSync.type === 'SPECTATOR_SYNC') {
@@ -417,6 +498,19 @@ watch(() => multiplayerStore.lastMessage, (msg) => {
   }
 
   if (msg.type === 'GAME_ACTION') {
+    if (msg.action?.type === 'RADAR_CELL_REVEAL' && msg.from !== astroStore.user) {
+        isTransitioning.value = true;
+        correctClicked.value = true;
+        clickedIndex.value = msg.action.index;
+        
+        setTimeout(() => {
+          correctClicked.value = false;
+          nextRound();
+          setTimeout(() => {
+            isTransitioning.value = false;
+          }, 200);
+        }, 800);
+    }
     if (msg.action?.type === 'SABOTAGE' && msg.action?.subtype === 'REDUCE_TIME') {
         timeLeft.value = Math.max(0, timeLeft.value - (msg.action.amount || 1));
     }
@@ -460,6 +554,7 @@ watch(score, (newScore) => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeCanvas);
   if (timerInterval) clearInterval(timerInterval);
 });
 </script>
@@ -519,7 +614,14 @@ onBeforeUnmount(() => {
   100% { transform: scale(1); }
 }
 
-.flashlight-overlay {
+.board-neon {
+  border: 2px solid #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.45), inset 0 0 15px rgba(0, 229, 255, 0.2);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+.flashlight-canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -527,13 +629,7 @@ onBeforeUnmount(() => {
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  transition: opacity 0.4s ease-in-out; 
-  background: radial-gradient(
-    circle var(--tunnelSize) at var(--mouseX) var(--mouseY), 
-    transparent 0%, 
-    rgba(11, 17, 32, 0.98) 80%, 
-    rgba(11, 17, 32, 1) 100%
-  );
+  transition: opacity 0.4s ease-in-out;
 }
 
 .flashlight-hidden {

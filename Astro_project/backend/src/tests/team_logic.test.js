@@ -81,4 +81,37 @@ describe('RoomManager Team and Role Logic', () => {
         expect(room.gameConfig.teams['User2']).toBe('User2');
         expect(room.gameConfig.subRoles['User1']).toBeNull();
     });
+
+    test('debe preservar los equipos predefinidos del lobby y asignar subroles alternados correctamente', async () => {
+        const roomId = await roomManager.createRoom('User1');
+        await roomManager.joinRoom(roomId, 'User2');
+        await roomManager.joinRoom(roomId, 'User3');
+        await roomManager.joinRoom(roomId, 'User4');
+
+        const room = roomManager.rooms.get(roomId);
+        room.gameConfig.currentGame = 'SpelledRosco';
+        
+        // Configuramos equipos predefinidos del lobby: User1 y User3 en equipo 'A', User2 y User4 en equipo 'B'
+        room.gameConfig.teams = {
+            'User1': 'A',
+            'User3': 'A',
+            'User2': 'B',
+            'User4': 'B'
+        };
+
+        await roomManager.assignRoles(roomId, 'SpelledRosco');
+
+        // Los equipos deben preservarse tal cual estaban
+        expect(room.gameConfig.teams['User1']).toBe('A');
+        expect(room.gameConfig.teams['User3']).toBe('A');
+        expect(room.gameConfig.teams['User2']).toBe('B');
+        expect(room.gameConfig.teams['User4']).toBe('B');
+
+        // Los sub-roles dentro de cada equipo deben alternarse correctamente
+        expect(room.gameConfig.subRoles['User1']).toBe(ROSCO_ROLES.SENDER);
+        expect(room.gameConfig.subRoles['User3']).toBe(ROSCO_ROLES.GUESSER);
+        
+        expect(room.gameConfig.subRoles['User2']).toBe(ROSCO_ROLES.SENDER);
+        expect(room.gameConfig.subRoles['User4']).toBe(ROSCO_ROLES.GUESSER);
+    });
 });

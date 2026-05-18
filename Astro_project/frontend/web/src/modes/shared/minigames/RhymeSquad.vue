@@ -453,9 +453,9 @@ function startGame() {
     if (isCoop2vs2.value && isAuthority.value) {
       multiplayerStore.sendGameAction({ type: 'RHYME_TARGET_SYNC', target: currentTarget.value })
     }
-    if (gameLoopInterval) clearInterval(gameLoopInterval)
-    gameLoopInterval = setInterval(gameTick, 16)
   }
+  if (gameLoopInterval) clearInterval(gameLoopInterval)
+  gameLoopInterval = setInterval(gameTick, 16)
 
   let lastTick = Date.now()
   timerInterval = setInterval(() => {
@@ -506,10 +506,12 @@ let lastSpawnTime = 0
 function gameTick() {
   if (!isPlaying.value || props.isPaused || isWaitingForOthers.value) return
 
-  const now = Date.now()
-  if (now - lastSpawnTime > currentSpawnRate) {
-    spawnWord()
-    lastSpawnTime = now
+  if (isAuthority.value) {
+    const now = Date.now()
+    if (now - lastSpawnTime > currentSpawnRate) {
+      spawnWord()
+      lastSpawnTime = now
+    }
   }
 
   activeWords.value.forEach(word => {
@@ -523,7 +525,7 @@ function gameTick() {
   activeWords.value.forEach((word, index) => {
     if (word.y > limit) {
       if (word.status === 'falling') {
-        if (word.isRhyme) {
+        if (word.isRhyme && isAuthority.value) {
           incorrectHits.value++
           takeDamage()
           triggerFeedback('error')
@@ -537,7 +539,7 @@ function gameTick() {
     activeWords.value.splice(outIndices[i], 1)
   }
 
-  if (score.value > 0 && score.value % 500 === 0) {
+  if (isAuthority.value && score.value > 0 && score.value % 500 === 0) {
     currentSpeed = Math.min(10, currentSpeed + 0.05)
     currentSpawnRate = Math.max(500, currentSpawnRate - 10)
   }
@@ -868,8 +870,9 @@ watch(score, newScore => {
 })
 
 watch(() => multiplayerStore.timeLeft, newTime => {
-  if (props.isMultiplayer && (props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT')) {
+  if (props.isMultiplayer) {
     timeLeft.value = newTime
+    if (timeLeft.value <= 0 && isPlaying.value) endGame()
   }
 })
 </script>

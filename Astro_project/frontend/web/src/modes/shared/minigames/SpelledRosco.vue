@@ -94,9 +94,9 @@
         </svg>
 
         <!-- Partner Emoji / Hint Floating -->
-        <div v-if="multiplayerStore.partnerEmoji" class="partner-hint-bubble">
+        <div v-if="partnerEmoji" class="partner-hint-bubble">
           <div class="hint-label">{{ $t('spelledRosco.hintFromPartner') }}</div>
-          <div class="hint-content">{{ multiplayerStore.partnerEmoji }}</div>
+          <div class="hint-content">{{ partnerEmoji }}</div>
         </div>
       </div>
 
@@ -306,6 +306,11 @@ const isTranslator = computed(() => props.isMultiplayer && !props.isDuel && subR
 const isSender = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'sender')
 const isGuesser = computed(() => props.isMultiplayer && !props.isDuel && subRole.value === 'guesser')
 
+const partnerEmoji = computed(() => {
+  const list = multiplayerStore.partnerEmojis || []
+  return list.length > 0 ? list[list.length - 1] : null
+})
+
 const currentLetter = computed(() => roscoLetters.value.length > 0 ? roscoLetters.value[currentIndex.value] : { char: '?', question: '', answer: '' })
 
 watch(currentLetter, (newVal) => {
@@ -346,6 +351,9 @@ function shuffleArray(array) {
 }
 
 function initRosco(force = false) {
+  if (props.isMultiplayer) {
+    multiplayerStore.partnerEmojis = []
+  }
   const allData = roscoData[locale.value] || roscoData['es']
   if (props.isMultiplayer && multiplayerStore.room?.gameConfig?.roscoData && !force && !props.isDuel && !props.isRace) {
     const teamId = multiplayerStore.room?.gameConfig?.teams[astroStore.user]
@@ -593,6 +601,9 @@ function skipLetter() {
 }
 
 function advanceTurn() {
+  if (props.isMultiplayer) {
+    multiplayerStore.partnerEmojis = []
+  }
   if (rocketAnimating.value) return
   
   let next = (currentIndex.value + 1) % roscoLetters.value.length; let loops = 0
@@ -751,8 +762,9 @@ watch(score, (newScore) => {
 })
 
 watch(() => multiplayerStore.timeLeft, newTime => {
-  if (props.isMultiplayer && (props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT')) {
+  if (props.isMultiplayer) {
     timeLeft.value = newTime
+    if (timeLeft.value <= 0 && isPlaying.value) finishGame()
   }
 })
 </script>

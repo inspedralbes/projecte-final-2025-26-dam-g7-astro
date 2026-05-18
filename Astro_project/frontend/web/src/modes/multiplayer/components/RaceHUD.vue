@@ -76,8 +76,30 @@
     return 0
   }
 
-  const localProgressIndex = computed(() => getProgressFromId(multiplayerStore.raceProgress))
-  const partnerProgressIndex = computed(() => getProgressFromId(multiplayerStore.partnerProgress))
+  const isDuel = computed(() => {
+    const is1vs1 = multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'
+    const isLocalDuel = multiplayerStore.activeGameName && (
+      multiplayerStore.lastDuelEvent?.attacker === astroStore.user || 
+      multiplayerStore.lastDuelEvent?.rival === astroStore.user
+    )
+    return is1vs1 || isLocalDuel
+  })
+
+  const localProgressIndex = computed(() => {
+    if (isDuel.value && multiplayerStore.activeGameName) {
+      const score = multiplayerStore.roundScores[localName.value] || 0
+      return Math.min(100, Math.round((score / 1000) * 100))
+    }
+    return getProgressFromId(multiplayerStore.playersProgress[localName.value] || multiplayerStore.raceProgress)
+  })
+
+  const partnerProgressIndex = computed(() => {
+    if (isDuel.value && multiplayerStore.activeGameName) {
+      const score = multiplayerStore.roundScores[partnerName.value] || 0
+      return Math.min(100, Math.round((score / 1000) * 100))
+    }
+    return getProgressFromId(multiplayerStore.playersProgress[partnerName.value])
+  })
 
   const localName = computed(() => astroStore.user)
   const localAvatar = computed(() => getPlayerAvatar(astroStore.user))

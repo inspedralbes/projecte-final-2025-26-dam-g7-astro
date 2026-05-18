@@ -6,37 +6,100 @@
     <!-- Espaciador de seguridad superior -->
     <div class="safe-top-spacer" />
 
-    <!-- Icono principal -->
-    <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="result-icon-wrapper mb-6">
-      <v-icon
-        class="result-icon"
-        :color="isWin ? 'amber' : (isTie ? 'cyan-accent-2' : 'red-lighten-1')"
-        :icon="isWin ? 'mdi-trophy' : (isTie ? 'mdi-handshake' : 'mdi-skull-outline')"
-        :size="160"
-      />
-    </div>
-
-    <!-- Título -->
-    <h1 v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'" class="result-title mb-8 italic glow-text text-amber">
-      CLASSIFICACIÓ FINAL DEL TORNEIG
-    </h1>
-    <template v-else>
-      <h1 class="result-title mb-2 italic glow-text" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
-        {{ resultMainTitle }}
-      </h1>
-
-      <div v-if="winner && winner.startsWith('team-')" class="team-winner-banner mb-8 pa-4 rounded-pill">
-        <v-icon icon="mdi-account-group" class="mr-2" />
-        <span class="text-h4 font-weight-black text-uppercase">{{ $t('multiplayerResult.team') }} {{ winner.split('-')[1] }} {{ $t('multiplayerResult.winsTheMatch') || 'GUANYA LA PARTIDA' }}</span>
+    <!-- SECCIÓN DE RESULTADO ESTÁNDAR / INDIVIDUAL O DUELO -->
+    <template v-if="!isTeammate">
+      <!-- Icono principal -->
+      <div v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="result-icon-wrapper mb-6">
+        <v-icon
+          class="result-icon"
+          :color="isWin ? 'amber' : (isTie ? 'cyan-accent-2' : 'red-lighten-1')"
+          :icon="isWin ? 'mdi-trophy' : (isTie ? 'mdi-handshake' : 'mdi-skull-outline')"
+          :size="160"
+        />
       </div>
+
+      <!-- Título -->
+      <h1 v-if="multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT'" class="result-title mb-8 italic glow-text text-amber">
+        CLASSIFICACIÓ FINAL DEL TORNEIG
+      </h1>
+      <template v-else>
+        <h1 class="result-title mb-2 italic glow-text" :class="isWin ? 'text-amber' : (isTie ? 'text-cyan-accent-2' : 'text-red-lighten-2')">
+          {{ resultMainTitle }}
+        </h1>
+
+        <div v-if="winner && winner.startsWith('team-')" class="team-winner-banner mb-8 pa-4 rounded-pill">
+          <v-icon icon="mdi-account-group" class="mr-2" />
+          <span class="text-h4 font-weight-black text-uppercase">{{ $t('multiplayerResult.team') }} {{ winner.split('-')[1] }} {{ $t('multiplayerResult.winsTheMatch') || 'GUANYA LA PARTIDA' }}</span>
+        </div>
+      </template>
+
+      <p v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="text-h5 text-grey-lighten-2 mb-10 text-center px-4 max-width-800">
+        <span v-if="isWin" class="text-amber-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.winQuote') || '¡Has dominat la galàxia amb honor!' }}</span>
+        <span v-else-if="isTie" class="text-cyan-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.tieQuote') || 'Un equilibri perfecte de forces.' }}</span>
+        <span v-else class="text-red-lighten-3 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.defeatQuote') || 'La derrota és només un pas més cap al coneixement.' }}</span>
+        {{ isWin ? $t('multiplayerResult.winDesc') : (isTie ? $t('multiplayerResult.tieDesc') : $t('multiplayerResult.defeatDesc')) }}
+      </p>
     </template>
 
-    <p v-if="multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="text-h5 text-grey-lighten-2 mb-10 text-center px-4 max-width-800">
-      <span v-if="isWin" class="text-amber-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.winQuote') || '¡Has dominat la galàxia amb honor!' }}</span>
-      <span v-else-if="isTie" class="text-cyan-accent-2 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.tieQuote') || 'Un equilibri perfecte de forces.' }}</span>
-      <span v-else class="text-red-lighten-3 font-weight-bold d-block mb-2">{{ $t('multiplayerResult.defeatQuote') || 'La derrota és només un pas més cap al coneixement.' }}</span>
-      {{ isWin ? $t('multiplayerResult.winDesc') : (isTie ? $t('multiplayerResult.tieDesc') : $t('multiplayerResult.defeatDesc')) }}
-    </p>
+    <!-- SECCIÓN COOPERATIVA DE PAREJAS / EQUIPO -->
+    <template v-else>
+      <div class="coop-victory-banner w-100 max-width-800 pa-8 rounded-xl text-center mb-8">
+        <div class="result-icon-wrapper mb-6">
+          <v-icon
+            class="result-icon"
+            color="amber"
+            icon="mdi-account-multiple-check"
+            :size="160"
+          />
+        </div>
+        <h1 class="result-title mb-2 italic glow-text text-amber">
+          ¡MISIÓN COMPLETADA EN EQUIPO!
+        </h1>
+        <p class="text-h4 font-weight-black text-white mt-4">
+          ¡Enhorabuena! Como pareja habéis conseguido <span class="text-cyan-accent-2 font-weight-black text-h3 glow-text-cyan">{{ totalCoopScore }}</span> puntos.
+        </p>
+        <p class="text-subtitle-1 text-grey-lighten-2 mt-2">
+          Vuestra sinergia espacial ha asegurado la victoria de la tripulación.
+        </p>
+      </div>
+
+      <!-- ANÁLISIS DETALLADO COOPERATIVO -->
+      <div class="coop-analysis-card w-100 max-width-800 pa-6 rounded-xl border-cyan mb-10 bg-black-opacity-40">
+        <div class="text-overline text-cyan-accent-2 mb-4 text-center tracking-widest">📋 ANÁLISIS DE RENDIMIENTO DE TRIPULACIÓN</div>
+        
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="analysis-stat-box text-center pa-4 rounded-lg bg-slate-900-opacity">
+              <div class="text-caption text-grey">Puntos Compartidos</div>
+              <div class="text-h3 font-weight-black text-amber">{{ totalCoopScore }}</div>
+              <div class="text-caption text-grey-lighten-1">Puntos Totales</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="analysis-stat-box text-center pa-4 rounded-lg bg-slate-900-opacity">
+              <div class="text-caption text-grey">Eficiencia de Rondas</div>
+              <div class="text-h3 font-weight-black text-cyan-accent-3">100%</div>
+              <div class="text-caption text-grey-lighten-1">Misiones Completadas</div>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4">
+            <div class="analysis-stat-box text-center pa-4 rounded-lg bg-slate-900-opacity">
+              <div class="text-caption text-grey">Sintonización Mental</div>
+              <div class="text-h3 font-weight-black text-green-accent-3">{{ sintonizacionPct }}%</div>
+              <div class="text-caption text-grey-lighten-1">Nivel de Sinergia</div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <div class="coop-feedback-box mt-6 pa-4 rounded-lg bg-cyan-opacity-10 border-cyan-light text-center">
+          <v-icon icon="mdi-orbit" color="cyan-accent-3" class="mb-2" size="32" />
+          <h4 class="text-subtitle-1 font-weight-black text-cyan-accent-2 mb-1">Informe del Comandante de Misión</h4>
+          <p class="text-body-2 text-grey-lighten-2 italic mx-auto" style="max-width: 600px;">
+            "{{ coopFeedbackMessage }}"
+          </p>
+        </div>
+      </div>
+    </template>
 
     <!-- GRÀFICA DE PUNTUACIÓ (Line Chart) -->
     <div v-if="chartData.length > 0 && multiplayerStore.room?.gameConfig?.mode !== 'TOURNAMENT'" class="score-chart-container mb-12 w-100 max-width-800">
@@ -150,8 +213,8 @@
       </v-list>
     </div>
 
-    <!-- Marcador final (Solo modo normal/duelo) -->
-    <div v-else class="score-board d-flex align-center mb-12">
+    <!-- Marcador final (Solo modo normal/duelo no cooperativo) -->
+    <div v-if="!isTeammate" class="score-board d-flex align-center mb-12">
       <!-- TÚ -->
       <div class="player-result text-center" :class="{ 'winner-glow': isWin }">
         <v-avatar class="mb-3 player-avatar" :class="isWin ? 'border-gold' : 'border-cyan'" size="80">
@@ -240,6 +303,48 @@
             >
               {{ $t('multiplayerResult.waiting') }}
             </v-chip>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado de Preparación de la Tripulación (Solo en modo Cooperativo / Parejas) -->
+    <div v-else class="crew-status-container w-100 max-width-600 mb-8 pa-5 rounded-xl bg-black-opacity-40 text-center border-cyan-light">
+      <div class="text-overline text-cyan-accent-2 mb-3 tracking-widest">SINCRO DE RETORNO A BASE</div>
+      <div class="d-flex justify-center align-center gap-6">
+        <!-- Yo -->
+        <div class="d-flex align-center gap-3">
+          <v-avatar size="40" class="border-cyan"><v-img :src="getPlayerAvatar(myName)" /></v-avatar>
+          <div class="text-left">
+            <div class="text-body-2 font-weight-bold text-white">{{ $t('multiplayerResult.you') }}</div>
+            <v-chip
+              v-if="multiplayerStore.returnedPlayers.includes(myName)"
+              color="success"
+              prepend-icon="mdi-check-circle"
+              size="x-small"
+              variant="flat"
+              class="mt-1"
+            > Listo </v-chip>
+            <v-chip v-else color="grey" size="x-small" variant="outlined" class="mt-1"> Esperando </v-chip>
+          </div>
+        </div>
+
+        <div class="vertical-divider-custom mx-6" />
+
+        <!-- Compañero -->
+        <div class="d-flex align-center gap-3">
+          <v-avatar size="40" class="border-cyan"><v-img :src="getPlayerAvatar(opponentName)" /></v-avatar>
+          <div class="text-left">
+            <div class="text-body-2 font-weight-bold text-white">{{ opponentName }}</div>
+            <v-chip
+              v-if="multiplayerStore.returnedPlayers.includes(opponentName)"
+              color="success"
+              prepend-icon="mdi-check-circle"
+              size="x-small"
+              variant="flat"
+              class="mt-1"
+            > Listo </v-chip>
+            <v-chip v-else color="grey" size="x-small" variant="outlined" class="mt-1"> Esperando </v-chip>
           </div>
         </div>
       </div>
@@ -439,6 +544,35 @@
     if (props.isTie || !props.winner) return false
     // Si el ganador es mi nombre o mi equipo
     return props.winner === myName.value || props.winner === myTeam.value
+  })
+
+  const totalCoopScore = computed(() => {
+    const s = props.scores || {}
+    const p1Score = Number(s[myName.value] || 0)
+    const p2Score = Number(s[props.opponentName] || 0)
+    return p1Score + p2Score
+  })
+
+  const sintonizacionPct = computed(() => {
+    const s = props.scores || {}
+    const p1 = Number(s[myName.value] || 0)
+    const p2 = Number(s[props.opponentName] || 0)
+    const total = p1 + p2
+    if (total === 0) return 50
+    const diff = Math.abs(p1 - p2)
+    const ratio = diff / total
+    return Math.round(98 - (ratio * 38))
+  })
+
+  const coopFeedbackMessage = computed(() => {
+    const score = totalCoopScore.value
+    if (score >= 500) {
+      return "¡Excelente sincronización intergaláctica! Vuestra coordinación táctica es de nivel élite. Habéis sintonizado vuestros intelectos a la perfección para salvar la nave espacial."
+    } else if (score >= 250) {
+      return "Sinergia operacional óptima. Habéis demostrado un excelente flujo de comunicación y capacidad de resolución conjunta. ¡Un gran tándem espacial!"
+    } else {
+      return "Misión completada con éxito, pero la telemetría muestra algunas turbulencias en la sincronización. Seguid entrenando vuestra sintonía para futuros viajes espaciales."
+    }
   })
 
   // Lógica de Ranking para el Podio
@@ -844,6 +978,59 @@
   }
   .max-width-600 {
     max-width: 600px;
+  }
+
+  /* --- COOPERATIVE MATCH RESULTS STYLES --- */
+  .coop-victory-banner {
+    background: radial-gradient(circle at center, rgba(255, 193, 7, 0.12) 0%, rgba(8, 15, 27, 0) 75%);
+    border: 1px dashed rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 40px rgba(255, 193, 7, 0.05);
+    animation: zoom-in-coop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes zoom-in-coop {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .coop-analysis-card {
+    border: 1px solid rgba(0, 229, 255, 0.2) !important;
+    background: rgba(10, 25, 47, 0.45) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .analysis-stat-box {
+    background: rgba(15, 23, 42, 0.65) !important;
+    border: 1px solid rgba(0, 229, 255, 0.1) !important;
+    transition: all 0.3s ease;
+  }
+
+  .analysis-stat-box:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 229, 255, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(0, 229, 255, 0.15);
+  }
+
+  .coop-feedback-box {
+    background: rgba(0, 229, 255, 0.04) !important;
+    border: 1px dashed rgba(0, 229, 255, 0.25) !important;
+  }
+
+  .glow-text-cyan {
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+  }
+
+  .vertical-divider-custom {
+    width: 1px;
+    height: 50px;
+    background: rgba(0, 229, 255, 0.15);
+  }
+
+  .crew-status-container {
+    border: 1px solid rgba(0, 229, 255, 0.15) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    animation: slide-up 0.9s cubic-bezier(0.16, 1, 0.3, 1);
   }
 </style>
 

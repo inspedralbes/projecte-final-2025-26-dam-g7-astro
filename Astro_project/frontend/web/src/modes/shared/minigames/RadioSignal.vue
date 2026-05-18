@@ -191,6 +191,32 @@
             </div>
         </div>
 
+        <!-- Notepad cooperatiu per a la ràdio -->
+        <div v-if="props.isMultiplayer && !props.isDuel && !props.isRace" class="coop-notes-deck mt-4 d-flex flex-column align-center w-100 ga-2">
+            <!-- Notepad local per a escriure -->
+            <div class="coop-chat-cabinet pa-3 rounded-lg w-100">
+                <div class="text-caption text-cyan-accent-2 mb-1 font-weight-bold d-flex align-center ga-1" style="font-size: 10px;">
+                    <v-icon size="14" color="cyan-accent-2">mdi-notebook-edit</v-icon>
+                    ESCRIU AL TEU TEAMMATE EL QUE ESCUITIS:
+                </div>
+                <input
+                    v-model="myNotes"
+                    class="radio-notes-input"
+                    placeholder="Escriu aquí el que sintonitzes per al teu company..."
+                    @input="sendNotesToPartner"
+                    :disabled="props.isSpectator"
+                />
+            </div>
+            <!-- Visualitzador de notes del company -->
+            <div v-if="multiplayerStore.partnerText" class="coop-partner-note pa-3 rounded-lg animate-pulse w-100">
+                <div class="text-caption text-amber-accent-3 mb-1 font-weight-bold d-flex align-center ga-1" style="font-size: 10px;">
+                    <v-icon size="14" color="amber-accent-3">mdi-message-text</v-icon>
+                    EL TEU COMPANYER DIU QUE ESCUITA:
+                </div>
+                <div class="partner-text-speech font-weight-black">{{ multiplayerStore.partnerText }}</div>
+            </div>
+        </div>
+
         <!-- Feedback Visual Overlay (Lògica de fe82024) -->
         <v-overlay
             v-model="showFeedback"
@@ -282,6 +308,22 @@
   })
 
   const emit = defineEmits(['game-over', 'action'])
+
+  const isMultiplayer = computed(() => props.isMultiplayer)
+  const isRace = computed(() => props.isRace)
+  const isDuel = computed(() => props.isDuel)
+  const isHost = computed(() => {
+    if (!props.isMultiplayer) return false
+    return (multiplayerStore.room?.host?.username || multiplayerStore.room?.host) === astroStore.user
+  })
+
+  const myNotes = ref('')
+  function sendNotesToPartner () {
+    multiplayerStore.sendGameAction({
+      type: 'PARTNER_TYPING',
+      text: myNotes.value
+    })
+  }
 
   // --- REFORÇ VISUAL I SONOR ---
   const showFeedback = ref(false)
@@ -1049,9 +1091,15 @@
   })
 
   watch(() => multiplayerStore.timeLeft, newTime => {
-    if (props.isMultiplayer && (props.isDuel || props.isRace || multiplayerStore.room?.gameConfig?.modality === '1vs1' || multiplayerStore.room?.gameConfig?.mode === 'TOURNAMENT')) {
+    if (props.isMultiplayer) {
       timeLeft.value = newTime
+      if (timeLeft.value <= 0 && isPlaying.value) endGame()
     }
+  })
+
+  watch(currentPhraseIdx, () => {
+    myNotes.value = ''
+    multiplayerStore.partnerText = ''
   })
 </script>
 
@@ -1366,6 +1414,42 @@ canvas { display: block; width: 100%; height: auto; }
 .retro-chip-sw:hover {
   filter: brightness(1.2);
   box-shadow: 0 0 10px rgba(0,230,118,0.3);
+}
+
+.coop-chat-cabinet {
+    background: rgba(10, 12, 16, 0.95);
+    border: 1px solid rgba(0, 229, 255, 0.2) !important;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    font-family: 'Courier New', monospace;
+    width: 100%;
+}
+.radio-notes-input {
+    width: 100%;
+    background: #050608;
+    border: 1px solid #1f2229;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #00E5FF;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    transition: all 0.3s;
+}
+.radio-notes-input:focus {
+    border-color: #00E5FF;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+}
+.coop-partner-note {
+    background: rgba(255, 179, 0, 0.08);
+    border: 1px dashed rgba(255, 179, 0, 0.4) !important;
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    box-shadow: 0 0 10px rgba(255, 179, 0, 0.05);
+}
+.partner-text-speech {
+    color: #FFB300;
+    font-size: 15px;
+    letter-spacing: 0.5px;
 }
 </style>
 

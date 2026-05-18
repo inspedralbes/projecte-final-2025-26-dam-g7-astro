@@ -378,7 +378,7 @@
             <component
               :is="activeGameComponent"
               v-if="activeGameComponent"
-              :key="multiplayerStore.room?.gameConfig?.modality + '-' + multiplayerStore.room?.status"
+              :key="multiplayerStore.room?.gameConfig?.modality + '-' + multiplayerStore.room?.status + '-' + (multiplayerStore.room?.gameConfig?.currentGame || 'none')"
               :auto-start="true"
               class="minigame-component"
               :class="[
@@ -1701,7 +1701,7 @@
     const status = multiplayerStore.room?.status
     
     // Solo saltar al juego si el estado es PLAYING o MATCH_STARTING y NO es modo Carrera
-    if (!isRaceMode && (status === 'PLAYING' || status === 'MATCH_STARTING') && newGame && gameComponents[newGame] && !activeGameComponent.value) {
+    if (!isRaceMode && (status === 'PLAYING' || status === 'MATCH_STARTING') && newGame && gameComponents[newGame] && activeGameComponent.value !== gameComponents[newGame]) {
       
       // En modo TORNEO, solo entramos si somos participantes del match activo
       if (isTournament) {
@@ -1742,9 +1742,9 @@
       
       console.log('--- CAMBIO DE JUEGO DETECTADO ---', newGame)
       const status = multiplayerStore.room?.status;
-      // Solo cargamos el componente si estamos realmente jugando.
+      // Solo cargamos el componente si estamos realmente jugando, iniciando o en muerte súbita.
       // Si estamos en resultados o viendo el árbol, mantenemos null para ver el mapa.
-      if (status === 'PLAYING' || status === 'SUDDEN_DEATH') {
+      if (status === 'PLAYING' || status === 'MATCH_STARTING' || status === 'SUDDEN_DEATH') {
         activeGameComponent.value = gameComponents[newGame]
       } else {
         activeGameComponent.value = null;
@@ -2852,10 +2852,16 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     window.addEventListener('keydown', handleKeydown, { capture: true })
     if (!multiplayerStore.isConnected) {
       multiplayerStore.connect()
+    }
+    try {
+      await astroStore.fetchUserInventory()
+      console.log('🎒 INVENTARIO SINCRONIZADO EN MULTIPLAYER LOBBY:', astroStore.inventory)
+    } catch (err) {
+      console.error('❌ Error al precargar inventario:', err)
     }
   })
 
@@ -2879,6 +2885,15 @@
 
   function startBriefing (gameName, anomaly = null, duration = 10) {
     if (!gameName || !gameComponents[gameName]) return
+
+    // Limpiar puntuaciones al inicio de cualquier juego/duelo
+    multiplayerStore.roundScores = {}
+
+    // Configurar temporizador de 60 segundos para duelos en modo Carrera
+    if (isDuel.value && multiplayerStore.room?.gameConfig?.mode === 'RACE') {
+      multiplayerStore.timeLeft = 60
+      console.log('⚔️ DUELO DE CARRERA: Iniciando temporizador de 60 segundos')
+    }
     
     // Si no viene anomalía, usamos la que tengamos guardada del interrogante
     const activeAnomaly = anomaly || multiplayerStore.nextMoveAnomaly
